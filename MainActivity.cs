@@ -11,6 +11,7 @@ using Google.Android.Material.FloatingActionButton;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
 
+
 namespace Ass_Pain
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
@@ -27,6 +28,11 @@ namespace Ass_Pain
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
             fab.Click += FabOnClick;
 
+            Adam adam = new Adam();
+            Android.Widget.TextView logout = FindViewById<Android.Widget.TextView>(Resource.Id.text);
+            logout.Click += adam.logout_Click;
+
+
             DrawerLayout drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
             drawer.AddDrawerListener(toggle);
@@ -35,6 +41,8 @@ namespace Ass_Pain
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
         }
+
+
 
         public override void OnBackPressed()
         {
