@@ -76,11 +76,11 @@ namespace Ass_Pain
             File.WriteAllBytes($"{path}/file.jpg", imgBytes);
 
             Config.IgnoreSignal(Laerdal.FFmpeg.Android.Signal.Sigxcpu);
-            int status = FFmpeg.Execute($"-i {dest} -i {path}/file.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -y '{path}/{video.Title}.mp3'");
+            int status = FFmpeg.Execute($"-i {dest} -i {path}/file.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -y '{path}/{title}.mp3'");
             if (status == 0)
             {
                 Console.WriteLine("Adding tags");
-                var tfile = TagLib.File.Create($"{path}/{video.Title}.mp3");
+                var tfile = TagLib.File.Create($"{path}/{title}.mp3");
                 tfile.Tag.Title = video.Title;
                 string[] autors = { video.Author.ChannelTitle };
                 tfile.Tag.Performers = autors;
