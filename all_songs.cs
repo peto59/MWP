@@ -102,7 +102,8 @@ namespace Ass_Pain
             }
             else if (id == Resource.Id.nav_slideshow) // youtube
             {
-
+                Intent intetn = new Intent(this, typeof(youtube));
+                StartActivity(intetn);
             }
           
 

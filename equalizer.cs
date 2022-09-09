@@ -25,19 +25,18 @@ namespace Ass_Pain
         {
             base.OnCreate(savedInstanceState);
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
-            SetContentView(Resource.Layout.equalizer);
+            SetContentView(Resource.Layout.activity_equalizer);
             Toolbar toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
-            FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
-            fab.Click += FabOnClick;
-
             Adam adam = new Adam();
             Android.Widget.TextView logout = FindViewById<Android.Widget.TextView>(Resource.Id.text);
             logout.Click += adam.logout_Click;
 
+            FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
+            fab.Click += FabOnClick;
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
             drawer.AddDrawerListener(toggle);
@@ -102,7 +101,8 @@ namespace Ass_Pain
             }
             else if (id == Resource.Id.nav_slideshow) // youtube
             {
-
+                Intent intetn = new Intent(this, typeof(youtube));
+                StartActivity(intetn);
             }
 
 

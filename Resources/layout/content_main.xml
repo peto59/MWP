@@ -14,26 +14,5 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:text="Start!" />
-    <Button
-        android:text="start"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/text"
-        android:id="@+id/start" />
-    <Button
-        android:text="stop"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/start"
-        android:id="@+id/stop" />
-    <WebView
-        android:id="@+id/webview"
-        android:layout_width="386.0dp"
-        android:layout_height="280.0dp"/>
-    <Button
-        android:text="Download"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/stop"
-        android:id="@+id/download" />
+   
 </RelativeLayout>
