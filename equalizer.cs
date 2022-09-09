@@ -13,10 +13,11 @@ using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
 
 
+
 namespace Ass_Pain
 {
-    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
-    public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
+    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
+    public class equalizer : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         DrawerLayout drawer;
 
@@ -24,7 +25,7 @@ namespace Ass_Pain
         {
             base.OnCreate(savedInstanceState);
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
-            SetContentView(Resource.Layout.activity_main);
+            SetContentView(Resource.Layout.equalizer);
             Toolbar toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
 
@@ -37,9 +38,8 @@ namespace Ass_Pain
             Android.Widget.TextView logout = FindViewById<Android.Widget.TextView>(Resource.Id.text);
             logout.Click += adam.logout_Click;
 
-            
+
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
-            drawer.OpenDrawer(GravityCompat.Start);
             drawer.AddDrawerListener(toggle);
             toggle.SyncState();
 
@@ -52,7 +52,7 @@ namespace Ass_Pain
         public override void OnBackPressed()
         {
             DrawerLayout drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
-            if(drawer.IsDrawerOpen(GravityCompat.Start))
+            if (drawer.IsDrawerOpen(GravityCompat.Start))
             {
                 drawer.CloseDrawer(GravityCompat.Start);
             }
@@ -81,7 +81,7 @@ namespace Ass_Pain
 
         private void FabOnClick(object sender, EventArgs eventArgs)
         {
-            View view = (View) sender;
+            View view = (View)sender;
             Snackbar.Make(view, "Replace with your own action", Snackbar.LengthLong)
                 .SetAction("Action", (Android.Views.View.IOnClickListener)null).Show();
         }
@@ -94,7 +94,6 @@ namespace Ass_Pain
             {
                 Intent intent = new Intent(this, typeof(all_songs));
                 StartActivity(intent);
-
             }
             else if (id == Resource.Id.nav_gallery) // equalizer
             {
@@ -118,4 +117,3 @@ namespace Ass_Pain
         }
     }
 }
-
