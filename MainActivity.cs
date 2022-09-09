@@ -11,7 +11,7 @@ using AndroidX.DrawerLayout.Widget;
 using Google.Android.Material.FloatingActionButton;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
-
+using Android.Webkit;
 
 namespace Ass_Pain
 {
@@ -19,6 +19,8 @@ namespace Ass_Pain
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         DrawerLayout drawer;
+
+        WebView web_view;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -34,8 +36,15 @@ namespace Ass_Pain
             fab.Click += FabOnClick;
 
             Adam adam = new Adam();
-            Android.Widget.TextView logout = FindViewById<Android.Widget.TextView>(Resource.Id.text);
+            Android.Widget.Button logout = FindViewById<Android.Widget.Button>(Resource.Id.start);
             logout.Click += adam.logout_Click;
+            Android.Widget.Button stop = FindViewById<Android.Widget.Button>(Resource.Id.stop);
+            stop.Click += adam.stop;
+            Android.Widget.Button download = FindViewById<Android.Widget.Button>(Resource.Id.download);
+            download.Click += (sender, ea) =>
+            {
+                adam.Download(sender, ea, web_view.Url);
+            };
 
             
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
@@ -45,6 +54,12 @@ namespace Ass_Pain
 
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
+
+            web_view = FindViewById<WebView>(Resource.Id.webview);
+            web_view.Settings.JavaScriptEnabled = true;
+            web_view.SetWebViewClient(new HelloWebViewClient());
+            web_view.LoadUrl("https://www.youtube.com/");
+            
         }
 
 
