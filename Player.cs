@@ -1,17 +1,9 @@
 ﻿using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using Android.Media;
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.IO;
 
-using Android.Graphics;
 namespace Ass_Pain
 {
     internal class Player
@@ -55,27 +47,51 @@ namespace Ass_Pain
             queue = new List<string>();
 
         }
-        public static void GetAutors(object sender, EventArgs e)
+        public static List<string> GetAuthors(object sender, EventArgs e)
         {
             var root = Directory.EnumerateDirectories($"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music");
-            foreach (string autor in root)
+            List<string> authors = new List<string>();
+            foreach (string author in root)
             {
-                Console.WriteLine(autor);
+                Console.WriteLine(author);
+                authors.Add(author);
             }
+            return authors;
         }
-        public static void GetAlbums(object sender, EventArgs e)
+        ///<summary>
+        ///Gets all albums of all authors
+        ///</summary>
+        public static List<string> GetAlbums()
         {
-            //var mp3Files = Directory.EnumerateFiles(path1, "*.mp3", SearchOption.AllDirectories);
             var root = Directory.EnumerateDirectories($"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music");
-            foreach (string autor in root)
+            List<string> albums = new List<string>();
+
+            foreach (string author in root)
             {
-                foreach(string album in Directory.EnumerateDirectories(autor))
+                foreach (string album in Directory.EnumerateDirectories(author))
                 {
                     Console.WriteLine(album);
-
+                    albums.Add(album);
                 }
             }
+            return albums;
         }
+        ///<summary>
+        ///Gets all albums from author
+        ///</summary>
+        public static List<string> GetAlbums(string author)
+        {
+            List<string> albums = new List<string>();
+            foreach (string album in Directory.EnumerateDirectories(author))
+            {
+                Console.WriteLine(album);
+                albums.Add(album);
+            }
+            return albums;
+        }
+        ///<summary>
+        ///Gets all songs in album or all albumless songs for author
+        ///</summary>
         public static List<string> GetSongs(string path)
         {
             List<string> songs = new List<string>();
@@ -87,14 +103,35 @@ namespace Ass_Pain
             }
             return songs;
         }
-        public static void GetAllSongs(object sender, EventArgs e)
+        ///<summary>
+        ///Gets all songs in device
+        ///</summary>
+        public static List<string> GetSongs()
         {
             var root = $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music";
             var mp3Files = Directory.EnumerateFiles(root, "*.mp3", SearchOption.AllDirectories);
+            List<string> songs = new List<string>();
             foreach (string currentFile in mp3Files)
             {
                 Console.WriteLine(currentFile);
+                songs.Add(currentFile);
             }
+            return songs;
+        }
+        public static string GetSongTitle(string path)
+        {
+            var tfile = TagLib.File.Create(path);
+            return tfile.Tag.Title;
+        }
+        public static List<string> GetSongTitle(List<string> Files)
+        {
+            List<string> titles = new List<string>();
+            foreach (string currentFile in Files)
+            {
+                var tfile = TagLib.File.Create(currentFile);
+                titles.Add(tfile.Tag.Title);
+            }
+            return titles;
         }
     }
 }
