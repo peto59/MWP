@@ -47,6 +47,7 @@ namespace Ass_Pain
             queue = new List<string>();
 
         }
+
         public static List<string> GetAuthors(object sender, EventArgs e)
         {
             var root = Directory.EnumerateDirectories($"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music");
@@ -58,6 +59,7 @@ namespace Ass_Pain
             }
             return authors;
         }
+
         ///<summary>
         ///Gets all albums of all authors
         ///</summary>
@@ -76,6 +78,7 @@ namespace Ass_Pain
             }
             return albums;
         }
+
         ///<summary>
         ///Gets all albums from author
         ///</summary>
@@ -89,6 +92,7 @@ namespace Ass_Pain
             }
             return albums;
         }
+
         ///<summary>
         ///Gets all songs in album or all albumless songs for author
         ///</summary>
@@ -103,6 +107,7 @@ namespace Ass_Pain
             }
             return songs;
         }
+
         ///<summary>
         ///Gets all songs in device
         ///</summary>
@@ -118,11 +123,13 @@ namespace Ass_Pain
             }
             return songs;
         }
+
         public static string GetSongTitle(string path)
         {
             var tfile = TagLib.File.Create(path);
             return tfile.Tag.Title;
         }
+
         public static List<string> GetSongTitle(List<string> Files)
         {
             List<string> titles = new List<string>();
@@ -133,15 +140,24 @@ namespace Ass_Pain
             }
             return titles;
         }
+
+        ///<summary>
+        ///Gets last name/folder from path
+        ///</summary>
         public static string GetNameFromPath(string path)
         {
-            return path.Substring(path.LastIndexOf('/'), path.Length);
+            string[] subs = path.Split('/');
+            return subs[subs.Length-1];
         }
-        public static List<string> GetNameAuthorFromPath(string path)
+
+        ///<summary>
+        ///Gets album name and author from album path
+        ///</summary>
+        public static Dictionary<string, string> GetAlbumAuthorFromPath(string path)
         {
-            List<string> names = new List<string>();
-            names.Add(GetNameFromPath(path));
-            names.Add(Path.GetDirectoryName(path));
+            Dictionary<string, string> names = new Dictionary<string, string>();
+            names.Add("author", GetNameFromPath(path));
+            names.Add("album", GetNameFromPath(Path.GetDirectoryName(path)));
             return names;
         }
     }

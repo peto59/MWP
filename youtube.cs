@@ -37,8 +37,12 @@ namespace Ass_Pain
             fab.Click += FabOnClick;
 
 
-            //Android.Widget.Button stop = FindViewById<Android.Widget.Button>(Resource.Id.stop);
-            //stop.Click += Player.GetAllSongs;
+            /*Android.Widget.Button stop = FindViewById<Android.Widget.Button>(Resource.Id.stop);
+            stop.Click += (sender, ea) =>
+            {
+                Player.GetAlbumAuthorFromPath(Player.GetAlbums()[0]);
+            };*/
+
             Android.Widget.Button download = FindViewById<Android.Widget.Button>(Resource.Id.download);
             download.Click += (sender, ea) =>
             {
