@@ -74,13 +74,25 @@ namespace Ass_Pain
             {
                 case 0: // author
 
+                    var albums = Player.GetAlbums();
 
-                    for (int i = 0; i < 10; i++)
+                    for (int i = 0; i < albums.Count; i++)
                     {
+                        AndroidX.AppCompat.Widget.Toolbar tb = new AndroidX.AppCompat.Widget.Toolbar(this);
+                        
+
+                        // ボッタン作って
+                        float scale = Resources.DisplayMetrics.Density;
+                        int w = (int)(150 * scale + 0.5f);
+                        int h = (int)(180 * scale + 0.5f);
+
+
                         ImageButton mori = new ImageButton(this);
-                        mori.LayoutParameters = new LinearLayout.LayoutParams(
-                            150, 180
+                        LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
+                            w, h
                         );
+                        ll.SetMargins(50, 0, 0, 0);
+                        mori.LayoutParameters = ll;
 
                         TagLib.File tagFile = TagLib.File.Create(
                             $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/Gravity.mp3"
@@ -92,11 +104,8 @@ namespace Ass_Pain
                         );
 
                         lin.AddView(mori);
+
                     }
-
-                    
-
-                
 
                     break;
                 case 1: // all

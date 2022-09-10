@@ -44,7 +44,7 @@
         android:minWidth="25px"
         android:minHeight="25px"
         android:layout_width="match_parent"
-        android:layout_height="180dp"
+        android:layout_height="220dp"
         android:layout_marginTop="20dp"
         android:layout_below="@id/toolbar1"
         android:id="@+id/horizontalScrollView1" >
@@ -55,14 +55,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/linearLayout1" >
+           
+         
+           
 
-            <ImageButton
-                    android:layout_width="150dp"
-                    android:layout_height="180dp"
-                    android:minWidth="25px"
-                    android:minHeight="25px"
-                    android:layout_marginLeft="10dp"
-                    android:id="@+id/imageButton1" />
             
             
            

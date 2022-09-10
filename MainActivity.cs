@@ -12,7 +12,7 @@ using Google.Android.Material.FloatingActionButton;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
 using Android.Webkit;
-
+using System.IO;
 
 namespace Ass_Pain
 {
@@ -45,7 +45,18 @@ namespace Ass_Pain
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
 
-            
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            if (!Directory.Exists($"{path}/music"))
+            {
+                Console.WriteLine("Creating " + $"{path}/music");
+                Directory.CreateDirectory($"{path}/music");
+            }
+
+            if (!Directory.Exists($"{path}/tmp"))
+            {
+                Console.WriteLine("Creating " + $"{path}/tmp");
+                Directory.CreateDirectory($"{path}/tmp");
+            }
         }
 
         public override void OnBackPressed()
