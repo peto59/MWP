@@ -133,5 +133,16 @@ namespace Ass_Pain
             }
             return titles;
         }
+        public static string GetNameFromPath(string path)
+        {
+            return path.Substring(path.LastIndexOf('/'), path.Length);
+        }
+        public static List<string> GetNameAuthorFromPath(string path)
+        {
+            List<string> names = new List<string>();
+            names.Add(GetNameFromPath(path));
+            names.Add(Path.GetDirectoryName(path));
+            return names;
+        }
     }
 }
