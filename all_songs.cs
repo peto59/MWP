@@ -11,8 +11,9 @@ using AndroidX.DrawerLayout.Widget;
 using Google.Android.Material.FloatingActionButton;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
-
-
+using Android.Graphics;
+using Android.Widget;
+using System.IO;
 
 namespace Ass_Pain
 {
@@ -26,25 +27,84 @@ namespace Ass_Pain
             base.OnCreate(savedInstanceState);
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_all_songs);
-            Toolbar toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
+
+            AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
-            FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
-            fab.Click += FabOnClick;
 
+            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, 
+                drawer, 
+                toolbar, 
+                Resource.String.navigation_drawer_open,
+                Resource.String.navigation_drawer_close
+            );
 
-
-            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
             drawer.AddDrawerListener(toggle);
             toggle.SyncState();
 
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
+
+            // -=-=-=-=-=
+            set_buttons_color(Resource.Id.author);
+            set_buttons_color(Resource.Id.all_songs);
+            set_buttons_color(Resource.Id.playlists);
+
+            populate_grid(0);
         }
 
+        public void set_buttons_color(int id)
+        {
+            Button authors = FindViewById<Button>(id);
+            authors.Background.SetColorFilter(
+                Color.Rgb(255, 76, 41),
+                PorterDuff.Mode.Multiply
+            );
+            authors.SetTextColor(Color.Black);
+        }
 
+        public void populate_grid(int type)
+        {
+            LinearLayout lin = FindViewById<LinearLayout>(Resource.Id.linearLayout1);
+            
+            switch (type)
+            {
+                case 0: // author
+
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        ImageButton mori = new ImageButton(this);
+                        mori.LayoutParameters = new LinearLayout.LayoutParams(
+                            150, 180
+                        );
+
+                        TagLib.File tagFile = TagLib.File.Create(
+                            $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/Gravity.mp3"
+                        );
+                        MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+                        var x = BitmapFactory.DecodeStream(ms);
+                        mori.SetImageBitmap(
+                            x
+                        );
+
+                        lin.AddView(mori);
+                    }
+
+                    
+
+                
+
+                    break;
+                case 1: // all
+                    break;
+                case 2: // playlists
+                    break;
+            }
+        }
 
         public override void OnBackPressed()
         {

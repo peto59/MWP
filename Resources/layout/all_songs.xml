@@ -1,20 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:p4="http://xamarin.com/mono/android/designer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#082032"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/app_bar_all_songs">
-
-    
-
-    <TextView
-        android:id="@+id/text"
+    <androidx.appcompat.widget.Toolbar
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="All songs" />
+        android:layout_centerHorizontal="true"
+        android:id="@+id/toolbar1"
+        >
+
+
+
+        <Button
+            android:text="Author"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10dp"
+            android:id="@+id/author" />
+        <Button
+            android:text="All"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10dp"
+            android:id="@+id/all_songs" />
+        <Button
+            android:text="Playlists"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            
+            android:id="@+id/playlists" />
+    </androidx.appcompat.widget.Toolbar>
+
+   
+
+    <HorizontalScrollView
+        android:minWidth="25px"
+        android:minHeight="25px"
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:layout_marginTop="20dp"
+        android:layout_below="@id/toolbar1"
+        android:id="@+id/horizontalScrollView1" >
+        <LinearLayout
+            android:orientation="horizontal"
+            android:minWidth="25px"
+            android:minHeight="25px"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/linearLayout1" >
+
+            <ImageButton
+                    android:layout_width="150dp"
+                    android:layout_height="180dp"
+                    android:minWidth="25px"
+                    android:minHeight="25px"
+                    android:layout_marginLeft="10dp"
+                    android:id="@+id/imageButton1" />
+            
+            
+           
+        </LinearLayout>
+      </HorizontalScrollView>
+    
+
+
+
+
+
+
 
 
 
