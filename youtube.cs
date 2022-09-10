@@ -37,15 +37,12 @@ namespace Ass_Pain
             fab.Click += FabOnClick;
 
 
-            Adam adam = new Adam();
-            Android.Widget.Button logout = FindViewById<Android.Widget.Button>(Resource.Id.start);
-            logout.Click += adam.logout_Click;
             Android.Widget.Button stop = FindViewById<Android.Widget.Button>(Resource.Id.stop);
-            stop.Click += adam.stop;
+            stop.Click += Player.GetAllSongs;
             Android.Widget.Button download = FindViewById<Android.Widget.Button>(Resource.Id.download);
             download.Click += (sender, ea) =>
             {
-                adam.Download(sender, ea, web_view.Url);
+                Downloader.Download(sender, ea, web_view.Url);
             };
 
 

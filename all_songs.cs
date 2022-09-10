@@ -34,9 +34,6 @@ namespace Ass_Pain
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
             fab.Click += FabOnClick;
 
-            Adam adam = new Adam();
-            Android.Widget.TextView logout = FindViewById<Android.Widget.TextView>(Resource.Id.text);
-            logout.Click += adam.logout_Click;
 
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);

@@ -13,6 +13,7 @@ using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
 using Android.Webkit;
 
+
 namespace Ass_Pain
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
@@ -34,6 +35,7 @@ namespace Ass_Pain
 
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
             fab.Click += FabOnClick;
+
             
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
             drawer.OpenDrawer(GravityCompat.Start);

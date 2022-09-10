@@ -31,10 +31,6 @@ namespace Ass_Pain
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
-            Adam adam = new Adam();
-            Android.Widget.TextView logout = FindViewById<Android.Widget.TextView>(Resource.Id.text);
-            logout.Click += adam.logout_Click;
-
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
             fab.Click += FabOnClick;
 
