@@ -57,7 +57,19 @@ namespace Ass_Pain
         {
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             string dest = $"{path}/tmp/video.mp3";
-            
+
+            if (!Directory.Exists($"{path}/music"))
+            {
+                Console.WriteLine("Creating " + $"{path}/music");
+                Directory.CreateDirectory($"{path}/music");
+            }
+
+            if (!Directory.Exists($"{path}/tmp"))
+            {
+                Console.WriteLine("Creating " + $"{path}/tmp");
+                Directory.CreateDirectory($"{path}/tmp");
+            }
+
             YoutubeClient youtube = new YoutubeClient();
 
             StreamManifest streamManifest = await youtube.Videos.Streams.GetManifestAsync(url);
