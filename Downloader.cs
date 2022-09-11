@@ -26,7 +26,7 @@ using Google.Android.Material.Snackbar;
 
 namespace Ass_Pain
 {
-    internal class Downloader
+    internal static class Downloader
     {
         public static async void Download(object sender, EventArgs e, string url)
         {
@@ -121,7 +121,7 @@ namespace Ass_Pain
                 tfile.Save();
                 View view = (View)sender;
                 Snackbar.Make(view, $"{video.Title} downloaded successfully", Snackbar.LengthLong)
-                    .SetAction("Action", (Android.Views.View.IOnClickListener)null).Show();
+                    .SetAction("Action", (View.IOnClickListener)null).Show();
                 return 0;
             }
             else
@@ -129,7 +129,7 @@ namespace Ass_Pain
                 Console.WriteLine($"FFmpeg failed with status code {status}");
                 View view = (View)sender;
                 Snackbar.Make(view, $"{video.Title} failed with {status} code", Snackbar.LengthLong)
-                    .SetAction("Action", (Android.Views.View.IOnClickListener)null).Show();
+                    .SetAction("Action", (View.IOnClickListener)null).Show();
                 return 1;
             }
         }

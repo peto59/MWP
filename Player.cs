@@ -8,157 +8,134 @@ namespace Ass_Pain
 {
     internal class Player
     {
-        protected MediaPlayer player;
+        protected MediaPlayer player = new MediaPlayer();
         protected List<string> queue = new List<string>();
+        int index = 0;
+        bool used = false;
 
-        public void Play(object sender, EventArgs e)
+        public Player()
         {
-            //var folder = Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
-            Console.WriteLine("Clicked");
-            var folder = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            Console.WriteLine(folder);
-            var filesList = Directory.GetFiles(folder);
-            foreach (var file in filesList)
+            player.Completion += NextSong;
+            player.Prepared += (sender, ea) =>
             {
-                Console.WriteLine(file);
-                if (player == null)
-                {
-                    player = new MediaPlayer();
-                }
-                else
+                used = true;
+            };
+        }
+
+        public void Play(string source)
+        {
+            GenerateQueue(source);
+        }
+
+        public void NextSong(object sender = null, EventArgs e = null)
+        {
+            if (queue.Count > index)
+            {
+                if (used)
                 {
                     player.Reset();
                 }
-                player.SetDataSource(file);
+                player.SetDataSource(queue[index]);
+                index++;
                 player.Prepare();
                 player.Start();
             }
-            //RootDirectory();
         }
 
-        public void stop(object sender, EventArgs e)
+        public void Resume(object sender, EventArgs e)
+        {
+            Console.WriteLine("Resumed");
+            if (used)
+            {
+                player.Start();
+            }
+        }
+        public void Stop(object sender, EventArgs e)
         {
             Console.WriteLine("Stopped");
             player.Pause();
         }
 
-        public void AddToQueue()
+        public void ClearQueue(object sender = null, EventArgs e = null)
         {
             queue = new List<string>();
-
-        }
-
-        public static List<string> GetAuthors(object sender, EventArgs e)
-        {
-            var root = Directory.EnumerateDirectories($"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music");
-            List<string> authors = new List<string>();
-            foreach (string author in root)
-            {
-                Console.WriteLine(author);
-                authors.Add(author);
-            }
-            return authors;
+            index = 0;
         }
 
         ///<summary>
-        ///Gets all albums of all authors
+        ///Generates clear queue from single track or entire album/author and resets index to 0
         ///</summary>
-        public static List<string> GetAlbums()
+        public void GenerateQueue(string source)
         {
-            var root = Directory.EnumerateDirectories($"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music");
-            List<string> albums = new List<string>();
-
-            foreach (string author in root)
+            index = 0;
+            if (FileManager.IsDirectory(source))
             {
-                foreach (string album in Directory.EnumerateDirectories(author))
-                {
-                    Console.WriteLine(album);
-                    albums.Add(album);
-                }
+                GenerateQueue(FileManager.GetSongs(source));
             }
-            return albums;
+            else
+            {
+                queue = new List<string>{source};
+                NextSong();
+
+            }
         }
 
         ///<summary>
-        ///Gets all albums from author
+        ///Generates clear queue from list and resets index to 0
         ///</summary>
-        public static List<string> GetAlbums(string author)
+        public void GenerateQueue(List<string> source)
         {
-            List<string> albums = new List<string>();
-            foreach (string album in Directory.EnumerateDirectories(author))
-            {
-                Console.WriteLine(album);
-                albums.Add(album);
-            }
-            return albums;
+            index = 0;
+            queue = source;
+            NextSong();
         }
 
         ///<summary>
-        ///Gets all songs in album or all albumless songs for author
+        ///Adds single track or entire album/author to queue
         ///</summary>
-        public static List<string> GetSongs(string path)
+        public void AddToQueue(string addition)
         {
-            List<string> songs = new List<string>();
-            var mp3Files = Directory.EnumerateFiles(path, "*.mp3");
-            foreach (string currentFile in mp3Files)
+            if (FileManager.IsDirectory(addition))
             {
-                Console.WriteLine(currentFile);
-                songs.Add(currentFile);
+                AddToQueue(FileManager.GetSongs(addition));
             }
-            return songs;
+            else
+            {
+                queue.Add(addition);
+            }
         }
 
         ///<summary>
-        ///Gets all songs in device
+        ///Adds list of songs to queue
         ///</summary>
-        public static List<string> GetSongs()
+        public void AddToQueue(List<string> addition)
         {
-            var root = $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music";
-            var mp3Files = Directory.EnumerateFiles(root, "*.mp3", SearchOption.AllDirectories);
-            List<string> songs = new List<string>();
-            foreach (string currentFile in mp3Files)
-            {
-                Console.WriteLine(currentFile);
-                songs.Add(currentFile);
-            }
-            return songs;
-        }
-
-        public static string GetSongTitle(string path)
-        {
-            var tfile = TagLib.File.Create(path);
-            return tfile.Tag.Title;
-        }
-
-        public static List<string> GetSongTitle(List<string> Files)
-        {
-            List<string> titles = new List<string>();
-            foreach (string currentFile in Files)
-            {
-                var tfile = TagLib.File.Create(currentFile);
-                titles.Add(tfile.Tag.Title);
-            }
-            return titles;
+            queue.AddRange(addition);
         }
 
         ///<summary>
-        ///Gets last name/folder from path
+        ///Adds song or entire album/author as first to queue
         ///</summary>
-        public static string GetNameFromPath(string path)
+        public void PlayNext(string addition)
         {
-            string[] subs = path.Split('/');
-            return subs[subs.Length-1];
+            if (FileManager.IsDirectory(addition))
+            {
+                PlayNext(FileManager.GetSongs(addition));
+            }
+            else
+            {
+                queue.Insert(0, addition);
+            }
+            
         }
-
+        
         ///<summary>
-        ///Gets album name and author from album path
+        ///Adds song list as first to queue
         ///</summary>
-        public static Dictionary<string, string> GetAlbumAuthorFromPath(string path)
+        public void PlayNext(List<string> addition)
         {
-            Dictionary<string, string> names = new Dictionary<string, string>();
-            names.Add("author", GetNameFromPath(path));
-            names.Add("album", GetNameFromPath(Path.GetDirectoryName(path)));
-            return names;
+            addition.AddRange(queue);
+            queue = addition;
         }
     }
 }

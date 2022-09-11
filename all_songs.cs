@@ -74,7 +74,7 @@ namespace Ass_Pain
             {
                 case 0: // author
 
-                    var albums = Player.GetAlbums();
+                    var albums = FileManager.GetAlbums();
 
                     for (int i = 0; i < albums.Count; i++)
                     {
@@ -94,13 +94,34 @@ namespace Ass_Pain
                         ll.SetMargins(50, 0, 0, 0);
                         mori.LayoutParameters = ll;
 
-                        TagLib.File tagFile = TagLib.File.Create(
-                            $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/Gravity.mp3"
-                        );
-                        MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
-                        var x = BitmapFactory.DecodeStream(ms);
+                        //<adam je kkt a jebal sa ti do kodu ale u neho fungoval>
+                        Bitmap image = null;
+                        DirectoryInfo dir = new DirectoryInfo(albums[i]);
+                        FileInfo[] files = dir.GetFiles("cover.*");
+                        string validFileTypes = ".jpg,.png,.webm";
+                        if (files.Length > 0)
+                        {
+                            foreach (FileInfo file in files)
+                            {
+                                if (validFileTypes.Contains(file.Extension))
+                                {
+                                    image = BitmapFactory.DecodeStream(File.OpenRead(file.FullName)); // extracts image from cover.* in album dir
+                                    break;
+                                }
+                            }
+                        }
+                        if (image == null)
+                        {
+                            TagLib.File tagFile = TagLib.File.Create(
+                                FileManager.GetSongs(albums[i])[0]//extracts image from first song of album
+                            );
+                            MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+                            image = BitmapFactory.DecodeStream(ms);
+                        }
+                        //</adam je kkt a jebal sa ti do kodu ale u neho fungoval>
+
                         mori.SetImageBitmap(
-                            x
+                            image
                         );
 
                         lin.AddView(mori);

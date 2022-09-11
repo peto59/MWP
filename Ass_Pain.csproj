@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Downloader.cs" />
+    <Compile Include="FileManager.cs" />
     <Compile Include="HelloWebViewClient.cs" />
     <Compile Include="all_songs.cs" />
     <Compile Include="equalizer.cs" />
