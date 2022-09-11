@@ -98,9 +98,9 @@ namespace Ass_Pain
                         Bitmap image = null;
                         DirectoryInfo dir = new DirectoryInfo(albums[i]);
                         FileInfo[] files = dir.GetFiles("cover.*");
-                        string validFileTypes = ".jpg,.png,.webm";
                         if (files.Length > 0)
                         {
+                            string validFileTypes = ".jpg,.png,.webm";
                             foreach (FileInfo file in files)
                             {
                                 if (validFileTypes.Contains(file.Extension))
@@ -112,11 +112,29 @@ namespace Ass_Pain
                         }
                         if (image == null)
                         {
-                            TagLib.File tagFile = TagLib.File.Create(
-                                FileManager.GetSongs(albums[i])[0]//extracts image from first song of album
-                            );
-                            MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
-                            image = BitmapFactory.DecodeStream(ms);
+                            TagLib.File tagFile;
+
+                            foreach (string song in FileManager.GetSongs(albums[i]))
+                            {
+                                try
+                                {
+                                    tagFile= TagLib.File.Create(
+                                        song//extracts image from first song of album that contains embedded picture
+                                    );
+                                    MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+                                    image = BitmapFactory.DecodeStream(ms);
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine(ex.Message);
+                                    Console.WriteLine($"Doesnt contain image: {song}");
+                                }
+                            }
+                            if(image == null)
+                            {
+                                image = BitmapFactory.DecodeStream(Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
+                            }
                         }
                         //</adam je kkt a jebal sa ti do kodu ale u neho fungoval>
 
