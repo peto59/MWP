@@ -68,18 +68,30 @@ namespace Ass_Pain
 
         public void populate_grid(int type)
         {
-            LinearLayout lin = FindViewById<LinearLayout>(Resource.Id.linearLayout1);
+            
             
             switch (type)
             {
                 case 0: // author
+                    LinearLayout lin = FindViewById<LinearLayout>(Resource.Id.linearLayout1);
 
                     var albums = FileManager.GetAlbums();
 
                     for (int i = 0; i < albums.Count; i++)
                     {
-                        AndroidX.AppCompat.Widget.Toolbar tb = new AndroidX.AppCompat.Widget.Toolbar(this);
-                        
+                        //リネアルレーアート作る
+                        LinearLayout ln_in = new LinearLayout(this);
+                        ln_in.Orientation = Orientation.Vertical;
+                        ln_in.SetBackgroundResource(Resource.Drawable.rounded);
+
+                        LinearLayout.LayoutParams ln_in_params = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MatchParent,
+                            LinearLayout.LayoutParams.WrapContent
+                        );
+                        ln_in_params.SetMargins(50, 0, 0, 0);
+                        ln_in.LayoutParameters = ln_in_params;
+
+
 
                         // ボッタン作って
                         float scale = Resources.DisplayMetrics.Density;
@@ -91,7 +103,7 @@ namespace Ass_Pain
                         LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
                             w, h
                         );
-                        ll.SetMargins(50, 0, 0, 0);
+                        ll.SetMargins(50, 50, 50, 0);
                         mori.LayoutParameters = ll;
 
                         //<adam je kkt a jebal sa ti do kodu ale u neho fungoval>
@@ -118,7 +130,7 @@ namespace Ass_Pain
                             {
                                 try
                                 {
-                                    tagFile= TagLib.File.Create(
+                                    tagFile = TagLib.File.Create(
                                         song//extracts image from first song of album that contains embedded picture
                                     );
                                     MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
@@ -131,7 +143,7 @@ namespace Ass_Pain
                                     Console.WriteLine($"Doesnt contain image: {song}");
                                 }
                             }
-                            if(image == null)
+                            if (image == null)
                             {
                                 image = BitmapFactory.DecodeStream(Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
                             }
@@ -141,8 +153,32 @@ namespace Ass_Pain
                         mori.SetImageBitmap(
                             image
                         );
+                        ln_in.AddView(mori);
 
-                        lin.AddView(mori);
+
+
+                        //アルブムの名前
+                        int h_name = (int)(40 * scale + 0.5f);
+
+                        TextView name = new TextView(this);
+                        name.Text = FileManager.GetNameFromPath(albums[i]);
+                        name.TextSize = 15;
+                        name.SetTextColor(Color.White);
+                        name.TextAlignment = TextAlignment.Center;
+
+                        LinearLayout.LayoutParams ln_name_params = new LinearLayout.LayoutParams(
+                          w,
+                          h_name
+                        );
+                        ln_name_params.SetMargins(50, 0, 50, 50);
+                        name.LayoutParameters = ln_name_params;
+
+                        ln_in.AddView(name);
+
+
+
+                        //全部加える
+                        lin.AddView(ln_in);
 
                     }
 
