@@ -23,8 +23,6 @@ namespace Ass_Pain
     {
         DrawerLayout drawer;
 
-        WebView web_view;
-
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -60,9 +58,9 @@ namespace Ass_Pain
                 Directory.CreateDirectory($"{path}/tmp");
             }
 
-            if (!File.Exists($"{path}/alises.json"))
+            if (!File.Exists($"{path}/aliases.json"))
             {
-                File.WriteAllTextAsync($"{path}/alises.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
+                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
 
             }
 

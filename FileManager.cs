@@ -135,6 +135,22 @@ namespace Ass_Pain
             return string.IsNullOrEmpty(Path.GetFileName(path)) || Directory.Exists(path);
         }
 
+        public static string GetAlias(string name)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            string json = File.ReadAllText($"{path}/aliases.json");
+            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+            if (aliases.ContainsKey(name))
+            {
+                return aliases[name];
+            }
+            else
+            {
+                return name;
+            }
+
+        }
+
         public static void AddAlias(string name, string target)
         {
             string author = target.Replace("/", "");
@@ -146,7 +162,8 @@ namespace Ass_Pain
             nameFile = nameFile.Replace("?", "");
 
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>($"{path}/aliases.json");
+            string json = File.ReadAllText($"{path}/aliases.json");
+            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             aliases.Add(nameFile, nameFile);
             File.WriteAllTextAsync($"{path}/alises.json", JsonConvert.SerializeObject(aliases));
             Directory.Move($"{path}/music/{nameFile}", $"{path}/music/{author}");
@@ -163,7 +180,7 @@ namespace Ass_Pain
                     else
                     {
                         //TODO: add symlink move
-                        if(i == 0)
+                        if (i == 0)
                         {
                             continue;
                         }
@@ -174,25 +191,12 @@ namespace Ass_Pain
                 tfile.Save();
             }
         }
-        public static string GetAlias(string name)
-        {
-            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>($"{path}/aliases.json");
-            if (aliases.ContainsKey(name))
-            {
-                return aliases[name];
-            }
-            else
-            {
-                return name;
-            }
-            
-        }
 
         public static void CreatePlaylist(string name)
         {
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>($"{path}/playlists.json");
+            string json = File.ReadAllText($"{path}/playlists.json");
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             playlists.Add(name, new List<string>());
             File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
@@ -200,7 +204,8 @@ namespace Ass_Pain
         public static void AddToPlaylist(string name, string song)
         {
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>($"{path}/playlists.json");
+            string json = File.ReadAllText($"{path}/playlists.json");
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             playlists[name].Add(song);
             File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
@@ -208,7 +213,8 @@ namespace Ass_Pain
         public static void AddToPlaylist(string name, List<string> songs)
         {
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>($"{path}/playlists.json");
+            string json = File.ReadAllText($"{path}/playlists.json");
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             playlists[name].AddRange(songs);
             File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
