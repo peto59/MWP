@@ -4,6 +4,7 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -132,6 +133,84 @@ namespace Ass_Pain
         public static bool IsDirectory(string path)
         {
             return string.IsNullOrEmpty(Path.GetFileName(path)) || Directory.Exists(path);
+        }
+
+        public static void AddAlias(string name, string target)
+        {
+            string author = target.Replace("/", "");
+            author = author.Replace("#", "");
+            author = author.Replace("?", "");
+
+            string nameFile = name.Replace("/", "");
+            nameFile = nameFile.Replace("#", "");
+            nameFile = nameFile.Replace("?", "");
+
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>($"{path}/aliases.json");
+            aliases.Add(nameFile, nameFile);
+            File.WriteAllTextAsync($"{path}/alises.json", JsonConvert.SerializeObject(aliases));
+            Directory.Move($"{path}/music/{nameFile}", $"{path}/music/{author}");
+            foreach (string song in FileManager.GetSongs($"{path}/music/{author}"))
+            {
+                var tfile = TagLib.File.Create($"{song}");
+                string[] autors = tfile.Tag.Performers;
+                for (int i = 0; i < autors.Length; i++)
+                {
+                    if (autors[i] == name)
+                    {
+                        autors[i] = target;
+                    }
+                    else
+                    {
+                        //TODO: add symlink move
+                        if(i == 0)
+                        {
+                            continue;
+                        }
+                        //Android.Systems.Os.Symlink();
+                    }
+                }
+                tfile.Tag.Performers = autors;
+                tfile.Save();
+            }
+        }
+        public static string GetAlias(string name)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>($"{path}/aliases.json");
+            if (aliases.ContainsKey(name))
+            {
+                return aliases[name];
+            }
+            else
+            {
+                return name;
+            }
+            
+        }
+
+        public static void CreatePlaylist(string name)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>($"{path}/playlists.json");
+            playlists.Add(name, new List<string>());
+            File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
+        }
+
+        public static void AddToPlaylist(string name, string song)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>($"{path}/playlists.json");
+            playlists[name].Add(song);
+            File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
+        }
+
+        public static void AddToPlaylist(string name, List<string> songs)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>($"{path}/playlists.json");
+            playlists[name].AddRange(songs);
+            File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
     }
 }

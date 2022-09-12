@@ -13,6 +13,8 @@ using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
 using Android.Webkit;
 using System.IO;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Ass_Pain
 {
@@ -56,6 +58,17 @@ namespace Ass_Pain
             {
                 Console.WriteLine("Creating " + $"{path}/tmp");
                 Directory.CreateDirectory($"{path}/tmp");
+            }
+
+            if (!File.Exists($"{path}/alises.json"))
+            {
+                File.WriteAllTextAsync($"{path}/alises.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
+
+            }
+
+            if (!File.Exists($"{path}/playlists.json"))
+            {
+                File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
         }
 
