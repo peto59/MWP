@@ -35,40 +35,10 @@
             android:text="Playlists"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            
             android:id="@+id/playlists" />
     </androidx.appcompat.widget.Toolbar>
-
    
-
-    <HorizontalScrollView
-       
-        android:layout_width="match_parent"
-        android:layout_height="240dp"
-        android:layout_marginTop="20dp"
-        android:layout_below="@id/toolbar1"
-        android:id="@+id/horizontalScrollView1" >
-        <LinearLayout
-            android:orientation="horizontal"
-            android:minWidth="25px"
-            android:minHeight="25px"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/linearLayout1" >
-           
-           
-         
-           
-
-            
-            
-           
-        </LinearLayout>
-      </HorizontalScrollView>
-    
-
-
-
+   
 
 
 

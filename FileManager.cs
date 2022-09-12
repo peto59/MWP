@@ -15,7 +15,7 @@ namespace Ass_Pain
 {
     internal static class FileManager
     {
-        public static List<string> GetAuthors(object sender, EventArgs e)
+        public static List<string> GetAuthors()
         {
             var root = Directory.EnumerateDirectories($"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music");
             List<string> authors = new List<string>();
