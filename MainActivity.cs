@@ -60,7 +60,11 @@ namespace Ass_Pain
 
             if (!File.Exists($"{path}/aliases.json"))
             {
-                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
+                var x = new Dictionary<string, string>
+                {
+                    { "IRyS Ch. hololive-EN", "IRyS - Topic" }
+                };
+                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(x));
 
             }
 
