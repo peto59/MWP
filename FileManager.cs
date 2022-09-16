@@ -148,18 +148,17 @@ namespace Ass_Pain
             {
                 return name;
             }
-
         }
 
         public static void AddAlias(string name, string target)
         {
-            string author = target.Replace("/", "");
-            author = author.Replace("#", "");
-            author = author.Replace("?", "");
+            if(name == target)
+            {
+                return;
+            }
+            string author = Sanitize(target);
 
-            string nameFile = name.Replace("/", "");
-            nameFile = nameFile.Replace("#", "");
-            nameFile = nameFile.Replace("?", "");
+            string nameFile = Sanitize(name);
 
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             string json = File.ReadAllText($"{path}/aliases.json");
@@ -217,6 +216,24 @@ namespace Ass_Pain
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             playlists[name].AddRange(songs);
             File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
+        }
+
+        public static string Sanitize(string value)
+        {
+            return value.Replace("/", "").Replace("#", "").Replace("?", "");
+        }
+
+        public static int GetAvailableFile()
+        {
+            int i = 0;
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            while (File.Exists($"{path}/tmp/video{i}.mp3"))
+            {
+                i++;
+            }
+            string dest = $"{path}/tmp/video{i}.mp3";
+            File.Create(dest).Close();
+            return i;
         }
     }
 }

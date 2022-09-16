@@ -38,10 +38,8 @@ namespace Ass_Pain
 
 
             Android.Widget.Button stop = FindViewById<Android.Widget.Button>(Resource.Id.stop);
-            /*stop.Click += (sender, ea) =>
-            {
-                Player.GetAlbumAuthorFromPath(Player.GetAlbums()[0]);
-            };*/
+            NetworkManager nm = new NetworkManager();
+            stop.Click += nm.WifiTest;
             Player player = new Player();
             stop.Click += player.Resume;
 

@@ -21,11 +21,15 @@ using YoutubeExplode.Common;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using YoutubeExplode.Playlists;
-using Laerdal.FFmpeg.Android;
 using Google.Android.Material.Snackbar;
+using Java.Lang.Reflect;
+using Com.Arthenica.Ffmpegkit;
+using Signal = Com.Arthenica.Ffmpegkit.Signal;
 
 namespace Ass_Pain
 {
+    public delegate bool ExecuteCallback(int hwnd, int lParam);
+
     internal static class Downloader
     {
         public static async void Download(object sender, EventArgs e, string url)
@@ -37,14 +41,18 @@ namespace Ass_Pain
                 var videos = await youtube.Playlists.GetVideosAsync(playlist.Id);
                 foreach (PlaylistVideo video in videos)
                 {
-                    _ = DownloadVideo(sender, e, video.Url, playlist.Title);
-                    //int x = await DownloadVideo(sender, e, video.Url, playlist.Title);
-                    //Console.WriteLine($"{x} RETURN NUMBER OF {video.Url}");
+                    int i = FileManager.GetAvailableFile();
+                    void ts()
+                    {
+                        DownloadVideo(sender, e, video.Url, playlist.Title, i);
+                    }
+                    new Thread(ts).Start();
                 }
             }
             else if (url.Contains("watch"))
             {
-                _ = DownloadVideo(sender, e, url);
+
+                DownloadVideo(sender, e, url, FileManager.GetAvailableFile());
             }
             else
             {
@@ -52,61 +60,41 @@ namespace Ass_Pain
             }
         }
         
-        public static async Task DownloadVideo(object sender, EventArgs e, string url)
+        public static async void DownloadVideo(object sender, EventArgs e, string url, int i)
         {
-            int i = 0;
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            while (File.Exists($"{path}/tmp/video{i}.mp3"))
-            {
-                i++;
-            }
+
+            
+
             string dest = $"{path}/tmp/video{i}.mp3";
-            File.Create(dest).Close();
 
             YoutubeClient youtube = new YoutubeClient();
 
             StreamManifest streamManifest = await youtube.Videos.Streams.GetManifestAsync(url);
             var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-            var progress = new Progress<double>(p => Console.WriteLine($"YoutubeExplode Demo [{p:P0}]"));
-            await youtube.Videos.Streams.DownloadAsync(streamInfo, dest, progress);
+            //var progress = new Progress<double>(p => Console.WriteLine($"YoutubeExplode Demo [{p:P0}]"));
+            //await youtube.Videos.Streams.DownloadAsync(streamInfo, dest, progress);
+            await youtube.Videos.Streams.DownloadAsync(streamInfo, dest);
 
             Video video = await youtube.Videos.GetAsync(url);
-            string file_name = video.Title.Replace("/", "");
-            file_name = file_name.Replace("#", "");
-            file_name = file_name.Replace("?", "");
+            string file_name = FileManager.Sanitize(video.Title);
 
-            string author = video.Author.ChannelTitle.Replace("/", "");
-            author = author.Replace("#", "");
-            author = author.Replace("?", "");
+            string author = FileManager.Sanitize(video.Author.ChannelTitle);
             author = FileManager.GetAlias(author);
 
-            if (!Directory.Exists($"{path}/music/{author}"))
-            {
-                Console.WriteLine("Creating " + $"{path}/music/{author}");
-                Directory.CreateDirectory($"{path}/music/{author}");
-            }
+            Directory.CreateDirectory($"{path}/music/{author}");
 
             string output = $"{path}/music/{author}/{file_name}.mp3";
-            WebClient cli = new WebClient();
 
-            if (await GetHttpStatus($"http://img.youtube.com/vi/{video.Id}/maxresdefault.jpg"))
-            {
-                var imgBytes = cli.DownloadData($"http://img.youtube.com/vi/{video.Id}/maxresdefault.jpg");
-                File.WriteAllBytes($"{path}/tmp/file{i}.jpg", imgBytes);
-            }
-            else
-            {
-                var imgBytes = cli.DownloadData($"http://img.youtube.com/vi/{video.Id}/0.jpg");
-                File.WriteAllBytes($"{path}/tmp/file{i}.jpg", imgBytes);
-            }
+            await GetImage(i, video.Id);
 
-            Config.IgnoreSignal(Laerdal.FFmpeg.Android.Signal.Sigxcpu);
-            int status = FFmpeg.Execute($"-i {dest} -i {path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -y '{output}'");
+            FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu);
+            FFmpegSession session = FFmpegKit.Execute($"-i {dest} -i {path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -y '{output}'");
 
             File.Delete($"{path}/tmp/file{i}.jpg");
             File.Delete(dest);
 
-            if (status == 0)
+            if (session.ReturnCode.IsSuccess)
             {
                 Console.WriteLine("Adding tags");
                 var tfile = TagLib.File.Create($"{output}");
@@ -121,79 +109,49 @@ namespace Ass_Pain
             }
             else
             {
-                Console.WriteLine($"FFmpeg failed with status code {status}");
+                Console.WriteLine($"FFmpeg failed with status code {55}");
                 View view = (View)sender;
-                Snackbar.Make(view, $"{status} Failed: {video.Title}", Snackbar.LengthLong)
+                Snackbar.Make(view, $"{55} Failed: {video.Title}", Snackbar.LengthLong)
                     .SetAction("Action", (View.IOnClickListener)null).Show();
             }
         }
 
-        public static async Task DownloadVideo(object sender, EventArgs e, string url, string album)
+        public static async void DownloadVideo(object sender, EventArgs e, string url, string album, int i)
         {
-            int i = 0;
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            while (File.Exists($"{path}/tmp/video{i}.mp3"))
-            {
-                i++;
-            }
+
+
             string dest = $"{path}/tmp/video{i}.mp3";
-            File.Create(dest).Close();
 
             YoutubeClient youtube = new YoutubeClient();
 
             StreamManifest streamManifest = await youtube.Videos.Streams.GetManifestAsync(url);
             var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-            var progress = new Progress<double>(p => Console.WriteLine($"YoutubeExplode Demo [{p:P0}]"));
-            await youtube.Videos.Streams.DownloadAsync(streamInfo, dest, progress);
+            //var progress = new Progress<double>(p => Console.WriteLine($"YoutubeExplode Demo [{p:P0}]"));
+            //await youtube.Videos.Streams.DownloadAsync(streamInfo, dest, progress);
+            await youtube.Videos.Streams.DownloadAsync(streamInfo, dest);
 
             Video video = await youtube.Videos.GetAsync(url);
-            string file_name = video.Title.Replace("/", "");
-            file_name = file_name.Replace("#", "");
-            file_name = file_name.Replace("?", "");
+            string file_name = FileManager.Sanitize(video.Title);
 
-            string author = video.Author.ChannelTitle.Replace("/", "");
-            author = author.Replace("#", "");
-            author = author.Replace("?", "");
+            string author = FileManager.Sanitize(video.Author.ChannelTitle);
             author = FileManager.GetAlias(author);
 
-            string album_name = album.Replace("/", "");
-            album_name = album_name.Replace("#", "");
-            album_name = album_name.Replace("?", "");
+            string album_name = FileManager.Sanitize(album);
 
-            if (!Directory.Exists($"{path}/music/{author}"))
-            {
-                Console.WriteLine("Creating " + $"{path}/music/{author}");
-                Directory.CreateDirectory($"{path}/music/{author}");
-            }
-
-            if (!Directory.Exists($"{path}/music/{author}/{album_name}"))
-            {
-                Console.WriteLine("Creating " + $"{path}/music/{author}/{album_name}");
-                Directory.CreateDirectory($"{path}/music/{author}/{album_name}");
-            }
+            Directory.CreateDirectory($"{path}/music/{author}/{album_name}");
 
             string output = $"{path}/music/{author}/{album_name}/{file_name}.mp3";
 
-            WebClient cli = new WebClient();
+            await GetImage(i, video.Id);
 
-            if (await GetHttpStatus($"http://img.youtube.com/vi/{video.Id}/maxresdefault.jpg"))
-            {
-                var imgBytes = cli.DownloadData($"http://img.youtube.com/vi/{video.Id}/maxresdefault.jpg");
-                File.WriteAllBytes($"{path}/tmp/file{i}.jpg", imgBytes);
-            }
-            else
-            {
-                var imgBytes = cli.DownloadData($"http://img.youtube.com/vi/{video.Id}/0.jpg");
-                File.WriteAllBytes($"{path}/tmp/file{i}.jpg", imgBytes);
-            }
-
-            Config.IgnoreSignal(Laerdal.FFmpeg.Android.Signal.Sigxcpu);
-            int status = FFmpeg.Execute($"-i {dest} -i {path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -y '{output}'");
+            FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu);
+            FFmpegSession session = FFmpegKit.Execute($"-i {dest} -i {path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -y '{output}'");
 
             File.Delete($"{path}/tmp/file{i}.jpg");
             File.Delete(dest);
 
-            if (status == 0)
+            if (session.ReturnCode.IsSuccess)
             {
                 Console.WriteLine("Adding tags");
                 var tfile = TagLib.File.Create($"{output}");
@@ -209,9 +167,9 @@ namespace Ass_Pain
             }
             else
             {
-                Console.WriteLine($"FFmpeg failed with status code {status}");
+                Console.WriteLine($"FFmpeg failed with status code {55}");
                 View view = (View)sender;
-                Snackbar.Make(view, $"{status} Failed: {video.Title}", Snackbar.LengthLong)
+                Snackbar.Make(view, $"{55} Failed: {video.Title}", Snackbar.LengthLong)
                     .SetAction("Action", (View.IOnClickListener)null).Show();
             }
         }
@@ -238,6 +196,28 @@ namespace Ass_Pain
             {
                 return false;
             }
+        }
+
+        public static async Task GetImage(int i, VideoId id)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            WebClient cli = new WebClient();
+
+            if (await GetHttpStatus($"http://img.youtube.com/vi/{id}/maxresdefault.jpg"))
+            {
+                var imgBytes = cli.DownloadData($"http://img.youtube.com/vi/{id}/maxresdefault.jpg");
+                File.WriteAllBytes($"{path}/tmp/file{i}.jpg", imgBytes);
+            }
+            else
+            {
+                var imgBytes = cli.DownloadData($"http://img.youtube.com/vi/{id}/0.jpg");
+                File.WriteAllBytes($"{path}/tmp/file{i}.jpg", imgBytes);
+            }
+        }
+
+        public static void callvacxk()
+        {
+
         }
     }
 }
