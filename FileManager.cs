@@ -144,10 +144,7 @@ namespace Ass_Pain
             {
                 return aliases[name];
             }
-            else
-            {
-                return name;
-            }
+            return name;
         }
 
         public static void AddAlias(string name, string target)
@@ -234,6 +231,39 @@ namespace Ass_Pain
             string dest = $"{path}/tmp/video{i}.mp3";
             File.Create(dest).Close();
             return i;
+        }
+
+        ///<summary>
+        ///Gets all playlist names
+        ///</summary>
+        public static List<string> GetPlaylist()
+        {
+            List<string> list = new List<string>();
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            string json = File.ReadAllText($"{path}/playlists.json");
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
+            foreach (KeyValuePair<string, List<string>> pr in playlists)
+            {
+                list.Add(pr.Key);
+            }
+            return list;
+        }
+
+        ///<summary>
+        ///Gets all songs in <paramref name="playlist"/>
+        ///<br>Returns <returns>null</returns> if <paramref name="playlist"/> doesn't exist</br>
+        ///</summary>
+        public static List<string> GetPlaylist(string playlist)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            string json = File.ReadAllText($"{path}/playlists.json");
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
+            if (playlists.ContainsKey(playlist))
+            {
+                return playlists[playlist];
+            }
+            return null;
+            
         }
     }
 }
