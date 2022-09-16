@@ -22,7 +22,6 @@ using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using YoutubeExplode.Playlists;
 using Google.Android.Material.Snackbar;
-using Java.Lang.Reflect;
 using Com.Arthenica.Ffmpegkit;
 using Signal = Com.Arthenica.Ffmpegkit.Signal;
 
@@ -51,8 +50,13 @@ namespace Ass_Pain
             }
             else if (url.Contains("watch"))
             {
-
-                DownloadVideo(sender, e, url, FileManager.GetAvailableFile());
+                int i = FileManager.GetAvailableFile();
+                void ts()
+                {
+                    DownloadVideo(sender, e, url, i);
+                }
+                new Thread(ts).Start();
+                
             }
             else
             {
@@ -63,8 +67,6 @@ namespace Ass_Pain
         public static async void DownloadVideo(object sender, EventArgs e, string url, int i)
         {
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-
-            
 
             string dest = $"{path}/tmp/video{i}.mp3";
 
@@ -119,7 +121,6 @@ namespace Ass_Pain
         public static async void DownloadVideo(object sender, EventArgs e, string url, string album, int i)
         {
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-
 
             string dest = $"{path}/tmp/video{i}.mp3";
 
@@ -187,10 +188,7 @@ namespace Ass_Pain
                 {
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+                return false;
             }
             catch
             {
@@ -213,11 +211,6 @@ namespace Ass_Pain
                 var imgBytes = cli.DownloadData($"http://img.youtube.com/vi/{id}/0.jpg");
                 File.WriteAllBytes($"{path}/tmp/file{i}.jpg", imgBytes);
             }
-        }
-
-        public static void callvacxk()
-        {
-
         }
     }
 }

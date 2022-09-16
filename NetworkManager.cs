@@ -53,7 +53,7 @@ namespace Ass_Pain
                 {
                     try
                     {
-                        server = new TcpListener(IPAddress.Parse("127.0.0.1"), listenPort);
+                        server = new TcpListener(new IPAddress(d.IpAddress), listenPort);
                         server.Start();
                         break;
                     }
