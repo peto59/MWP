@@ -33,9 +33,7 @@ namespace Ass_Pain
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
 
-            FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
-            fab.Click += FabOnClick;
-
+        
 
             Android.Widget.Button stop = FindViewById<Android.Widget.Button>(Resource.Id.stop);
             NetworkManager nm = new NetworkManager();

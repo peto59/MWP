@@ -15,6 +15,10 @@ using Android.Graphics;
 using Android.Widget;
 using System.IO;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Android.Service.Autofill;
+using Android.Icu.Number;
+using Org.Apache.Http.Conn;
 
 namespace Ass_Pain
 {
@@ -24,8 +28,12 @@ namespace Ass_Pain
         DrawerLayout drawer;
 
         Dictionary<ImageButton, string> album_buttons = new Dictionary<ImageButton, string>();
+        Dictionary<ImageButton, int> song_buttons = new Dictionary<ImageButton, int>();
 
         string current = "";
+        List<string> selected_playlists = new List<string>();
+
+        Player player = new Player();
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -74,6 +82,14 @@ namespace Ass_Pain
                 populate_grid(2.0f);
             };
 
+
+            FloatingActionButton create_playlist = FindViewById<FloatingActionButton>(Resource.Id.fab);
+            create_playlist.Background.SetColorFilter(
+                Color.Rgb(255, 76, 41),
+                PorterDuff.Mode.Multiply
+            );
+
+            create_playlist.Click += new EventHandler(show_popup);
         }
 
         public void set_buttons_color(int id)
@@ -87,7 +103,7 @@ namespace Ass_Pain
         }
 
 
-        LinearLayout pupulate_songs(string song_path, float scale, bool ort, int ww, int hh, int[] btn_margins, int[] name_margins, int[] card_margins, int name_size, string album_song)
+        LinearLayout pupulate_songs(string song_path, float scale, bool ort, int ww, int hh, int[] btn_margins, int[] name_margins, int[] card_margins, int name_size, string album_song, int index)
         {
             //リネアルレーアート作る
             LinearLayout ln_in = new LinearLayout(this);
@@ -205,15 +221,23 @@ namespace Ass_Pain
             {
                 case "album":
                     mori.Click += new EventHandler(album_button_clicked);
+                    album_buttons.Add(mori, song_path);
                     break;
                 case "song":
                     mori.Click += new EventHandler(songs_button_clicked);
+
+                    mori.LongClick += (sender, e) =>
+                    {
+                        show_popup_song_edit(sender, e, song_path);
+                    };
+
+                    song_buttons.Add(mori, index);
                     break;
                 case "author":
                     mori.Click += new EventHandler(author_button_clicked);
+                    album_buttons.Add(mori, song_path); 
                     break;
             }
-            album_buttons.Add(mori, song_path); 
 
 
 
@@ -222,7 +246,7 @@ namespace Ass_Pain
 
 
             //アルブムの名前
-            int h_name = (int)(40 * scale + 0.5f);
+            int h_name = (int)(42 * scale + 0.5f);
 
             TextView name = new TextView(this);
             name.Text = FileManager.GetNameFromPath(song_path);
@@ -232,7 +256,7 @@ namespace Ass_Pain
             name.SetForegroundGravity(GravityFlags.Center);
 
             LinearLayout.LayoutParams ln_name_params = new LinearLayout.LayoutParams(
-              w,
+              (int)(130 * scale + 0.5f),
               h_name
             );
             ln_name_params.SetMargins(name_margins[0], name_margins[1], name_margins[2], name_margins[3]);
@@ -240,6 +264,9 @@ namespace Ass_Pain
             name.LayoutParameters = ln_name_params;
 
             ln_in.AddView(name);
+
+
+            
 
             return ln_in;
         }
@@ -265,7 +292,7 @@ namespace Ass_Pain
 
             for (int i = 0; i < albums.Count; i++)
             {
-                LinearLayout ln_in = pupulate_songs(albums[i], scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "album");
+                LinearLayout ln_in = pupulate_songs(albums[i], scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "album", i);
 
                 //全部加える
                 lin.AddView(ln_in);
@@ -294,9 +321,10 @@ namespace Ass_Pain
             int[] name_margins = { 50, 0, 50, 50 };
             int[] card_margins = { 50, 50, 0, 0 };
 
-            foreach (var auth in authors)
+            for (int i = 0; i < authors.Count; i++)
             {
-                LinearLayout ln_in = pupulate_songs(auth, scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "author");
+                var auth = authors[i];
+                LinearLayout ln_in = pupulate_songs(auth, scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "author", i);
 
                 //全部加える
                 lin.AddView(ln_in);
@@ -306,11 +334,28 @@ namespace Ass_Pain
             return lin;
         }
 
+        
+
         public void songs_button_clicked(Object sender, EventArgs e)
         {
-            Console.WriteLine(current);
-            Player player = new Player();
-            player.GenerateQueue(current);
+            ImageButton pressedButtoon = (ImageButton)sender;
+
+            foreach (KeyValuePair<ImageButton, int> pr in song_buttons)
+            {
+                if (pr.Key == pressedButtoon)
+                {
+                    if (current == "all")
+                    {
+                        player.GenerateQueue(FileManager.GetSongs(), pr.Value);
+
+                    }
+                    else
+                    {
+                        player.GenerateQueue(FileManager.GetSongs(current), pr.Value);
+                    }
+                    break;
+                }
+            }
         }
 
         public void album_button_clicked(Object sender, EventArgs e)
@@ -321,8 +366,8 @@ namespace Ass_Pain
             {
                 if (pr.Key == pressedButtoon)
                 {
-                    populate_grid(0.1f, pr.Value);
                     current = pr.Value;
+                    populate_grid(0.1f, pr.Value);
                     break;
                 }
             }
@@ -340,6 +385,202 @@ namespace Ass_Pain
                     break;
                 }
             }
+        }
+
+        public void show_popup(object sender, EventArgs e)
+        {
+            Console.WriteLine("popup clicked");
+
+            LayoutInflater ifl = LayoutInflater.From(this);
+            View view = ifl.Inflate(Resource.Layout.new_playlist_popup, null);
+            Android.App.AlertDialog.Builder alert = new Android.App.AlertDialog.Builder(this);
+            alert.SetView(view);
+
+            var user_data = view.FindViewById<EditText>(Resource.Id.editText);
+            alert.SetCancelable(false).SetPositiveButton("submit", delegate
+            {
+                FileManager.CreatePlaylist(user_data.Text);
+                Toast.MakeText(
+                    this, user_data.Text + " Created successfully",
+                    ToastLength.Short
+                ).Show();
+            })
+                .SetNegativeButton("cancel", delegate
+                {
+                    alert.Dispose();
+                });
+
+
+            Android.App.AlertDialog dialog = alert.Create();
+            dialog.Show();
+        }
+
+        public void list_playlists_popup(object sender, EventArgs e, string path)
+        {
+            Console.WriteLine("popup clicked");
+            float scale = Resources.DisplayMetrics.Density;
+
+            LayoutInflater ifl = LayoutInflater.From(this);
+            View view = ifl.Inflate(Resource.Layout.list_plas_popup, null);
+            Android.App.AlertDialog.Builder alert = new Android.App.AlertDialog.Builder(this);
+            alert.SetView(view);
+
+            Android.App.AlertDialog dialog = alert.Create();
+
+            LinearLayout ln = view.FindViewById<LinearLayout>(Resource.Id.playlists_list_la);
+
+            var plas = FileManager.GetPlaylist();
+            foreach (var p in plas)
+            {
+                LinearLayout ln_in = new LinearLayout(this);
+                ln_in.Orientation = Orientation.Vertical;
+                ln_in.SetBackgroundResource(Resource.Drawable.rounded_light);
+
+                LinearLayout.LayoutParams ln_in_params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MatchParent,
+                    (int)(50 * scale + 0.5f)
+                );
+                ln_in_params.SetMargins(20, 20, 20, 20);
+                ln_in.LayoutParameters = ln_in_params;
+                ln_in.SetGravity(GravityFlags.Center);
+
+                ln_in.Click += (sender, e) =>
+                {
+                    Console.WriteLine(path);
+                    if (selected_playlists.Contains(p))
+                    {
+                        selected_playlists.Remove(p);
+                        ln_in.SetBackgroundResource(Resource.Drawable.rounded_light);
+                        Console.WriteLine("removed : " + p);
+                    }
+                    else
+                    {
+                        selected_playlists.Add(p);
+                        Console.WriteLine("added: " + p);
+                        ln_in.SetBackgroundResource(Resource.Drawable.rounded_dark);
+
+                    }
+                };
+
+                // ---
+                TextView name = new TextView(this);
+                name.TextAlignment = TextAlignment.Center;
+                name.SetTextColor(Color.White);
+                name.Text = p;
+                ln_in.AddView(name);
+
+
+                ln.AddView(ln_in);
+            }
+
+
+            // ----
+            Button submit = view.FindViewById<Button>(Resource.Id.submit_plas);
+            submit.Background.SetColorFilter(
+                Color.Rgb(255, 76, 41),
+                PorterDuff.Mode.Multiply
+            ); submit.SetTextColor(Color.Black);
+
+            submit.Click += (sender, e) =>
+            {
+                foreach (var s in selected_playlists)
+                {
+                    Console.WriteLine(s + " " + selected_playlists.Count);
+
+                    var pla_songs = FileManager.GetPlaylist(s);
+                    if (pla_songs.Contains(path))
+                        Toast.MakeText(this, "already exists in : " + s, ToastLength.Short).Show();
+                    else
+                    {
+                        FileManager.AddToPlaylist(s, path);
+
+                        Toast.MakeText(
+                            this, "added successfully",
+                            ToastLength.Short
+                        ).Show();
+                    }
+
+                }
+
+
+                dialog.Hide();
+                selected_playlists.Clear();
+
+                
+            };
+
+            Button cancel = view.FindViewById<Button>(Resource.Id.cancel_plas);
+            cancel.Background.SetColorFilter(
+                Color.Rgb(255, 76, 41),
+                PorterDuff.Mode.Multiply
+            ); cancel.SetTextColor(Color.Black);
+
+            cancel.Click += (sender, e) =>
+            {
+                dialog.Hide();
+            };
+
+
+
+            dialog.Show();
+        }
+
+        public void show_popup_song_edit(object sender, EventArgs e, string path)
+        {
+            Console.WriteLine("popup clicked");
+
+            LayoutInflater ifl = LayoutInflater.From(this);
+            View view = ifl.Inflate(Resource.Layout.edit_song_popup, null);
+            Android.App.AlertDialog.Builder alert = new Android.App.AlertDialog.Builder(this);
+            alert.SetView(view);
+
+            Android.App.AlertDialog dialog = alert.Create();
+
+            /*
+             * popup buttons start
+             */
+            Button add_to_pla = view.FindViewById<Button>(Resource.Id.add_to_pla);
+            Button add_to_qu = view.FindViewById<Button>(Resource.Id.add_to_qu);
+            Button delete = view.FindViewById<Button>(Resource.Id.delete);
+
+            add_to_pla.Background.SetColorFilter(
+                Color.Rgb(255, 76, 41),
+                PorterDuff.Mode.Multiply
+            ); add_to_pla.SetTextColor(Color.Black);
+            add_to_qu.Background.SetColorFilter(
+                Color.Rgb(255, 76, 41),
+                PorterDuff.Mode.Multiply
+            ); add_to_qu.SetTextColor(Color.Black);
+            delete.Background.SetColorFilter(
+                Color.Rgb(255, 76, 41),
+                PorterDuff.Mode.Multiply
+            ); delete.SetTextColor(Color.Black);
+
+            // handle clicked
+
+            add_to_pla.Click += (sender, e) =>
+            {
+                dialog.Hide();
+                list_playlists_popup(sender, e, path);
+                Console.WriteLine(path);
+
+            };
+            add_to_qu.Click += (sender, e) =>
+            {
+                player.AddToQueue(path);
+            };
+            delete.Click += (sender, e) =>
+            {
+                // empty for know
+            };
+
+
+            /*
+             * popup buttons end
+             */
+
+            
+            dialog.Show();
         }
 
         public void populate_grid(float type, string path_for_01 = null, bool clear = true, int scroll_view_height = 150)
@@ -424,14 +665,14 @@ namespace Ass_Pain
                     if (path_for_01 != null)
                     {
                         var album_songs = FileManager.GetSongs(path_for_01);
-                        foreach (var song in album_songs)
+                        for (int i = 0; i < album_songs.Count; i++)
                         {
                             LinearLayout ln_in = pupulate_songs(
-                                song, scale, false, 
+                                album_songs[i], scale, false, 
                                 150, 100,
                                 button_margins, name_margins, card_margins,
                                 17, 
-                                "song"
+                                "song", i
                             );
                             ln_main.AddView(ln_in);
                         }
@@ -449,8 +690,6 @@ namespace Ass_Pain
 
                     main_rel_l.RemoveAllViews();
 
-
-
                     HorizontalScrollView hr = new HorizontalScrollView(this);
                     RelativeLayout.LayoutParams hr_params = new RelativeLayout.LayoutParams(
                         RelativeLayout.LayoutParams.MatchParent,
@@ -461,7 +700,7 @@ namespace Ass_Pain
                     hr.LayoutParameters = hr_params;
 
                     LinearLayout lin = new LinearLayout(this);
-
+                    
                     
                     var albums = FileManager.GetAlbums(path_for_01);
 
@@ -586,6 +825,8 @@ namespace Ass_Pain
 
                     main_rel_l.RemoveAllViews();
 
+                    current = "all";
+
                     ScrollView all_songs_scroll = new ScrollView(this);
                     RelativeLayout.LayoutParams all_songs_scroll_params = new RelativeLayout.LayoutParams(
                         RelativeLayout.LayoutParams.MatchParent,
@@ -611,14 +852,14 @@ namespace Ass_Pain
 
                     
                     var list_songs = FileManager.GetSongs();
-                    foreach (var song in list_songs)
+                    for (int i = 0; i < list_songs.Count; i++)
                     {
                         LinearLayout ln_in = pupulate_songs(
-                            song, scale, false,
+                            list_songs[i], scale, false,
                             150, 100,
                             all_songs_button_margins, all_songs_name_margins, all_songs_card_margins,
                             17,
-                            "song"
+                            "song", i
                         );
                         all_songs_ln_main.AddView(ln_in);
                     }
@@ -633,10 +874,140 @@ namespace Ass_Pain
                 case 2.0f: // playlists
                     main_rel_l.RemoveAllViews();
 
+                    ScrollView playlists_scroll = new ScrollView(this);
+                    RelativeLayout.LayoutParams playlist_scroll_params = new RelativeLayout.LayoutParams(
+                        RelativeLayout.LayoutParams.MatchParent,
+                        RelativeLayout.LayoutParams.MatchParent
+                    );
+                    playlist_scroll_params.SetMargins(0, scroll_view_height, 0, 0);
+                    playlist_scroll_params.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
+                    playlists_scroll.LayoutParameters = playlist_scroll_params;
 
+
+                    LinearLayout playlist_ln_main = new LinearLayout(this);
+                    playlist_ln_main.Orientation = Orientation.Vertical;
+                    RelativeLayout.LayoutParams playlist_ln_main_params = new RelativeLayout.LayoutParams(
+                            RelativeLayout.LayoutParams.MatchParent,
+                            RelativeLayout.LayoutParams.MatchParent
+                    );
+                    playlist_ln_main_params.SetMargins(20, 20, 20, 20);
+                    playlist_ln_main.LayoutParameters = playlist_ln_main_params;
+
+                    int[] playlist_button_margins = { 50, 50, 50, 50 };
+                    int[] playlist_card_margins = { 0, 50, 0, 0 };
+
+
+                    var playlists = FileManager.GetPlaylist();
+                    foreach (var playlist in playlists)
+                    {
+                        LinearLayout ln_in = new LinearLayout(this);
+                        ln_in.Orientation = Orientation.Vertical;
+                        ln_in.SetBackgroundResource(Resource.Drawable.rounded);
+
+                        LinearLayout.LayoutParams ln_in_params = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MatchParent,
+                            LinearLayout.LayoutParams.WrapContent
+                        );
+                        ln_in_params.SetMargins(
+                            playlist_card_margins[0], playlist_card_margins[1], 
+                            playlist_card_margins[2], playlist_card_margins[3]
+                        );
+                        ln_in.LayoutParameters = ln_in_params;
+
+
+                        TextView pla_name = new TextView(this);
+                        LinearLayout.LayoutParams name_params = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MatchParent,
+                            LinearLayout.LayoutParams.WrapContent
+                        );
+                        name_params.SetMargins(0, 20, 0, 20);
+                        pla_name.LayoutParameters = name_params; 
+                        pla_name.Text = playlist;
+                        pla_name.SetTextColor(Color.White);
+                        pla_name.TextSize = 30;
+                        pla_name.TextAlignment = TextAlignment.Center;
+
+                        TextView songs_count = new TextView(this);
+                        LinearLayout.LayoutParams count_params = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MatchParent,
+                            LinearLayout.LayoutParams.WrapContent
+                        );
+                        count_params.SetMargins(0, 20, 0, 20);
+                        songs_count.LayoutParameters = count_params;
+                        songs_count.Text = $"number of songs: {FileManager.GetPlaylist(playlist).Count}";
+                        songs_count.SetTextColor(Color.White);
+                        songs_count.TextSize = 15;
+                        songs_count.TextAlignment = TextAlignment.Center;
+
+
+                        ln_in.Click += (sender, e) =>
+                        {
+                            populate_grid(2.1f, playlist);
+                            //Toast.MakeText(this, playlist + " opend", ToastLength.Short).Show();
+                        };
+
+                        ln_in.AddView(pla_name);
+                        ln_in.AddView(songs_count);
+
+                        playlist_ln_main.AddView(ln_in);
+
+                        Console.WriteLine("pl name: " + playlist);
+                    }
+
+                    playlists_scroll.AddView(playlist_ln_main);
+                    main_rel_l.AddView(playlists_scroll);
 
 
                     break;
+                case 2.1f: // playlist songs
+                    main_rel_l.RemoveAllViews();
+
+                    Toast.MakeText(this, path_for_01 + " opend", ToastLength.Short).Show();
+
+                    current = "all";
+
+                    ScrollView in_playlist_scroll = new ScrollView(this);
+                    RelativeLayout.LayoutParams in_playlist_scroll_params = new RelativeLayout.LayoutParams(
+                        RelativeLayout.LayoutParams.MatchParent,
+                        RelativeLayout.LayoutParams.MatchParent
+                    );
+                    in_playlist_scroll_params.SetMargins(0, scroll_view_height, 0, 0);
+                    in_playlist_scroll_params.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
+                    in_playlist_scroll.LayoutParameters = in_playlist_scroll_params;
+
+
+                    LinearLayout in_playlist_ln_main = new LinearLayout(this);
+                    in_playlist_ln_main.Orientation = Orientation.Vertical;
+                    RelativeLayout.LayoutParams in_playlist_ln_main_params = new RelativeLayout.LayoutParams(
+                            RelativeLayout.LayoutParams.MatchParent,
+                            RelativeLayout.LayoutParams.MatchParent
+                    );
+                    in_playlist_ln_main_params.SetMargins(20, 20, 20, 20);
+                    in_playlist_ln_main.LayoutParameters = in_playlist_ln_main_params;
+
+                    int[] in_playlist_button_margins = { 50, 50, 50, 50 };
+                    int[] in_playlist_name_margins = { 50, 130, 50, 50 };
+                    int[] in_playlist_card_margins = { 0, 50, 0, 0 };
+
+
+                    var plyalist_songs = FileManager.GetPlaylist(path_for_01);
+                    for (int i = 0; i < plyalist_songs.Count; i++)
+                    {
+                        LinearLayout ln_in = pupulate_songs(
+                            plyalist_songs[i], scale, false,
+                            150, 100,
+                            in_playlist_button_margins, in_playlist_name_margins, in_playlist_card_margins,
+                            17,
+                            "song", i
+                        );
+                        in_playlist_ln_main.AddView(ln_in);
+                    }
+
+                    in_playlist_scroll.AddView(in_playlist_ln_main);
+                    main_rel_l.AddView(in_playlist_scroll);
+
+                    break;
+
             }
 
 

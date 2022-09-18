@@ -90,6 +90,13 @@ namespace Ass_Pain
             NextSong();
         }
 
+        public void GenerateQueue(List<string> source, int i)
+        {
+            index = i;
+            queue = source;
+            NextSong();
+        }
+
         ///<summary>
         ///Adds single track or entire album/author to queue
         ///</summary>

@@ -43,7 +43,20 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/content"
-        android:orientation="vertical"/>
+        android:orientation="vertical">
+
+       
+    
+    </RelativeLayout>
+
+     <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_margin="20dp"
+            app:srcCompat="@android:drawable/ic_dialog_email" />
 
 
 
