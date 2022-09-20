@@ -19,6 +19,8 @@ using System.Runtime.InteropServices;
 using Android.Service.Autofill;
 using Android.Icu.Number;
 using Org.Apache.Http.Conn;
+using Com.Arthenica.Ffmpegkit;
+using Android.Drm;
 
 namespace Ass_Pain
 {
@@ -27,10 +29,12 @@ namespace Ass_Pain
     {
         DrawerLayout drawer;
 
-        Dictionary<ImageButton, string> album_buttons = new Dictionary<ImageButton, string>();
-        Dictionary<ImageButton, int> song_buttons = new Dictionary<ImageButton, int>();
+        Dictionary<LinearLayout, string> album_buttons = new Dictionary<LinearLayout, string>();
+        Dictionary<LinearLayout, int> song_buttons = new Dictionary<LinearLayout, int>();
 
-        string current = "";
+        (string location, string album) where_are_you_are_you_are_you_are_you_are_you_are_ = ("", "");
+        (bool is_auth, string auth) in_author = (false, "");
+
         List<string> selected_playlists = new List<string>();
 
         Player player = new Player();
@@ -44,6 +48,10 @@ namespace Ass_Pain
             SetSupportActionBar(toolbar);
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
+
+
+
+           
 
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -72,14 +80,22 @@ namespace Ass_Pain
             author.Click += (sender, e) =>
             {
                 populate_grid(0.0f);
+                in_author.is_auth = false;
+                in_author.auth = "";
             };
             all_songs.Click += (sender, e) =>
             {
                 populate_grid(1.0f);
+                in_author.is_auth = false;
+                in_author.auth = "";
+
             };
             playlists.Click += (sender, e) =>
             {
                 populate_grid(2.0f);
+                in_author.is_auth = false;
+                in_author.auth = "";
+
             };
 
 
@@ -103,7 +119,10 @@ namespace Ass_Pain
         }
 
 
-        LinearLayout pupulate_songs(string song_path, float scale, bool ort, int ww, int hh, int[] btn_margins, int[] name_margins, int[] card_margins, int name_size, string album_song, int index)
+        LinearLayout pupulate_songs(
+            string song_path, float scale, bool ort, int ww, int hh, int[] btn_margins, int[] name_margins, int[] card_margins, int name_size, string album_song, int index,
+            LinearLayout lin_for_delete = null
+        )
         {
             //リネアルレーアート作る
             LinearLayout ln_in = new LinearLayout(this);
@@ -130,7 +149,7 @@ namespace Ass_Pain
             int h = (int)(hh * scale + 0.5f);
 
 
-            ImageButton mori = new ImageButton(this);
+            ImageView mori = new ImageView(this);
             LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
                 w, h
             );
@@ -181,7 +200,7 @@ namespace Ass_Pain
                     {
                         image = BitmapFactory.DecodeStream(Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
                     }
-                } 
+                }
                 //</adam je kkt a jebal sa ti do kodu ale u neho fungoval> 
 
             }
@@ -212,7 +231,6 @@ namespace Ass_Pain
             }
 
 
-
             mori.SetImageBitmap(
                 image
             ); 
@@ -220,22 +238,23 @@ namespace Ass_Pain
             switch (album_song)
             {
                 case "album":
-                    mori.Click += new EventHandler(album_button_clicked);
-                    album_buttons.Add(mori, song_path);
+                    ln_in.Click += new EventHandler(album_button_clicked);
+                    album_buttons.Add(ln_in, song_path);
                     break;
                 case "song":
-                    mori.Click += new EventHandler(songs_button_clicked);
+                    ln_in.Click += new EventHandler(songs_button_clicked);
+                    
 
-                    mori.LongClick += (sender, e) =>
+                    ln_in.LongClick += (sender, e) =>
                     {
-                        show_popup_song_edit(sender, e, song_path);
+                        show_popup_song_edit(sender, e, song_path, lin_for_delete, ln_in);
                     };
 
-                    song_buttons.Add(mori, index);
+                    song_buttons.Add(ln_in, index);
                     break;
                 case "author":
-                    mori.Click += new EventHandler(author_button_clicked);
-                    album_buttons.Add(mori, song_path); 
+                    ln_in.Click += new EventHandler(author_button_clicked);
+                    album_buttons.Add(ln_in, song_path); 
                     break;
             }
 
@@ -338,20 +357,20 @@ namespace Ass_Pain
 
         public void songs_button_clicked(Object sender, EventArgs e)
         {
-            ImageButton pressedButtoon = (ImageButton)sender;
+            LinearLayout pressedButtoon = (LinearLayout)sender;
 
-            foreach (KeyValuePair<ImageButton, int> pr in song_buttons)
+            foreach (KeyValuePair<LinearLayout, int> pr in song_buttons)
             {
                 if (pr.Key == pressedButtoon)
                 {
-                    if (current == "all")
+                    if (where_are_you_are_you_are_you_are_you_are_you_are_.album == "all")
                     {
                         player.GenerateQueue(FileManager.GetSongs(), pr.Value);
-
+                        
                     }
                     else
                     {
-                        player.GenerateQueue(FileManager.GetSongs(current), pr.Value);
+                        player.GenerateQueue(FileManager.GetSongs(where_are_you_are_you_are_you_are_you_are_you_are_.album), pr.Value);
                     }
                     break;
                 }
@@ -360,14 +379,17 @@ namespace Ass_Pain
 
         public void album_button_clicked(Object sender, EventArgs e)
         {
-            ImageButton pressedButtoon = (ImageButton)sender;
+            LinearLayout pressedButtoon = (LinearLayout)sender;
 
-            foreach(KeyValuePair<ImageButton, string> pr in album_buttons)
+            foreach(KeyValuePair<LinearLayout, string> pr in album_buttons)
             {
                 if (pr.Key == pressedButtoon)
                 {
-                    current = pr.Value;
+                    where_are_you_are_you_are_you_are_you_are_you_are_.album = pr.Value;
                     populate_grid(0.1f, pr.Value);
+                    in_author.is_auth = false;
+                    in_author.auth = "";
+
                     break;
                 }
             }
@@ -375,13 +397,16 @@ namespace Ass_Pain
 
         public void author_button_clicked(Object sender, EventArgs e)
         {
-            ImageButton pressedButtoon = (ImageButton)sender;
+            LinearLayout pressedButtoon = (LinearLayout)sender;
 
-            foreach (KeyValuePair<ImageButton, string> pr in album_buttons)
+            foreach (KeyValuePair<LinearLayout, string> pr in album_buttons)
             {
                 if (pr.Key == pressedButtoon)
                 {
                     populate_grid(0.2f, pr.Value);
+                    in_author.is_auth = true;
+                    in_author.auth = pr.Value;
+
                     break;
                 }
             }
@@ -412,6 +437,42 @@ namespace Ass_Pain
 
 
             Android.App.AlertDialog dialog = alert.Create();
+            dialog.Show();
+        }
+
+
+
+        public void add_alias_popup(string author_n)
+        {
+            Console.WriteLine("popup clicked");
+
+            LayoutInflater ifl = LayoutInflater.From(this);
+            View view = ifl.Inflate(Resource.Layout.add_alias_popup, null);
+            Android.App.AlertDialog.Builder alert = new Android.App.AlertDialog.Builder(this);
+            alert.SetView(view);
+
+            Android.App.AlertDialog dialog = alert.Create();
+
+            TextView author = view.FindViewById<TextView>(Resource.Id.author_name);
+            author.Text = author_n;
+
+            var user_input = view.FindViewById<EditText>(Resource.Id.user_author);
+            Button sub = view.FindViewById<Button>(Resource.Id.submit_alias);
+            sub.Click += delegate
+            {
+                FileManager.AddAlias(author_n, user_input.Text);
+
+
+                dialog.Hide();
+            };
+
+            Button cancel = view.FindViewById<Button>(Resource.Id.cancel_alias);
+            cancel.Click += delegate
+            {
+                dialog.Hide();
+            };
+
+            
             dialog.Show();
         }
 
@@ -525,7 +586,60 @@ namespace Ass_Pain
             dialog.Show();
         }
 
-        public void show_popup_song_edit(object sender, EventArgs e, string path)
+
+        public void deleting_song(Object sender, EventArgs e, Android.App.AlertDialog di)
+        {
+            di.Hide();
+        }
+
+        public void are_you_sure(object sender, EventArgs e, string path, Android.App.AlertDialog di, LinearLayout lin_from_delete, LinearLayout lin_for_delete)
+        {
+            Console.WriteLine("popup clicked");
+
+
+            LayoutInflater ifl = LayoutInflater.From(this);
+            View view = ifl.Inflate(Resource.Layout.are_you_sure_popup, null);
+            Android.App.AlertDialog.Builder alert = new Android.App.AlertDialog.Builder(this);
+            alert.SetView(view);
+
+            Android.App.AlertDialog dialog = alert.Create();
+
+            TextView txt = view.FindViewById<TextView>(Resource.Id.are_you_sure_text);
+            txt.SetTextColor(Color.White);
+            txt.Text = "Deleting: " + FileManager.GetNameFromPath(path); 
+
+            Button yes = view.FindViewById<Button>(Resource.Id.yes_daddy);
+            yes.Background.SetColorFilter(
+                Color.Rgb(255, 76, 41),
+                PorterDuff.Mode.Multiply
+            ); yes.SetTextColor(Color.Black);
+
+            yes.Click += delegate
+            {
+                FileManager.Delete(path);
+                dialog.Hide();
+                deleting_song(sender, e, di);
+
+                lin_from_delete.RemoveView(lin_for_delete);
+
+                Toast.MakeText(this, $"{path} has been deleted", ToastLength.Short).Show();
+            };
+            
+            Button no = view.FindViewById<Button>(Resource.Id.you_are_not_sure);
+            no.Background.SetColorFilter(
+                Color.Rgb(255, 76, 41),
+                PorterDuff.Mode.Multiply
+            ); no.SetTextColor(Color.Black);
+
+            no.Click += (sender, e) =>
+            {
+                deleting_song(sender, e, di);
+            };
+            
+            dialog.Show();
+        }
+
+        public void show_popup_song_edit(object sender, EventArgs e, string path, LinearLayout lin_from_delet, LinearLayout lin_for_delete)
         {
             Console.WriteLine("popup clicked");
 
@@ -571,7 +685,7 @@ namespace Ass_Pain
             };
             delete.Click += (sender, e) =>
             {
-                // empty for know
+                are_you_sure(sender, e, path, dialog, lin_from_delet, lin_for_delete);
             };
 
 
@@ -597,6 +711,9 @@ namespace Ass_Pain
                 case 0.0f: // 作家
 
                     main_rel_l.RemoveAllViews();
+
+                    where_are_you_are_you_are_you_are_you_are_you_are_.location = "main";
+                    where_are_you_are_you_are_you_are_you_are_you_are_.album = "";
 
                     var display_metrics = Resources.DisplayMetrics;
                     int display_width = display_metrics.WidthPixels;
@@ -672,7 +789,7 @@ namespace Ass_Pain
                                 150, 100,
                                 button_margins, name_margins, card_margins,
                                 17, 
-                                "song", i
+                                "song", i, ln_main
                             );
                             ln_main.AddView(ln_in);
                         }
@@ -725,7 +842,7 @@ namespace Ass_Pain
                         int h = (int)(180 * scale + 0.5f);
 
 
-                        ImageButton mori = new ImageButton(this);
+                        ImageView mori = new ImageView(this);
                         LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
                             w, h
                         );
@@ -781,8 +898,8 @@ namespace Ass_Pain
                         mori.SetImageBitmap(
                             image
                         );
-                        mori.Click += new EventHandler(album_button_clicked);
-                        album_buttons.Add(mori, albums[i]);
+                        ln_in.Click += new EventHandler(album_button_clicked);
+                        album_buttons.Add(ln_in, albums[i]);
 
                         ln_in.AddView(mori);
 
@@ -825,7 +942,8 @@ namespace Ass_Pain
 
                     main_rel_l.RemoveAllViews();
 
-                    current = "all";
+                    where_are_you_are_you_are_you_are_you_are_you_are_.location = "all";
+                    where_are_you_are_you_are_you_are_you_are_you_are_.album = "all";
 
                     ScrollView all_songs_scroll = new ScrollView(this);
                     RelativeLayout.LayoutParams all_songs_scroll_params = new RelativeLayout.LayoutParams(
@@ -859,9 +977,10 @@ namespace Ass_Pain
                             150, 100,
                             all_songs_button_margins, all_songs_name_margins, all_songs_card_margins,
                             17,
-                            "song", i
+                            "song", i, all_songs_ln_main
                         );
                         all_songs_ln_main.AddView(ln_in);
+                        
                     }
                     
                     all_songs_scroll.AddView(all_songs_ln_main);
@@ -964,7 +1083,7 @@ namespace Ass_Pain
 
                     Toast.MakeText(this, path_for_01 + " opend", ToastLength.Short).Show();
 
-                    current = "all";
+                    where_are_you_are_you_are_you_are_you_are_you_are_.album = "all";
 
                     ScrollView in_playlist_scroll = new ScrollView(this);
                     RelativeLayout.LayoutParams in_playlist_scroll_params = new RelativeLayout.LayoutParams(
@@ -1037,6 +1156,9 @@ namespace Ass_Pain
             int id = item.ItemId;
             if (id == Resource.Id.action_settings)
             {
+                if (in_author.is_auth)
+                    add_alias_popup(FileManager.GetNameFromPath(in_author.auth));
+
                 return true;
             }
 
