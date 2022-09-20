@@ -48,6 +48,17 @@ namespace Ass_Pain
         }
 
         ///<summary>
+        /// Deletes file on <paramref name="path"/>
+        ///</summary>
+        public static void Delete(string path)
+        {
+            if (IsDirectory(path))
+                Directory.Delete(path, true);
+            else
+                File.Delete(path);
+        }
+
+        ///<summary>
         ///Gets all albums from <paramref name="author"/>
         ///</summary>
         public static List<string> GetAlbums(string author)
@@ -152,6 +163,7 @@ namespace Ass_Pain
             return name;
         }
 
+        // TODO : rercursive alias 
         public static void AddAlias(string name, string target)
         {
             if(name == target)
@@ -165,8 +177,8 @@ namespace Ass_Pain
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             string json = File.ReadAllText($"{path}/aliases.json");
             Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-            aliases.Add(nameFile, nameFile);
-            File.WriteAllTextAsync($"{path}/alises.json", JsonConvert.SerializeObject(aliases));
+            aliases.Add(nameFile, author);
+            File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(aliases));
             Directory.Move($"{path}/music/{nameFile}", $"{path}/music/{author}");
             foreach (string song in FileManager.GetSongs($"{path}/music/{author}"))
             {
