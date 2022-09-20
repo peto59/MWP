@@ -134,12 +134,11 @@ namespace Ass_Pain
         ///</summary>
         public static Dictionary<string, string> GetAlbumAuthorFromPath(string path)
         {
-            Dictionary<string, string> names = new Dictionary<string, string>
+            return new Dictionary<string, string>
             {
-                { "author", GetNameFromPath(path) },
-                { "album", GetNameFromPath(Path.GetDirectoryName(path)) }
+                { "album", GetNameFromPath(path) },
+                { "author", GetNameFromPath(Path.GetDirectoryName(path)) }
             };
-            return names;
         }
 
         public static bool IsDirectory(string path)
@@ -154,7 +153,7 @@ namespace Ass_Pain
             Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             if (aliases.ContainsKey(name))
             {
-                return aliases[name];
+                return GetAlias(aliases[name]);
             }
             else if (aliases.ContainsKey(Sanitize(name)))
             {
@@ -179,8 +178,36 @@ namespace Ass_Pain
             Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             aliases.Add(nameFile, author);
             File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(aliases));
-            Directory.Move($"{path}/music/{nameFile}", $"{path}/music/{author}");
-            foreach (string song in FileManager.GetSongs($"{path}/music/{author}"))
+            if (Directory.Exists($"{path}/music/{author}"))
+            {
+                foreach (string song in GetSongs($"{path}/music/{nameFile}"))
+                {
+                    FileInfo fi = new FileInfo(song);
+                    File.Move(song, $"{path}/music/{author}/{fi.Name}");
+                }
+                foreach(string album in GetAlbums($"{path}/music/{nameFile}"))
+                {
+                    string albumName = GetNameFromPath(album);
+                    if (Directory.Exists($"{path}/music/{author}/{albumName}"))
+                    {
+                        foreach (string song in GetSongs(album))
+                        {
+                            FileInfo fi = new FileInfo(song);
+                            File.Move(song, $"{path}/music/{author}/{albumName}/{fi.Name}");
+                        }
+                    }
+                    else
+                    {
+                        Directory.Move(album, $"{path}/music/{author}/{albumName}");
+                    }
+                }
+                Directory.Delete($"{path}/music/{nameFile}", true);
+            }
+            else
+            {
+                Directory.Move($"{path}/music/{nameFile}", $"{path}/music/{author}");
+            }
+            foreach (string song in GetSongs($"{path}/music/{author}"))
             {
                 var tfile = TagLib.File.Create($"{song}");
                 string[] autors = tfile.Tag.Performers;

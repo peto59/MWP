@@ -19,6 +19,8 @@ using System.Net.Sockets;
 using YoutubeExplode.Common;
 using System.Net.NetworkInformation;
 using System.Threading;
+using Org.Apache.Http.Protocol;
+using System.Net.Http;
 
 namespace Ass_Pain
 {
@@ -67,20 +69,28 @@ namespace Ass_Pain
 
 
                 int broadcastPort = 8008;
-                byte[] msg = BitConverter.GetBytes(listenPort);
-                //Cycle this for all IP adresses
                 IPAddress broadcastIp = GetBroadCastIP(new IPAddress(d.IpAddress), new IPAddress(d.Netmask));
                 IPEndPoint destinationEndpoint = new IPEndPoint(broadcastIp, broadcastPort);
                 Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
                 sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
                 sock.ReceiveTimeout = 2000;
-                sock.SendTo(msg, destinationEndpoint);
                 byte[] buffer = new Byte[256];
-                try
-                {
-                    sock.Receive(buffer);
-                }
-                catch
+
+                int retries = 0;
+                int maxRetries = 3;
+                do {
+                    sock.SendTo(BitConverter.GetBytes(listenPort), destinationEndpoint);
+                    retries++;
+                    try
+                    {
+                        sock.Receive(buffer);
+                        break;
+                    }
+                    catch
+                    {
+                    }
+                } while (retries < maxRetries);
+                if(retries == maxRetries)
                 {
                     sock.Close();
                     server.Stop();
@@ -103,7 +113,6 @@ namespace Ass_Pain
                     TcpClient client = server.AcceptTcpClient();
                     Console.WriteLine("Connected!");
 
-                    data = null;
 
                     // Get a stream object for reading and writing
                     NetworkStream networkStream = client.GetStream();
@@ -111,23 +120,41 @@ namespace Ass_Pain
                     int i;
 
                     // Loop to receive all the data sent by the client.
-                    while (true)
+                    while ((i = networkStream.Read(bytes, 0, bytes.Length)) != 0)
                     {
-                        while ((i = networkStream.Read(bytes, 0, bytes.Length)) != 0)
+                        // Translate data bytes to a ASCII string.
+                        data = Encoding.ASCII.GetString(bytes, 0, i);
+                        Console.WriteLine("Received: {0}", data);
+
+
+                        //byte[] message = Encoding.ASCII.GetBytes("hi");
+
+                        // Send back a response.
+                        //networkStream.Write(message, 0, message.Length);
+                        //Console.WriteLine("Sent: {0}", Encoding.ASCII.GetString(message, 0, message.Length));
+                        switch (data)
                         {
-                            // Translate data bytes to a ASCII string.
-                            data = Encoding.ASCII.GetString(bytes, 0, i);
-                            Console.WriteLine("Received: {0}", data);
+                            case "autosync":
+                                //ZABALIT POSIELANIE SUBOROV DO TRY KVOLI RANDOM DISCONNECTOM
+                                FileManager.AddSyncTarget(((IPEndPoint)client.Client.RemoteEndPoint).Address);
+                                break;
+                            case "file":
 
 
-                            byte[] message = Encoding.ASCII.GetBytes("end");
-
-                            // Send back a response.
-                            networkStream.Write(message, 0, message.Length);
-                            Console.WriteLine("Sent: {0}", Encoding.ASCII.GetString(message, 0, message.Length));
+                                break;
+                            case "end":
+                                byte[] msg = Encoding.ASCII.GetBytes("end");
+                                networkStream.Write(msg, 0, msg.Length);
+                                networkStream.Close();
+                                client.Close();
+                                goto End;
+                            //break;
+                            default:
+                                Console.WriteLine(data);
+                                break;
                         }
-                        break;
                     }
+                    End:
                     Console.WriteLine("END");
 
                     // Shutdown and end connection
