@@ -101,7 +101,7 @@ namespace Ass_Pain
                 Console.WriteLine("Adding tags");
                 var tfile = TagLib.File.Create($"{output}");
                 tfile.Tag.Title = video.Title;
-                string[] autors = { video.Author.ChannelTitle };
+                string[] autors = { FileManager.GetAlias(video.Author.ChannelTitle) };
                 tfile.Tag.Performers = autors;
                 tfile.Tag.AlbumArtists = autors;
                 tfile.Save();
@@ -157,7 +157,7 @@ namespace Ass_Pain
                 Console.WriteLine("Adding tags");
                 var tfile = TagLib.File.Create($"{output}");
                 tfile.Tag.Title = video.Title;
-                string[] autors = { video.Author.ChannelTitle };
+                string[] autors = { FileManager.GetAlias(video.Author.ChannelTitle) };
                 tfile.Tag.Performers = autors;
                 tfile.Tag.AlbumArtists = autors;
                 tfile.Tag.Album = album;

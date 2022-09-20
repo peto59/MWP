@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 
 namespace Ass_Pain
@@ -61,12 +62,13 @@ namespace Ass_Pain
         }
 
         ///<summary>
-        ///Gets all songs in album or all albumless songs for author
+        ///Gets all songs in device
         ///</summary>
-        public static List<string> GetSongs(string path)
+        public static List<string> GetSongs()
         {
+            var root = $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music";
+            var mp3Files = Directory.EnumerateFiles(root, "*.mp3", SearchOption.AllDirectories);
             List<string> songs = new List<string>();
-            var mp3Files = Directory.EnumerateFiles(path, "*.mp3");
             foreach (string currentFile in mp3Files)
             {
                 Console.WriteLine(currentFile);
@@ -76,12 +78,11 @@ namespace Ass_Pain
         }
 
         ///<summary>
-        ///Gets all songs in device
+        ///Gets all songs in album or all albumless songs for author
         ///</summary>
-        public static List<string> GetSongs()
+        public static List<string> GetSongs(string path)
         {
-            var root = $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music";
-            var mp3Files = Directory.EnumerateFiles(root, "*.mp3", SearchOption.AllDirectories);
+            var mp3Files = Directory.EnumerateFiles(path, "*.mp3");
             List<string> songs = new List<string>();
             foreach (string currentFile in mp3Files)
             {
@@ -143,6 +144,10 @@ namespace Ass_Pain
             if (aliases.ContainsKey(name))
             {
                 return aliases[name];
+            }
+            else if (aliases.ContainsKey(Sanitize(name)))
+            {
+                return GetAlias(aliases[Sanitize(name)]);
             }
             return name;
         }
@@ -217,7 +222,7 @@ namespace Ass_Pain
 
         public static string Sanitize(string value)
         {
-            return value.Replace("/", "").Replace("#", "").Replace("?", "");
+            return value.Replace("/", "").Replace("|", "").Replace("\\", "").Replace(":", "").Replace("*", "").Replace("\"", "").Replace("#", "").Replace("?", "").Replace("<", "").Replace(">", "").Trim(' ');
         }
 
         public static int GetAvailableFile()
@@ -246,7 +251,7 @@ namespace Ass_Pain
 
         ///<summary>
         ///Gets all songs in <paramref name="playlist"/>
-        ///<br>Returns <returns>null</returns> if <paramref name="playlist"/> doesn't exist</br>
+        ///<br>Returns <returns>empty List<string></returns> if <paramref name="playlist"/> doesn't exist</br>
         ///</summary>
         public static List<string> GetPlaylist(string playlist)
         {
@@ -257,8 +262,25 @@ namespace Ass_Pain
             {
                 return playlists[playlist];
             }
-            return null;
-            
+            return new List<string>();
+        }
+        public static void AddSyncTarget(IPAddress host)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            string json = File.ReadAllText($"{path}/sync_targets.json");
+            Dictionary<IPAddress, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<IPAddress, List<string>>>(json);
+            targets.Add(host, GetSongs());
+        }
+        public static List<string> GetSyncSongs(IPAddress host)
+        {
+            string path = AppContext.BaseDirectory;
+            string json = File.ReadAllText($"{path}/sync_targets.json");
+            Dictionary<IPAddress, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<IPAddress, List<string>>>(json);
+            if (targets.ContainsKey(host))
+            {
+                return targets[host];
+            }
+            return new List<string>();
         }
     }
 }
