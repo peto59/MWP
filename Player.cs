@@ -6,14 +6,14 @@ using System.IO;
 
 namespace Ass_Pain
 {
-    internal class Player
+    public class Slovenska_prostituka
     {
         protected MediaPlayer player = new MediaPlayer();
         protected List<string> queue = new List<string>();
         int index = 0;
         bool used = false;
 
-        public Player()
+        public Slovenska_prostituka()
         {
             player.Completion += NextSong;
             player.Prepared += (sender, ea) =>

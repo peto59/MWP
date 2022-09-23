@@ -20,18 +20,20 @@ using Android.Widget;
 
 namespace Ass_Pain
 {
-    public class side_player
+    public static class side_player
     {
 
-        public void populate_side_bar(AppCompatActivity context)
+        
+        public static void populate_side_bar(AppCompatActivity context, Slovenska_prostituka player)
         {
+
             TextView ttt = context.FindViewById<TextView>(Resource.Id.song_cover_name);
             ttt.Text = "Song Name";
 
             ImageView song_image = context.FindViewById<ImageView>(Resource.Id.song_cover);
             
 
-
+            
         }
 
     }

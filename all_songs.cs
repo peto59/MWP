@@ -22,6 +22,7 @@ using Org.Apache.Http.Conn;
 using Com.Arthenica.Ffmpegkit;
 using Android.Drm;
 using AngleSharp.Html.Dom;
+using Newtonsoft.Json;
 
 namespace Ass_Pain
 {
@@ -38,9 +39,11 @@ namespace Ass_Pain
 
         List<string> selected_playlists = new List<string>();
 
-        Player player = new Player();
+        Slovenska_prostituka player = MainActivity.player;
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
+
             base.OnCreate(savedInstanceState);
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_all_songs);
@@ -49,6 +52,7 @@ namespace Ass_Pain
             SetSupportActionBar(toolbar);
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
+
 
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -1216,17 +1220,20 @@ namespace Ass_Pain
             if (id == Resource.Id.nav_camera) // home
             {
                 Intent intent = new Intent(this, typeof(all_songs));
+                
                 StartActivity(intent);
             }
             else if (id == Resource.Id.nav_gallery) // equalizer
             {
-                Intent intetn = new Intent(this, typeof(equalizer));
-                StartActivity(intetn);
+                Intent intent = new Intent(this, typeof(equalizer));
+                
+                StartActivity(intent);
             }
             else if (id == Resource.Id.nav_slideshow) // youtube
             {
-                Intent intetn = new Intent(this, typeof(youtube));
-                StartActivity(intetn);
+                Intent intent = new Intent(this, typeof(youtube));
+               
+                StartActivity(intent);
             }
           
 

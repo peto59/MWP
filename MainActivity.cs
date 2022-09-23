@@ -18,14 +18,21 @@ using Newtonsoft.Json;
 using AndroidX.AppCompat.Graphics.Drawable;
 using Android.Widget;
 using System.Threading;
+using Newtonsoft.Json;
+using System.Text.Json;
+using AngleSharp.Html;
+using System.Runtime.InteropServices;
 
 namespace Ass_Pain
 {
+
+
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
+        public static Slovenska_prostituka player = new Slovenska_prostituka();
+
         DrawerLayout drawer;
-        side_player side_bar_pl = new side_player();
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -40,8 +47,8 @@ namespace Ass_Pain
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
             fab.Click += FabOnClick;
 
-          
-            
+
+
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
             drawer.OpenDrawer(GravityCompat.Start);
             drawer.AddDrawerListener(toggle);
@@ -52,7 +59,7 @@ namespace Ass_Pain
             navigationView.SetNavigationItemSelectedListener(this);
 
 
-            side_bar_pl.populate_side_bar(this);
+            side_player.populate_side_bar(this, player);
 
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             if (!Directory.Exists($"{path}/music"))
@@ -63,7 +70,7 @@ namespace Ass_Pain
 
             if (!Directory.Exists($"{path}/tmp"))
             {
-                Console.WriteLine("Creating " + $"{path}/tmp"); 
+                Console.WriteLine("Creating " + $"{path}/tmp");
                 Directory.CreateDirectory($"{path}/tmp");
             }
 
@@ -89,7 +96,7 @@ namespace Ass_Pain
         public override void OnBackPressed()
         {
             DrawerLayout drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
-            if(drawer.IsDrawerOpen(GravityCompat.Start))
+            if (drawer.IsDrawerOpen(GravityCompat.Start))
             {
                 drawer.CloseDrawer(GravityCompat.Start);
             }
@@ -118,7 +125,7 @@ namespace Ass_Pain
 
         private void FabOnClick(object sender, EventArgs eventArgs)
         {
-            View view = (View) sender;
+            View view = (View)sender;
             Snackbar.Make(view, "Replace with your own action", Snackbar.LengthLong)
                 .SetAction("Action", (Android.Views.View.IOnClickListener)null).Show();
         }
@@ -130,24 +137,28 @@ namespace Ass_Pain
             if (id == Resource.Id.nav_camera) // home
             {
                 Intent intent = new Intent(this, typeof(all_songs));
+
                 StartActivity(intent);
 
             }
             else if (id == Resource.Id.nav_gallery) // equalizer
             {
-                Intent intetn = new Intent(this, typeof(equalizer));
-                StartActivity(intetn);
+                Intent intent = new Intent(this, typeof(equalizer));
+              
+                StartActivity(intent);
             }
             else if (id == Resource.Id.nav_slideshow) // youtube
             {
-                Intent intetn = new Intent(this, typeof(youtube));
-                StartActivity(intetn);
+                Intent intent = new Intent(this, typeof(youtube));
+               
+                StartActivity(intent);
             }
 
 
             drawer.CloseDrawer(GravityCompat.Start);
             return true;
         }
+        
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);

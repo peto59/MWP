@@ -11,8 +11,7 @@ using AndroidX.DrawerLayout.Widget;
 using Google.Android.Material.FloatingActionButton;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
-
-
+using Newtonsoft.Json;
 
 namespace Ass_Pain
 {
@@ -20,6 +19,7 @@ namespace Ass_Pain
     public class equalizer : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         DrawerLayout drawer;
+        Slovenska_prostituka player = MainActivity.player;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -92,13 +92,13 @@ namespace Ass_Pain
             }
             else if (id == Resource.Id.nav_gallery) // equalizer
             {
-                Intent intetn = new Intent(this, typeof(equalizer));
-                StartActivity(intetn);
+                Intent intent = new Intent(this, typeof(equalizer));
+                StartActivity(intent);
             }
             else if (id == Resource.Id.nav_slideshow) // youtube
             {
-                Intent intetn = new Intent(this, typeof(youtube));
-                StartActivity(intetn);
+                Intent intent = new Intent(this, typeof(youtube));
+                StartActivity(intent);
             }
 
 

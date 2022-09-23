@@ -12,8 +12,8 @@ using Google.Android.Material.FloatingActionButton;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
 using Android.Webkit;
-
-
+using Newtonsoft.Json;
+using System.Runtime.InteropServices;
 
 namespace Ass_Pain
 {
@@ -22,6 +22,9 @@ namespace Ass_Pain
     {
         DrawerLayout drawer;
         WebView web_view;
+
+        Slovenska_prostituka player = MainActivity.player;
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -33,12 +36,9 @@ namespace Ass_Pain
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
 
-        
-
             Android.Widget.Button stop = FindViewById<Android.Widget.Button>(Resource.Id.stop);
             //NetworkManager nm = new NetworkManager();
             //stop.Click += nm.WifiTest;
-            Player player = new Player();
             stop.Click += player.Resume;
 
             Android.Widget.Button download = FindViewById<Android.Widget.Button>(Resource.Id.download);
@@ -111,13 +111,13 @@ namespace Ass_Pain
             }
             else if (id == Resource.Id.nav_gallery) // equalizer
             {
-                Intent intetn = new Intent(this, typeof(equalizer));
-                StartActivity(intetn);
+                Intent intent = new Intent(this, typeof(equalizer));
+                StartActivity(intent);
             }
             else if (id == Resource.Id.nav_slideshow) // youtube
             {
-                Intent intetn = new Intent(this, typeof(youtube));
-                StartActivity(intetn);
+                Intent intent = new Intent(this, typeof(youtube));
+                StartActivity(intent);
             }
 
 
