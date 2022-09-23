@@ -59,7 +59,7 @@ namespace Ass_Pain
             navigationView.SetNavigationItemSelectedListener(this);
 
 
-            side_player.populate_side_bar(this, player);
+            side_player.populate_side_bar(this);
 
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             if (!Directory.Exists($"{path}/music"))

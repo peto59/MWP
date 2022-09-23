@@ -24,11 +24,11 @@ namespace Ass_Pain
     {
 
         
-        public static void populate_side_bar(AppCompatActivity context, Slovenska_prostituka player)
+        public static void populate_side_bar(AppCompatActivity context)
         {
 
             TextView ttt = context.FindViewById<TextView>(Resource.Id.song_cover_name);
-            ttt.Text = FileManager.GetSongTitle(player.NowPlaying());
+            ttt.Text = FileManager.GetSongTitle(MainActivity.player.NowPlaying());
 
             ImageView song_image = context.FindViewById<ImageView>(Resource.Id.song_cover);
             

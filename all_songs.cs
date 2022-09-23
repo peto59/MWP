@@ -69,7 +69,8 @@ namespace Ass_Pain
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
 
-            side_player.populate_side_bar(this, player);
+            side_player.populate_side_bar(this);
+            player.SetView(this);
 
             // -=-=-=-=-=
             set_buttons_color(Resource.Id.author);
@@ -381,12 +382,10 @@ namespace Ass_Pain
                     if (where_are_you_are_you_are_you_are_you_are_you_are_.album == "all")
                     {
                         player.GenerateQueue(FileManager.GetSongs(), pr.Value);
-                        side_player.populate_side_bar(this, player);
                     }
                     else
                     {
                         player.GenerateQueue(FileManager.GetSongs(where_are_you_are_you_are_you_are_you_are_you_are_.album), pr.Value);
-                        side_player.populate_side_bar(this, player);
 
                     }
                     break;

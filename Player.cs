@@ -55,10 +55,10 @@ namespace Ass_Pain
                     player.Reset();
                 }
                 player.SetDataSource(queue[index]);
+                side_player.populate_side_bar(view);
                 index++;
                 player.Prepare();
                 player.Start();
-                side_player.populate_side_bar(view, this);
             }
         }
 
