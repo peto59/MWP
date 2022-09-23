@@ -1,5 +1,6 @@
 ﻿using Android.App;
 using Android.Media;
+using AndroidX.AppCompat.App;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,6 +13,7 @@ namespace Ass_Pain
         protected List<string> queue = new List<string>();
         int index = 0;
         bool used = false;
+        AppCompatActivity view;
 
         public Slovenska_prostituka()
         {
@@ -20,6 +22,11 @@ namespace Ass_Pain
             {
                 used = true;
             };
+        }
+
+        public void SetView(AppCompatActivity new_view)
+        {
+            view = new_view;
         }
 
         public string NowPlaying()
@@ -51,6 +58,7 @@ namespace Ass_Pain
                 index++;
                 player.Prepare();
                 player.Start();
+                side_player.populate_side_bar(view, this);
             }
         }
 
