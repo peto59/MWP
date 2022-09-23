@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Ass_Pain
@@ -121,17 +122,15 @@ namespace Ass_Pain
 
         public static string GetSongTitle(string path)
         {
-            // puepac, babral som sa ti tu
-            try
+            if (File.Exists(path))
             {
                 var tfile = TagLib.File.Create(path);
                 return tfile.Tag.Title;
             }
-            catch
+            else
             {
                 return "";
             }
-
         }
 
         public static List<string> GetSongTitle(List<string> Files)

@@ -22,6 +22,11 @@ namespace Ass_Pain
             };
         }
 
+        public string nowPlaying()
+        {
+            return queue[index];
+        }
+
         public void Play(string source)
         {
             GenerateQueue(source);
