@@ -264,15 +264,15 @@ namespace Ass_Pain
             return value.Replace("/", "").Replace("|", "").Replace("\\", "").Replace(":", "").Replace("*", "").Replace("\"", "").Replace("#", "").Replace("?", "").Replace("<", "").Replace(">", "").Trim(' ');
         }
 
-        public static int GetAvailableFile()
+        public static int GetAvailableFile(string name = "video")
         {
             int i = 0;
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            while (File.Exists($"{path}/tmp/video{i}.mp3"))
+            while (File.Exists($"{path}/tmp/{name}{i}.mp3"))
             {
                 i++;
             }
-            string dest = $"{path}/tmp/video{i}.mp3";
+            string dest = $"{path}/tmp/{name}{i}.mp3";
             File.Create(dest).Close();
             return i;
         }
@@ -312,7 +312,7 @@ namespace Ass_Pain
         }
         public static List<string> GetSyncSongs(IPAddress host)
         {
-            string path = AppContext.BaseDirectory;
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             string json = File.ReadAllText($"{path}/sync_targets.json");
             Dictionary<IPAddress, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<IPAddress, List<string>>>(json);
             if (targets.ContainsKey(host))

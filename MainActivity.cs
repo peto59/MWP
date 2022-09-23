@@ -15,6 +15,7 @@ using Android.Webkit;
 using System.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using System.Threading;
 
 namespace Ass_Pain
 {
@@ -75,6 +76,9 @@ namespace Ass_Pain
             {
                 File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
+
+            NetworkManager nm = new NetworkManager();
+            new Thread(() => { nm.Listener(); }).Start();
         }
 
         public override void OnBackPressed()

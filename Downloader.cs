@@ -24,6 +24,8 @@ using YoutubeExplode.Playlists;
 using Google.Android.Material.Snackbar;
 using Com.Arthenica.Ffmpegkit;
 using Signal = Com.Arthenica.Ffmpegkit.Signal;
+using static Android.Provider.MediaStore.Audio;
+//using static Android.Provider.MediaStore;
 
 namespace Ass_Pain
 {
@@ -41,22 +43,14 @@ namespace Ass_Pain
                 foreach (PlaylistVideo video in videos)
                 {
                     int i = FileManager.GetAvailableFile();
-                    void ts()
-                    {
-                        DownloadVideo(sender, e, video.Url, playlist.Title, i);
-                    }
-                    new Thread(ts).Start();
+                    new Thread(() => { DownloadVideo(sender, e, video.Url, playlist.Title, i); }).Start();
                 }
             }
             else if (url.Contains("watch"))
             {
                 int i = FileManager.GetAvailableFile();
-                void ts()
-                {
-                    DownloadVideo(sender, e, url, i);
-                }
-                new Thread(ts).Start();
-                
+                new Thread(() => { DownloadVideo(sender, e, url, i); }).Start();
+
             }
             else
             {

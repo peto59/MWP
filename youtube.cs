@@ -36,8 +36,8 @@ namespace Ass_Pain
         
 
             Android.Widget.Button stop = FindViewById<Android.Widget.Button>(Resource.Id.stop);
-            NetworkManager nm = new NetworkManager();
-            stop.Click += nm.WifiTest;
+            //NetworkManager nm = new NetworkManager();
+            //stop.Click += nm.WifiTest;
             Player player = new Player();
             stop.Click += player.Resume;
 
