@@ -54,9 +54,24 @@ namespace Ass_Pain
         public static void Delete(string path)
         {
             if (IsDirectory(path))
+            {
+                foreach (var playlistName in GetPlaylist())
+                {
+                    foreach(var file in GetSongs(path))
+                    {
+                        DeletePlaylist(playlistName, file);
+                    }
+                }
                 Directory.Delete(path, true);
+            }
             else
+            {
                 File.Delete(path);
+                foreach (var playlistName in GetPlaylist())
+                {
+                    DeletePlaylist(playlistName, path);
+                }
+            }
         }
 
         ///<summary>
