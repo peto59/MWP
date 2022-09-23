@@ -129,7 +129,7 @@ namespace Ass_Pain
             }
             else
             {
-                return "";
+                return "cant get title";
             }
         }
 

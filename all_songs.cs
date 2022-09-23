@@ -69,6 +69,8 @@ namespace Ass_Pain
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
 
+            side_player.populate_side_bar(this, player);
+
             // -=-=-=-=-=
             set_buttons_color(Resource.Id.author);
             set_buttons_color(Resource.Id.all_songs);
@@ -379,11 +381,13 @@ namespace Ass_Pain
                     if (where_are_you_are_you_are_you_are_you_are_you_are_.album == "all")
                     {
                         player.GenerateQueue(FileManager.GetSongs(), pr.Value);
-                        
+                        side_player.populate_side_bar(this, player);
                     }
                     else
                     {
                         player.GenerateQueue(FileManager.GetSongs(where_are_you_are_you_are_you_are_you_are_you_are_.album), pr.Value);
+                        side_player.populate_side_bar(this, player);
+
                     }
                     break;
                 }
@@ -1143,7 +1147,7 @@ namespace Ass_Pain
                     var plyalist_songs = FileManager.GetPlaylist(path_for_01);
                     for (int i = 0; i < plyalist_songs.Count; i++)
                     {
-                        if (FileManager.GetSongTitle(plyalist_songs[i]) != "")
+                        if (FileManager.GetSongTitle(plyalist_songs[i]) != "cant get title")
                         {
                             LinearLayout ln_in = pupulate_songs(
                                 plyalist_songs[i], scale, false,

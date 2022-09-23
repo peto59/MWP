@@ -28,7 +28,7 @@ namespace Ass_Pain
         {
 
             TextView ttt = context.FindViewById<TextView>(Resource.Id.song_cover_name);
-            ttt.Text = "Song Name";
+            ttt.Text = FileManager.GetSongTitle(player.NowPlaying());
 
             ImageView song_image = context.FindViewById<ImageView>(Resource.Id.song_cover);
             

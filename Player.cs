@@ -22,9 +22,16 @@ namespace Ass_Pain
             };
         }
 
-        public string nowPlaying()
+        public string NowPlaying()
         {
-            return queue[index];
+            try
+            {
+                return queue[index];
+            }
+            catch
+            {
+                return "prostitutka ja nai";
+            }
         }
 
         public void Play(string source)
