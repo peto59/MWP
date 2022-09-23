@@ -15,6 +15,8 @@ using Android.Webkit;
 using System.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using AndroidX.AppCompat.Graphics.Drawable;
+using Android.Widget;
 
 namespace Ass_Pain
 {
@@ -22,13 +24,14 @@ namespace Ass_Pain
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         DrawerLayout drawer;
+        side_player side_bar_pl = new side_player();
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
-            Toolbar toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
+            AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
@@ -43,10 +46,12 @@ namespace Ass_Pain
             drawer.AddDrawerListener(toggle);
             toggle.SyncState();
 
-           
 
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
+
+
+            side_bar_pl.populate_side_bar(this);
 
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             if (!Directory.Exists($"{path}/music"))
@@ -57,7 +62,7 @@ namespace Ass_Pain
 
             if (!Directory.Exists($"{path}/tmp"))
             {
-                Console.WriteLine("Creating " + $"{path}/tmp");
+                Console.WriteLine("Creating " + $"{path}/tmp"); 
                 Directory.CreateDirectory($"{path}/tmp");
             }
 
