@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Text;
 
@@ -105,8 +106,17 @@ namespace Ass_Pain
 
         public static string GetSongTitle(string path)
         {
-            var tfile = TagLib.File.Create(path);
-            return tfile.Tag.Title;
+            // puepac, babral som sa ti tu
+            try
+            {
+                var tfile = TagLib.File.Create(path);
+                return tfile.Tag.Title;
+            }
+            catch
+            {
+                return "";
+            }
+
         }
 
         public static List<string> GetSongTitle(List<string> Files)
@@ -256,6 +266,34 @@ namespace Ass_Pain
             string json = File.ReadAllText($"{path}/playlists.json");
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             playlists[name].AddRange(songs);
+            File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
+        }
+
+
+        ///<summary>
+        ///Deletetes <paramref name="playlist"/> from <paramref name="song"/>
+        ///</summary>
+        public static void DeletePlaylist(string playlist, string song)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            string json = File.ReadAllText($"{path}/playlists.json");
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
+            if (playlists.ContainsKey(playlist))
+            {
+                playlists[playlist].Remove(song);
+                File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
+            }
+        }
+
+        ///<summary>
+        ///Deletetes <paramref name="playlist"/>
+        ///</summary>
+        public static void DeletePlaylist(string playlist)
+        {
+            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            string json = File.ReadAllText($"{path}/playlists.json");
+            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
+            playlists.Remove(playlist);
             File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
 

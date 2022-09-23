@@ -21,6 +21,7 @@ using Android.Icu.Number;
 using Org.Apache.Http.Conn;
 using Com.Arthenica.Ffmpegkit;
 using Android.Drm;
+using AngleSharp.Html.Dom;
 
 namespace Ass_Pain
 {
@@ -48,10 +49,6 @@ namespace Ass_Pain
             SetSupportActionBar(toolbar);
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
-
-
-
-           
 
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -206,7 +203,7 @@ namespace Ass_Pain
             }
             else
             {
-               
+                Console.WriteLine(FileManager.GetSongTitle(song_path));
             
                 try
                 {
@@ -239,6 +236,12 @@ namespace Ass_Pain
             {
                 case "album":
                     ln_in.Click += new EventHandler(album_button_clicked);
+
+                    ln_in.LongClick += (sender, e) =>
+                    {
+                        show_popup_song_edit(sender, e, song_path, lin_for_delete, ln_in, "album");
+                    };
+
                     album_buttons.Add(ln_in, song_path);
                     break;
                 case "song":
@@ -247,13 +250,19 @@ namespace Ass_Pain
 
                     ln_in.LongClick += (sender, e) =>
                     {
-                        show_popup_song_edit(sender, e, song_path, lin_for_delete, ln_in);
+                        show_popup_song_edit(sender, e, song_path, lin_for_delete, ln_in, "song");
                     };
 
                     song_buttons.Add(ln_in, index);
                     break;
                 case "author":
                     ln_in.Click += new EventHandler(author_button_clicked);
+
+                    ln_in.LongClick += (sender, e) =>
+                    {
+                        show_popup_song_edit(sender, e, song_path, lin_for_delete, ln_in, "album");
+                    };
+
                     album_buttons.Add(ln_in, song_path); 
                     break;
             }
@@ -592,7 +601,7 @@ namespace Ass_Pain
             di.Hide();
         }
 
-        public void are_you_sure(object sender, EventArgs e, string path, Android.App.AlertDialog di, LinearLayout lin_from_delete, LinearLayout lin_for_delete)
+        public void are_you_sure(object sender, EventArgs e, string path, Android.App.AlertDialog di, LinearLayout lin_from_delete, LinearLayout lin_for_delete, string is_what)
         {
             Console.WriteLine("popup clicked");
 
@@ -620,7 +629,15 @@ namespace Ass_Pain
                 dialog.Hide();
                 deleting_song(sender, e, di);
 
-                lin_from_delete.RemoveView(lin_for_delete);
+                if (is_what == "song")
+                    lin_from_delete.RemoveView(lin_for_delete);
+                else
+                {
+                    populate_grid(0.0f);
+                    in_author.is_auth = false;
+                    in_author.auth = "";
+                }
+                    
 
                 Toast.MakeText(this, $"{path} has been deleted", ToastLength.Short).Show();
             };
@@ -639,12 +656,17 @@ namespace Ass_Pain
             dialog.Show();
         }
 
-        public void show_popup_song_edit(object sender, EventArgs e, string path, LinearLayout lin_from_delet, LinearLayout lin_for_delete)
+        public void show_popup_song_edit(object sender, EventArgs e, string path, LinearLayout lin_from_delet, LinearLayout lin_for_delete, string what_is)
         {
             Console.WriteLine("popup clicked");
 
             LayoutInflater ifl = LayoutInflater.From(this);
-            View view = ifl.Inflate(Resource.Layout.edit_song_popup, null);
+            View view;
+            if (what_is == "song")
+                view = ifl.Inflate(Resource.Layout.edit_song_popup, null);
+            else
+                view = ifl.Inflate(Resource.Layout.edit_album_popup, null);
+
             Android.App.AlertDialog.Builder alert = new Android.App.AlertDialog.Builder(this);
             alert.SetView(view);
 
@@ -653,14 +675,25 @@ namespace Ass_Pain
             /*
              * popup buttons start
              */
-            Button add_to_pla = view.FindViewById<Button>(Resource.Id.add_to_pla);
+            if (what_is == "song")
+            {
+                Button add_to_pla = view.FindViewById<Button>(Resource.Id.add_to_pla);
+                add_to_pla.Background.SetColorFilter(
+                    Color.Rgb(255, 76, 41),
+                    PorterDuff.Mode.Multiply
+                ); add_to_pla.SetTextColor(Color.Black);
+                add_to_pla.Click += (sender, e) =>
+                {
+                    dialog.Hide();
+                    list_playlists_popup(sender, e, path);
+                    Console.WriteLine(path);
+
+                };
+            }
+
+
             Button add_to_qu = view.FindViewById<Button>(Resource.Id.add_to_qu);
             Button delete = view.FindViewById<Button>(Resource.Id.delete);
-
-            add_to_pla.Background.SetColorFilter(
-                Color.Rgb(255, 76, 41),
-                PorterDuff.Mode.Multiply
-            ); add_to_pla.SetTextColor(Color.Black);
             add_to_qu.Background.SetColorFilter(
                 Color.Rgb(255, 76, 41),
                 PorterDuff.Mode.Multiply
@@ -672,20 +705,14 @@ namespace Ass_Pain
 
             // handle clicked
 
-            add_to_pla.Click += (sender, e) =>
-            {
-                dialog.Hide();
-                list_playlists_popup(sender, e, path);
-                Console.WriteLine(path);
-
-            };
+           
             add_to_qu.Click += (sender, e) =>
             {
                 player.AddToQueue(path);
             };
             delete.Click += (sender, e) =>
             {
-                are_you_sure(sender, e, path, dialog, lin_from_delet, lin_for_delete);
+                are_you_sure(sender, e, path, dialog, lin_from_delet, lin_for_delete, what_is);
             };
 
 
@@ -1112,14 +1139,24 @@ namespace Ass_Pain
                     var plyalist_songs = FileManager.GetPlaylist(path_for_01);
                     for (int i = 0; i < plyalist_songs.Count; i++)
                     {
-                        LinearLayout ln_in = pupulate_songs(
-                            plyalist_songs[i], scale, false,
-                            150, 100,
-                            in_playlist_button_margins, in_playlist_name_margins, in_playlist_card_margins,
-                            17,
-                            "song", i
-                        );
-                        in_playlist_ln_main.AddView(ln_in);
+                        if (FileManager.GetSongTitle(plyalist_songs[i]) != "")
+                        {
+                            LinearLayout ln_in = pupulate_songs(
+                                plyalist_songs[i], scale, false,
+                                150, 100,
+                                in_playlist_button_margins, in_playlist_name_margins, in_playlist_card_margins,
+                                17,
+                                "song", i, in_playlist_ln_main
+                            );
+                            in_playlist_ln_main.AddView(ln_in);
+                        }
+                        else
+                        {
+                            FileManager.DeletePlaylist(path_for_01, plyalist_songs[i]);
+                            Console.WriteLine("deleted ddded");
+                            populate_grid(2.0f);
+                        }
+
                     }
 
                     in_playlist_scroll.AddView(in_playlist_ln_main);
