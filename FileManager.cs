@@ -18,6 +18,7 @@ namespace Ass_Pain
 {
     internal static class FileManager
     {
+        
         public static List<string> GetAuthors()
         {
             var root = Directory.EnumerateDirectories($"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/music");
@@ -130,6 +131,30 @@ namespace Ass_Pain
             else
             {
                 return "cant get title";
+            }
+        }
+
+        public static string GetSongAlbum(string path)
+        {
+            if (File.Exists(path))
+            {
+                var tfile = TagLib.File.Create(path);
+                return tfile.Tag.Album;
+            }
+            else
+            {
+                return "cant get album";
+            }
+        }
+        public static string[] GetSongArtist(string path)
+        {
+            if (File.Exists(path))
+            {
+                var tfile = TagLib.File.Create(path);
+                return tfile.Tag.AlbumArtists;
+            }
+            else {
+                return new string[] { "cant get artist" };
             }
         }
 

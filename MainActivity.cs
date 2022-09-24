@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using System.Text.Json;
 using AngleSharp.Html;
 using System.Runtime.InteropServices;
+using Android.Content.PM;
 
 namespace Ass_Pain
 {
@@ -88,6 +89,26 @@ namespace Ass_Pain
             {
                 File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
+            string[] PermissionsLocation =
+            {
+                Android.Manifest.Permission.ManageExternalStorage,
+                Android.Manifest.Permission.WriteExternalStorage,
+                Android.Manifest.Permission.ReadExternalStorage
+            };
+
+            const int RequestLocationId = 1;
+            //string[] permission = { Android.Manifest.Permission.ManageExternalStorage };
+            //RequestPermissions(permission, 0);
+            if (ShouldShowRequestPermissionRationale(Android.Manifest.Permission.ManageExternalStorage))
+            {
+                //Explain to the user why we need to read the contacts
+                Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
+                        .SetAction("OK", v => RequestPermissions(PermissionsLocation, RequestLocationId))
+                        .Show();
+                return;
+            }
+            //Finally request permissions with the list of permissions and Id
+            RequestPermissions(PermissionsLocation, RequestLocationId);
 
             NetworkManager nm = new NetworkManager();
             new Thread(() => { nm.Listener(); }).Start();
