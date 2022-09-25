@@ -283,7 +283,16 @@ namespace Ass_Pain
             }
             else
             {
-                return (GetNameFromPath(Path.GetDirectoryName(path)), GetNameFromPath(Path.GetDirectoryName(Path.GetDirectoryName(path))));
+                try
+                {
+                    return (GetNameFromPath(Path.GetDirectoryName(path)), GetNameFromPath(Path.GetDirectoryName(Path.GetDirectoryName(path))));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    return ("", "");
+                }
+                
             }
         }
 

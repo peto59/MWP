@@ -180,20 +180,22 @@ namespace Ass_Pain
                 if (files.Length > 0)
                 {
                     string validFileTypes = ".jpg,.png,.webm";
-                    foreach (FileInfo file in files)
+                    Parallel.ForEach(files, (file, state) =>
                     {
                         if (validFileTypes.Contains(file.Extension))
                         {
                             image = BitmapFactory.DecodeStream(File.OpenRead(file.FullName)); // extracts image from cover.* in album dir
-                            break;
+                            state.Break();
                         }
-                    }
+
+                    });
+                  
                 }
                 if (image == null)
                 {
-
-                    foreach (string song in FileManager.GetSongs(song_path))
+                    Parallel.ForEach(FileManager.GetSongs(song_path), (song, state) =>
                     {
+
                         try
                         {
                             tagFile = TagLib.File.Create(
@@ -201,14 +203,15 @@ namespace Ass_Pain
                             );
                             MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
                             image = BitmapFactory.DecodeStream(ms);
-                            break;
+                            state.Break();
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine(ex.Message);
                             Console.WriteLine($"Doesnt contain image: {song}");
                         }
-                    }
+                    });
+                   
                     if (image == null)
                     {
                         image = BitmapFactory.DecodeStream(Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 

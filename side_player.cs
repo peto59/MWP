@@ -135,6 +135,7 @@ namespace Ass_Pain
         public static void populate_side_bar(AppCompatActivity context)
         {
             // basic  vars
+            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
             string current_song_path = MainActivity.player.NowPlaying();
             float scale = context.Resources.DisplayMetrics.Density;
 
@@ -158,14 +159,15 @@ namespace Ass_Pain
 
             song_title.LayoutParameters = song_title_params;
             song_title.Text = FileManager.GetSongTitle(current_song_path);
-            
+
+            (string album, string autor) = FileManager.GetAlbumAuthorFromPath(current_song_path);
             if (FileManager.GetSongArtist(current_song_path).Length != 0)
             {
                 song_author.Text = FileManager.GetSongArtist(current_song_path)[0];
                 song_author.Click += (sender, e) =>
                 {
                     Intent intent = new Intent(context, typeof(all_songs));
-                    intent.PutExtra("link_author", "");
+                    intent.PutExtra("link_author", $"{path}/{autor}");
                     context.StartActivity(intent);
                 };
             }
