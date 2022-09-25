@@ -133,6 +133,32 @@ namespace Ass_Pain
             }
         }
 
+        public static string[] GetSongArtist(string path)
+        {
+            if (File.Exists(path))
+            {
+                var tfile = TagLib.File.Create(path);
+                return tfile.Tag.AlbumArtists;
+            }
+            else
+            {
+                return new string[] { "cant get artist" };
+            }
+        }
+
+        public static string GetSongAlbum(string path)
+        {
+            if (File.Exists(path))
+            {
+                var tfile = TagLib.File.Create(path);
+                return tfile.Tag.Album;
+            }
+            else
+            {
+                return "cant get album";
+            }
+        }
+
         public static List<string> GetSongTitle(List<string> Files)
         {
             List<string> titles = new List<string>();

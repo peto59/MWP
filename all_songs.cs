@@ -23,6 +23,9 @@ using Com.Arthenica.Ffmpegkit;
 using Android.Drm;
 using AngleSharp.Html.Dom;
 using Newtonsoft.Json;
+using System.Threading;
+using Org.Apache.Http.Authentication;
+using System.Threading.Tasks;
 
 namespace Ass_Pain
 {
@@ -53,7 +56,13 @@ namespace Ass_Pain
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
+            // get intent sent from side bar to navigate author
+            {
+                string intent_author = Intent.GetStringExtra("link_author");
+                if (intent_author != "")
+                    populate_grid(0.2f, intent_author);
 
+            }
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, 
@@ -324,21 +333,25 @@ namespace Ass_Pain
             int[] name_margins = { 50, 0, 50, 50 };
             int[] card_margins = { 40, 50, 0, 0 };
 
-
-            for (int i = 0; i < albums.Count; i++)
+            Parallel.For(0, albums.Count, i =>
             {
+
                 LinearLayout ln_in = pupulate_songs(albums[i], scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "album", i);
 
                 //全部加える
                 lin.AddView(ln_in);
 
-            }
+            });
+
+            /*for (int i = 0; i < albums.Count; i++)
+            {
+            }*/
 
             return lin;
         }
 
        
-
+       
         public LinearLayout author_tiles(float scale)
         {
 
@@ -356,15 +369,20 @@ namespace Ass_Pain
             int[] name_margins = { 50, 0, 50, 50 };
             int[] card_margins = { 50, 50, 0, 0 };
 
-            for (int i = 0; i < authors.Count; i++)
+            Parallel.For(0, authors.Count, i =>
             {
-                var auth = authors[i];
-                LinearLayout ln_in = pupulate_songs(auth, scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "author", i);
+                LinearLayout ln_in = pupulate_songs(authors[i], scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "author", i);
 
                 //全部加える
                 lin.AddView(ln_in);
+            });
 
-            }
+            /*
+            for (int i = 0; i < authors.Count; i++)
+            {
+
+
+            } */  
 
             return lin;
         }
@@ -816,21 +834,23 @@ namespace Ass_Pain
                     if (path_for_01 != null)
                     {
                         var album_songs = FileManager.GetSongs(path_for_01);
-                        for (int i = 0; i < album_songs.Count; i++)
+                        Parallel.For(0, album_songs.Count, i =>
                         {
+
                             LinearLayout ln_in = pupulate_songs(
-                                album_songs[i], scale, false, 
+                                album_songs[i], scale, false,
                                 150, 100,
                                 button_margins, name_margins, card_margins,
-                                17, 
+                                17,
                                 "song", i, ln_main
                             );
                             ln_main.AddView(ln_in);
-                        }
+                        });
+                        
                     }
                     else
                     {
-                        Console.WriteLine("bad path, ln; 280");
+                        Console.WriteLine("bad path, ln; 845");
                     }
 
                     songs_scroll.AddView(ln_main);
@@ -854,9 +874,9 @@ namespace Ass_Pain
                     
                     
                     var albums = FileManager.GetAlbums(path_for_01);
-
-                    for (int i = 0; i < albums.Count; i++)
+                    Parallel.For(0, albums.Count, i =>
                     {
+
                         //リネアルレーアート作る
                         LinearLayout ln_in = new LinearLayout(this);
                         ln_in.Orientation = Orientation.Vertical;
@@ -961,10 +981,9 @@ namespace Ass_Pain
 
                         //全部加える
                         lin.AddView(ln_in);
+                    });
 
-                    } 
-
-                    
+                   
 
                     hr.AddView(lin);
                     main_rel_l.AddView(hr);
@@ -1004,8 +1023,9 @@ namespace Ass_Pain
 
                     
                     var list_songs = FileManager.GetSongs();
-                    for (int i = 0; i < list_songs.Count; i++)
+                    Parallel.For(0, list_songs.Count, i =>
                     {
+                        
                         LinearLayout ln_in = pupulate_songs(
                             list_songs[i], scale, false,
                             150, 100,
@@ -1014,8 +1034,10 @@ namespace Ass_Pain
                             "song", i, all_songs_ln_main
                         );
                         all_songs_ln_main.AddView(ln_in);
-                        
-                    }
+
+
+                    });
+                   
                     
                     all_songs_scroll.AddView(all_songs_ln_main);
                     main_rel_l.AddView(all_songs_scroll);
@@ -1051,8 +1073,9 @@ namespace Ass_Pain
 
 
                     var playlists = FileManager.GetPlaylist();
-                    foreach (var playlist in playlists)
+                    Parallel.ForEach(playlists, playlist =>
                     {
+
                         LinearLayout ln_in = new LinearLayout(this);
                         ln_in.Orientation = Orientation.Vertical;
                         ln_in.SetBackgroundResource(Resource.Drawable.rounded);
@@ -1105,7 +1128,8 @@ namespace Ass_Pain
                         playlist_ln_main.AddView(ln_in);
 
                         Console.WriteLine("pl name: " + playlist);
-                    }
+                    });
+                   
 
                     playlists_scroll.AddView(playlist_ln_main);
                     main_rel_l.AddView(playlists_scroll);
@@ -1144,8 +1168,10 @@ namespace Ass_Pain
 
 
                     var plyalist_songs = FileManager.GetPlaylist(path_for_01);
-                    for (int i = 0; i < plyalist_songs.Count; i++)
+
+                    Parallel.For(0, plyalist_songs.Count, i =>
                     {
+
                         if (FileManager.GetSongTitle(plyalist_songs[i]) != "cant get title")
                         {
                             LinearLayout ln_in = pupulate_songs(
@@ -1163,8 +1189,8 @@ namespace Ass_Pain
                             Console.WriteLine("deleted ddded");
                             populate_grid(2.0f);
                         }
-
-                    }
+                    });
+                   
 
                     in_playlist_scroll.AddView(in_playlist_ln_main);
                     main_rel_l.AddView(in_playlist_scroll);
@@ -1223,7 +1249,7 @@ namespace Ass_Pain
             if (id == Resource.Id.nav_camera) // home
             {
                 Intent intent = new Intent(this, typeof(all_songs));
-                
+                intent.PutExtra("link_author", "");
                 StartActivity(intent);
             }
             else if (id == Resource.Id.nav_gallery) // equalizer
