@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using System.Text.Json;
 using AngleSharp.Html;
 using System.Runtime.InteropServices;
+using Android.Content.PM;
 
 namespace Ass_Pain
 {
@@ -61,26 +62,24 @@ namespace Ass_Pain
 
             side_player.populate_side_bar(this);
 
-            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            if (!Directory.Exists($"{path}/music"))
+
+            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+            if (!Directory.Exists(path))
             {
-                Console.WriteLine("Creating " + $"{path}/music");
-                Directory.CreateDirectory($"{path}/music");
+                Console.WriteLine("Creating " + $"{path}");
+                Directory.CreateDirectory(path);
             }
 
-            if (!Directory.Exists($"{path}/tmp"))
+            string privatePath = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            if (!Directory.Exists($"{privatePath}/tmp"))
             {
-                Console.WriteLine("Creating " + $"{path}/tmp");
-                Directory.CreateDirectory($"{path}/tmp");
+                Console.WriteLine("Creating " + $"{privatePath}/tmp");
+                Directory.CreateDirectory($"{privatePath}/tmp");
             }
 
             if (!File.Exists($"{path}/aliases.json"))
             {
-                var x = new Dictionary<string, string>
-                {
-                    { "IRyS Ch. hololive-EN", "IRyS - Topic" }
-                };
-                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(x));
+                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
 
             }
 
@@ -89,8 +88,32 @@ namespace Ass_Pain
                 File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
 
+            
+            string[] PermissionsLocation =
+            {
+                Android.Manifest.Permission.ManageExternalStorage,
+                Android.Manifest.Permission.WriteExternalStorage,
+                Android.Manifest.Permission.ReadExternalStorage
+            };
+
+            const int RequestLocationId = 1;
+            //string[] permission = { Android.Manifest.Permission.ManageExternalStorage };
+            //RequestPermissions(permission, 0);
+            if (ShouldShowRequestPermissionRationale(Android.Manifest.Permission.ManageExternalStorage))
+            {
+                //Explain to the user why we need to read the contacts
+                Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
+                        .SetAction("OK", v => RequestPermissions(PermissionsLocation, RequestLocationId))
+                        .Show();
+                return;
+            }
+            //Finally request permissions with the list of permissions and Id
+            RequestPermissions(PermissionsLocation, RequestLocationId);
+
             NetworkManager nm = new NetworkManager();
             new Thread(() => { nm.Listener(); }).Start();
+
+            FileManager.DiscoverFiles();
         }
 
         public override void OnBackPressed()

@@ -62,6 +62,33 @@ namespace Ass_Pain
             }
         }
 
+        public void PreviousSong(object sender = null, EventArgs e = null)
+        {
+            try
+            {
+                if(player.CurrentPosition< 10000)
+                {
+                    player.SeekTo(0);
+                }
+                if (used)
+                {
+                    player.Reset();
+                }
+                index -= 2;
+                player.SetDataSource(queue[index]);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+                index = 0;
+                player.SetDataSource(queue[index]);
+            }
+                side_player.populate_side_bar(view);
+                index++;
+                player.Prepare();
+                player.Start();
+        }
+
         public void Resume(object sender, EventArgs e)
         {
             Console.WriteLine("Resumed");

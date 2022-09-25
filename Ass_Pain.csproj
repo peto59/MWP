@@ -252,6 +252,9 @@
     </AndroidResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
     <AndroidAsset Include="Assets\left.png" />
   </ItemGroup>
   <ItemGroup>

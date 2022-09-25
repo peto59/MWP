@@ -27,6 +27,8 @@ using Android.Annotation;
 using Java.Nio;
 using Android.Bluetooth;
 using Org.Apache.Http.Authentication;
+using CliWrap;
+using static Android.Provider.DocumentsContract;
 //using Android.Net;
 
 namespace Ass_Pain
@@ -50,7 +52,7 @@ namespace Ass_Pain
             return new IPAddress(broadcastIPBytes);
         }
 
-        public void Listener()
+        public async void Listener()
         {
             System.Timers.Timer aTimer = new System.Timers.Timer();
             aTimer.Interval = 20000;
@@ -59,8 +61,10 @@ namespace Ass_Pain
 
             aTimer.AutoReset = true;
 
-            aTimer.Enabled = true;
+            //aTimer.Enabled = true;
 
+            Thread.Sleep(1500);
+            SendBroadcast();
 
             Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             IPEndPoint iep = new IPEndPoint(IPAddress.Any, 8008);
@@ -97,9 +101,10 @@ namespace Ass_Pain
 
                     sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), groupEP);
 
+                    connected.Add(target_ip);
+
                     P2PDecide(groupEP, target_ip, sock);
 
-                    connected.Add(target_ip);
 
 
                 }
@@ -114,7 +119,7 @@ namespace Ass_Pain
             }
         }
 
-        public void SendBroadcast(Object source, ElapsedEventArgs e)
+        public void SendBroadcast(Object source = null, ElapsedEventArgs e = null)
         {
             
             if (new IPAddress(d.IpAddress).ToString() != "0.0.0.0")
@@ -140,7 +145,7 @@ namespace Ass_Pain
                 EndPoint groupEP = (EndPoint)iep;
                 do
                 {
-                    sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), destinationEndpoint);
+                    sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
                     retries++;
                     try
                     {
@@ -160,9 +165,9 @@ namespace Ass_Pain
                 IPAddress target_ip = ((IPEndPoint)groupEP).Address;
                 string remoteHostname = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
 
-                P2PDecide(groupEP, target_ip, sock);
-
                 connected.Add(target_ip);
+
+                P2PDecide(groupEP, target_ip, sock);
                 
                 sock.Close();
             }
@@ -172,7 +177,7 @@ namespace Ass_Pain
             }
         }
 
-        private void Server(TcpListener server)
+        private void Server(TcpListener server, IPAddress target_ip)
         {
             try
             {
@@ -237,7 +242,7 @@ namespace Ass_Pain
                 }
             End:
                 Console.WriteLine("END");
-
+                connected.Remove(target_ip);
                 // Shutdown and end connection
                 networkStream.Close();
                 client.Close();
@@ -258,61 +263,168 @@ namespace Ass_Pain
         {
             Console.WriteLine($"Connecting to: {server}:{port}");
             TcpClient client = new TcpClient(server.ToString(), port);
-            byte[] data = Encoding.ASCII.GetBytes("end");
             NetworkStream networkStream = client.GetStream();
             string remoteHostname = String.Empty;
+            int command = 0;
+            byte[] recCommand = new byte[4];
+            byte[] sendCommand = new byte[4];
+            byte[] recLength = new byte[4];
+            int length = 0;
+            bool ending = false;
+            bool fileToSend = false;
             while (true)
             {
-                networkStream.Write(data, 0, data.Length);
-                data = new byte[256];
-                String responseData = String.Empty;
-                Int32 bytes = networkStream.Read(data, 0, data.Length);
-                responseData = Encoding.ASCII.GetString(data, 0, bytes);
-                Console.WriteLine("Received: {0}", responseData);
-                switch (responseData)
+                
+                if (networkStream.DataAvailable)
                 {
-                    case "host":
-                        bytes = networkStream.Read(data, 0, data.Length);
-                        remoteHostname = Encoding.ASCII.GetString(data, 0, bytes);
+                    networkStream.Read(recCommand, 0, 4);
+                    command = BitConverter.ToInt32(recCommand, 0);
+                }
+                else
+                {
+                    command = 0;
+                }
+                Console.WriteLine("Received command: {0}", command);
+                if (fileToSend)
+                {
+
+                }
+                else if (ending)
+                {
+                    sendCommand = BitConverter.GetBytes(100);
+                    networkStream.Write(sendCommand, 0, sendCommand.Length);
+                    Console.WriteLine("send end");
+                }
+                else
+                {
+                    try
+                    {
+                        sendCommand = BitConverter.GetBytes(0);
+                        networkStream.Write(sendCommand, 0, sendCommand.Length);
+                    }
+                    catch
+                    {
+                        Console.WriteLine("shut");
+                        Thread.Sleep(100);
+                    }
+                }
+                switch (command)
+                {
+                    case 10: //host
+                        networkStream.Read(recLength, 0, 4);
+                        length = BitConverter.ToInt32(recLength, 0);
+                        byte[] data = new byte[length];
+                        networkStream.Read(data, 0, length);
+                        remoteHostname = Encoding.UTF8.GetString(data, 0, length);
+                        Console.WriteLine($"hostname {remoteHostname}");
+                        ending = true;
                         break;
-                    case "autosync":
+                    case 20: //autosync
                         //FileManager.AddSyncTarget(remoteHostname);
                         break;
-                    case "file":
-                        string f = $"{AppContext.BaseDirectory}/music/Mori Calliope Ch. hololive-EN/[Original Rap] DEAD BEATS - Calliope Mori holoMyth hololiveEnglish.mp3";
-                        //(TcpListener receiveServer, int listenPort) = StartServer();
+                    case 30: //file
+                        int i = FileManager.GetAvailableFile("receive");
+                        string musicPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+                        string path = $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/tmp/receive{i}.mp3";
+                        byte[] recFileLength = new byte[8];
+                        networkStream.Read(recFileLength, 0, 8);
+                        Int64 fileLength = BitConverter.ToInt64(recFileLength, 0);
+                        if(fileLength > 4000000000){
+                            throw new Exception("You can't receive files larger than 4GB on Android");
+                        }
+                        int readLength = 0;
+                        Console.WriteLine($"File size {fileLength}");
+                        while (fileLength > 0)
+                        {
+                            if (fileLength > int.MaxValue)
+                            {
+                                readLength = int.MaxValue;
+                            }
+                            else
+                            {
+                                readLength = Convert.ToInt32(fileLength);
+                            }
+                            byte[] file = new byte[readLength];
+                            int minus = networkStream.Read(file, 0, readLength);
+                            fileLength -= minus;
+                            using (var stream = new FileStream(path, FileMode.Append))
+                            {
+                                Console.WriteLine($"Writing {minus} bytes");
+                                stream.Write(file, 0, minus);
+                            }
+                        }
 
-
+                        string name = FileManager.Sanitize(FileManager.GetSongTitle(path));
+                        string artist = FileManager.GetAlias(FileManager.Sanitize(FileManager.GetSongArtist(path)[0]));
+                        string unAlbum = FileManager.GetSongAlbum(path);
+                        if(unAlbum == null)
+                        {
+                            Directory.CreateDirectory($"{musicPath}/{artist}");
+                            if (!File.Exists($"{musicPath}/{artist}/{name}.mp3"))
+                            {
+                                File.Move(path, $"{musicPath}/{artist}/{name}.mp3");
+                            }
+                            else
+                            {
+                                File.Delete(path);
+                            }
+                        }
+                        else
+                        {
+                            string album = FileManager.Sanitize(unAlbum);
+                            Directory.CreateDirectory($"{musicPath}/{artist}/{album}");
+                            if (!File.Exists($"{musicPath}/{artist}/{album}/{name}.mp3"))
+                            {
+                                File.Move(path, $"{musicPath}/{artist}/{album}/{name}.mp3");
+                            }
+                            else
+                            {
+                                File.Delete(path);
+                            }
+                        }
                         break;
-                    case "end":
-                        byte[] message = Encoding.ASCII.GetBytes("end");
-                        networkStream.Write(message, 0, message.Length);
+                    case 100: //end
+                        byte[] message = BitConverter.GetBytes(100);
+                        Console.WriteLine("got end");
+                        try
+                        {
+                            networkStream.Write(message, 0, message.Length);
+                        }
+                        catch
+                        {
+                            Console.WriteLine("Disconnected");
+                        }
                         networkStream.Close();
                         client.Close();
                         goto End;
                     //break;
-                    default:
-                        Console.WriteLine(responseData);
+                    default: //wait or uninplemented
+                        Console.WriteLine($"default: {command}");
                         break;
                 }
             }
-            End:
+        End:
             // Close everything.
+            Console.WriteLine("END");
             networkStream.Close();
             client.Close();
+            connected.Remove(server);
         }
 
         private void P2PDecide(EndPoint groupEP, IPAddress target_ip, Socket sock)
         {
             int state;
             EndPoint endPoint = groupEP;
-            byte[] buffer = new Byte[32];
+            byte[] buffer = new byte[4];
             while (true)
             {
-                state = new Random().Next(0, 1);
+                state = new Random().Next(0, 2);
                 sock.SendTo(BitConverter.GetBytes(state), groupEP);
+                Console.WriteLine($"sending {state} to {((IPEndPoint)groupEP).Address}");
                 sock.ReceiveFrom(buffer, ref endPoint);
-                while (((IPEndPoint)endPoint).Address != target_ip)
+                Console.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
+                Console.WriteLine($"debug: {((IPEndPoint)endPoint).Address}  {target_ip}  {!((IPEndPoint)endPoint).Address.Equals(target_ip)}");
+                while (!((IPEndPoint)endPoint).Address.Equals(target_ip))
                 {
                     sock.ReceiveFrom(buffer, ref endPoint);
                 }
@@ -327,7 +439,7 @@ namespace Ass_Pain
                             Console.WriteLine("Server");
                             (TcpListener server, int listenPort) = StartServer(new IPAddress(d.IpAddress));
                             sock.SendTo(BitConverter.GetBytes(listenPort), groupEP);
-                            new Thread(() => { Server(server); }).Start();
+                            new Thread(() => { Server(server, target_ip); }).Start();
                         }
                         else
                         {
@@ -337,6 +449,7 @@ namespace Ass_Pain
                             int sendPort = BitConverter.ToInt32(buffer);
                             new Thread(() => { Client(((IPEndPoint)groupEP).Address, sendPort); }).Start();
                         }
+                        return;
                     }
                 }
             }
