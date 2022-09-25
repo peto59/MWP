@@ -5,3 +5,7 @@ Uprav NetworkManager file receive na viacero autorov
 Proccess multiple broadcast replies
 
 Add way to show images on authors
+
+fix permission wait
+
+Application.Context.GetExternalFilesDir(null).AbsolutePath

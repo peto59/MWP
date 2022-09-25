@@ -64,17 +64,6 @@ namespace Ass_Pain
             //aTimer.Enabled = true;
 
             Thread.Sleep(1500);
-            Console.WriteLine(Android.OS.Environment.ExternalStorageDirectory);
-            var status = await Permissions.RequestAsync<Permissions.StorageRead>();
-            Console.WriteLine(status);
-            status = await Permissions.RequestAsync<Permissions.StorageWrite>();
-            Console.WriteLine(status);
-            var mp3Files = Directory.EnumerateFiles(Android.OS.Environment.GetExternalStoragePublicDirectory(null).AbsolutePath, "*.mp3", SearchOption.AllDirectories);
-            foreach (string currentFile in mp3Files)
-            {
-                Console.WriteLine(currentFile);
-            }
-            Console.WriteLine("files emd");
             SendBroadcast();
 
             Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -335,8 +324,8 @@ namespace Ass_Pain
                         break;
                     case 30: //file
                         int i = FileManager.GetAvailableFile("receive");
-                        string root = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-                        string path = $"{root}/tmp/receive{i}.mp3";
+                        string musicPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+                        string path = $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/tmp/receive{i}.mp3";
                         byte[] recFileLength = new byte[8];
                         networkStream.Read(recFileLength, 0, 8);
                         Int64 fileLength = BitConverter.ToInt64(recFileLength, 0);
@@ -370,10 +359,10 @@ namespace Ass_Pain
                         string unAlbum = FileManager.GetSongAlbum(path);
                         if(unAlbum == null)
                         {
-                            Directory.CreateDirectory($"{root}/music/{artist}");
-                            if (!File.Exists($"{root}/music/{artist}/{name}.mp3"))
+                            Directory.CreateDirectory($"{musicPath}/{artist}");
+                            if (!File.Exists($"{musicPath}/{artist}/{name}.mp3"))
                             {
-                                File.Move(path, $"{root}/music/{artist}/{name}.mp3");
+                                File.Move(path, $"{musicPath}/{artist}/{name}.mp3");
                             }
                             else
                             {
@@ -383,10 +372,10 @@ namespace Ass_Pain
                         else
                         {
                             string album = FileManager.Sanitize(unAlbum);
-                            Directory.CreateDirectory($"{root}/music/{artist}/{album}");
-                            if (!File.Exists($"{root}/music/{artist}/{album}/{name}.mp3"))
+                            Directory.CreateDirectory($"{musicPath}/{artist}/{album}");
+                            if (!File.Exists($"{musicPath}/{artist}/{album}/{name}.mp3"))
                             {
-                                File.Move(path, $"{root}/music/{artist}/{album}/{name}.mp3");
+                                File.Move(path, $"{musicPath}/{artist}/{album}/{name}.mp3");
                             }
                             else
                             {

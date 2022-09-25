@@ -62,26 +62,24 @@ namespace Ass_Pain
 
             side_player.populate_side_bar(this);
 
-            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            if (!Directory.Exists($"{path}/music"))
+
+            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+            if (!Directory.Exists(path))
             {
-                Console.WriteLine("Creating " + $"{path}/music");
-                Directory.CreateDirectory($"{path}/music");
+                Console.WriteLine("Creating " + $"{path}");
+                Directory.CreateDirectory(path);
             }
 
-            if (!Directory.Exists($"{path}/tmp"))
+            string privatePath = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            if (!Directory.Exists($"{privatePath}/tmp"))
             {
-                Console.WriteLine("Creating " + $"{path}/tmp");
-                Directory.CreateDirectory($"{path}/tmp");
+                Console.WriteLine("Creating " + $"{privatePath}/tmp");
+                Directory.CreateDirectory($"{privatePath}/tmp");
             }
 
             if (!File.Exists($"{path}/aliases.json"))
             {
-                var x = new Dictionary<string, string>
-                {
-                    { "IRyS Ch. hololive-EN", "IRyS - Topic" }
-                };
-                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(x));
+                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
 
             }
 
@@ -89,6 +87,8 @@ namespace Ass_Pain
             {
                 File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
+
+            
             string[] PermissionsLocation =
             {
                 Android.Manifest.Permission.ManageExternalStorage,
@@ -112,6 +112,8 @@ namespace Ass_Pain
 
             NetworkManager nm = new NetworkManager();
             new Thread(() => { nm.Listener(); }).Start();
+
+            FileManager.DiscoverFiles();
         }
 
         public override void OnBackPressed()

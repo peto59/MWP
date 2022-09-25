@@ -61,6 +61,7 @@ namespace Ass_Pain
         public static async void DownloadVideo(object sender, EventArgs e, string url, int i)
         {
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            string musicPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
 
             string dest = $"{path}/tmp/video{i}.mp3";
 
@@ -78,9 +79,9 @@ namespace Ass_Pain
             string author = FileManager.Sanitize(video.Author.ChannelTitle);
             author = FileManager.GetAlias(author);
 
-            Directory.CreateDirectory($"{path}/music/{author}");
+            Directory.CreateDirectory($"{musicPath}/{author}");
 
-            string output = $"{path}/music/{author}/{file_name}.mp3";
+            string output = $"{musicPath}/{author}/{file_name}.mp3";
 
             await GetImage(i, video.Id);
 
@@ -115,6 +116,7 @@ namespace Ass_Pain
         public static async void DownloadVideo(object sender, EventArgs e, string url, string album, int i)
         {
             string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            string musicPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
 
             string dest = $"{path}/tmp/video{i}.mp3";
 
@@ -134,9 +136,9 @@ namespace Ass_Pain
 
             string album_name = FileManager.Sanitize(album);
 
-            Directory.CreateDirectory($"{path}/music/{author}/{album_name}");
+            Directory.CreateDirectory($"{musicPath}/{author}/{album_name}");
 
-            string output = $"{path}/music/{author}/{album_name}/{file_name}.mp3";
+            string output = $"{musicPath}/{author}/{album_name}/{file_name}.mp3";
 
             await GetImage(i, video.Id);
 
