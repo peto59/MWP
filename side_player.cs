@@ -120,13 +120,13 @@ namespace Ass_Pain
             {
                 MainActivity.player.Stop(sender, e);
                 play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
-                is_playing = false;
+                is_playing = true;
             }
             else
             {
                 MainActivity.player.Resume(sender, e);
                 play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
-                is_playing = true;
+                is_playing = false;
             }
         }
 

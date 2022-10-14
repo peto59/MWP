@@ -41,6 +41,9 @@ namespace Ass_Pain
             //stop.Click += nm.WifiTest;
             stop.Click += player.Resume;
 
+            side_player.populate_side_bar(this);
+            player.SetView(this);
+
             Android.Widget.Button download = FindViewById<Android.Widget.Button>(Resource.Id.download);
             download.Click += (sender, ea) =>
             {
@@ -113,11 +116,13 @@ namespace Ass_Pain
             else if (id == Resource.Id.nav_gallery) // equalizer
             {
                 Intent intent = new Intent(this, typeof(equalizer));
+                intent.PutExtra("link_author", "");
                 StartActivity(intent);
             }
             else if (id == Resource.Id.nav_slideshow) // youtube
             {
                 Intent intent = new Intent(this, typeof(youtube));
+                intent.PutExtra("link_author", "");
                 StartActivity(intent);
             }
 
