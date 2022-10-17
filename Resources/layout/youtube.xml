@@ -9,36 +9,33 @@
 
     
 
-    <TextView
-        android:id="@+id/text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="Start!" />
-    <Button
-        android:text="start"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/text"
-        android:id="@+id/start" />
-    <Button
-        android:text="stop"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/start"
-        android:id="@+id/stop" />
-    <WebView
-        android:id="@+id/webview"
-        android:layout_width="386.0dp"
-        android:layout_height="280.0dp"/>
-    <Button
-        android:text="Download"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/stop"
-        android:id="@+id/download" />
+    
+        <WebView
+            android:id="@+id/webview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+   
 
+         <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:layout_margin="20dp"
+                app:srcCompat="@android:drawable/ic_dialog_email" 
+         />
 
+        <Button
+            android:text="Download"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
 
+            android:layout_marginRight="5dp"
+            android:layout_marginBottom="20dp"
+        
+            android:layout_toLeftOf="@id/fab"
+            android:id="@+id/download" />
 </RelativeLayout>
   

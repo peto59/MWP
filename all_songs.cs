@@ -82,6 +82,8 @@ namespace Ass_Pain
             side_player.populate_side_bar(this);
             player.SetView(this);
 
+            accept_songs.wake_drag_button(this, Resource.Id.main_rel_l);
+
             // -=-=-=-=-=
             set_buttons_color(Resource.Id.author);
             set_buttons_color(Resource.Id.all_songs);
@@ -239,13 +241,16 @@ namespace Ass_Pain
 
             LinearLayout.LayoutParams ln_name_params = new LinearLayout.LayoutParams(
               (int)(130 * scale + 0.5f),
-              LinearLayout.LayoutParams.MatchParent
+              LinearLayout.LayoutParams.WrapContent
             );
             ln_name_params.SetMargins(name_margins[0], name_margins[1], name_margins[2], name_margins[3]);
 
             name.LayoutParameters = ln_name_params;
 
+            parent.SetGravity(GravityFlags.Center);
+            parent.SetHorizontalGravity(GravityFlags.Center);
             parent.AddView(name);
+            
 
         }
 
@@ -316,8 +321,8 @@ namespace Ass_Pain
                     break;
             }
 
-            
 
+            ln_in.SetHorizontalGravity(GravityFlags.Center);
             return ln_in;
         }
 
@@ -336,14 +341,18 @@ namespace Ass_Pain
             var albums = FileManager.GetAlbums();
 
             int[] button_margins = { 50, 50, 50, 0 };
-            int[] name_margins = { 50, 0, 50, 50 };
+            int[] name_margins = { 50, 50, 50, 50 };
             int[] card_margins = { 40, 50, 0, 0 };
 
             Parallel.For(0, albums.Count, i =>
             {
 
                 LinearLayout ln_in = pupulate_songs(albums[i], scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "album", i);
-                song_tiles_image_set(ln_in, albums[i], scale, 150, 100, button_margins, "album", 15, name_margins);
+                song_tiles_image_set(
+                    ln_in, albums[i], scale, 150, 100, 
+                    button_margins, "album", 15, 
+                    name_margins
+                );
 
                 //全部加える
                 lin.AddView(ln_in);
@@ -361,25 +370,28 @@ namespace Ass_Pain
        
         public LinearLayout author_tiles(float scale)
         {
-
             LinearLayout lin = new LinearLayout(this);
             lin.Orientation = Orientation.Vertical;
             LinearLayout.LayoutParams lin_params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WrapContent,
-                    LinearLayout.LayoutParams.WrapContent
-                );
+                LinearLayout.LayoutParams.WrapContent,
+                LinearLayout.LayoutParams.WrapContent
+            );
             lin.LayoutParameters = lin_params;
 
             var authors = FileManager.GetAuthors();
 
             int[] button_margins = { 50, 50, 50, 0 };
-            int[] name_margins = { 50, 0, 50, 50 };
+            int[] name_margins = { 50, 50, 50, 50 };
             int[] card_margins = { 50, 50, 0, 0 };
 
             Parallel.For(0, authors.Count, i =>
             {
                 LinearLayout ln_in = pupulate_songs(authors[i], scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "author", i);
-
+                song_tiles_image_set(
+                    ln_in, authors[i], scale, 150, 100,
+                    button_margins, "song", 17,
+                    name_margins
+                );
                 //全部加える
                 lin.AddView(ln_in);
             });
@@ -851,6 +863,11 @@ namespace Ass_Pain
                                 17,
                                 "song", i, ln_main
                             );
+                            song_tiles_image_set(
+                                ln_in, album_songs[i], scale, 150, 100,
+                                button_margins, "song", 17,
+                                name_margins
+                            );
                             ln_main.AddView(ln_in);
                         });
                         
@@ -1026,7 +1043,7 @@ namespace Ass_Pain
 
 
                     int[] all_songs_button_margins = { 50, 50, 50, 50 };
-                    int[] all_songs_name_margins = { 50, 0, 50, 50 };
+                    int[] all_songs_name_margins = { 50, 50, 50, 50 };
                     int[] all_songs_card_margins = { 0, 50, 0, 0 };
 
 
@@ -1051,7 +1068,7 @@ namespace Ass_Pain
 
                     for (var i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
                     {
-                        song_tiles_image_set(lazy_buffer[i].Item1, list_songs[i], scale, 150, 100, all_songs_button_margins, "song", 15, all_songs_name_margins);
+                        song_tiles_image_set(lazy_buffer[i].Item1, list_songs[lazy_buffer[i].Item2], scale, 150, 100, all_songs_button_margins, "song", 15, all_songs_name_margins);
                         all_songs_ln_main.AddView(lazy_buffer[i].Item1);
                         lazy_buffer.RemoveAt(i);
                     }
@@ -1071,7 +1088,7 @@ namespace Ass_Pain
 
                             for (var i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
                             {
-                                song_tiles_image_set(lazy_buffer[i].Item1, list_songs[i], scale, 150, 100, all_songs_button_margins, "song", 17, all_songs_name_margins);
+                                song_tiles_image_set(lazy_buffer[i].Item1, list_songs[lazy_buffer[i].Item2], scale, 150, 100, all_songs_button_margins, "song", 17, all_songs_name_margins);
                                 all_songs_ln_main.AddView(lazy_buffer[i].Item1);
                                 lazy_buffer.RemoveAt(i);
                                
@@ -1212,7 +1229,7 @@ namespace Ass_Pain
 
                     var plyalist_songs = FileManager.GetPlaylist(path_for_01);
 
-                    Parallel.For(0, plyalist_songs.Count, i =>
+                    for (var i = 0; i < plyalist_songs.Count; i++)
                     {
 
                         if (FileManager.GetSongTitle(plyalist_songs[i]) != "cant get title")
@@ -1224,6 +1241,11 @@ namespace Ass_Pain
                                 17,
                                 "song", i, in_playlist_ln_main
                             );
+                            song_tiles_image_set(
+                                ln_in, plyalist_songs[i], scale, 150, 100, 
+                                in_playlist_button_margins, "song", 17, 
+                                in_playlist_name_margins
+                            );
                             in_playlist_ln_main.AddView(ln_in);
                         }
                         else
@@ -1232,7 +1254,7 @@ namespace Ass_Pain
                             Console.WriteLine("deleted ddded");
                             populate_grid(2.0f);
                         }
-                    });
+                    }
                    
 
                     in_playlist_scroll.AddView(in_playlist_ln_main);

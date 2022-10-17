@@ -82,10 +82,10 @@ namespace Ass_Pain
                         (int)(30 * scale + 0.5f),
                         (int)(30 * scale + 0.5f)
                     );
-                    small_cube_params.SetMargins(
+                    small_cube_params.SetMargins (
                        (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f), // left, top
                        (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f) // right, bottom
-                   );
+                    );
 
                     cube.LayoutParameters = small_cube_params;
                     cube.Orientation = Android.Widget.Orientation.Horizontal;
