@@ -66,9 +66,10 @@ namespace Ass_Pain
         {
             try
             {
-                if(player.CurrentPosition< 10000)
+                if(player.CurrentPosition > 10000)
                 {
                     player.SeekTo(0);
+                    return;
                 }
                 if (used)
                 {

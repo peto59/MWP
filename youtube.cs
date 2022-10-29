@@ -23,7 +23,7 @@ namespace Ass_Pain
         DrawerLayout drawer;
         WebView web_view;
 
-        Slovenska_prostituka player = MainActivity.player;
+        //Slovenska_prostituka player = MainActivity.player;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -39,7 +39,7 @@ namespace Ass_Pain
             Android.Widget.Button stop = FindViewById<Android.Widget.Button>(Resource.Id.stop);
             //NetworkManager nm = new NetworkManager();
             //stop.Click += nm.WifiTest;
-            stop.Click += player.Resume;
+            //stop.Click += player.Resume;
 
             Android.Widget.Button download = FindViewById<Android.Widget.Button>(Resource.Id.download);
             download.Click += (sender, ea) =>

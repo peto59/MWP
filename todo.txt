@@ -6,6 +6,30 @@ Proccess multiple broadcast replies
 
 Add way to show images on authors
 
-fix permission wait
+fix storage permission wait
 
 Application.Context.GetExternalFilesDir(null).AbsolutePath
+
+add option to disable broadcast and listener on unknown networks
+check for wifi on both sending and receiving broadcast (Thread.Sleep I guess)
+
+network manager case 20 sending paths not names
+
+remove chaos.nacl
+
+add be able to send files of length of int64
+try to merge encryptor and decryptor
+
+add xml configuration and configurator class
+
+windows DoesKeyExists close key
+
+enable timer on listener in network manager
+
+filemanager getAlbums Directory.EnumerateDirectories(author).toList()
+
+fix file discovery
+
+Downloader.cs searchAPI add confirmation for user
+
+youtube.cs navigate back button

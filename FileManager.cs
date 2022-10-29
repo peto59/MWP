@@ -14,15 +14,18 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+//using static Android.Provider.MediaStore.Audio;
 
 namespace Ass_Pain
 {
     internal static class FileManager
     {
         static string root = (string)Android.OS.Environment.ExternalStorageDirectory;
+        static string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
         static string music_folder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
         public static void DiscoverFiles(string path = null)
         {
+            return;
             if(path == null)
             {
                 path = root;
@@ -100,16 +103,18 @@ namespace Ass_Pain
                     Console.WriteLine(ex);
                 }
             }
+            //GetSongTitle(GetSongs());
         }
         public static List<string> GetAuthors()
         {
-            List<string> authors = new List<string>();
+            return Directory.EnumerateDirectories(music_folder).ToList();
+            /*List<string> authors = new List<string>();
             foreach (string author in Directory.EnumerateDirectories(music_folder))
             {
                 Console.WriteLine(author);
                 authors.Add(author);
             }
-            return authors;
+            return authors;*/
         }
 
         ///<summary>
@@ -121,11 +126,12 @@ namespace Ass_Pain
 
             foreach (string author in Directory.EnumerateDirectories(music_folder))
             {
-                foreach (string album in Directory.EnumerateDirectories(author))
+                albums.AddRange(Directory.EnumerateDirectories(author));
+                /*foreach (string album in Directory.EnumerateDirectories(author))
                 {
                     Console.WriteLine(album);
                     albums.Add(album);
-                }
+                }*/
             }
             return albums;
         }
@@ -175,14 +181,15 @@ namespace Ass_Pain
         ///</summary>
         public static List<string> GetSongs()
         {
-            var mp3Files = Directory.EnumerateFiles(music_folder, "*.mp3", SearchOption.AllDirectories);
+            return Directory.EnumerateFiles(music_folder, "*.mp3", SearchOption.AllDirectories).ToList();
+            /*var mp3Files = Directory.EnumerateFiles(music_folder, "*.mp3", SearchOption.AllDirectories);
             List<string> songs = new List<string>();
             foreach (string currentFile in mp3Files)
             {
                 Console.WriteLine(currentFile);
                 songs.Add(currentFile);
             }
-            return songs;
+            return songs;*/
         }
 
         ///<summary>
@@ -443,7 +450,6 @@ namespace Ass_Pain
         public static int GetAvailableFile(string name = "video")
         {
             int i = 0;
-            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             while (File.Exists($"{path}/tmp/{name}{i}.mp3"))
             {
                 i++;
@@ -451,6 +457,11 @@ namespace Ass_Pain
             string dest = $"{path}/tmp/{name}{i}.mp3";
             File.Create(dest).Close();
             return i;
+        }
+
+        public static void GetPlaceholderFile(string writePath, string name, string extension)
+        {
+            File.Create($"{writePath}/{name}.{extension}").Close();
         }
 
         ///<summary>
@@ -477,23 +488,45 @@ namespace Ass_Pain
             }
             return new List<string>();
         }
-        public static void AddSyncTarget(IPAddress host)
+        public static void AddSyncTarget(string host)
         {
-            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            
             string json = File.ReadAllText($"{path}/sync_targets.json");
-            Dictionary<IPAddress, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<IPAddress, List<string>>>(json);
+            Dictionary<string, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             targets.Add(host, GetSongs());
+            File.WriteAllTextAsync($"{path}/sync_targets.json", JsonConvert.SerializeObject(targets));
         }
-        public static List<string> GetSyncSongs(IPAddress host)
+
+        public static void AddTrustedHost(string host)
         {
-            string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+
+            string json = File.ReadAllText($"{path}/trusted_hosts.json");
+            List<string> hosts = JsonConvert.DeserializeObject<List<string>>(json);
+            hosts.Add(host);
+            File.WriteAllTextAsync($"{path}/trusted_hosts.json", JsonConvert.SerializeObject(hosts));
+        }
+
+        public static bool GetTrustedHost(string host)
+        {
+
+            string json = File.ReadAllText($"{path}/trusted_hosts.json");
+            List<string> hosts = JsonConvert.DeserializeObject<List<string>>(json);
+            if (hosts.Contains(host))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static (bool, List<string>) GetSyncSongs(string host)
+        {
             string json = File.ReadAllText($"{path}/sync_targets.json");
-            Dictionary<IPAddress, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<IPAddress, List<string>>>(json);
+            Dictionary<string, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             if (targets.ContainsKey(host))
             {
-                return targets[host];
+                return (true, targets[host]);
             }
-            return new List<string>();
+            return (false, null);
         }
     }
 }

@@ -27,13 +27,16 @@ using Android.Annotation;
 using Java.Nio;
 using Android.Bluetooth;
 using Org.Apache.Http.Authentication;
-using CliWrap;
 using static Android.Provider.DocumentsContract;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.Xml.Serialization;
 //using Android.Net;
 
 namespace Ass_Pain
 {
-    internal class NetworkManager
+    public class NetworkManager
     {
         static Android.Net.Wifi.WifiManager wifiManager = (Android.Net.Wifi.WifiManager)Application.Context.GetSystemService(Service.WifiService);
 
@@ -52,7 +55,7 @@ namespace Ass_Pain
             return new IPAddress(broadcastIPBytes);
         }
 
-        public async void Listener()
+        public void Listener()
         {
             System.Timers.Timer aTimer = new System.Timers.Timer();
             aTimer.Interval = 20000;
@@ -62,8 +65,7 @@ namespace Ass_Pain
             aTimer.AutoReset = true;
 
             //aTimer.Enabled = true;
-
-            Thread.Sleep(1500);
+            Thread.Sleep(5000);
             SendBroadcast();
 
             Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -75,7 +77,13 @@ namespace Ass_Pain
 
             try
             {
-                while (true)
+                Start:
+                if (new IPAddress(d.IpAddress).ToString() == "0.0.0.0")
+                {
+                    Thread.Sleep(20000);
+                }
+
+                while (new IPAddress(d.IpAddress).ToString() != "0.0.0.0")
                 {
                     Console.WriteLine("Waiting for broadcast");
                     sock.ReceiveFrom(buffer, ref groupEP);
@@ -104,10 +112,8 @@ namespace Ass_Pain
                     connected.Add(target_ip);
 
                     P2PDecide(groupEP, target_ip, sock);
-
-
-
                 }
+                goto Start;
             }
             catch (SocketException e)
             {
@@ -222,7 +228,7 @@ namespace Ass_Pain
                     {
                         case "autosync":
                             //ZABALIT POSIELANIE SUBOROV DO TRY KVOLI RANDOM DISCONNECTOM
-                            FileManager.AddSyncTarget(((IPEndPoint)client.Client.RemoteEndPoint).Address);
+                            //FileManager.AddSyncTarget("");
                             break;
                         case "file":
 
@@ -259,53 +265,78 @@ namespace Ass_Pain
             server.Stop();
         }
 
-        private void Client(IPAddress server, int port)
+        private async Task Client(IPAddress server, int port)
         {
             Console.WriteLine($"Connecting to: {server}:{port}");
             TcpClient client = new TcpClient(server.ToString(), port);
             NetworkStream networkStream = client.GetStream();
-            string remoteHostname = String.Empty;
             int command = 0;
-            byte[] recCommand = new byte[4];
-            byte[] sendCommand = new byte[4];
-            byte[] recLength = new byte[4];
+            byte[] recCommand = new byte[256];
+            byte[] sendCommand = new byte[256];
+            byte[] recLength = new byte[256];
+            byte[] sendLength = new byte[256];
             int length = 0;
             bool ending = false;
-            bool fileToSend = false;
+            string remoteHostname = String.Empty;
+            bool canSend = false;
+            bool encrypted = false;
+
+            RSACryptoServiceProvider encryptor = new RSACryptoServiceProvider();
+            RSACryptoServiceProvider decryptor = new RSACryptoServiceProvider();
+            Aes aes = Aes.Create();
+
+            List<string> files = new List<string>();
+            List<string> sent = new List<string>();
+
+            byte[] host = Encoding.UTF8.GetBytes(DeviceInfo.Name);
+            networkStream.Write(BitConverter.GetBytes(10), 0, 4);
+            networkStream.Write(BitConverter.GetBytes(host.Length), 0, 4);
+            networkStream.Write(host, 0, host.Length);
+
             while (true)
             {
-                
+                Thread.Sleep(50);
+
                 if (networkStream.DataAvailable)
                 {
-                    networkStream.Read(recCommand, 0, 4);
-                    command = BitConverter.ToInt32(recCommand, 0);
-                }
-                else
-                {
-                    command = 0;
+                    if (encrypted)
+                    {
+                        networkStream.Read(recCommand, 0, 256);
+                        command = BitConverter.ToInt32(decryptor.Decrypt(recCommand, true), 0);
+                    }
+                    else
+                    {
+                        networkStream.Read(recCommand, 0, 4);
+                        command = BitConverter.ToInt32(recCommand, 0);
+                    }
                 }
                 Console.WriteLine("Received command: {0}", command);
-                if (fileToSend)
+                if (files.Count > 0)
                 {
 
                 }
-                else if (ending)
+                else if (ending && !networkStream.DataAvailable)
                 {
                     sendCommand = BitConverter.GetBytes(100);
+                    sendCommand = encryptor.Encrypt(sendCommand, true);
                     networkStream.Write(sendCommand, 0, sendCommand.Length);
                     Console.WriteLine("send end");
                 }
                 else
                 {
-                    try
+                    if (command != 10)
                     {
-                        sendCommand = BitConverter.GetBytes(0);
-                        networkStream.Write(sendCommand, 0, sendCommand.Length);
-                    }
-                    catch
-                    {
-                        Console.WriteLine("shut");
-                        Thread.Sleep(100);
+                        try
+                        {
+                            sendCommand = BitConverter.GetBytes(0);
+                            sendCommand = encryptor.Encrypt(sendCommand, true);
+                            networkStream.Write(sendCommand, 0, sendCommand.Length);
+                        }
+                        catch
+                        {
+                            Console.WriteLine("shut");
+                            Thread.Sleep(100);
+                        }
                     }
                 }
                 switch (command)
@@ -317,42 +348,236 @@ namespace Ass_Pain
                         networkStream.Read(data, 0, length);
                         remoteHostname = Encoding.UTF8.GetString(data, 0, length);
                         Console.WriteLine($"hostname {remoteHostname}");
-                        ending = true;
+                        //SecureStorage.RemoveAll();
+                        //add some statement to retrieve existing key;
+                        string storedPrivKey, storedPubKey;
+                        try
+                        {
+                            storedPrivKey = await SecureStorage.GetAsync($"{remoteHostname}_privkey");
+                            storedPubKey = await SecureStorage.GetAsync($"{remoteHostname}_pubkey");
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception("You're fucked, boy. Go buy something else than Nokia 3310");
+                        }
+                        if (storedPrivKey != null && storedPubKey != null)
+                        {
+                            encryptor.FromXmlString(storedPubKey);
+                            decryptor.FromXmlString(storedPrivKey);
+                        }
+                        else
+                        {
+                            Console.WriteLine("generating keys");
+                            (string pubKeyString, RSAParameters privKey) = CreateKeyPair();
+                            networkStream.Write(BitConverter.GetBytes(11), 0, 4);
+                            data = Encoding.UTF8.GetBytes(pubKeyString);
+                            networkStream.Write(BitConverter.GetBytes(data.Length), 0, 4);
+                            networkStream.Write(data, 0, data.Length);
+
+                            while (!networkStream.DataAvailable)
+                            {
+                                Thread.Sleep(10);
+                            }
+
+                            networkStream.Read(recCommand, 0, 4);
+                            command = BitConverter.ToInt32(recCommand);
+                            Console.WriteLine($"command for enc {command}");
+                            if (command != 11)
+                            {
+                                throw new Exception("wrong order to establish cypher");
+                            }
+                            networkStream.Read(recLength, 0, 4);
+                            length = BitConverter.ToInt32(recLength, 0);
+                            data = new byte[length];
+                            //networkStream.Read(data, 0, length);
+                            Console.WriteLine($"Read {networkStream.Read(data, 0, length)}");
+                            decryptor.ImportParameters(privKey);
+                            pubKeyString = Encoding.UTF8.GetString(data, 0, length);
+                            encryptor.FromXmlString(pubKeyString);
+
+                            //store private and public key for later use
+                            SecureStorage.SetAsync($"{remoteHostname}_privkey", decryptor.ToXmlString(true)).Wait();
+                            SecureStorage.SetAsync($"{remoteHostname}_pubkey", pubKeyString).Wait();
+                        }
+                        //Console.WriteLine($"{decryptor.ToXmlString(true)}\n{encryptor.ToXmlString(false)}");
+                        Console.WriteLine("1");
+                        while (!networkStream.DataAvailable)
+                        {
+                            Console.WriteLine("wt");
+                            Thread.Sleep(10);
+                        }
+                        Console.WriteLine("2");
+                        networkStream.Read(recCommand, 0, 256);
+                        Console.WriteLine("21");
+                        var a = decryptor.Decrypt(recCommand, true);
+                        Console.WriteLine("22");
+                        command = BitConverter.ToInt32(a, 0);
+                        Console.WriteLine($"command for AES {command}");
+                        Console.WriteLine("23");
+                        if (command != 12)
+                        {
+                            throw new Exception("wrong order to establish cypher AES");
+                        }
+                        Console.WriteLine("3");
+                        aes.KeySize = 256;
+                        Console.WriteLine("waiting");
+                        while (!networkStream.DataAvailable)
+                        {
+                            Console.WriteLine("wt2");
+                            Thread.Sleep(10);
+                        }
+                        networkStream.Read(recLength, 0, 256);
+                        aes.Key = decryptor.Decrypt(recLength, true);
+
+                        sendCommand = BitConverter.GetBytes(13);
+                        sendCommand = encryptor.Encrypt(sendCommand, true);
+                        networkStream.Write(sendCommand, 0, sendCommand.Length);
+
+                        encrypted = true;
+                        Console.WriteLine("ecnrypted");
+
+                        (bool exists, List<string> songs) = FileManager.GetSyncSongs(remoteHostname);
+                        if (exists)
+                        {
+                            if(songs.Count > 0)
+                            {
+                                files = songs;
+                            }
+                            else
+                            {
+                                ending = true;
+                            }
+                        }
+                        else
+                        {
+                            ending = true;
+                        }
                         break;
-                    case 20: //autosync
-                        //FileManager.AddSyncTarget(remoteHostname);
+                    case 20: //sync
+                        if (FileManager.GetTrustedHost(remoteHostname))
+                        {
+                            sendCommand = BitConverter.GetBytes(21);
+                            sendCommand = encryptor.Encrypt(sendCommand, true);
+                            networkStream.Write(sendCommand, 0, sendCommand.Length);
+                        }
+                        else
+                        {
+                            sendCommand = BitConverter.GetBytes(22);
+                            sendCommand = encryptor.Encrypt(sendCommand, true);
+                            networkStream.Write(sendCommand, 0, sendCommand.Length);
+
+                            while (!networkStream.DataAvailable)
+                            {
+                                Thread.Sleep(10);
+                            }
+                            byte[] ivBuffer;
+                            do
+                            {
+                                networkStream.Read(recLength, 0, 256);
+                                ivBuffer = decryptor.Decrypt(recLength, true);
+                            } while (ivBuffer.Length == 4);
+                            Console.WriteLine($"length IV {ivBuffer.Length}");
+                            aes.IV = ivBuffer;
+
+
+                            while (!networkStream.DataAvailable)
+                            {
+                                Thread.Sleep(10);
+                            }
+
+                            networkStream.Read(recLength, 0, 256);
+                            length = BitConverter.ToInt32(decryptor.Decrypt(recLength, true), 0);
+
+                            byte[] recList = new byte[length];
+
+
+                            while (!networkStream.DataAvailable)
+                            {
+                                Thread.Sleep(10);
+                            }
+                            networkStream.Read(recList, 0, length);
+
+                            byte[] decBuffer = new byte[length];
+                            using (MemoryStream msDecrypt = new MemoryStream(recList))
+                            {
+                                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aes.CreateDecryptor(), CryptoStreamMode.Read))
+                                {
+                                    csDecrypt.Read(decBuffer, 0, length);
+                                }
+                            }
+                            string json = Encoding.UTF8.GetString(decBuffer);
+
+                            
+                            Console.WriteLine(json);
+                            List<string> recSongs = JsonConvert.DeserializeObject<List<string>>(json);
+                            bool x = false;
+                            foreach(string s in recSongs)
+                            {
+                                Console.WriteLine(s);
+                            }
+                            x = true;
+                            if (x) //present some form of user check if they really want to receive files
+                            {
+                                sendCommand = BitConverter.GetBytes(21);
+                                sendCommand = encryptor.Encrypt(sendCommand, true);
+                                networkStream.Write(sendCommand, 0, sendCommand.Length);
+                                FileManager.AddTrustedHost(remoteHostname);
+                            }
+                            else
+                            {
+                                sendCommand = BitConverter.GetBytes(23);
+                                sendCommand = encryptor.Encrypt(sendCommand, true);
+                                networkStream.Write(sendCommand, 0, sendCommand.Length);
+                            }
+                        }
                         break;
                     case 30: //file
                         int i = FileManager.GetAvailableFile("receive");
                         string musicPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
                         string path = $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/tmp/receive{i}.mp3";
-                        byte[] recFileLength = new byte[8];
-                        networkStream.Read(recFileLength, 0, 8);
-                        Int64 fileLength = BitConverter.ToInt64(recFileLength, 0);
+
+                        networkStream.Read(recLength, 0, 256);
+                        aes.IV = decryptor.Decrypt(recLength, true);
+
+                        byte[] recFileLength = new byte[256];
+                        networkStream.Read(recFileLength, 0, 256);
+                        //Console.WriteLine($"rec ;en {decryptor.Decrypt(recFileLength, true).Length}");
+                        Int64 fileLength = BitConverter.ToInt64(decryptor.Decrypt(recFileLength, true), 0);
                         if(fileLength > 4000000000){
                             throw new Exception("You can't receive files larger than 4GB on Android");
                         }
-                        int readLength = 0;
+                        int readLength;
                         Console.WriteLine($"File size {fileLength}");
-                        while (fileLength > 0)
+
+                        using(MemoryStream msDecrypt = new MemoryStream())
                         {
-                            if (fileLength > int.MaxValue)
+
+                            while (fileLength > 0)
                             {
-                                readLength = int.MaxValue;
-                            }
-                            else
-                            {
-                                readLength = Convert.ToInt32(fileLength);
-                            }
-                            byte[] file = new byte[readLength];
-                            int minus = networkStream.Read(file, 0, readLength);
-                            fileLength -= minus;
-                            using (var stream = new FileStream(path, FileMode.Append))
-                            {
+                                if (fileLength > int.MaxValue)
+                                {
+                                    readLength = int.MaxValue;
+                                }
+                                else
+                                {
+                                    readLength = Convert.ToInt32(fileLength);
+                                }
+                                byte[] file = new byte[readLength];
+                                int minus = networkStream.Read(file, 0, readLength);
+                                fileLength -= minus;
+                                msDecrypt.Write(file, 0, minus);
                                 Console.WriteLine($"Writing {minus} bytes");
-                                stream.Write(file, 0, minus);
+                            }
+                            msDecrypt.Position = 0;
+                            using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aes.CreateDecryptor(), CryptoStreamMode.Read))
+                            {
+                                using (var stream = new FileStream(path, FileMode.Append))
+                                {
+                                    csDecrypt.CopyTo(stream);
+                                }
                             }
                         }
+
 
                         string name = FileManager.Sanitize(FileManager.GetSongTitle(path));
                         string artist = FileManager.GetAlias(FileManager.Sanitize(FileManager.GetSongArtist(path)[0]));
@@ -384,11 +609,18 @@ namespace Ass_Pain
                         }
                         break;
                     case 100: //end
-                        byte[] message = BitConverter.GetBytes(100);
                         Console.WriteLine("got end");
+                        if (files.Count > 0)//if work to do
+                        {
+                            Console.WriteLine("Still work to do");
+                            continue;
+                        }
                         try
                         {
-                            networkStream.Write(message, 0, message.Length);
+                            sendCommand = BitConverter.GetBytes(100);
+                            sendCommand = encryptor.Encrypt(sendCommand, true);
+                            networkStream.Write(sendCommand, 0, sendCommand.Length);
+                            Thread.Sleep(100);
                         }
                         catch
                         {
@@ -406,6 +638,9 @@ namespace Ass_Pain
         End:
             // Close everything.
             Console.WriteLine("END");
+            encryptor.Dispose();
+            decryptor.Dispose();
+            aes.Dispose();
             networkStream.Close();
             client.Close();
             connected.Remove(server);
@@ -447,7 +682,7 @@ namespace Ass_Pain
                             Console.WriteLine("Client");
                             sock.ReceiveFrom(buffer, ref groupEP);
                             int sendPort = BitConverter.ToInt32(buffer);
-                            new Thread(() => { Client(((IPEndPoint)groupEP).Address, sendPort); }).Start();
+                            new Thread(() => { _ = Client(((IPEndPoint)groupEP).Address, sendPort); }).Start();
                         }
                         return;
                     }
@@ -475,6 +710,15 @@ namespace Ass_Pain
             }
             Console.WriteLine(listenPort);
             return (server, listenPort);
+        }
+
+        private (string pubKeyString, RSAParameters privKey) CreateKeyPair()
+        {
+            RSACryptoServiceProvider csp = new RSACryptoServiceProvider(2048);
+            string pubKey = csp.ToXmlString(false);
+            RSAParameters privKey = csp.ExportParameters(true);
+            csp.Dispose();
+            return (pubKey, privKey);
         }
     }
 }

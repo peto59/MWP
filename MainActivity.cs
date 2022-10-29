@@ -18,7 +18,6 @@ using Newtonsoft.Json;
 using AndroidX.AppCompat.Graphics.Drawable;
 using Android.Widget;
 using System.Threading;
-using Newtonsoft.Json;
 using System.Text.Json;
 using AngleSharp.Html;
 using System.Runtime.InteropServices;
@@ -32,6 +31,7 @@ namespace Ass_Pain
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         public static Slovenska_prostituka player = new Slovenska_prostituka();
+        public static NetworkManager nm = new NetworkManager();
 
         DrawerLayout drawer;
 
@@ -63,18 +63,29 @@ namespace Ass_Pain
             side_player.populate_side_bar(this);
 
 
+            string privatePath = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+
             if (!Directory.Exists(path))
             {
                 Console.WriteLine("Creating " + $"{path}");
                 Directory.CreateDirectory(path);
             }
 
-            string privatePath = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             if (!Directory.Exists($"{privatePath}/tmp"))
             {
                 Console.WriteLine("Creating " + $"{privatePath}/tmp");
                 Directory.CreateDirectory($"{privatePath}/tmp");
+            }
+
+            if (!File.Exists($"{privatePath}/trusted_hosts.json"))
+            {
+                File.WriteAllText($"{privatePath}/trusted_hosts.json", JsonConvert.SerializeObject(new List<string>()));
+            }
+
+            if (!File.Exists($"{privatePath}/sync_targets.json"))
+            {
+                File.WriteAllText($"{privatePath}/sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
 
             if (!File.Exists($"{path}/aliases.json"))
@@ -110,10 +121,9 @@ namespace Ass_Pain
             //Finally request permissions with the list of permissions and Id
             RequestPermissions(PermissionsLocation, RequestLocationId);
 
-            NetworkManager nm = new NetworkManager();
             new Thread(() => { nm.Listener(); }).Start();
-
-            FileManager.DiscoverFiles();
+            new Thread(() => { FileManager.DiscoverFiles(); }).Start();
+            
         }
 
         public override void OnBackPressed()

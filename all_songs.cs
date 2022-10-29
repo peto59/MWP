@@ -26,6 +26,8 @@ using Newtonsoft.Json;
 using System.Threading;
 using Org.Apache.Http.Authentication;
 using System.Threading.Tasks;
+using System.Diagnostics;
+
 
 namespace Ass_Pain
 {
@@ -46,7 +48,6 @@ namespace Ass_Pain
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
-
             base.OnCreate(savedInstanceState);
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_all_songs);
@@ -245,8 +246,6 @@ namespace Ass_Pain
                 }
 
             }
-
-
             mori.SetImageBitmap(
                 image
             ); 
@@ -951,7 +950,7 @@ namespace Ass_Pain
                         //</adam je kkt a jebal sa ti do kodu ale u neho fungoval>
 
                         // IRyS Ch. hololive-EN
-
+                        Console.WriteLine("test");
                         mori.SetImageBitmap(
                             image
                         );
@@ -1026,6 +1025,8 @@ namespace Ass_Pain
 
                     
                     var list_songs = FileManager.GetSongs();
+                    Stopwatch stopwatch = new Stopwatch();
+                    stopwatch.Start();
                     Parallel.For(0, list_songs.Count, i =>
                     {
                         
@@ -1036,12 +1037,15 @@ namespace Ass_Pain
                             17,
                             "song", i, all_songs_ln_main
                         );
+                        ln_in.ScrollChange += (s, e) => { };
                         all_songs_ln_main.AddView(ln_in);
 
 
                     });
-                   
-                    
+                    stopwatch.Stop();
+                    Console.WriteLine("Time elapsed: {0}", stopwatch.Elapsed);
+
+
                     all_songs_scroll.AddView(all_songs_ln_main);
                     main_rel_l.AddView(all_songs_scroll);
 
