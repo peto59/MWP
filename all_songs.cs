@@ -26,7 +26,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using Org.Apache.Http.Authentication;
 using System.Threading.Tasks;
-using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 
 namespace Ass_Pain
@@ -66,7 +66,7 @@ namespace Ass_Pain
             }
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, 
+                this,
                 drawer, 
                 toolbar, 
                 Resource.String.navigation_drawer_open,
@@ -81,6 +81,8 @@ namespace Ass_Pain
 
             side_player.populate_side_bar(this);
             player.SetView(this);
+
+            accept_songs.wake_drag_button(this, Resource.Id.main_rel_l);
 
             // -=-=-=-=-=
             set_buttons_color(Resource.Id.author);
@@ -132,6 +134,123 @@ namespace Ass_Pain
             authors.SetTextColor(Color.Black);
         }
 
+        
+        void song_tiles_image_set(LinearLayout parent, string song_path, float scale, int ww, int hh, int[] btn_margins, string album_song, int name_size, int[] name_margins)
+        {
+            ImageView mori = new ImageView(this);
+            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
+                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
+            );
+            ll.SetMargins(btn_margins[0], btn_margins[1], btn_margins[2], btn_margins[3]);
+            mori.LayoutParameters = ll;
+
+            //<adam je kkt a jebal sa ti do kodu ale u neho fungoval>
+            Bitmap image = null;
+            TagLib.File tagFile;
+
+            if (album_song == "album")
+            {
+                DirectoryInfo dir = new DirectoryInfo(song_path);
+                FileInfo[] files = dir.GetFiles("cover.*");
+                if (files.Length > 0)
+                {
+                    string validFileTypes = ".jpg,.png,.webm";
+                    Parallel.ForEach(files, (file, state) =>
+                    {
+                        if (validFileTypes.Contains(file.Extension))
+                        {
+                            image = BitmapFactory.DecodeStream(File.OpenRead(file.FullName)); // extracts image from cover.* in album dir
+                            state.Break();
+                        }
+
+                    });
+
+                }
+                if (image == null)
+                {
+                    Parallel.ForEach(FileManager.GetSongs(song_path), (song, state) =>
+                    {
+
+                        try
+                        {
+                            tagFile = TagLib.File.Create(
+                                song//extracts image from first song of album that contains embedded picture
+                            );
+                            MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+                            image = BitmapFactory.DecodeStream(ms);
+                            state.Break();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                            Console.WriteLine($"Doesnt contain image: {song}");
+                        }
+                    });
+
+                    if (image == null)
+                    {
+                        image = BitmapFactory.DecodeStream(Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
+                    }
+                }
+                //</adam je kkt a jebal sa ti do kodu ale u neho fungoval> 
+
+            }
+            else
+            {
+                Console.WriteLine(FileManager.GetSongTitle(song_path));
+
+                try
+                {
+                    tagFile = TagLib.File.Create(
+                        song_path //extracts image from first song of album that contains embedded picture
+                    );
+                    MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+                    image = BitmapFactory.DecodeStream(ms);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine($"Doesnt contain image: {song_path}");
+                }
+
+                if (image == null)
+                {
+                    image = BitmapFactory.DecodeStream(Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
+                }
+
+            }
+            mori.SetImageBitmap(
+                image
+            );
+
+            parent.AddView(mori);
+
+
+            //アルブムの名前
+            int h_name = (int)(42 * scale + 0.5f);
+
+            TextView name = new TextView(this);
+            name.Text = FileManager.GetNameFromPath(song_path);
+            name.TextSize = name_size;
+            name.SetTextColor(Color.White);
+            name.TextAlignment = TextAlignment.Center;
+            name.SetForegroundGravity(GravityFlags.Center);
+
+            LinearLayout.LayoutParams ln_name_params = new LinearLayout.LayoutParams(
+              (int)(130 * scale + 0.5f),
+              LinearLayout.LayoutParams.WrapContent
+            );
+            ln_name_params.SetMargins(name_margins[0], name_margins[1], name_margins[2], name_margins[3]);
+
+            name.LayoutParameters = ln_name_params;
+
+            parent.SetGravity(GravityFlags.Center);
+            parent.SetHorizontalGravity(GravityFlags.Center);
+            parent.AddView(name);
+            
+
+        }
 
         LinearLayout pupulate_songs(
             string song_path, float scale, bool ort, int ww, int hh, int[] btn_margins, int[] name_margins, int[] card_margins, int name_size, string album_song, int index,
@@ -162,94 +281,9 @@ namespace Ass_Pain
             int w = (int)(ww * scale + 0.5f);
             int h = (int)(hh * scale + 0.5f);
 
+           
 
-            ImageView mori = new ImageView(this);
-            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
-                w, h
-            );
-            ll.SetMargins(btn_margins[0], btn_margins[1], btn_margins[2], btn_margins[3]);
-            mori.LayoutParameters = ll;
 
-            //<adam je kkt a jebal sa ti do kodu ale u neho fungoval>
-            Bitmap image = null;
-            TagLib.File tagFile;
-
-            if (album_song == "album")
-            {
-                DirectoryInfo dir = new DirectoryInfo(song_path);
-                FileInfo[] files = dir.GetFiles("cover.*");
-                if (files.Length > 0)
-                {
-                    string validFileTypes = ".jpg,.png,.webm";
-                    Parallel.ForEach(files, (file, state) =>
-                    {
-                        if (validFileTypes.Contains(file.Extension))
-                        {
-                            image = BitmapFactory.DecodeStream(File.OpenRead(file.FullName)); // extracts image from cover.* in album dir
-                            state.Break();
-                        }
-
-                    });
-                  
-                }
-                if (image == null)
-                {
-                    Parallel.ForEach(FileManager.GetSongs(song_path), (song, state) =>
-                    {
-
-                        try
-                        {
-                            tagFile = TagLib.File.Create(
-                                song//extracts image from first song of album that contains embedded picture
-                            );
-                            MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
-                            image = BitmapFactory.DecodeStream(ms);
-                            state.Break();
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.Message);
-                            Console.WriteLine($"Doesnt contain image: {song}");
-                        }
-                    });
-                   
-                    if (image == null)
-                    {
-                        image = BitmapFactory.DecodeStream(Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
-                    }
-                }
-                //</adam je kkt a jebal sa ti do kodu ale u neho fungoval> 
-
-            }
-            else
-            {
-                Console.WriteLine(FileManager.GetSongTitle(song_path));
-            
-                try
-                {
-                    tagFile = TagLib.File.Create(
-                        song_path//extracts image from first song of album that contains embedded picture
-                    );
-                    MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
-                    image = BitmapFactory.DecodeStream(ms);
-            
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine($"Doesnt contain image: {song_path}");
-                }
-            
-                if (image == null)
-                {
-                    image = BitmapFactory.DecodeStream(Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
-                }
-
-            }
-            mori.SetImageBitmap(
-                image
-            ); 
-            
             switch (album_song)
             {
                 case "album":
@@ -286,34 +320,7 @@ namespace Ass_Pain
             }
 
 
-
-            ln_in.AddView(mori);
-
-
-
-            //アルブムの名前
-            int h_name = (int)(42 * scale + 0.5f);
-
-            TextView name = new TextView(this);
-            name.Text = FileManager.GetNameFromPath(song_path);
-            name.TextSize = name_size;
-            name.SetTextColor(Color.White);
-            name.TextAlignment = TextAlignment.Center;
-            name.SetForegroundGravity(GravityFlags.Center);
-
-            LinearLayout.LayoutParams ln_name_params = new LinearLayout.LayoutParams(
-              (int)(130 * scale + 0.5f),
-              h_name
-            );
-            ln_name_params.SetMargins(name_margins[0], name_margins[1], name_margins[2], name_margins[3]);
-            
-            name.LayoutParameters = ln_name_params;
-
-            ln_in.AddView(name);
-
-
-            
-
+            ln_in.SetHorizontalGravity(GravityFlags.Center);
             return ln_in;
         }
 
@@ -332,13 +339,18 @@ namespace Ass_Pain
             var albums = FileManager.GetAlbums();
 
             int[] button_margins = { 50, 50, 50, 0 };
-            int[] name_margins = { 50, 0, 50, 50 };
+            int[] name_margins = { 50, 50, 50, 50 };
             int[] card_margins = { 40, 50, 0, 0 };
 
             Parallel.For(0, albums.Count, i =>
             {
 
                 LinearLayout ln_in = pupulate_songs(albums[i], scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "album", i);
+                song_tiles_image_set(
+                    ln_in, albums[i], scale, 150, 100, 
+                    button_margins, "album", 15, 
+                    name_margins
+                );
 
                 //全部加える
                 lin.AddView(ln_in);
@@ -356,25 +368,28 @@ namespace Ass_Pain
        
         public LinearLayout author_tiles(float scale)
         {
-
             LinearLayout lin = new LinearLayout(this);
             lin.Orientation = Orientation.Vertical;
             LinearLayout.LayoutParams lin_params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WrapContent,
-                    LinearLayout.LayoutParams.WrapContent
-                );
+                LinearLayout.LayoutParams.WrapContent,
+                LinearLayout.LayoutParams.WrapContent
+            );
             lin.LayoutParameters = lin_params;
 
             var authors = FileManager.GetAuthors();
 
             int[] button_margins = { 50, 50, 50, 0 };
-            int[] name_margins = { 50, 0, 50, 50 };
+            int[] name_margins = { 50, 50, 50, 50 };
             int[] card_margins = { 50, 50, 0, 0 };
 
             Parallel.For(0, authors.Count, i =>
             {
                 LinearLayout ln_in = pupulate_songs(authors[i], scale, true, 130, 160, button_margins, name_margins, card_margins, 15, "author", i);
-
+                song_tiles_image_set(
+                    ln_in, authors[i], scale, 150, 100,
+                    button_margins, "song", 17,
+                    name_margins
+                );
                 //全部加える
                 lin.AddView(ln_in);
             });
@@ -846,6 +861,11 @@ namespace Ass_Pain
                                 17,
                                 "song", i, ln_main
                             );
+                            song_tiles_image_set(
+                                ln_in, album_songs[i], scale, 150, 100,
+                                button_margins, "song", 17,
+                                name_margins
+                            );
                             ln_main.AddView(ln_in);
                         });
                         
@@ -1019,15 +1039,17 @@ namespace Ass_Pain
                     all_songs_ln_main_params.SetMargins(20, 20, 20, 20);
                     all_songs_ln_main.LayoutParameters = all_songs_ln_main_params;
 
+
                     int[] all_songs_button_margins = { 50, 50, 50, 50 };
-                    int[] all_songs_name_margins = { 50, 130, 50, 50 };
+                    int[] all_songs_name_margins = { 50, 50, 50, 50 };
                     int[] all_songs_card_margins = { 0, 50, 0, 0 };
+
+
+                    List<Tuple<LinearLayout, int>> lazy_buffer = new List<Tuple<LinearLayout, int>>();
 
                     
                     var list_songs = FileManager.GetSongs();
-                    Stopwatch stopwatch = new Stopwatch();
-                    stopwatch.Start();
-                    Parallel.For(0, list_songs.Count, i =>
+                    for (int i = 0; i < list_songs.Count; i++)
                     {
                         
                         LinearLayout ln_in = pupulate_songs(
@@ -1037,13 +1059,42 @@ namespace Ass_Pain
                             17,
                             "song", i, all_songs_ln_main
                         );
-                        ln_in.ScrollChange += (s, e) => { };
-                        all_songs_ln_main.AddView(ln_in);
+
+                        lazy_buffer.Add(new Tuple<LinearLayout, int>(ln_in, i));
+                        
+                    }
+
+                    for (var i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
+                    {
+                        song_tiles_image_set(lazy_buffer[i].Item1, list_songs[lazy_buffer[i].Item2], scale, 150, 100, all_songs_button_margins, "song", 15, all_songs_name_margins);
+                        all_songs_ln_main.AddView(lazy_buffer[i].Item1);
+                        lazy_buffer.RemoveAt(i);
+                    }
 
 
-                    });
-                    stopwatch.Stop();
-                    Console.WriteLine("Time elapsed: {0}", stopwatch.Elapsed);
+                    all_songs_scroll.ScrollChange += (sender, e) =>
+                    {
+                       
+
+                        var view = all_songs_ln_main.GetChildAt(all_songs_ln_main.ChildCount - 1);
+                        var top_detect = all_songs_scroll.ScrollY;
+                        var bottom_detect = view.Bottom - (all_songs_scroll.Height + all_songs_scroll.ScrollY);
+
+                        if (bottom_detect == 0 && lazy_buffer.Count != 0)
+                        {
+                            Console.WriteLine("loading new");
+
+                            for (var i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
+                            {
+                                song_tiles_image_set(lazy_buffer[i].Item1, list_songs[lazy_buffer[i].Item2], scale, 150, 100, all_songs_button_margins, "song", 17, all_songs_name_margins);
+                                all_songs_ln_main.AddView(lazy_buffer[i].Item1);
+                                lazy_buffer.RemoveAt(i);
+                               
+                            }
+                        }
+
+                       
+                    };
 
 
                     all_songs_scroll.AddView(all_songs_ln_main);
@@ -1176,7 +1227,7 @@ namespace Ass_Pain
 
                     var plyalist_songs = FileManager.GetPlaylist(path_for_01);
 
-                    Parallel.For(0, plyalist_songs.Count, i =>
+                    for (var i = 0; i < plyalist_songs.Count; i++)
                     {
 
                         if (FileManager.GetSongTitle(plyalist_songs[i]) != "cant get title")
@@ -1188,6 +1239,11 @@ namespace Ass_Pain
                                 17,
                                 "song", i, in_playlist_ln_main
                             );
+                            song_tiles_image_set(
+                                ln_in, plyalist_songs[i], scale, 150, 100, 
+                                in_playlist_button_margins, "song", 17, 
+                                in_playlist_name_margins
+                            );
                             in_playlist_ln_main.AddView(ln_in);
                         }
                         else
@@ -1196,7 +1252,7 @@ namespace Ass_Pain
                             Console.WriteLine("deleted ddded");
                             populate_grid(2.0f);
                         }
-                    });
+                    }
                    
 
                     in_playlist_scroll.AddView(in_playlist_ln_main);
@@ -1262,13 +1318,13 @@ namespace Ass_Pain
             else if (id == Resource.Id.nav_gallery) // equalizer
             {
                 Intent intent = new Intent(this, typeof(equalizer));
-                
+                intent.PutExtra("link_author", "");
                 StartActivity(intent);
             }
             else if (id == Resource.Id.nav_slideshow) // youtube
             {
                 Intent intent = new Intent(this, typeof(youtube));
-               
+                intent.PutExtra("link_author", "");
                 StartActivity(intent);
             }
           
