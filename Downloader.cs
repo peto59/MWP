@@ -141,8 +141,10 @@ namespace Ass_Pain
             {
                 if (!File.Exists($"{musicPath}/{authorPath}/cover.jpg") && !File.Exists($"{musicPath}/{authorPath}/cover.png"))
                 {
-                    var authorThumbnails = await youtube.Channels.GetAsync(channelId);
-                    _ = Task.Run(() => { GetImage(authorThumbnails.Thumbnails.AsEnumerable(), $"{musicPath}/{authorPath}"); });
+                    _ = Task.Run(async () => { 
+                        var authorThumbnails = await youtube.Channels.GetAsync(channelId);
+                        GetImage(authorThumbnails.Thumbnails.AsEnumerable(), $"{musicPath}/{authorPath}");
+                    });
                 }
             }
 

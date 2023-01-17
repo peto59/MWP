@@ -69,7 +69,7 @@ namespace Ass_Pain
                     play_image.LayoutParameters = play_image_params;
 
                     if (演じる == true)
-                        play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
+                        play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
                     else
                         play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
 
@@ -119,14 +119,14 @@ namespace Ass_Pain
             if (is_playing)
             {
                 MainActivity.player.Stop(sender, e);
-                play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
-                is_playing = true;
+                play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
+                is_playing = false;
             }
             else
             {
                 MainActivity.player.Resume(sender, e);
-                play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
-                is_playing = false;
+                play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
+                is_playing = true;
             }
         }
 

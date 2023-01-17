@@ -26,7 +26,7 @@ namespace Ass_Pain
         DrawerLayout drawer;
         WebView web_view;
 
-        //Slovenska_prostituka player = MainActivity.player;
+        Slovenska_prostituka player = MainActivity.player;
 
         SensorSpeed speed = SensorSpeed.Game;
         
