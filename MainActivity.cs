@@ -43,6 +43,37 @@ namespace Ass_Pain
             AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
 
+            string[] PermissionsLocation =
+            {
+                Android.Manifest.Permission.ManageExternalStorage,
+                Android.Manifest.Permission.WriteExternalStorage,
+                Android.Manifest.Permission.ReadExternalStorage
+            };
+
+
+            const int RequestLocationId = 1;
+            //string[] permission = { Android.Manifest.Permission.ManageExternalStorage };
+            //RequestPermissions(permission, 0);
+            if (ShouldShowRequestPermissionRationale(Android.Manifest.Permission.ManageExternalStorage))
+            {
+                //Explain to the user why we need to read the contacts
+                Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
+                        .SetAction("OK", v => RequestPermissions(PermissionsLocation, RequestLocationId))
+                        .Show();
+                return;
+            }
+            //Finally request permissions with the list of permissions and Id
+            RequestPermissions(PermissionsLocation, RequestLocationId);
+
+            if (!Android.OS.Environment.IsExternalStorageManager)
+            {
+                Intent intent = new Intent();
+                intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
+                Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
+                intent.SetData(uri);
+                StartActivity(intent);
+            }
+
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
@@ -99,27 +130,6 @@ namespace Ass_Pain
                 File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
 
-            
-            string[] PermissionsLocation =
-            {
-                Android.Manifest.Permission.ManageExternalStorage,
-                Android.Manifest.Permission.WriteExternalStorage,
-                Android.Manifest.Permission.ReadExternalStorage
-            };
-
-            const int RequestLocationId = 1;
-            //string[] permission = { Android.Manifest.Permission.ManageExternalStorage };
-            //RequestPermissions(permission, 0);
-            if (ShouldShowRequestPermissionRationale(Android.Manifest.Permission.ManageExternalStorage))
-            {
-                //Explain to the user why we need to read the contacts
-                Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
-                        .SetAction("OK", v => RequestPermissions(PermissionsLocation, RequestLocationId))
-                        .Show();
-                return;
-            }
-            //Finally request permissions with the list of permissions and Id
-            RequestPermissions(PermissionsLocation, RequestLocationId);
 
             //new Thread(() => { nm.Listener(); }).Start();
             new Thread(() => { FileManager.DiscoverFiles(); }).Start();
