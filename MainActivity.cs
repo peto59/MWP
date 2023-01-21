@@ -22,6 +22,7 @@ using System.Text.Json;
 using AngleSharp.Html;
 using System.Runtime.InteropServices;
 using Android.Content.PM;
+using Android.Media;
 
 namespace Ass_Pain
 {
@@ -65,14 +66,14 @@ namespace Ass_Pain
             //Finally request permissions with the list of permissions and Id
             RequestPermissions(PermissionsLocation, RequestLocationId);
 
-            if (!Android.OS.Environment.IsExternalStorageManager)
+            /*while (!Android.OS.Environment.IsExternalStorageManager)
             {
                 Intent intent = new Intent();
                 intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
                 Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
                 intent.SetData(uri);
                 StartActivity(intent);
-            }
+            }*/
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
@@ -132,8 +133,10 @@ namespace Ass_Pain
 
 
             //new Thread(() => { nm.Listener(); }).Start();
-            new Thread(() => { FileManager.DiscoverFiles(); }).Start();
-            
+            //new Thread(() => { FileManager.DiscoverFiles(); }).Start();
+            player.SetView(this);
+            IntentFilter intentFilter = new IntentFilter(AudioManager.ActionAudioBecomingNoisy);
+            RegisterReceiver(player, intentFilter);
         }
 
         public override void OnBackPressed()

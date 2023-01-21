@@ -1,4 +1,5 @@
 ﻿using Android.App;
+using Android.Content;
 using Android.Media;
 using AndroidX.AppCompat.App;
 using System;
@@ -7,9 +8,11 @@ using System.IO;
 
 namespace Ass_Pain
 {
-    public class Slovenska_prostituka
+    [BroadcastReceiver(Enabled = false, Exported = false)]
+    [IntentFilter(new[] { AudioManager.ActionAudioBecomingNoisy })]
+    public class Slovenska_prostituka : BroadcastReceiver
     {
-        protected MediaPlayer player = new MediaPlayer();
+        protected static MediaPlayer player = new MediaPlayer();
         protected List<string> queue = new List<string>();
         int index = 0;
         bool used = false;
@@ -22,6 +25,12 @@ namespace Ass_Pain
             {
                 used = true;
             };
+        }
+
+        public override void OnReceive(Context context, Intent intent)
+        {
+            Console.WriteLine("noisy");
+            player.Pause();
         }
 
         public void SetView(AppCompatActivity new_view)
@@ -43,6 +52,7 @@ namespace Ass_Pain
 
         public void Play(string source)
         {
+            side_player.SetStopButton(view);
             GenerateQueue(source);
         }
 
@@ -59,6 +69,7 @@ namespace Ass_Pain
                 index++;
                 player.Prepare();
                 player.Start();
+                side_player.populate_side_bar(view);
             }
         }
 
@@ -66,7 +77,7 @@ namespace Ass_Pain
         {
             try
             {
-                if(player.CurrentPosition > 10000)
+                if(player.CurrentPosition > 10000)//if current song is playing longer than 10 seconds
                 {
                     player.SeekTo(0);
                     return;
@@ -90,7 +101,7 @@ namespace Ass_Pain
                 player.Start();
         }
 
-        public void Resume(object sender, EventArgs e)
+        public void Resume()
         {
             Console.WriteLine("Resumed");
             if (used)
@@ -98,10 +109,33 @@ namespace Ass_Pain
                 player.Start();
             }
         }
-        public void Stop(object sender, EventArgs e)
+        public void Stop()
         {
             Console.WriteLine("Stopped");
             player.Pause();
+        }
+
+        public bool TogglePlayButton(AppCompatActivity context)
+        {
+            if (player.IsPlaying)
+            {
+                side_player.SetPlayButton(context);
+                player.Pause();
+                return false;
+            }
+            else
+            {
+                if (used)
+                {
+                    player.Start();
+                    side_player.SetStopButton(context);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
         }
 
         public void ClearQueue(object sender = null, EventArgs e = null)
@@ -115,6 +149,7 @@ namespace Ass_Pain
         ///</summary>
         public void GenerateQueue(string source)
         {
+            side_player.SetStopButton(view);
             index = 0;
             if (FileManager.IsDirectory(source))
             {
@@ -128,18 +163,17 @@ namespace Ass_Pain
             }
         }
 
+        public bool isPlaying()
+        {
+            return player.IsPlaying;
+        }
+
         ///<summary>
         ///Generates clear queue from list and resets index to 0
         ///</summary>
-        public void GenerateQueue(List<string> source)
+        public void GenerateQueue(List<string> source, int i = 0)
         {
-            index = 0;
-            queue = source;
-            NextSong();
-        }
-
-        public void GenerateQueue(List<string> source, int i)
-        {
+            side_player.SetStopButton(view);
             index = i;
             queue = source;
             NextSong();
