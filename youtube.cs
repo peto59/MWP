@@ -200,9 +200,7 @@ namespace Ass_Pain
             }
             else if (id == Resource.Id.nav_slideshow) // youtube
             {
-                Intent intent = new Intent(this, typeof(youtube));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
+                drawer.CloseDrawer(GravityCompat.Start);
             }
 
 

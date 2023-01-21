@@ -16,6 +16,7 @@ namespace Ass_Pain
         protected List<string> queue = new List<string>();
         int index = 0;
         bool used = false;
+        bool loopAll = false;
         AppCompatActivity view;
 
         public Slovenska_prostituka()
@@ -50,26 +51,29 @@ namespace Ass_Pain
             }
         }
 
-        public void Play(string source)
+        public void Play()
         {
-            side_player.SetStopButton(view);
-            GenerateQueue(source);
+            if (used)
+            {
+                player.Reset();
+            }
+            player.SetDataSource(queue[index]);
+            side_player.populate_side_bar(view);
+            player.Prepare();
+            player.Start();
+            side_player.populate_side_bar(view);
         }
 
         public void NextSong(object sender = null, EventArgs e = null)
         {
             if (queue.Count > index)
             {
-                if (used)
-                {
-                    player.Reset();
-                }
-                player.SetDataSource(queue[index]);
-                side_player.populate_side_bar(view);
                 index++;
-                player.Prepare();
-                player.Start();
-                side_player.populate_side_bar(view);
+                Play();
+            }else if (loopAll)
+            {
+                index = 0;
+                Play();
             }
         }
 
@@ -176,7 +180,7 @@ namespace Ass_Pain
             side_player.SetStopButton(view);
             index = i;
             queue = source;
-            NextSong();
+            Play();
         }
 
         ///<summary>
