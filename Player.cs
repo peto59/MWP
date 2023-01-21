@@ -12,11 +12,12 @@ namespace Ass_Pain
     [IntentFilter(new[] { AudioManager.ActionAudioBecomingNoisy })]
     public class Slovenska_prostituka : BroadcastReceiver
     {
-        protected static MediaPlayer player = new MediaPlayer();
-        protected List<string> queue = new List<string>();
-        int index = 0;
-        bool used = false;
-        bool loopAll = false;
+        private static MediaPlayer player = new MediaPlayer();
+        private List<string> queue = new List<string>();
+        private int index = 0;
+        private bool used = false;
+        private bool loopAll = false;
+        private bool loopSingle = false;
         AppCompatActivity view;
 
         public Slovenska_prostituka()
@@ -26,8 +27,6 @@ namespace Ass_Pain
             {
                 used = true;
             };
-
-           
         }
 
         public override void OnReceive(Context context, Intent intent)
@@ -70,7 +69,10 @@ namespace Ass_Pain
         {
             if (queue.Count > index)
             {
-                index++;
+                if (!loopSingle)
+                {
+                    index++;
+                }
                 Play();
             }else if (loopAll)
             {
@@ -231,6 +233,25 @@ namespace Ass_Pain
         {
             addition.AddRange(queue);
             queue = addition;
+        }
+
+        public void ToggleLoop(Int16 state)
+        {
+            switch (state) { 
+                case 0:
+                    loopAll = false;
+                    loopSingle = false;
+                    break;
+                case 1:
+                    loopAll = true;
+                    loopSingle = false;
+                    break;
+                case 2:
+                    loopAll = false;
+                    loopSingle = true;
+                    break;
+                default: break;
+            }
         }
     }
 }
