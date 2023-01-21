@@ -44,7 +44,8 @@ namespace Ass_Pain
 
         List<string> selected_playlists = new List<string>();
 
-        Slovenska_prostituka player = MainActivity.player;
+        // Slovenska_prostituka player = MainActivity.player;
+
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -80,7 +81,7 @@ namespace Ass_Pain
             navigationView.SetNavigationItemSelectedListener(this);
 
             side_player.populate_side_bar(this);
-            player.SetView(this);
+            MainActivity.player.SetView(this);
 
             accept_songs.wake_drag_button(this, Resource.Id.main_rel_l);
 
@@ -411,12 +412,12 @@ namespace Ass_Pain
                 {
                     if (where_are_you_are_you_are_you_are_you_are_you_are_.album == "all")
                     {
-                        player.GenerateQueue(FileManager.GetSongs(), pr.Value);
+                        MainActivity.player.GenerateQueue(FileManager.GetSongs(), pr.Value);
                     }
                     else
                     {
                         
-                        player.GenerateQueue(FileManager.GetSongs(where_are_you_are_you_are_you_are_you_are_you_are_.album), pr.Value);
+                        MainActivity.player.GenerateQueue(FileManager.GetSongs(where_are_you_are_you_are_you_are_you_are_you_are_.album), pr.Value);
 
                     }
                     break;
@@ -747,7 +748,7 @@ namespace Ass_Pain
            
             add_to_qu.Click += (sender, e) =>
             {
-                player.AddToQueue(path);
+                MainActivity.player.AddToQueue(path);
             };
             delete.Click += (sender, e) =>
             {
