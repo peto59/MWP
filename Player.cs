@@ -26,6 +26,8 @@ namespace Ass_Pain
             {
                 used = true;
             };
+
+           
         }
 
         public override void OnReceive(Context context, Intent intent)
