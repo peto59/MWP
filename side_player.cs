@@ -38,7 +38,7 @@ namespace Ass_Pain
         static bool is_playing = true;
         static ImageView play_image;
 
-        private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, bool 演じる, bool 左右 = false)
+        private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, bool 演じる, string 型 = "idk")
         {
 
             LinearLayout cube = new LinearLayout(context);
@@ -88,21 +88,49 @@ namespace Ass_Pain
                     );
 
                     cube.LayoutParameters = small_cube_params;
+                    cube.SetGravity(GravityFlags.Center);
                     cube.Orientation = Android.Widget.Orientation.Horizontal;
                     cube.SetBackgroundResource(Resource.Drawable.rounded_light);
 
                     ImageView last_image = new ImageView(context);
-                    LinearLayout.LayoutParams last_image_params = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MatchParent,
-                        LinearLayout.LayoutParams.MatchParent
-                    );
-                    last_image.LayoutParameters = last_image_params;
-                    if (左右)
-                        last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("right.png")));
-                    else
-                        last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("left.png")));
-                   
+                    LinearLayout.LayoutParams last_image_params;
 
+
+                    switch (型)
+                    {
+                        case "right":
+                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("right.png")));
+                            last_image_params = new LinearLayout.LayoutParams(
+                               LinearLayout.LayoutParams.MatchParent,
+                               LinearLayout.LayoutParams.MatchParent
+                            );
+                            last_image.LayoutParameters = last_image_params;
+                            break;
+                        case "left":
+                            last_image_params = new LinearLayout.LayoutParams(
+                               LinearLayout.LayoutParams.MatchParent,
+                               LinearLayout.LayoutParams.MatchParent
+                            );
+                            last_image.LayoutParameters = last_image_params;
+                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("left.png")));
+                            break;
+                        case "shuffle":
+                            last_image_params = new LinearLayout.LayoutParams(
+                              (int)(20 * scale + 0.5f),
+                              (int)(20 * scale + 0.5f)
+                            );
+                            last_image.LayoutParameters = last_image_params;
+                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
+                            break;
+                        case "repeat":
+                            last_image_params = new LinearLayout.LayoutParams(
+                             (int)(20 * scale + 0.5f),
+                             (int)(20 * scale + 0.5f)
+                            );
+                            last_image.LayoutParameters = last_image_params;
+                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
+                            break;
+                    }
 
 
 
@@ -181,7 +209,14 @@ namespace Ass_Pain
             buttons_main_lin.RemoveAllViews();
             player_buttons.Clear();
             {
-                LinearLayout last = cube_creator("small", scale, context, false, false);
+                LinearLayout shuffle = cube_creator("small", scale, context, false, "shuffle");
+                player_buttons.Add(shuffle, "shuffle");
+
+                LinearLayout repeat = cube_creator("small", scale, context, false, "repeat");
+                player_buttons.Add(repeat, "repeat");
+
+
+                LinearLayout last = cube_creator("small", scale, context, false, "left");
                 last.Click += delegate
                 {
                     // pass
@@ -192,7 +227,7 @@ namespace Ass_Pain
                 play_pause.Click += (sender, e) => { pause_play(sender, e, context);  };
                 player_buttons.Add(play_pause, "play_pause");
 
-                LinearLayout next = cube_creator("small", scale, context, false, true);
+                LinearLayout next = cube_creator("small", scale, context, false, "right");
                 next.Click += delegate
                 {
                     MainActivity.player.NextSong();
@@ -200,9 +235,11 @@ namespace Ass_Pain
                 player_buttons.Add(next, "next");
 
 
+                buttons_main_lin.AddView(shuffle);
                 buttons_main_lin.AddView(last);
                 buttons_main_lin.AddView(play_pause);
                 buttons_main_lin.AddView(next);
+                buttons_main_lin.AddView(repeat);
             }
 
             /*
