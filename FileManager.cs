@@ -46,6 +46,22 @@ namespace Ass_Pain
             {
                 return;
             }
+            if (GetNameFromPath(path) == "Recordings")
+            {
+                return;
+            }
+            if (GetNameFromPath(path) == "Ringtones")
+            {
+                return;
+            }
+            if (GetNameFromPath(path) == "MIUI")
+            {
+                return;
+            }
+            if (GetNameFromPath(path) == "Alarms")
+            {
+                return;
+            }
             if (path == music_folder)
             {
                 return;
@@ -107,7 +123,7 @@ namespace Ass_Pain
         }
         public static List<string> GetAuthors()
         {
-            return Directory.EnumerateDirectories(music_folder).ToList();
+            return Directory.EnumerateDirectories(music_folder).Where(author => !GetNameFromPath(author).StartsWith(".")).ToList();
             /*List<string> authors = new List<string>();
             foreach (string author in Directory.EnumerateDirectories(music_folder))
             {

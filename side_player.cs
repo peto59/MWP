@@ -35,10 +35,9 @@ namespace Ass_Pain
 
         static Dictionary<LinearLayout, string> player_buttons = new Dictionary<LinearLayout, string>();
 
-        static bool is_playing = true;
         static ImageView play_image;
 
-        private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, bool 演じる, string 型 = "idk")
+        private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, string 型 = "idk")
         {
 
             LinearLayout cube = new LinearLayout(context);
@@ -68,7 +67,7 @@ namespace Ass_Pain
                     );
                     play_image.LayoutParameters = play_image_params;
 
-                    if (演じる == true)
+                    if (MainActivity.player.isPlaying())
                         play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
                     else
                         play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
@@ -144,22 +143,21 @@ namespace Ass_Pain
 
         private static void pause_play(Object sender, EventArgs e, AppCompatActivity context)
         {
-            if (is_playing)
-            {
-                MainActivity.player.Stop(sender, e);
-                play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
-                is_playing = false;
-            }
-            else
-            {
-                MainActivity.player.Resume(sender, e);
-                play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
-                is_playing = true;
-            }
+            MainActivity.player.TogglePlayButton(context);
+        }
+
+        public static void SetPlayButton(AppCompatActivity context)
+        {
+            
+            play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
+        }
+
+        public static void SetStopButton(AppCompatActivity context)
+        {
+            play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
         }
 
 
-        
         public static void populate_side_bar(AppCompatActivity context)
         {
             // basic  vars
@@ -209,25 +207,25 @@ namespace Ass_Pain
             buttons_main_lin.RemoveAllViews();
             player_buttons.Clear();
             {
-                LinearLayout shuffle = cube_creator("small", scale, context, false, "shuffle");
+                LinearLayout shuffle = cube_creator("small", scale, context, "shuffle");
                 player_buttons.Add(shuffle, "shuffle");
 
-                LinearLayout repeat = cube_creator("small", scale, context, false, "repeat");
+                LinearLayout repeat = cube_creator("small", scale, context, "repeat");
                 player_buttons.Add(repeat, "repeat");
 
 
-                LinearLayout last = cube_creator("small", scale, context, false, "left");
+                LinearLayout last = cube_creator("small", scale, context, "left");
                 last.Click += delegate
                 {
-                    // last
+                    MainActivity.player.PreviousSong();
                 };
                 player_buttons.Add(last, "last");
 
-                LinearLayout play_pause = cube_creator("big", scale, context, is_playing);
+                LinearLayout play_pause = cube_creator("big", scale, context);
                 play_pause.Click += (sender, e) => { pause_play(sender, e, context);  };
                 player_buttons.Add(play_pause, "play_pause");
 
-                LinearLayout next = cube_creator("small", scale, context, false, "right");
+                LinearLayout next = cube_creator("small", scale, context, "right");
                 next.Click += delegate
                 {
                     MainActivity.player.NextSong();
@@ -253,8 +251,9 @@ namespace Ass_Pain
 
             try
             {
+                Console.WriteLine($"now playing: {MainActivity.player.NowPlaying()}");
                 tagFile = TagLib.File.Create(
-                    MainActivity.player.NowPlaying()//extracts image from first song of album that contains embedded picture
+                    MainActivity.player.NowPlaying()
                 );
                 MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
                 image = BitmapFactory.DecodeStream(ms);
