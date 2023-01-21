@@ -22,6 +22,8 @@ namespace Ass_Pain
             {
                 used = true;
             };
+
+           
         }
 
         public void SetView(AppCompatActivity new_view)

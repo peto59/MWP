@@ -219,7 +219,7 @@ namespace Ass_Pain
                 LinearLayout last = cube_creator("small", scale, context, false, "left");
                 last.Click += delegate
                 {
-                    // pass
+                    // last
                 };
                 player_buttons.Add(last, "last");
 
