@@ -5,6 +5,7 @@ using AndroidX.AppCompat.App;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Ass_Pain
 {
@@ -233,6 +234,14 @@ namespace Ass_Pain
         {
             addition.AddRange(queue);
             queue = addition;
+        }
+
+        public void Shuffle()
+        {
+            string tmp = queue.Pop(index);
+            index = 0;
+            queue.Shuffle();
+            queue.Prepend(tmp);
         }
 
         public void ToggleLoop(Int16 state)

@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="Levenshtein.cs" />
     <Compile Include="NetworkManager.cs" />
     <Compile Include="Downloader.cs" />
