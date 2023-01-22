@@ -20,6 +20,7 @@ namespace Ass_Pain
         private bool loopAll = false;
         private bool loopSingle = false;
         AppCompatActivity view;
+        private bool shuffle = false;
 
         public Slovenska_prostituka()
         {
@@ -236,12 +237,18 @@ namespace Ass_Pain
             queue = addition;
         }
 
-        public void Shuffle()
+        public void Shuffle(bool shuf)
         {
-            string tmp = queue.Pop(index);
-            index = 0;
-            queue.Shuffle();
-            queue.Prepend(tmp);
+           if (queue.Count > 0)
+           {
+                string tmp = queue.Pop(index);
+                index = 0;
+                queue.Shuffle();
+                queue.Prepend(tmp);
+           }
+
+            shuffle = shuf;
+        
         }
 
         public void ToggleLoop(Int16 state)

@@ -225,6 +225,8 @@ namespace Ass_Pain
                     {
                         shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
                         shuffle_state = true;
+
+                        MainActivity.player.Shuffle(shuffle_state);
                     }
                     else
                     {
