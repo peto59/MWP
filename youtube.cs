@@ -17,12 +17,15 @@ using System.Runtime.InteropServices;
 using Xamarin.Essentials;
 using Android.Widget;
 using Android.Graphics;
+using AndroidX.Core.App;
 
 namespace Ass_Pain
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class youtube : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
+       
+
         DrawerLayout drawer;
         WebView web_view;
 
@@ -42,8 +45,11 @@ namespace Ass_Pain
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
+        
 
 
+
+            // side bar where are song controlls
             side_player.populate_side_bar(this);
             player.SetView(this);
 
@@ -123,6 +129,7 @@ namespace Ass_Pain
         }
 
 
+       
 
         void acc_shaked(object sender, EventArgs e)
         {

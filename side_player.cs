@@ -400,7 +400,7 @@ namespace Ass_Pain
 
         private static string converts_seconds_to_seconds_and_minutes(int seconds)
         {
-            return $"{seconds / 60}:" + seconds.ToString().PadLeft(2, '0');
+            return $"{seconds / 60}:" + (seconds % 60).ToString().PadLeft(2, '0');
         }
 
     }
