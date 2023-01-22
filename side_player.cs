@@ -28,6 +28,7 @@ using Android.Content.Res.Loader;
 using System.Runtime.CompilerServices;
 using Xamarin.Essentials;
 using Android.Views.Inspectors;
+using System.Threading;
 
 namespace Ass_Pain
 {
@@ -344,14 +345,37 @@ namespace Ass_Pain
 
             // set the image
             song_image.SetImageBitmap(image);
-            
-            
-            // progress song
-          
 
+
+            // progress song
+            SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
             
+            TextView const_time = context.FindViewById<TextView>(Resource.Id.end_time);
+            TextView prog_time = context.FindViewById<TextView>(Resource.Id.progress_time);
+
+            sek.Max = MainActivity.player.Duration;
+            sek.SetProgress(MainActivity.player.CurrentPosition, true);
+            sek.ProgressChanged += (object sender, SeekBar.ProgressChangedEventArgs e) =>
+            {
+                if (e.FromUser)
+                {
+                    Console.WriteLine(sek.Progress);
+                    MainActivity.player.SeekTo = sek.Progress * 1000;
+                }
+            };
+
+
+            var cts = new CancellationTokenSource();
+            Interval.SetIntervalAsync(() =>
+            {
+                sek.Progress += 1;
+            }, 1000, cts.Token);
+
+
         }
 
-       
+        
+
+
     }
 }

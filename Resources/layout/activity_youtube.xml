@@ -93,13 +93,14 @@
                     android:layout_height="wrap_content"
                     android:text="0:00"/>
                
-                <ProgressBar
-                    style="?android:attr/progressBarStyleHorizontal"
+                <SeekBar
                     android:layout_width="250dp"
                     android:layout_margin="10dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
-                    android:id="@+id/progress_bar" />
+                    android:id="@+id/seek" />
+                    
+                    />
 
                 <TextView
                     android:id="@+id/end_time"

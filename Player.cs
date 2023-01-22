@@ -53,6 +53,15 @@ namespace Ass_Pain
         {
             get { return player.CurrentPosition; }
         }
+        public int SeekTo
+        {
+            set { 
+                try
+                {
+                    player.SeekTo(value); 
+                } catch (Exception) { }
+            }
+        }
 
         public Slovenska_prostituka()
         {
