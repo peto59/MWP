@@ -25,7 +25,7 @@ namespace Ass_Pain
         static string music_folder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
         public static void DiscoverFiles(string path = null)
         {
-            return;
+            //return;
             if(path == null)
             {
                 path = root;
@@ -75,6 +75,7 @@ namespace Ass_Pain
             {
                 try
                 {
+                    Console.WriteLine($"Processing: {file}");
                     string title = GetSongTitle(file);
                     if (title == null)
                     {

@@ -29,353 +29,379 @@ using System.Runtime.CompilerServices;
 using Xamarin.Essentials;
 using Android.Views.Inspectors;
 using System.Threading;
+using Java.Util;
 
 namespace Ass_Pain
 {
-    public static class side_player
-    {
+	public static class side_player
+	{
 
-        static Dictionary<LinearLayout, string> player_buttons = new Dictionary<LinearLayout, string>();
+		static Dictionary<LinearLayout, string> player_buttons = new Dictionary<LinearLayout, string>();
 
-        static ImageView play_image;
+		static ImageView play_image;
 
-        private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, string 型 = "idk")
-        {
+		private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, string 型 = "idk")
+		{
 
-            LinearLayout cube = new LinearLayout(context);
+			LinearLayout cube = new LinearLayout(context);
 
-            switch (size)
-            {
-                case "big":
-                    LinearLayout.LayoutParams big_cube_params = new LinearLayout.LayoutParams(
-                        (int)(50 * scale + 0.5f),
-                        (int)(50 * scale + 0.5f)
-                    );
-                    big_cube_params.SetMargins(
-                        (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f), // left, top
-                        (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f) // right, bottom
-                    );
+			switch (size)
+			{
+				case "big":
+					LinearLayout.LayoutParams big_cube_params = new LinearLayout.LayoutParams(
+						(int)(50 * scale + 0.5f),
+						(int)(50 * scale + 0.5f)
+					);
+					big_cube_params.SetMargins(
+						(int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f), // left, top
+						(int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f) // right, bottom
+					);
 
-                    cube.LayoutParameters = big_cube_params;
-                    cube.SetGravity(GravityFlags.Center);
-                    cube.Orientation = Android.Widget.Orientation.Horizontal;
-                    cube.SetBackgroundResource(Resource.Drawable.rounded_light);
-
-
-                    play_image = new ImageView(context);
-                    LinearLayout.LayoutParams play_image_params = new LinearLayout.LayoutParams(
-                        (int)(40 * scale + 0.5f),
-                        (int)(40 * scale + 0.5f)
-                    );
-                    play_image.LayoutParameters = play_image_params;
-
-                    if (MainActivity.player.IsPlaying)
-                        play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
-                    else
-                        play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
+					cube.LayoutParameters = big_cube_params;
+					cube.SetGravity(GravityFlags.Center);
+					cube.Orientation = Android.Widget.Orientation.Horizontal;
+					cube.SetBackgroundResource(Resource.Drawable.rounded_light);
 
 
-                    cube.AddView(play_image);
+					play_image = new ImageView(context);
+					LinearLayout.LayoutParams play_image_params = new LinearLayout.LayoutParams(
+						(int)(40 * scale + 0.5f),
+						(int)(40 * scale + 0.5f)
+					);
+					play_image.LayoutParameters = play_image_params;
 
-                    break;
-                case "small":
-                    LinearLayout.LayoutParams small_cube_params = new LinearLayout.LayoutParams(
-                        (int)(30 * scale + 0.5f),
-                        (int)(30 * scale + 0.5f)
-                    );
-                    small_cube_params.SetMargins (
-                       (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f), // left, top
-                       (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f) // right, bottom
-                    );
-
-                    cube.LayoutParameters = small_cube_params;
-                    cube.SetGravity(GravityFlags.Center);
-                    cube.Orientation = Android.Widget.Orientation.Horizontal;
-                    
-
-                    ImageView last_image = new ImageView(context);
-                    LinearLayout.LayoutParams last_image_params;
+					if (MainActivity.player.IsPlaying)
+						play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
+					else
+						play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
 
 
-                    switch (型)
-                    {
-                        case "right":
-                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("right.png")));
-                            last_image_params = new LinearLayout.LayoutParams(
-                               LinearLayout.LayoutParams.MatchParent,
-                               LinearLayout.LayoutParams.MatchParent
-                            );
-                            last_image.LayoutParameters = last_image_params;
-                            cube.SetBackgroundResource(Resource.Drawable.rounded_light);
-                            break;
-                        case "left":
-                            last_image_params = new LinearLayout.LayoutParams(
-                               LinearLayout.LayoutParams.MatchParent,
-                               LinearLayout.LayoutParams.MatchParent
-                            );
-                            last_image.LayoutParameters = last_image_params;
-                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("left.png")));
-                            cube.SetBackgroundResource(Resource.Drawable.rounded_light);
-                            break;
-                        case "shuffle":
-                            last_image_params = new LinearLayout.LayoutParams(
-                              (int)(20 * scale + 0.5f),
-                              (int)(20 * scale + 0.5f)
-                            );
-                            last_image.LayoutParameters = last_image_params;
-                            if (MainActivity.player.IsShuffling)
-                            {
-                                last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
-                            }
-                            else
-                            {
-                                last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
-                            }
-                            
-                            break;
-                        case "repeat":
-                            last_image_params = new LinearLayout.LayoutParams(
-                             (int)(20 * scale + 0.5f),
-                             (int)(20 * scale + 0.5f)
-                            );
-                            last_image.LayoutParameters = last_image_params;
-                            switch (MainActivity.player.LoopState)
-                            {
-                                case 0:
-                                    last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
-                                    break;
-                                case 1:
-                                    last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
-                                    break;
-                                case 2:
-                                    last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
-                                    break;
-                            }
-                            break;
-                    }
+					cube.AddView(play_image);
+
+					break;
+				case "small":
+					LinearLayout.LayoutParams small_cube_params = new LinearLayout.LayoutParams(
+						(int)(30 * scale + 0.5f),
+						(int)(30 * scale + 0.5f)
+					);
+					small_cube_params.SetMargins (
+					   (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f), // left, top
+					   (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f) // right, bottom
+					);
+
+					cube.LayoutParameters = small_cube_params;
+					cube.SetGravity(GravityFlags.Center);
+					cube.Orientation = Android.Widget.Orientation.Horizontal;
+					
+
+					ImageView last_image = new ImageView(context);
+					LinearLayout.LayoutParams last_image_params;
+
+
+					switch (型)
+					{
+						case "right":
+							last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("right.png")));
+							last_image_params = new LinearLayout.LayoutParams(
+							   LinearLayout.LayoutParams.MatchParent,
+							   LinearLayout.LayoutParams.MatchParent
+							);
+							last_image.LayoutParameters = last_image_params;
+							cube.SetBackgroundResource(Resource.Drawable.rounded_light);
+							break;
+						case "left":
+							last_image_params = new LinearLayout.LayoutParams(
+							   LinearLayout.LayoutParams.MatchParent,
+							   LinearLayout.LayoutParams.MatchParent
+							);
+							last_image.LayoutParameters = last_image_params;
+							last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("left.png")));
+							cube.SetBackgroundResource(Resource.Drawable.rounded_light);
+							break;
+						case "shuffle":
+							last_image_params = new LinearLayout.LayoutParams(
+							  (int)(20 * scale + 0.5f),
+							  (int)(20 * scale + 0.5f)
+							);
+							last_image.LayoutParameters = last_image_params;
+							if (MainActivity.player.IsShuffling)
+							{
+								last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
+							}
+							else
+							{
+								last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
+							}
+							
+							break;
+						case "repeat":
+							last_image_params = new LinearLayout.LayoutParams(
+							 (int)(20 * scale + 0.5f),
+							 (int)(20 * scale + 0.5f)
+							);
+							last_image.LayoutParameters = last_image_params;
+							switch (MainActivity.player.LoopState)
+							{
+								case 0:
+									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
+									break;
+								case 1:
+									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
+									break;
+								case 2:
+									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
+									break;
+							}
+							break;
+					}
 
 
 
-                    cube.AddView(last_image);
+					cube.AddView(last_image);
 
-                    break;
-            }
+					break;
+			}
 
-            return cube;
-        }
+			return cube;
+		}
 
-        private static void pause_play(Object sender, EventArgs e, AppCompatActivity context)
-        {
-            MainActivity.player.TogglePlayButton(context);
-        }
+		private static void pause_play(Object sender, EventArgs e, AppCompatActivity context)
+		{
+			MainActivity.player.TogglePlayButton(context);
+		}
 
-        public static void SetPlayButton(AppCompatActivity context)
-        {
-            
-            play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
-        }
+		public static void SetPlayButton(AppCompatActivity context)
+		{
+			
+			play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
+		}
 
-        public static void SetStopButton(AppCompatActivity context)
-        {
-            play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
-        }
+		public static void SetStopButton(AppCompatActivity context)
+		{
+			play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
+		}
 
-      
-        public static void populate_side_bar(AppCompatActivity context)
-        {
-            // basic  vars
-            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
-            string current_song_path = MainActivity.player.NowPlaying();
-            float scale = context.Resources.DisplayMetrics.Density;
+	  
+		public static void populate_side_bar(AppCompatActivity context)
+		{
+			// basic  vars
+			string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+			string current_song_path = MainActivity.player.NowPlaying();
+			float scale = context.Resources.DisplayMetrics.Density;
 
-            // sing title image
-            ImageView song_image = context.FindViewById<ImageView>(Resource.Id.song_cover);
+			// sing title image
+			ImageView song_image = context.FindViewById<ImageView>(Resource.Id.song_cover);
 
-            // texts
-            TextView song_title = context.FindViewById<TextView>(Resource.Id.song_cover_name);
-            TextView song_author = context.FindViewById<TextView>(Resource.Id.side_author);
-            TextView song_album = context.FindViewById<TextView>(Resource.Id.side_album);
+			// texts
+			TextView song_title = context.FindViewById<TextView>(Resource.Id.song_cover_name);
+			TextView song_author = context.FindViewById<TextView>(Resource.Id.side_author);
+			TextView song_album = context.FindViewById<TextView>(Resource.Id.side_album);
 
-            
-            LinearLayout.LayoutParams song_title_params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WrapContent,
-                (int)(30 * scale + 0.5f)
-            );
-            song_title_params.SetMargins(
-                0, (int)(10 * scale + 0.5f), 0, (int)(10 * scale + 0.5f)
-            );
-
-
-            song_title.LayoutParameters = song_title_params;
-            song_title.Text = FileManager.GetSongTitle(current_song_path);
-
-            (string album, string autor) = FileManager.GetAlbumAuthorFromPath(current_song_path);
-            if (FileManager.GetSongArtist(current_song_path).Length != 0)
-            {
-                song_author.Text = FileManager.GetSongArtist(current_song_path)[0];
-                song_author.Click += (sender, e) =>
-                {
-                    Intent intent = new Intent(context, typeof(all_songs));
-                    intent.PutExtra("link_author", $"{path}/{autor}");
-                    context.StartActivity(intent);
-                };
-            }
-                
-            song_album.Text = FileManager.GetSongAlbum(current_song_path);
-
-            /* 
-             * player buttons
-             */
-            LinearLayout buttons_main_lin = context.FindViewById<LinearLayout>(Resource.Id.player_buttons);
-            buttons_main_lin.RemoveAllViews();
-            player_buttons.Clear();
-            {
-
-                
-
-                LinearLayout shuffle = cube_creator("small", scale, context, "shuffle");
-                player_buttons.Add(shuffle, "shuffle");
-                shuffle.Click += delegate
-                {
-                    ImageView shuffle_img = (ImageView)shuffle.GetChildAt(0);
-                    if (MainActivity.player.IsShuffling)
-                    {
-                        shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
-                    }
-                    else
-                    {
-                        shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
-                    }
-                    MainActivity.player.Shuffle(!MainActivity.player.IsShuffling);
-                };
-
-                LinearLayout repeat = cube_creator("small", scale, context, "repeat");
-                player_buttons.Add(repeat, "repeat");
-                repeat.Click += delegate
-                {
-                    ImageView repeat_img = (ImageView)repeat.GetChildAt(0);
-                    switch (MainActivity.player.LoopState)
-                    {
-                        case 0:
-                            repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
-                            MainActivity.player.ToggleLoop(1);
-                            break;
-                        case 1:
-                            repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
-                            MainActivity.player.ToggleLoop(2);
-                            break;
-                        case 2:
-                            repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
-                            MainActivity.player.ToggleLoop(0);
-                            break;
-                    }
-
-                    
-                };
+			
+			LinearLayout.LayoutParams song_title_params = new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.WrapContent,
+				(int)(30 * scale + 0.5f)
+			);
+			song_title_params.SetMargins(
+				0, (int)(10 * scale + 0.5f), 0, (int)(10 * scale + 0.5f)
+			);
 
 
-                LinearLayout last = cube_creator("small", scale, context, "left");
-                last.Click += delegate
-                {
-                    MainActivity.player.PreviousSong();
-                };
-                player_buttons.Add(last, "last");
+			song_title.LayoutParameters = song_title_params;
+			song_title.Text = FileManager.GetSongTitle(current_song_path);
 
-                LinearLayout play_pause = cube_creator("big", scale, context);
-                play_pause.Click += (sender, e) => { pause_play(sender, e, context);  };
-                player_buttons.Add(play_pause, "play_pause");
+			(string album, string autor) = FileManager.GetAlbumAuthorFromPath(current_song_path);
+			if (FileManager.GetSongArtist(current_song_path).Length != 0)
+			{
+				song_author.Text = FileManager.GetSongArtist(current_song_path)[0];
+				song_author.Click += (sender, e) =>
+				{
+					Intent intent = new Intent(context, typeof(all_songs));
+					intent.PutExtra("link_author", $"{path}/{autor}");
+					context.StartActivity(intent);
+				};
+			}
+				
+			song_album.Text = FileManager.GetSongAlbum(current_song_path);
 
-                LinearLayout next = cube_creator("small", scale, context, "right");
-                next.Click += delegate
-                {
-                    MainActivity.player.NextSong();
-                };
-                player_buttons.Add(next, "next");
+			/* 
+			 * player buttons
+			 */
+			LinearLayout buttons_main_lin = context.FindViewById<LinearLayout>(Resource.Id.player_buttons);
+			buttons_main_lin.RemoveAllViews();
+			player_buttons.Clear();
+			{
+
+				
+
+				LinearLayout shuffle = cube_creator("small", scale, context, "shuffle");
+				player_buttons.Add(shuffle, "shuffle");
+				shuffle.Click += delegate
+				{
+					ImageView shuffle_img = (ImageView)shuffle.GetChildAt(0);
+					if (MainActivity.player.IsShuffling)
+					{
+						shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
+					}
+					else
+					{
+						shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
+					}
+					MainActivity.player.Shuffle(!MainActivity.player.IsShuffling);
+				};
+
+				LinearLayout repeat = cube_creator("small", scale, context, "repeat");
+				player_buttons.Add(repeat, "repeat");
+				repeat.Click += delegate
+				{
+					ImageView repeat_img = (ImageView)repeat.GetChildAt(0);
+					switch (MainActivity.player.LoopState)
+					{
+						case 0:
+							repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
+							MainActivity.player.ToggleLoop(1);
+							break;
+						case 1:
+							repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
+							MainActivity.player.ToggleLoop(2);
+							break;
+						case 2:
+							repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
+							MainActivity.player.ToggleLoop(0);
+							break;
+					}
+
+					
+				};
 
 
-                buttons_main_lin.AddView(shuffle);
-                buttons_main_lin.AddView(last);
-                buttons_main_lin.AddView(play_pause);
-                buttons_main_lin.AddView(next);
-                buttons_main_lin.AddView(repeat);
-            }
+				LinearLayout last = cube_creator("small", scale, context, "left");
+				last.Click += delegate
+				{
+					MainActivity.player.PreviousSong();
+				};
+				player_buttons.Add(last, "last");
 
-            /*
-             * Get Image from image to display
-             */
+				LinearLayout play_pause = cube_creator("big", scale, context);
+				play_pause.Click += (sender, e) => { pause_play(sender, e, context);  };
+				player_buttons.Add(play_pause, "play_pause");
 
-            Bitmap image = null;
-            TagLib.File tagFile;
-
-            song_image.SetImageResource(Resource.Mipmap.ic_launcher);
-
-            try
-            {
-                Console.WriteLine($"now playing: {MainActivity.player.NowPlaying()}");
-                tagFile = TagLib.File.Create(
-                    MainActivity.player.NowPlaying()
-                );
-                MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
-                image = BitmapFactory.DecodeStream(ms);
-
-                LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WrapContent,
-                    LinearLayout.LayoutParams.WrapContent
-                );
-                song_image.LayoutParameters = song_image_params;
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine($"Doesnt contain image: {MainActivity.player.NowPlaying()}");
-            }
-
-            if (image == null)
-            {
-                image = BitmapFactory.DecodeStream(context.Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
-                LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(
-                   (int)(120 * scale + 0.5f),
-                   (int)(120 * scale + 0.5f)
-                );
-                song_image.LayoutParameters = song_image_params;
-
-            }
+				LinearLayout next = cube_creator("small", scale, context, "right");
+				next.Click += delegate
+				{
+					MainActivity.player.NextSong();
+				};
+				player_buttons.Add(next, "next");
 
 
-            // set the image
-            song_image.SetImageBitmap(image);
+				buttons_main_lin.AddView(shuffle);
+				buttons_main_lin.AddView(last);
+				buttons_main_lin.AddView(play_pause);
+				buttons_main_lin.AddView(next);
+				buttons_main_lin.AddView(repeat);
+			}
+
+			/*
+			 * Get Image from image to display
+			 */
+
+			Bitmap image = null;
+			TagLib.File tagFile;
+
+			song_image.SetImageResource(Resource.Mipmap.ic_launcher);
+
+			try
+			{
+				Console.WriteLine($"now playing: {MainActivity.player.NowPlaying()}");
+				tagFile = TagLib.File.Create(
+					MainActivity.player.NowPlaying()
+				);
+				MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+				image = BitmapFactory.DecodeStream(ms);
+
+				LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(
+					LinearLayout.LayoutParams.WrapContent,
+					LinearLayout.LayoutParams.WrapContent
+				);
+				song_image.LayoutParameters = song_image_params;
+
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+				Console.WriteLine($"Doesnt contain image: {MainActivity.player.NowPlaying()}");
+			}
+
+			if (image == null)
+			{
+				image = BitmapFactory.DecodeStream(context.Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
+				LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(
+				   (int)(120 * scale + 0.5f),
+				   (int)(120 * scale + 0.5f)
+				);
+				song_image.LayoutParameters = song_image_params;
+
+			}
+
+
+			// set the image
+			song_image.SetImageBitmap(image);
 
 
             // progress song
-            SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
-            
-            TextView const_time = context.FindViewById<TextView>(Resource.Id.end_time);
-            TextView prog_time = context.FindViewById<TextView>(Resource.Id.progress_time);
 
-            sek.Max = MainActivity.player.Duration;
-            sek.SetProgress(MainActivity.player.CurrentPosition, true);
-            sek.ProgressChanged += (object sender, SeekBar.ProgressChangedEventArgs e) =>
-            {
-                if (e.FromUser)
-                {
-                    Console.WriteLine(sek.Progress);
-                    MainActivity.player.SeekTo = sek.Progress * 1000;
-                }
+            TextView prog_time = context.FindViewById<TextView>(Resource.Id.progress_time);
+			prog_time.Click += delegate
+			{
+				MainActivity.player.ProgTimeState = !MainActivity.player.ProgTimeState;
+
             };
 
+            if (MainActivity.player.IsPlaying) {
+                TextView const_time = context.FindViewById<TextView>(Resource.Id.end_time);
+                SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
+                const_time.Text = converts_millis_to_seconds_and_minutes(MainActivity.player.Duration);
+                sek.Max = MainActivity.player.Duration / 1000;
+                sek.SetProgress((MainActivity.player.CurrentPosition / 1000), true);
+                sek.ProgressChanged += (object sender, SeekBar.ProgressChangedEventArgs e) =>
+                {
+                    if (e.FromUser)
+                    {
+                        Console.WriteLine(sek.Progress);
+                        MainActivity.player.SeekTo = sek.Progress * 1000;
+                    }
+                };
+				StartMovingProgress(MainActivity.player.cts.Token, context);
+            }         
+		}
 
-            var cts = new CancellationTokenSource();
-            Interval.SetIntervalAsync(() =>
-            {
-                sek.Progress += 1;
-            }, 1000, cts.Token);
+		public static void StartMovingProgress(CancellationToken token, AppCompatActivity context)
+		{
+			SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
+            TextView prog_time = context.FindViewById<TextView>(Resource.Id.progress_time);
+            _ = Interval.SetIntervalAsync(() =>
+			{
+				sek.Progress += 1;
+				if (MainActivity.player.ProgTimeState)
+				{
+                    prog_time.Text = "-"+converts_millis_to_seconds_and_minutes(MainActivity.player.Duration - (sek.Progress * 1000));
+                }
+				else
+				{
+					prog_time.Text = converts_seconds_to_seconds_and_minutes(sek.Progress);
+				}
 
-
+            }, 1000, token);
+		}
+        private static string converts_millis_to_seconds_and_minutes(int millis)
+        {
+            return $"{millis / (1000 * 60) % 60}:"+(millis / 1000 % 60).ToString().PadLeft(2, '0');
         }
 
-        
-
+        private static string converts_seconds_to_seconds_and_minutes(int seconds)
+        {
+            return $"{seconds / 60}:" + seconds.ToString().PadLeft(2, '0');
+        }
 
     }
 }
