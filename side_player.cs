@@ -27,6 +27,7 @@ using System.Runtime.Remoting.Contexts;
 using Android.Content.Res.Loader;
 using System.Runtime.CompilerServices;
 using Xamarin.Essentials;
+using Android.Views.Inspectors;
 
 namespace Ass_Pain
 {
@@ -36,6 +37,8 @@ namespace Ass_Pain
         static Dictionary<LinearLayout, string> player_buttons = new Dictionary<LinearLayout, string>();
 
         static ImageView play_image;
+        static Int16 repeat_state = 0;
+        static bool shuffle_state = false;
 
         private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, string 型 = "idk")
         {
@@ -89,7 +92,7 @@ namespace Ass_Pain
                     cube.LayoutParameters = small_cube_params;
                     cube.SetGravity(GravityFlags.Center);
                     cube.Orientation = Android.Widget.Orientation.Horizontal;
-                    cube.SetBackgroundResource(Resource.Drawable.rounded_light);
+                    
 
                     ImageView last_image = new ImageView(context);
                     LinearLayout.LayoutParams last_image_params;
@@ -104,6 +107,7 @@ namespace Ass_Pain
                                LinearLayout.LayoutParams.MatchParent
                             );
                             last_image.LayoutParameters = last_image_params;
+                            cube.SetBackgroundResource(Resource.Drawable.rounded_light);
                             break;
                         case "left":
                             last_image_params = new LinearLayout.LayoutParams(
@@ -112,6 +116,7 @@ namespace Ass_Pain
                             );
                             last_image.LayoutParameters = last_image_params;
                             last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("left.png")));
+                            cube.SetBackgroundResource(Resource.Drawable.rounded_light);
                             break;
                         case "shuffle":
                             last_image_params = new LinearLayout.LayoutParams(
@@ -127,7 +132,8 @@ namespace Ass_Pain
                              (int)(20 * scale + 0.5f)
                             );
                             last_image.LayoutParameters = last_image_params;
-                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
+                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
+                            
                             break;
                     }
 
@@ -157,7 +163,7 @@ namespace Ass_Pain
             play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
         }
 
-
+      
         public static void populate_side_bar(AppCompatActivity context)
         {
             // basic  vars
@@ -207,11 +213,49 @@ namespace Ass_Pain
             buttons_main_lin.RemoveAllViews();
             player_buttons.Clear();
             {
+
+                
+
                 LinearLayout shuffle = cube_creator("small", scale, context, "shuffle");
                 player_buttons.Add(shuffle, "shuffle");
+                shuffle.Click += delegate
+                {
+                    ImageView shuffle_img = (ImageView)shuffle.GetChildAt(0);
+                    if (!shuffle_state)
+                    {
+                        shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
+                        shuffle_state = true;
+                    }
+                    else
+                    {
+                        shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
+                        shuffle_state = false;
+                    }
+                };
 
                 LinearLayout repeat = cube_creator("small", scale, context, "repeat");
                 player_buttons.Add(repeat, "repeat");
+                repeat.Click += delegate
+                {
+                    ImageView repeat_img = (ImageView)repeat.GetChildAt(0);
+                    switch (repeat_state)
+                    {
+                        case 0:
+                            repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
+                            repeat_state = 1;
+                            break;
+                        case 1:
+                            repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
+                            repeat_state = 2;
+                            break;
+                        case 2:
+                            repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
+                            repeat_state = 0;
+                            break;
+                    }
+
+                    MainActivity.player.ToggleLoop(repeat_state);
+                };
 
 
                 LinearLayout last = cube_creator("small", scale, context, "left");
