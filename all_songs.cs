@@ -1070,10 +1070,8 @@ namespace Ass_Pain
                         song_tiles_image_set(lazy_buffer[i].Item1, list_songs[lazy_buffer[i].Item2], scale, 150, 100, all_songs_button_margins, "song", 15, all_songs_name_margins);
                         all_songs_ln_main.AddView(lazy_buffer[i].Item1);
                     }
-
-
-                    for (var i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
-                        lazy_buffer.RemoveRange(i, Math.Min(5, lazy_buffer.Count));
+                   
+                    lazy_buffer.RemoveRange(0, Math.Min(5, lazy_buffer.Count));
 
                     all_songs_scroll.ScrollChange += (sender, e) =>
                     {
