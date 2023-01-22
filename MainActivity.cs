@@ -49,7 +49,7 @@ namespace Ass_Pain
                 .SetContentTitle("title")
                 .SetContentText("yeah this is something");
 
-            notification_manager.Notify(1, notification.Build());
+            notification_manager.Notify(100, notification.Build());
 
         }
 
