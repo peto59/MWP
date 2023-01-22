@@ -83,7 +83,7 @@ namespace Ass_Pain
                         (int)(30 * scale + 0.5f),
                         (int)(30 * scale + 0.5f)
                     );
-                    small_cube_params.SetMargins (
+                    small_cube_params.SetMargins(
                        (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f), // left, top
                        (int)(10 * scale + 0.5f), (int)(10 * scale + 0.5f) // right, bottom
                     );
@@ -91,7 +91,7 @@ namespace Ass_Pain
                     cube.LayoutParameters = small_cube_params;
                     cube.SetGravity(GravityFlags.Center);
                     cube.Orientation = Android.Widget.Orientation.Horizontal;
-                    
+
 
                     ImageView last_image = new ImageView(context);
                     LinearLayout.LayoutParams last_image_params;
@@ -131,7 +131,7 @@ namespace Ass_Pain
                             {
                                 last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
                             }
-                            
+
                             break;
                         case "repeat":
                             last_image_params = new LinearLayout.LayoutParams(
@@ -171,7 +171,7 @@ namespace Ass_Pain
 
         public static void SetPlayButton(AppCompatActivity context)
         {
-            
+
             play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
         }
 
@@ -180,7 +180,7 @@ namespace Ass_Pain
             play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
         }
 
-      
+
         public static void populate_side_bar(AppCompatActivity context)
         {
             // basic  vars
@@ -196,7 +196,7 @@ namespace Ass_Pain
             TextView song_author = context.FindViewById<TextView>(Resource.Id.side_author);
             TextView song_album = context.FindViewById<TextView>(Resource.Id.side_album);
 
-            
+
             LinearLayout.LayoutParams song_title_params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WrapContent,
                 (int)(30 * scale + 0.5f)
@@ -220,7 +220,7 @@ namespace Ass_Pain
                     context.StartActivity(intent);
                 };
             }
-                
+
             song_album.Text = FileManager.GetSongAlbum(current_song_path);
 
             /* 
@@ -231,7 +231,7 @@ namespace Ass_Pain
             player_buttons.Clear();
             {
 
-                
+
 
                 LinearLayout shuffle = cube_creator("small", scale, context, "shuffle");
                 player_buttons.Add(shuffle, "shuffle");
@@ -270,7 +270,7 @@ namespace Ass_Pain
                             break;
                     }
 
-                    
+
                 };
 
 
@@ -282,7 +282,7 @@ namespace Ass_Pain
                 player_buttons.Add(last, "last");
 
                 LinearLayout play_pause = cube_creator("big", scale, context);
-                play_pause.Click += (sender, e) => { pause_play(sender, e, context);  };
+                play_pause.Click += (sender, e) => { pause_play(sender, e, context); };
                 player_buttons.Add(play_pause, "play_pause");
 
                 LinearLayout next = cube_creator("small", scale, context, "right");
@@ -349,7 +349,7 @@ namespace Ass_Pain
 
             // progress song
             SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
-            
+
             TextView const_time = context.FindViewById<TextView>(Resource.Id.end_time);
             TextView prog_time = context.FindViewById<TextView>(Resource.Id.progress_time);
 
@@ -374,7 +374,10 @@ namespace Ass_Pain
 
         }
 
-        
+        private static string converts_millis_to_seconds_and_minutes(int millis)    
+        {
+            return $"{(int)((millis / (1000 * 60)) % 60)}:{(int)((millis / 1000) % 60)}";
+        }
 
 
     }
