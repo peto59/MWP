@@ -23,6 +23,7 @@ using AngleSharp.Html;
 using System.Runtime.InteropServices;
 using Android.Content.PM;
 using Android.Media;
+using AndroidX.Core.App;
 
 namespace Ass_Pain
 {
@@ -35,6 +36,22 @@ namespace Ass_Pain
         //public static NetworkManager nm = new NetworkManager();
 
         DrawerLayout drawer;
+
+        public static readonly string CHANNEL_ID = "location_notification";
+
+        private NotificationManagerCompat notification_manager;
+        public void push_notification()
+        {
+            Console.WriteLine("notificated");
+
+            var notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .SetSmallIcon(Resource.Drawable.ic_menu_manage)
+                .SetContentTitle("title")
+                .SetContentText("yeah this is something");
+
+            notification_manager.Notify(1, notification.Build());
+
+        }
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -155,6 +172,11 @@ namespace Ass_Pain
             player.SetView(this);
             IntentFilter intentFilter = new IntentFilter(AudioManager.ActionAudioBecomingNoisy);
             RegisterReceiver(player, intentFilter);
+
+
+            // notififcations
+            notification_manager = NotificationManagerCompat.From(this);
+            push_notification();
         }
 
         public override void OnBackPressed()

@@ -1049,7 +1049,7 @@ namespace Ass_Pain
                     var list_songs = FileManager.GetSongs();
                     for (int i = 0; i < list_songs.Count; i++)
                     {
-                        
+
                         LinearLayout ln_in = pupulate_songs(
                             list_songs[i], scale, false,
                             150, 100,
@@ -1058,13 +1058,12 @@ namespace Ass_Pain
                             "song", i, all_songs_ln_main
                         );
 
-                
+
                         Console.WriteLine("this song is going to buffer " + list_songs[i]);
                         lazy_buffer.Add(new Tuple<LinearLayout, int>(ln_in, i));
-                        
+
                     }
 
-                    Console.WriteLine("this much: " + Math.Min(5, lazy_buffer.Count));
                     for (var i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
                     {
                         song_tiles_image_set(lazy_buffer[i].Item1, list_songs[lazy_buffer[i].Item2], scale, 150, 100, all_songs_button_margins, "song", 15, all_songs_name_margins);
@@ -1087,15 +1086,10 @@ namespace Ass_Pain
                             {
                                 song_tiles_image_set(lazy_buffer[i].Item1, list_songs[lazy_buffer[i].Item2], scale, 150, 100, all_songs_button_margins, "song", 17, all_songs_name_margins);
                                 all_songs_ln_main.AddView(lazy_buffer[i].Item1);
-                                lazy_buffer.RemoveAt(i);
-                               
                             }
 
-                            for (var i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
-                                lazy_buffer.RemoveRange(i, Math.Min(5, lazy_buffer.Count));
+                            lazy_buffer.RemoveRange(0, Math.Min(5, lazy_buffer.Count));
                         }
-
-                       
                     };
 
 
