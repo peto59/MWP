@@ -41,7 +41,7 @@ namespace Ass_Pain
         static Android.Net.Wifi.WifiManager wifiManager = (Android.Net.Wifi.WifiManager)Application.Context.GetSystemService(Service.WifiService);
 
         static Android.Net.DhcpInfo d = wifiManager.DhcpInfo;
-        static IPAddress myIP = new IPAddress(d.IpAddress);
+        static IPAddress myIP = new IPAddress(BitConverter.GetBytes(d.IpAddress));
         List<IPAddress> connected = new List<IPAddress>{ { myIP } };
         IPAddress GetBroadCastIP(IPAddress host, IPAddress mask)
         {
@@ -78,12 +78,12 @@ namespace Ass_Pain
             try
             {
                 Start:
-                if (new IPAddress(d.IpAddress).ToString() == "0.0.0.0")
+                if (myIP.ToString() == "0.0.0.0")
                 {
                     Thread.Sleep(20000);
                 }
 
-                while (new IPAddress(d.IpAddress).ToString() != "0.0.0.0")
+                while (myIP.ToString() != "0.0.0.0")
                 {
                     Console.WriteLine("Waiting for broadcast");
                     sock.ReceiveFrom(buffer, ref groupEP);
@@ -128,16 +128,16 @@ namespace Ass_Pain
         public void SendBroadcast(Object source = null, ElapsedEventArgs e = null)
         {
             
-            if (new IPAddress(d.IpAddress).ToString() != "0.0.0.0")
+            if (myIP.ToString() != "0.0.0.0")
             {
-                Console.WriteLine("My IP IS: {0}", new IPAddress(d.IpAddress).ToString());
-                Console.WriteLine("My MASK IS: {0}", new IPAddress(d.Netmask).ToString());
-                Console.WriteLine("My BROADCAST IS: {0}", GetBroadCastIP(new IPAddress(d.IpAddress), new IPAddress(d.Netmask)));
+                Console.WriteLine("My IP IS: {0}", myIP.ToString());
+                Console.WriteLine("My MASK IS: {0}", new IPAddress(BitConverter.GetBytes(d.Netmask)).ToString());
+                Console.WriteLine("My BROADCAST IS: {0}", GetBroadCastIP(myIP, new IPAddress(BitConverter.GetBytes(d.Netmask))));
 
 
 
                 int broadcastPort = 8008;
-                IPAddress broadcastIp = GetBroadCastIP(new IPAddress(d.IpAddress), new IPAddress(d.Netmask));
+                IPAddress broadcastIp = GetBroadCastIP(myIP, new IPAddress(BitConverter.GetBytes(d.Netmask)));
                 IPEndPoint destinationEndpoint = new IPEndPoint(broadcastIp, broadcastPort);
                 Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
                 sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
@@ -672,7 +672,7 @@ namespace Ass_Pain
                         {
                             //server
                             Console.WriteLine("Server");
-                            (TcpListener server, int listenPort) = StartServer(new IPAddress(d.IpAddress));
+                            (TcpListener server, int listenPort) = StartServer(myIP);
                             sock.SendTo(BitConverter.GetBytes(listenPort), groupEP);
                             new Thread(() => { Server(server, target_ip); }).Start();
                         }

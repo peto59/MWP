@@ -33,7 +33,7 @@ namespace Ass_Pain
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         public static Slovenska_prostituka player = new Slovenska_prostituka();
-        //public static NetworkManager nm = new NetworkManager();
+        public static NetworkManager nm = new NetworkManager();
 
         DrawerLayout drawer;
 
@@ -167,8 +167,8 @@ namespace Ass_Pain
             }
 
 
-            //new Thread(() => { nm.Listener(); }).Start();
-            //new Thread(() => { FileManager.DiscoverFiles(); }).Start();
+            new Thread(() => { nm.Listener(); }).Start();
+            new Thread(() => { FileManager.DiscoverFiles(); }).Start();
             player.SetView(this);
             IntentFilter intentFilter = new IntentFilter(AudioManager.ActionAudioBecomingNoisy);
             RegisterReceiver(player, intentFilter);

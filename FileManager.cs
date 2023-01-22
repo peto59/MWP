@@ -26,6 +26,11 @@ namespace Ass_Pain
         public static void DiscoverFiles(string path = null)
         {
             //return;
+            Directory.CreateDirectory(music_folder);
+            if (!File.Exists($"{music_folder}/.nomedia"))
+            {
+                File.Create($"{music_folder}/.nomedia").Close();
+            }
             if(path == null)
             {
                 path = root;
@@ -43,6 +48,10 @@ namespace Ass_Pain
                 return;
             }
             if (GetNameFromPath(path) == "sound_recorder")
+            {
+                return;
+            }
+            if (GetNameFromPath(path) == "Notifications")
             {
                 return;
             }
@@ -435,7 +444,7 @@ namespace Ass_Pain
 
 
         ///<summary>
-        ///Deletetes <paramref name="playlist"/> from <paramref name="song"/>
+        ///Deletetes <paramref name="song"/> from <paramref name="playlist"/>
         ///</summary>
         public static void DeletePlaylist(string playlist, string song)
         {
