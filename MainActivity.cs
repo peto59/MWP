@@ -66,14 +66,32 @@ namespace Ass_Pain
             //Finally request permissions with the list of permissions and Id
             RequestPermissions(PermissionsLocation, RequestLocationId);
 
-            /*while (!Android.OS.Environment.IsExternalStorageManager)
+            try
             {
-                Intent intent = new Intent();
-                intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
-                Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
-                intent.SetData(uri);
-                StartActivity(intent);
-            }*/
+                while (!Android.OS.Environment.IsExternalStorageManager)
+                {
+                    Intent intent = new Intent();
+                    intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
+                    Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
+                    intent.SetData(uri);
+                    StartActivity(intent);
+                }
+            }catch(Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                try
+                {
+                    Intent intent = new Intent();
+                    intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
+                    Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
+                    intent.SetData(uri);
+                    StartActivity(intent);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 

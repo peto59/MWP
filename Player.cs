@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static Java.Util.Jar.Attributes;
 
 namespace Ass_Pain
 {
@@ -15,12 +16,43 @@ namespace Ass_Pain
     {
         private static MediaPlayer player = new MediaPlayer();
         private List<string> queue = new List<string>();
+        private List<string> orignalQueue = new List<string>();
         private int index = 0;
         private bool used = false;
-        private bool loopAll = false;
-        private bool loopSingle = false;
         AppCompatActivity view;
+        Int16 loopState = 0;
+        private bool loopSingle = false;
+        private bool loopAll = false;
         private bool shuffle = false;
+        /*public bool IsLoopingAll
+        {
+            get { return loopAll; }
+        }*/
+
+        /*public bool IsLoopingSingle
+        {
+            get { return loopSingle; }
+        }*/
+        public Int16 LoopState
+        {
+            get { return loopState; }
+        }
+        public bool IsShuffling
+        {
+            get { return shuffle; }
+        }
+        public bool IsPlaying
+        {
+            get { return player.IsPlaying; }
+        }
+        public int Duration
+        {
+            get { return player.Duration; }
+        }
+        public int CurrentPosition
+        {
+            get { return player.CurrentPosition; }
+        }
 
         public Slovenska_prostituka()
         {
@@ -69,14 +101,14 @@ namespace Ass_Pain
 
         public void NextSong(object sender = null, EventArgs e = null)
         {
-            if (queue.Count > index)
+            if (loopSingle && sender == null) 
             {
-                if (!loopSingle)
-                {
-                    index++;
-                }
                 Play();
-            }else if (loopAll)
+            } else if (queue.Count > index)
+            {
+                index++;
+                Play();
+            } else if (loopAll)
             {
                 index = 0;
                 Play();
@@ -148,6 +180,9 @@ namespace Ass_Pain
             }
         }
 
+        ///<summary>
+        ///Clears queue and resets index to 0
+        ///</summary>
         public void ClearQueue(object sender = null, EventArgs e = null)
         {
             queue = new List<string>();
@@ -168,14 +203,8 @@ namespace Ass_Pain
             else
             {
                 queue = new List<string>{source};
-                NextSong();
-
+                Play();
             }
-        }
-
-        public bool isPlaying()
-        {
-            return player.IsPlaying;
         }
 
         ///<summary>
@@ -184,8 +213,9 @@ namespace Ass_Pain
         public void GenerateQueue(List<string> source, int i = 0)
         {
             side_player.SetStopButton(view);
-            index = i;
             queue = source;
+            index = i;
+            Shuffle(shuffle);
             Play();
         }
 
@@ -237,22 +267,31 @@ namespace Ass_Pain
             queue = addition;
         }
 
-        public void Shuffle(bool shuf)
+        public void Shuffle(bool newShuffleState)
         {
-           if (queue.Count > 0)
-           {
+            if (newShuffleState && queue.Count > 0)
+            {
+                orignalQueue = queue;
                 string tmp = queue.Pop(index);
                 index = 0;
                 queue.Shuffle();
-                queue.Prepend(tmp);
-           }
-
-            shuffle = shuf;
-        
+                queue = queue.Prepend(tmp).ToList();
+            }
+            else
+            {
+                if(orignalQueue.Count > 0)
+                {
+                    index = orignalQueue.IndexOf(queue[index]);
+                    queue = orignalQueue;
+                }
+                orignalQueue = new List<string>();
+            }
+            shuffle = newShuffleState;
         }
 
         public void ToggleLoop(Int16 state)
         {
+            loopState = state;
             switch (state) { 
                 case 0:
                     loopAll = false;

@@ -37,8 +37,6 @@ namespace Ass_Pain
         static Dictionary<LinearLayout, string> player_buttons = new Dictionary<LinearLayout, string>();
 
         static ImageView play_image;
-        static Int16 repeat_state = 0;
-        static bool shuffle_state = false;
 
         private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, string 型 = "idk")
         {
@@ -70,7 +68,7 @@ namespace Ass_Pain
                     );
                     play_image.LayoutParameters = play_image_params;
 
-                    if (MainActivity.player.isPlaying())
+                    if (MainActivity.player.IsPlaying)
                         play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
                     else
                         play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
@@ -124,7 +122,15 @@ namespace Ass_Pain
                               (int)(20 * scale + 0.5f)
                             );
                             last_image.LayoutParameters = last_image_params;
-                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
+                            if (MainActivity.player.IsShuffling)
+                            {
+                                last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
+                            }
+                            else
+                            {
+                                last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
+                            }
+                            
                             break;
                         case "repeat":
                             last_image_params = new LinearLayout.LayoutParams(
@@ -132,8 +138,18 @@ namespace Ass_Pain
                              (int)(20 * scale + 0.5f)
                             );
                             last_image.LayoutParameters = last_image_params;
-                            last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
-                            
+                            switch (MainActivity.player.LoopState)
+                            {
+                                case 0:
+                                    last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
+                                    break;
+                                case 1:
+                                    last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
+                                    break;
+                                case 2:
+                                    last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
+                                    break;
+                            }
                             break;
                     }
 
@@ -221,18 +237,15 @@ namespace Ass_Pain
                 shuffle.Click += delegate
                 {
                     ImageView shuffle_img = (ImageView)shuffle.GetChildAt(0);
-                    if (!shuffle_state)
+                    if (MainActivity.player.IsShuffling)
                     {
-                        shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
-                        shuffle_state = true;
-
-                        MainActivity.player.Shuffle(shuffle_state);
+                        shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
                     }
                     else
                     {
-                        shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
-                        shuffle_state = false;
+                        shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
                     }
+                    MainActivity.player.Shuffle(!MainActivity.player.IsShuffling);
                 };
 
                 LinearLayout repeat = cube_creator("small", scale, context, "repeat");
@@ -240,23 +253,23 @@ namespace Ass_Pain
                 repeat.Click += delegate
                 {
                     ImageView repeat_img = (ImageView)repeat.GetChildAt(0);
-                    switch (repeat_state)
+                    switch (MainActivity.player.LoopState)
                     {
                         case 0:
                             repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
-                            repeat_state = 1;
+                            MainActivity.player.ToggleLoop(1);
                             break;
                         case 1:
                             repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
-                            repeat_state = 2;
+                            MainActivity.player.ToggleLoop(2);
                             break;
                         case 2:
                             repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
-                            repeat_state = 0;
+                            MainActivity.player.ToggleLoop(0);
                             break;
                     }
 
-                    MainActivity.player.ToggleLoop(repeat_state);
+                    
                 };
 
 
