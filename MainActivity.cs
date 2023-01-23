@@ -37,22 +37,6 @@ namespace Ass_Pain
 
         DrawerLayout drawer;
 
-        public static readonly string CHANNEL_ID = "location_notification";
-
-        private NotificationManagerCompat notification_manager;
-        public void push_notification()
-        {
-            Console.WriteLine("notificated");
-
-            var notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .SetSmallIcon(Resource.Drawable.ic_menu_manage)
-                .SetContentTitle("title")
-                .SetContentText("yeah this is something");
-
-            notification_manager.Notify(100, notification.Build());
-
-        }
-
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -175,8 +159,8 @@ namespace Ass_Pain
 
 
             // notififcations
-            notification_manager = NotificationManagerCompat.From(this);
-            push_notification();
+            Local_notification_service notif_service = new Local_notification_service();
+            notif_service.song_control_notification(this);
         }
 
         public override void OnBackPressed()
