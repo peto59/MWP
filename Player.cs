@@ -16,7 +16,8 @@ namespace Ass_Pain
 	[IntentFilter(new[] { AudioManager.ActionAudioBecomingNoisy })]
 	public class Slovenska_prostituka : BroadcastReceiver
 	{
-		public CancellationTokenSource cts = new CancellationTokenSource();
+		Local_notification_service notification_service = new Local_notification_service();
+        public CancellationTokenSource cts = new CancellationTokenSource();
 		private static MediaPlayer player = new MediaPlayer();
 		private List<string> queue = new List<string>();
 		private List<string> orignalQueue = new List<string>();
@@ -142,6 +143,7 @@ namespace Ass_Pain
 			cts.Cancel();
 			cts = new CancellationTokenSource();
 			side_player.StartMovingProgress(cts.Token, view);
+			notification_service.song_control_notification();
 		}
 
 		public void NextSong(object sender = null, EventArgs e = null)

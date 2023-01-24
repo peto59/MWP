@@ -1,11 +1,15 @@
 ﻿using Android.App;
 using Android.Content;
 using Android.Graphics;
+using Android.Icu.Number;
 using Android.OS;
 using Android.Support.V4.Media.Session;
 using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.App;
+using System;
+using System.IO;
+using System.Runtime.Remoting.Contexts;
 using Xamarin.Essentials;
 using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
@@ -76,7 +80,36 @@ namespace Ass_Pain
 
         }
 
-        public void song_control_notification(AppCompatActivity main_context)
+        private Bitmap get_current_song_image()
+        {
+            Bitmap image = null;
+            TagLib.File tagFile;
+
+            try
+            {
+                Console.WriteLine($"now playing: {MainActivity.player.NowPlaying()}");
+                tagFile = TagLib.File.Create(
+                    MainActivity.player.NowPlaying()
+                );
+                MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+                image = BitmapFactory.DecodeStream(ms);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine($"Doesnt contain image: {MainActivity.player.NowPlaying()}");
+            }
+
+            if (image == null)
+            {
+                image = BitmapFactory.DecodeStream(AndroidApp.Context.Assets.Open("music_placeholder.png"));
+            }
+
+            return image;
+        }
+
+        public void song_control_notification()
         {
             media_session = new MediaSessionCompat(AndroidApp.Context, "tag");
 
@@ -98,16 +131,16 @@ namespace Ass_Pain
             */
 
 
-            
+            Bitmap current_song_image = get_current_song_image();
           
             NotificationCompat.Builder notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
               .SetSmallIcon(
                   Resource.Drawable.ic_menu_camera
               )
-              .SetContentTitle("夜に駆ける")
-              .SetContentText("YOASOBI")
+              .SetContentTitle(FileManager.GetSongTitle(MainActivity.player.NowPlaying()))
+              .SetContentText(FileManager.GetSongArtist(MainActivity.player.NowPlaying())[0])
               .SetLargeIcon(
-                    BitmapFactory.DecodeStream(AndroidApp.Context.Assets.Open("yotu.jpg"))
+                    current_song_image
                )
               .AddAction(Resource.Drawable.previous, "Previous", null)
               .AddAction(Resource.Drawable.play, "play", null)

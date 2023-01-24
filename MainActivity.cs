@@ -160,7 +160,7 @@ namespace Ass_Pain
 
             // notififcations
             Local_notification_service notif_service = new Local_notification_service();
-            notif_service.song_control_notification(this);
+            notif_service.song_control_notification();
         }
 
         public override void OnBackPressed()
