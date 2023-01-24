@@ -33,3 +33,144 @@ fix file discovery
 Downloader.cs searchAPI add confirmation for user
 
 youtube.cs navigate back button
+
+
+
+
+public static async Task<(string, string, string, byte[])> SearchAPI(string name=null , string song = null, string album = null)
+        {
+            name = " Mori Calliope Ch. hololive-EN ";
+            song = "[ORIGINAL SONG] 失礼しますが、RIP♡ || “Excuse My Rudeness, But Could You Please RIP?” - Calliope Mori";
+            try
+            {
+                using (MusicBrainzClient client = new MusicBrainzClient())
+                {
+                    ArtistList artists = await client.Artists.SearchAsync(name, 20);
+                    Console.WriteLine("Total matches for '{0}': {1}", name, artists.Count);
+
+                    int count = artists.Items.Count(a => a.Score == 100);
+
+                    Console.WriteLine("Exact matches for '{0}': {1}", name, count);
+
+                    Artist artist;
+                    if (count > 1)
+                    {
+                        count = artists.Items.OrderByDescending(a => Levenshtein.Similarity(a.Name, name)).Count(a => a.Score == 1.0f);
+                        Console.WriteLine("Levenshtein matches for '{0}': {1}", name, count);
+                        if (count > 1)
+                        {
+                            count = artists.Items.OrderByDescending(a => Levenshtein.Similarity(a.Disambiguation, name)).Count(a => a.Score == 1.0f);
+                            Console.WriteLine("Levenshtein Disambiguation matches for '{0}': {1}", name, count);
+                            artist = artists.Items.OrderByDescending(a => Levenshtein.Similarity(a.Disambiguation, name)).First();
+                        }
+                        else
+                        {
+                            artist = artists.Items.OrderByDescending(a => Levenshtein.Similarity(a.Name, name)).First();
+                        }
+                    }
+                    else
+                    {
+                        artist = artists.Items.First();
+                    }
+                    Console.WriteLine($"{artist.Name} {artist.Id} {artist.Disambiguation}");
+                    var query = new QueryParameters<Recording>()
+                    {
+                        { "arid", artist.Id },
+                        { "recording", song }
+                    };
+
+                    var recordings = await client.Recordings.SearchAsync(query);
+                    if (recordings.Count == 0)
+                    {
+                        Console.WriteLine("No matches for recording");
+                        return (string.Empty, string.Empty, string.Empty, null);
+                    }
+                    Console.WriteLine("Total matches for '{0} by {1}': {2}", song, artist.Name, recordings.Count);
+                    var matches = recordings.Items.Where(r => r.Title == song);
+                    Console.WriteLine("Total exact matches for '{0} by {1}': {2}", song, artist.Name, matches.Count());
+
+                    if (matches.Count() == 0)
+                    {
+                        matches = recordings.Items.OrderByDescending(a => Levenshtein.Similarity(a.Title, song));
+                        //Console.WriteLine("No matches for recording");
+                        //return (string.Empty, string.Empty, string.Empty, null);
+                    }
+                    using (HttpClient httpClient = new HttpClient())
+                    {
+                        foreach (var match in matches)
+                        {
+                            IEnumerable<Release> releases;
+                            if (album != null)
+                            {
+                                releases = match.Releases.OrderBy(r => Levenshtein.Similarity(r.ReleaseGroup.Title, album));
+                                Console.WriteLine($"asdASDASD: {releases.First().ReleaseGroup.Title}");
+                            }
+                            else
+                            {
+                                releases = match.Releases.OrderBy(r => r.Date);
+                            }
+                            foreach (var release in releases)
+                            {
+                                var albumId = release.ReleaseGroup.Id;
+                                await Task.Delay(1000);
+                                var query2 = new QueryParameters<ReleaseGroup>()
+                                {
+                                    { "arid", artist.Id },
+                                    { "rgid", albumId }
+                                };
+
+                                var groups = await client.ReleaseGroups.SearchAsync(query2);
+
+                                Console.WriteLine($"release group matches {groups.Count}");
+
+                                var response = await httpClient.GetAsync($"https://coverartarchive.org/release-group/{albumId}");
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    //show prompt for user to confirm image
+                                    //confimation granted
+                                    if (1 == 1)
+                                    {
+                                        MusicBrainzThumbnail thumbnail = Newtonsoft.Json.JsonConvert.DeserializeObject<MusicBrainzThumbnail>(await response.Content.ReadAsStringAsync());
+                                        string url = thumbnail.images.FirstOrDefault().image;
+                                        using (WebClient cli = new WebClient())
+                                        {
+                                            byte[] bytes = cli.DownloadData(url);
+                                            Console.WriteLine($"Returning: {artist.Name} {groups.First().Title} {System.IO.Path.GetExtension(url)} + bytes[]");
+                                            return (artist.Name, groups.First().Title, System.IO.Path.GetExtension(url), bytes);
+                                        }
+                                    }
+                                }
+
+                                response = await httpClient.GetAsync($"https://coverartarchive.org/release/{release.Id}");
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    //show prompt for user to confirm image
+                                    //confimation granted
+                                    if (1 == 1)
+                                    {
+                                        MusicBrainzThumbnail thumbnail = Newtonsoft.Json.JsonConvert.DeserializeObject<MusicBrainzThumbnail>(await response.Content.ReadAsStringAsync());
+                                        string url = thumbnail.images.FirstOrDefault().image;
+                                        string extension = System.IO.Path.GetExtension(url);
+                                        using (WebClient cli = new WebClient())
+                                        {
+                                            byte[] bytes = cli.DownloadData(url);
+                                            Console.WriteLine($"Returning: {artist.Name} {groups.First().Title} {System.IO.Path.GetExtension(url)} + bytes[]");
+                                            return (artist.Name, groups.First().Title, System.IO.Path.GetExtension(url), bytes);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Console.WriteLine("Returning null");
+                        return (string.Empty, string.Empty, string.Empty, null);
+                    }
+                    //https://musicbrainz.org/doc/Cover_Art_Archive/API
+                    //https://stackoverflow.com/questions/13453678/how-to-get-album-image-using-musicbrainz
+                    //https://github.com/avatar29A/MusicBrainz/wiki/Example-4-Recordings
+                }
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return (string.Empty, string.Empty, string.Empty, null);
+            }
+        }

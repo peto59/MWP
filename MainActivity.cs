@@ -34,6 +34,7 @@ namespace Ass_Pain
     {
         public static Slovenska_prostituka player = new Slovenska_prostituka();
         public static NetworkManager nm = new NetworkManager();
+        public static APIThrottler throttler = new APIThrottler();
 
         DrawerLayout drawer;
 
@@ -177,6 +178,8 @@ namespace Ass_Pain
             // notififcations
             notification_manager = NotificationManagerCompat.From(this);
             push_notification();
+
+            //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
         }
 
         public override void OnBackPressed()

@@ -37,9 +37,11 @@ namespace Ass_Pain
     {
         public static string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
         public static string musicPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+
         public static async void Download(object sender, EventArgs e, string url)
         {
             List<string> authors = new List<string>();
+            //APIThrottler throttler = new APIThrottler();
             if (url.Contains("playlist"))
             {
                 YoutubeClient youtube = new YoutubeClient();
@@ -78,118 +80,130 @@ namespace Ass_Pain
         }
 
 
-        public static async void DownloadVideo(object sender, EventArgs e, string url, int i, VideoId videoId, string videoTitle, string channelName, bool getAuthourImage, ChannelId channelId ,string album = null, int a = 0, bool last = false, string playlistCoverExtension = null)
+        public static async void DownloadVideo(object sender, EventArgs e, string url, int i, VideoId videoId, string videoTitle, string channelName, bool getAuthourImage, ChannelId channelId, string album = null, int a = 0, bool last = false, string playlistCoverExtension = null)
         {
-            var imageTask = GetImage(i, videoId);
-            var searchTask = SearchAPI(channelName, videoTitle);
-
-            YoutubeClient youtube = new YoutubeClient();
-            StreamManifest streamManifest = await youtube.Videos.Streams.GetManifestAsync(url);
-            var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-            await youtube.Videos.Streams.DownloadAsync(streamInfo, $"{path}/tmp/unproccessed{i}.mp3");
-
-            FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu);
-            await imageTask;
-            var FFmpegTask = Task.Run(() => { return FFmpegKit.Execute($"-i {path}/tmp/unproccessed{i}.mp3 -i {path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -loglevel quiet -y '{path}/tmp/video{i}.mp3'"); });
-
-            (string author, string albumName, string albumCoverExtension, byte[] albumCover) = await searchTask;
-            string file_name = FileManager.Sanitize(videoTitle);
-            string authorPath;
-            if (author == String.Empty)
+            try
             {
-                author = channelName;
-                authorPath = FileManager.Sanitize(FileManager.GetAlias(channelName));
-            }
-            else
-            {
-                album = albumName;
-                authorPath = FileManager.Sanitize(FileManager.GetAlias(author));
-            }
+                var imageTask = GetImage(i, videoId);
+                //var searchTask = SearchAPI(channelName, videoTitle, album);
+                var searchTask = MainActivity.throttler.Throttle(new List<string> { channelName, videoTitle, album });
 
-            string output;
-            if (album != null)
-            {
-                string album_name = FileManager.Sanitize(album);
-                Directory.CreateDirectory($"{musicPath}/{authorPath}/{album_name}");
-                output = $"{musicPath}/{authorPath}/{album_name}/{file_name}.mp3";
-                if (!File.Exists($"{musicPath}/{authorPath}/{album_name}/cover.jpg") && !File.Exists($"{musicPath}/{authorPath}/{album_name}/cover.png"))
+                YoutubeClient youtube = new YoutubeClient();
+                StreamManifest streamManifest = await youtube.Videos.Streams.GetManifestAsync(url);
+                var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
+                await youtube.Videos.Streams.DownloadAsync(streamInfo, $"{path}/tmp/unproccessed{i}.mp3");
+
+                FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu);
+                await imageTask;
+                var FFmpegTask = Task.Run(() => { return FFmpegKit.Execute($"-i {path}/tmp/unproccessed{i}.mp3 -i {path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -loglevel quiet -y '{path}/tmp/video{i}.mp3'"); });
+
+                (string author, string albumName, string albumCoverExtension, byte[] albumCover) = await searchTask;
+                string file_name = FileManager.Sanitize(videoTitle);
+                string authorPath;
+                if (author == String.Empty)
                 {
-                    if (albumCoverExtension != String.Empty)
+                    author = channelName;
+                    authorPath = FileManager.Sanitize(FileManager.GetAlias(channelName));
+                }
+                else
+                {
+                    album = albumName;
+                    authorPath = FileManager.Sanitize(FileManager.GetAlias(author));
+                }
+
+                string output;
+                if (album != null)
+                {
+                    string album_name = FileManager.Sanitize(album);
+                    Directory.CreateDirectory($"{musicPath}/{authorPath}/{album_name}");
+                    output = $"{musicPath}/{authorPath}/{album_name}/{file_name}.mp3";
+                    if (!File.Exists($"{musicPath}/{authorPath}/{album_name}/cover.jpg") && !File.Exists($"{musicPath}/{authorPath}/{album_name}/cover.png"))
                     {
-                        _ = Task.Run(() => { File.WriteAllBytes($"{musicPath}/{authorPath}/{album_name}/cover{albumCoverExtension}", albumCover); });
-                    }
-                    else
-                    {
-                        var t = Task.Run(() => {
-                            File.Copy($"{path}/tmp/playlistThumb{a}{playlistCoverExtension}", $"{musicPath}/{authorPath}/{album_name}/cover{playlistCoverExtension}", true);
-                        });
-                        if (last)
+                        File.Create($"{musicPath}/{authorPath}/{album_name}/cover{albumCoverExtension ?? playlistCoverExtension ?? ".jpg"}").Close();
+                        if (albumCoverExtension != String.Empty)
                         {
-                            await t;
-                            File.Delete($"{path}/tmp/playlistThumb{a}{playlistCoverExtension}");
+                            _ = Task.Run(() => { File.WriteAllBytes($"{musicPath}/{authorPath}/{album_name}/cover{albumCoverExtension}", albumCover); });
+                        }
+                        else
+                        {
+                            var t = Task.Run(() => {
+                                File.Copy($"{path}/tmp/playlistThumb{a}{playlistCoverExtension}", $"{musicPath}/{authorPath}/{album_name}/cover{playlistCoverExtension}", true);
+                            });
+                            if (last)
+                            {
+                                await t;
+                                File.Delete($"{path}/tmp/playlistThumb{a}{playlistCoverExtension}");
+                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                Directory.CreateDirectory($"{musicPath}/{authorPath}");
-                output = $"{musicPath}/{authorPath}/{file_name}.mp3";
-            }
-
-            if (getAuthourImage)
-            {
-                if (!File.Exists($"{musicPath}/{authorPath}/cover.jpg") && !File.Exists($"{musicPath}/{authorPath}/cover.png"))
+                else
                 {
-                    _ = Task.Run(async () => { 
-                        var authorThumbnails = await youtube.Channels.GetAsync(channelId);
-                        GetImage(authorThumbnails.Thumbnails.AsEnumerable(), $"{musicPath}/{authorPath}");
-                    });
+                    Directory.CreateDirectory($"{musicPath}/{authorPath}");
+                    output = $"{musicPath}/{authorPath}/{file_name}.mp3";
                 }
-            }
 
-            FFmpegSession session = await FFmpegTask;
-            _ = Task.Run(() => {
-                File.Delete($"{path}/tmp/file{i}.jpg");
-                File.Delete($"{path}/tmp/unproccessed{i}.mp3");
-            });
-            
-            if (session.ReturnCode.IsSuccess)
-            {
-                View view = (View)sender;
-                try
+                if (getAuthourImage)
                 {
-                    File.Move($"{path}/tmp/video{i}.mp3", output);
+                    if (!File.Exists($"{musicPath}/{authorPath}/cover.jpg") && !File.Exists($"{musicPath}/{authorPath}/cover.png"))
+                    {
+                        _ = Task.Run(async () => {
+                            var authorThumbnails = await youtube.Channels.GetAsync(channelId);
+                            GetImage(authorThumbnails.Thumbnails.AsEnumerable(), $"{musicPath}/{authorPath}");
+                        });
+                    }
                 }
-                catch
+
+                FFmpegSession session = await FFmpegTask;
+                _ = Task.Run(() => {
+                    File.Delete($"{path}/tmp/file{i}.jpg");
+                    File.Delete($"{path}/tmp/unproccessed{i}.mp3");
+                });
+
+                if (session.ReturnCode.IsSuccess)
+                {
+                    View view = (View)sender;
+                    try
+                    {
+                        File.Move($"{path}/tmp/video{i}.mp3", output);
+                    }
+                    catch
+                    {
+                        File.Delete($"{path}/tmp/video{i}.mp3");
+                        Console.WriteLine("Video already exists");
+                        Snackbar.Make(view, $"Exists: {videoTitle}", Snackbar.LengthLong)
+                            .SetAction("Action", (View.IOnClickListener)null).Show();
+                        return;
+                    }
+                    Console.WriteLine("Adding tags");
+                    var tfile = TagLib.File.Create(output);
+                    tfile.Tag.Title = videoTitle;
+                    string[] autors = { FileManager.GetAlias(author) };
+                    tfile.Tag.Performers = autors;
+                    tfile.Tag.AlbumArtists = autors;
+                    if (album != null)
+                    {
+                        tfile.Tag.Album = album;
+                    }
+                    tfile.Save();
+                    Snackbar.Make(view, $"Success: {videoTitle}", Snackbar.LengthLong)
+                        .SetAction("Action", (View.IOnClickListener)null).Show();
+                }
+                else
                 {
                     File.Delete($"{path}/tmp/video{i}.mp3");
-                    Console.WriteLine("Video already exists");
-                    Snackbar.Make(view, $"Exists: {videoTitle}", Snackbar.LengthLong)
+                    Console.WriteLine($"FFmpeg failed with status code {session.ReturnCode.Value}");
+                    View view = (View)sender;
+                    Snackbar.Make(view, $"{session.ReturnCode.Value} Failed: {videoTitle}", Snackbar.LengthLong)
                         .SetAction("Action", (View.IOnClickListener)null).Show();
-                    return;
                 }
-                Console.WriteLine("Adding tags");
-                var tfile = TagLib.File.Create(output);
-                tfile.Tag.Title = videoTitle;
-                string[] autors = { FileManager.GetAlias(author) };
-                tfile.Tag.Performers = autors;
-                tfile.Tag.AlbumArtists = autors;
-                if(album != null)
-                {
-                    tfile.Tag.Album = album;
-                }
-                tfile.Save();
-                Snackbar.Make(view, $"Success: {videoTitle}", Snackbar.LengthLong)
-                    .SetAction("Action", (View.IOnClickListener)null).Show();
             }
-            else
+            catch (Exception ex)
             {
-                File.Delete($"{path}/tmp/video{i}.mp3");
-                Console.WriteLine($"FFmpeg failed with status code {session.ReturnCode.Value}");
+                Console.WriteLine($"BIG EROOOOOOOOR: {ex.Message}");
                 View view = (View)sender;
-                Snackbar.Make(view, $"{session.ReturnCode.Value} Failed: {videoTitle}", Snackbar.LengthLong)
-                    .SetAction("Action", (View.IOnClickListener)null).Show();
+                Snackbar.Make(view, $"Failed: {videoTitle}", Snackbar.LengthLong)
+                        .SetAction("Action", (View.IOnClickListener)null).Show();
             }
         }
 
@@ -265,18 +279,21 @@ namespace Ass_Pain
             return ".idk";
         }
 
-        public static async Task<(string, string, string, byte[])> SearchAPI(string name, string song)
+        public static async Task<(string, string, string, byte[])> SearchAPI(string name=null , string song = null, string album = null)
         {
+            Console.WriteLine("STARTING API SEARCH");
+            name = "Mori Calliope Ch. hololive-EN";
+            song = "[Original Rap] DEAD BEATS - Calliope Mori #holoMyth #hololiveEnglish";
             try
             {
                 using (MusicBrainzClient client = new MusicBrainzClient())
                 {
                     ArtistList artists = await client.Artists.SearchAsync(name, 20);
-                    Console.WriteLine("Total matches for '{0}': {1}", name, artists.Count);
+                    //Console.WriteLine("Total matches for '{0}': {1}", name, artists.Count);
 
                     int count = artists.Items.Count(a => a.Score == 100);
 
-                    Console.WriteLine("Exact matches for '{0}': {1}", name, count);
+                    //Console.WriteLine("Exact matches for '{0}': {1}", name, count);
 
                     Artist artist;
                     if (count > 1)
@@ -299,44 +316,108 @@ namespace Ass_Pain
                         artist = artists.Items.First();
                     }
                     Console.WriteLine($"{artist.Name} {artist.Id} {artist.Disambiguation}");
+                    Console.WriteLine();
+                    await Task.Delay(1000);
                     var query = new QueryParameters<Recording>()
                     {
                         { "arid", artist.Id },
                         { "recording", song }
                     };
 
-                    var recordings = await client.Recordings.SearchAsync(query);
+                    var recordings = await client.Recordings.SearchAsync(query, 100);
+                    foreach(var recording in recordings)
+                    {
+                        Console.WriteLine(recording.Title);
+                    }
                     if (recordings.Count == 0)
                     {
                         Console.WriteLine("No matches for recording");
                         return (string.Empty, string.Empty, string.Empty, null);
                     }
-                    Console.WriteLine("Total matches for '{0} by {1}': {2}", song, artist.Name, recordings.Count);
-                    var matches = recordings.Items.Where(r => r.Title == song);
-                    Console.WriteLine("Total exact matches for '{0} by {1}': {2}", song, artist.Name, matches.Count());
+                    Console.WriteLine("Total matches for recording '{0} by {1}': {2}", song, artist.Name, recordings.Count);
+                    var matches = recordings.Items.Where(r => r.Credits.Where(a => a.Artist.Id == artist.Id) != null ).Where(r => r.Title == song);
+                    Console.WriteLine("Total exact matches recording for '{0} by {1}': {2}", song, artist.Name, matches.Count());
 
                     if (matches.Count() == 0)
                     {
-                        matches = recordings.Items.OrderByDescending(a => Levenshtein.Similarity(a.Title, song));
+                        //matches = recordings.Items.Where(r => r.Credits.Where(a => a.Artist.Id == artist.Id) != null).OrderByDescending(a => Levenshtein.Similarity(a.Title, song));
+                        /*var answer = from recording in recordings.Items
+                                     from credit in recording.Credits
+                                     where credit.Artist.Id == artist.Id
+                                     select recording;*/
+                        List<Recording> x = new List<Recording>();
+                        foreach(Recording recor in recordings.Items)
+                        {
+                            Console.WriteLine(recor.Title);
+                            foreach (var cred in recor.Credits)
+                            {
+                                if(cred.Artist.Id == artist.Id && recor.Releases != null)
+                                {
+                                    if (recor.Releases.Count > 0)
+                                    {
+                                        if (song.IndexOf("remix", StringComparison.OrdinalIgnoreCase) < 0)
+                                        {
+                                            if (recor.Title.IndexOf("remix", StringComparison.OrdinalIgnoreCase) < 0)
+                                            {
+                                                x.Add(recor);
+                                                Console.WriteLine(recor.Title);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            x.Add(recor);
+                                            Console.WriteLine(recor.Title);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        x = x.OrderByDescending(s => Levenshtein.Similarity(s.Title, song)).ToList();
+                        //Console.WriteLine($"LINQ matches: {answer.Count()}");
+                        foreach (var match in x)
+                        {
+                            try
+                            {
+                                Console.WriteLine($"TITLE: {match.Title}");
+                                Console.WriteLine($"RELEASES: {match.Releases.Count}");
+                            }
+                            catch(Exception ex)
+                            {
+                                Console.WriteLine(ex);
+                            }
+                        }
+                        matches = x;
+                        return (string.Empty, string.Empty, string.Empty, null);
                     }
                     using (HttpClient httpClient = new HttpClient())
                     {
-                        foreach (var match in matches)
+                        foreach (Recording match in matches)
                         {
-                            var releases = match.Releases.OrderBy(r => r.Date);
+                            IEnumerable<Release> releases;
+                            if (album != null)
+                            {
+                                releases = match.Releases.OrderBy(r => Levenshtein.Similarity(r.Title, album));
+                                Console.WriteLine($"asdASDASD: {releases.First().ReleaseGroup.Title}");
+                            }
+                            else
+                            {
+                                releases = match.Releases.OrderBy(r => r.Date);
+                            }
                             foreach (var release in releases)
                             {
-                                var albumId = release.ReleaseGroup.Id;
+                                //Console.WriteLine(release.);
+                                /*await Task.Delay(1000);
                                 var query2 = new QueryParameters<ReleaseGroup>()
                                 {
-                                    { "rgid", albumId }
+                                    { "arid", artist.Id },
+                                    { "reid", release.Id }
                                 };
 
                                 var groups = await client.ReleaseGroups.SearchAsync(query2);
 
-                                Console.WriteLine($"release group matches {groups.First().Title}");
+                                Console.WriteLine($"release group matches {groups.Count}");
 
-                                var response = await httpClient.GetAsync($"https://coverartarchive.org/release-group/{albumId}");
+                                var response = await httpClient.GetAsync($"https://coverartarchive.org/release-group/{groups.First().Id}");
                                 if (response.IsSuccessStatusCode)
                                 {
                                     //show prompt for user to confirm image
@@ -348,12 +429,13 @@ namespace Ass_Pain
                                         using (WebClient cli = new WebClient())
                                         {
                                             byte[] bytes = cli.DownloadData(url);
+                                            Console.WriteLine($"Returning: {artist.Name} {groups.First().Title} {System.IO.Path.GetExtension(url)} + bytes[]");
                                             return (artist.Name, groups.First().Title, System.IO.Path.GetExtension(url), bytes);
                                         }
                                     }
-                                }
+                                }*/
 
-                                response = await httpClient.GetAsync($"https://coverartarchive.org/release/{release.Id}");
+                                var response = await httpClient.GetAsync($"https://coverartarchive.org/release/{release.Id}");
                                 if (response.IsSuccessStatusCode)
                                 {
                                     //show prompt for user to confirm image
@@ -366,12 +448,14 @@ namespace Ass_Pain
                                         using (WebClient cli = new WebClient())
                                         {
                                             byte[] bytes = cli.DownloadData(url);
-                                            return (artist.Name, groups.First().Title, System.IO.Path.GetExtension(url), bytes);
+                                            Console.WriteLine($"Returning: {artist.Name} {release.Title} {System.IO.Path.GetExtension(url)} + bytes[]");
+                                            return (artist.Name, release.Title, System.IO.Path.GetExtension(url), bytes);
                                         }
                                     }
                                 }
                             }
                         }
+                        Console.WriteLine("Returning null");
                         return (string.Empty, string.Empty, string.Empty, null);
                     }
                     //https://musicbrainz.org/doc/Cover_Art_Archive/API

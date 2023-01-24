@@ -67,9 +67,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
+    <Compile Include="APIThrottler.cs" />
+    <Compile Include="Class1.cs" />
     <Compile Include="Interval.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Levenshtein.cs" />
+    <Compile Include="MediaSessionCallback.cs" />
     <Compile Include="NetworkManager.cs" />
     <Compile Include="Downloader.cs" />
     <Compile Include="FileManager.cs" />

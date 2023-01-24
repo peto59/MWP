@@ -1,16 +1,20 @@
 ﻿using Android.App;
 using Android.Content;
 using Android.Media;
+using Android.Media.Session;
 using AndroidX.AppCompat.App;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using AndroidApp = Android.App.Application;
 using static Android.Renderscripts.Sampler;
 using static Java.Util.Jar.Attributes;
+using Android.Views.Animations;
 
 namespace Ass_Pain
+
 {
 	[BroadcastReceiver(Enabled = false, Exported = false)]
 	[IntentFilter(new[] { AudioManager.ActionAudioBecomingNoisy })]
@@ -18,7 +22,9 @@ namespace Ass_Pain
 	{
 		public CancellationTokenSource cts = new CancellationTokenSource();
 		private static MediaPlayer player = new MediaPlayer();
-		private List<string> queue = new List<string>();
+        MediaSession session = new MediaSession(AndroidApp.Context, "MusicService");
+        AudioManager manager = AudioManager.FromContext(AndroidApp.Context);
+        private List<string> queue = new List<string>();
 		private List<string> orignalQueue = new List<string>();
 		private int index = 0;
 		private bool used = false;
@@ -96,16 +102,32 @@ namespace Ass_Pain
 			get { return progTimeState; }
 		}
 
+
 		public Slovenska_prostituka()
 		{
+
 			player.Completion += NextSong;
 			player.Prepared += (sender, ea) =>
 			{
-				used = true;
+                var request = manager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
+                if (request != AudioFocusRequest.Granted)
+                {
+                    // handle any failed requests
+                }
+                if (!session.Active)
+                {
+                    session.Active = true;
+                }
+                used = true;
 			};
-		}
+			session.SetCallback(new MediaSessionCallback());
+            session.SetFlags(MediaSessionFlags.HandlesMediaButtons |
+            MediaSessionFlags.HandlesTransportControls);
 
-		public override void OnReceive(Context context, Intent intent)
+
+        }
+
+        public override void OnReceive(Context context, Intent intent)
 		{
 			Console.WriteLine("noisy");
 			player.Pause();
@@ -146,10 +168,7 @@ namespace Ass_Pain
 
 		public void NextSong(object sender = null, EventArgs e = null)
 		{
-			if (loopSingle && sender == null) 
-			{
-				Play();
-			} else if (queue.Count > index)
+			if (queue.Count > index)
 			{
 				index++;
 				Play();
@@ -339,14 +358,17 @@ namespace Ass_Pain
 				case 0:
 					loopAll = false;
 					loopSingle = false;
-					break;
+                    player.Looping = false;
+                    break;
 				case 1:
 					loopAll = true;
 					loopSingle = false;
-					break;
+                    player.Looping = false;
+                    break;
 				case 2:
 					loopAll = false;
 					loopSingle = true;
+					player.Looping = true;
 					break;
 				default: break;
 			}
