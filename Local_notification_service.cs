@@ -70,7 +70,7 @@ namespace Ass_Pain
                 .SetContentTitle("title")
                 .SetContentText("message")
                 .SetAutoCancel(true)
-                .SetContentIntent(pending);
+                .SetContentIntent(pending)
 
 
             NotificationManagerCompat manager = NotificationManagerCompat.From(AndroidApp.Context);
