@@ -19,7 +19,6 @@ namespace Ass_Pain
     public class equalizer : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         DrawerLayout drawer;
-        Slovenska_prostituka player = MainActivity.player;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {

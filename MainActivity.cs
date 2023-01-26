@@ -32,7 +32,7 @@ namespace Ass_Pain
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
-        public static Slovenska_prostituka player = new Slovenska_prostituka();
+        // public static Slovenska_prostituka player = new Slovenska_prostituka();
         public static NetworkManager nm = new NetworkManager();
         public static APIThrottler throttler = new APIThrottler();
         public static MyBroadcastReceiver receiver;
@@ -156,12 +156,10 @@ namespace Ass_Pain
 
             //new Thread(() => { nm.Listener(); }).Start();
             //new Thread(() => { FileManager.DiscoverFiles(); }).Start();
-            player.SetView(this);
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver(this);
-            IntentFilter intentFilter = new IntentFilter(AudioManager.ActionAudioBecomingNoisy);
-            RegisterReceiver(receiver, intentFilter);
-            //StartService(new Intent(this, typeof(MediaService)));
+            RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
+            StartService(new Intent(this, typeof(MediaService)));
             //StartService(new Intent(MediaService.ActionPlay, null, this, typeof(MediaService)));
 
             //new Thread(() => { Thread.Sleep(10000); stateHandler.zastav(); }).Start();

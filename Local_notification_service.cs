@@ -49,8 +49,6 @@ namespace Ass_Pain
 
         public void push_notification()
         {
-
-
             if (!is_channel_init)
             {
                 create_notification_channel();
@@ -87,9 +85,9 @@ namespace Ass_Pain
 
             try
             {
-                Console.WriteLine($"now playing: {MainActivity.player.NowPlaying()}");
+                Console.WriteLine($"now playing: {MainActivity.stateHandler.NowPlaying}");
                 tagFile = TagLib.File.Create(
-                    MainActivity.player.NowPlaying()
+                    MainActivity.stateHandler.NowPlaying
                 );
                 MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
                 image = BitmapFactory.DecodeStream(ms);
@@ -98,7 +96,7 @@ namespace Ass_Pain
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                Console.WriteLine($"Doesnt contain image: {MainActivity.player.NowPlaying()}");
+                Console.WriteLine($"Doesnt contain image: {MainActivity.stateHandler.NowPlaying}");
             }
 
             if (image == null)
@@ -112,6 +110,7 @@ namespace Ass_Pain
         public void song_control_notification()
         {
             media_session = new MediaSessionCompat(AndroidApp.Context, "tag");
+            
 
             if (!is_channel_init)
             {
@@ -130,15 +129,14 @@ namespace Ass_Pain
               .SetDefaults((int)NotificationDefaults.Sound | (int)NotificationDefaults.Vibrate);
             */
 
-
             Bitmap current_song_image = get_current_song_image();
           
             NotificationCompat.Builder notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
               .SetSmallIcon(
                   Resource.Drawable.ic_menu_camera
               )
-              .SetContentTitle(FileManager.GetSongTitle(MainActivity.player.NowPlaying()))
-              .SetContentText(FileManager.GetSongArtist(MainActivity.player.NowPlaying())[0])
+              .SetContentTitle(FileManager.GetSongTitle(MainActivity.stateHandler.NowPlaying))
+              .SetContentText(FileManager.GetSongArtist(MainActivity.stateHandler.NowPlaying)[0])
               .SetLargeIcon(
                     current_song_image
                )

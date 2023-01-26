@@ -70,7 +70,7 @@ namespace Ass_Pain
 					);
 					play_image.LayoutParameters = play_image_params;
 
-					if (MainActivity.player.IsPlaying)
+					if (MainActivity.stateHandler.IsPlaying)
 						play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
 					else
 						play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
@@ -124,7 +124,7 @@ namespace Ass_Pain
 							  (int)(20 * scale + 0.5f)
 							);
 							last_image.LayoutParameters = last_image_params;
-							if (MainActivity.player.IsShuffling)
+							if (MainActivity.stateHandler.IsShuffling)
 							{
 								last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
 							}
@@ -140,7 +140,7 @@ namespace Ass_Pain
 							 (int)(20 * scale + 0.5f)
 							);
 							last_image.LayoutParameters = last_image_params;
-							switch (MainActivity.player.LoopState)
+							switch (MainActivity.stateHandler.LoopState)
 							{
 								case 0:
 									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
@@ -167,7 +167,9 @@ namespace Ass_Pain
 
 		private static void pause_play(Object sender, EventArgs e, AppCompatActivity context)
 		{
-			MainActivity.player.TogglePlayButton(context);
+			context.StartService(
+				new Intent(MediaService.ActionTogglePlay, null, context, typeof(MediaService))
+			);
 		}
 
 		public static void SetPlayButton(AppCompatActivity context)
@@ -186,7 +188,7 @@ namespace Ass_Pain
 		{
 			// basic  vars
 			string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
-			string current_song_path = MainActivity.player.NowPlaying();
+			string current_song_path = MainActivity.stateHandler.NowPlaying;
 			float scale = context.Resources.DisplayMetrics.Density;
 
 			// sing title image
@@ -239,7 +241,7 @@ namespace Ass_Pain
 				shuffle.Click += delegate
 				{
 					ImageView shuffle_img = (ImageView)shuffle.GetChildAt(0);
-					if (MainActivity.player.IsShuffling)
+					if (MainActivity.stateHandler.IsShuffling)
 					{
 						shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
 					}
@@ -247,7 +249,11 @@ namespace Ass_Pain
 					{
 						shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
 					}
-					MainActivity.player.Shuffle(!MainActivity.player.IsShuffling);
+					context.StartService(
+						new Intent(MediaService.ActionShuffle, null, context, typeof(MediaService))
+						.PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling)
+					);
+
 				};
 
 				LinearLayout repeat = cube_creator("small", scale, context, "repeat");
@@ -255,19 +261,28 @@ namespace Ass_Pain
 				repeat.Click += delegate
 				{
 					ImageView repeat_img = (ImageView)repeat.GetChildAt(0);
-					switch (MainActivity.player.LoopState)
+					switch (MainActivity.stateHandler.LoopState)
 					{
 						case 0:
 							repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
-							MainActivity.player.ToggleLoop(1);
+							context.StartService(
+								new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
+								.PutExtra("loopState", 1)
+							);
 							break;
 						case 1:
 							repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
-							MainActivity.player.ToggleLoop(2);
-							break;
+                            context.StartService(
+                            new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
+								.PutExtra("loopState", 2)
+							);
+                            break;
 						case 2:
 							repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
-							MainActivity.player.ToggleLoop(0);
+							context.StartService(
+								new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
+								.PutExtra("loopState", 0)
+							);
 							break;
 					}
 
@@ -278,7 +293,9 @@ namespace Ass_Pain
 				LinearLayout last = cube_creator("small", scale, context, "left");
 				last.Click += delegate
 				{
-					MainActivity.player.PreviousSong();
+					context.StartService(
+						new Intent(MediaService.ActionPreviousSong, null, context, typeof(MediaService))
+					);
 				};
 				player_buttons.Add(last, "last");
 
@@ -289,7 +306,9 @@ namespace Ass_Pain
 				LinearLayout next = cube_creator("small", scale, context, "right");
 				next.Click += delegate
 				{
-					MainActivity.player.NextSong();
+					context.StartService(
+						new Intent(MediaService.ActionNextSong, null, context, typeof(MediaService))
+					);
 				};
 				player_buttons.Add(next, "next");
 
@@ -312,9 +331,9 @@ namespace Ass_Pain
 
 			try
 			{
-				Console.WriteLine($"now playing: {MainActivity.player.NowPlaying()}");
+				Console.WriteLine($"now playing: {MainActivity.stateHandler.NowPlaying}");
 				tagFile = TagLib.File.Create(
-					MainActivity.player.NowPlaying()
+					MainActivity.stateHandler.NowPlaying
 				);
 				MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
 				image = BitmapFactory.DecodeStream(ms);
@@ -329,7 +348,7 @@ namespace Ass_Pain
 			catch (Exception ex)
 			{
 				Console.WriteLine(ex.Message);
-				Console.WriteLine($"Doesnt contain image: {MainActivity.player.NowPlaying()}");
+				Console.WriteLine($"Doesnt contain image: {MainActivity.stateHandler.NowPlaying}");
 			}
 
 			if (image == null)
@@ -353,25 +372,28 @@ namespace Ass_Pain
             TextView prog_time = context.FindViewById<TextView>(Resource.Id.progress_time);
 			prog_time.Click += delegate
 			{
-				MainActivity.player.ProgTimeState = !MainActivity.player.ProgTimeState;
+				MainActivity.stateHandler.ProgTimeState = !MainActivity.stateHandler.ProgTimeState;
 
             };
 
-            if (MainActivity.player.IsPlaying) {
+            if (MainActivity.stateHandler.IsPlaying) {
                 TextView const_time = context.FindViewById<TextView>(Resource.Id.end_time);
                 SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
-                const_time.Text = converts_millis_to_seconds_and_minutes(MainActivity.player.Duration);
-                sek.Max = MainActivity.player.Duration / 1000;
-                sek.SetProgress((MainActivity.player.CurrentPosition / 1000), true);
+                const_time.Text = converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration);
+                sek.Max = MainActivity.stateHandler.Duration / 1000;
+                sek.SetProgress((MainActivity.stateHandler.CurrentPosition / 1000), true);
                 sek.ProgressChanged += (object sender, SeekBar.ProgressChangedEventArgs e) =>
                 {
                     if (e.FromUser)
                     {
                         Console.WriteLine(sek.Progress);
-                        MainActivity.player.SeekTo = sek.Progress * 1000;
+						context.StartService(
+							new Intent(MediaService.ActionSeekTo, null, context, typeof(MediaService))
+							.PutExtra("millis", sek.Progress * 1000)
+						);
                     }
                 };
-				StartMovingProgress(MainActivity.player.cts.Token, context);
+				StartMovingProgress(MainActivity.stateHandler.cts.Token, context);
             }         
 		}
 
@@ -382,9 +404,9 @@ namespace Ass_Pain
             _ = Interval.SetIntervalAsync(() =>
 			{
 				sek.Progress += 1;
-				if (MainActivity.player.ProgTimeState)
+				if (MainActivity.stateHandler.ProgTimeState)
 				{
-                    prog_time.Text = "-"+converts_millis_to_seconds_and_minutes(MainActivity.player.Duration - (sek.Progress * 1000));
+                    prog_time.Text = "-"+converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration - (sek.Progress * 1000));
                 }
 				else
 				{
