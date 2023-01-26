@@ -82,7 +82,7 @@ namespace Ass_Pain
             navigationView.SetNavigationItemSelectedListener(this);
 
             side_player.populate_side_bar(this);
-            MainActivity.player.SetView(this);
+            MainActivity.stateHandler.SetView(this);
 
             accept_songs.wake_drag_button(this, Resource.Id.main_rel_l);
 
@@ -271,7 +271,7 @@ namespace Ass_Pain
             }
             else
             {
-                ln_in.Orientation=Orientation.Horizontal;
+                ln_in.Orientation = Orientation.Horizontal;
             }
             ln_in.SetBackgroundResource(Resource.Drawable.rounded);
 
@@ -417,12 +417,20 @@ namespace Ass_Pain
                 {
                     if (where_are_you_are_you_are_you_are_you_are_you_are_.album == "all")
                     {
-                        MainActivity.player.GenerateQueue(FileManager.GetSongs(), pr.Value);
+                        StartService(
+                            new Intent(MediaService.ActionGenerateQueue, null, this, typeof(MediaService))
+                            .PutExtra("sourceList", FileManager.GetSongs().ToArray())
+                            .PutExtra("i", pr.Value)
+                        );
                         notification_player.song_control_notification();
                     }
                     else
                     {
-                        MainActivity.player.GenerateQueue(FileManager.GetSongs(where_are_you_are_you_are_you_are_you_are_you_are_.album), pr.Value);
+                        StartService(
+                           new Intent(MediaService.ActionGenerateQueue, null, this, typeof(MediaService))
+                           .PutExtra("sourceList", FileManager.GetSongs(where_are_you_are_you_are_you_are_you_are_you_are_.album).ToArray())
+                           .PutExtra("i", pr.Value)
+                        );
                         notification_player.song_control_notification();
                     }
                     break;
@@ -753,7 +761,10 @@ namespace Ass_Pain
            
             add_to_qu.Click += (sender, e) =>
             {
-                MainActivity.player.AddToQueue(path);
+                StartService(
+                    new Intent(MediaService.ActionAddToQueue, null, this, typeof(MediaService))
+                    .PutExtra("addition", path)
+                );
             };
             delete.Click += (sender, e) =>
             {

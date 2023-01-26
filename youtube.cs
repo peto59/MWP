@@ -29,7 +29,6 @@ namespace Ass_Pain
         DrawerLayout drawer;
         WebView web_view;
 
-        Slovenska_prostituka player = MainActivity.player;
 
         SensorSpeed speed = SensorSpeed.Game;
         
@@ -51,8 +50,7 @@ namespace Ass_Pain
 
             // side bar where are song controlls
             side_player.populate_side_bar(this);
-            player.SetView(this);
-
+            MainActivity.stateHandler.SetView(this);
            
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);

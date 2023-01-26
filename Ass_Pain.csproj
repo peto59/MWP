@@ -82,7 +82,7 @@
     <Compile Include="all_songs.cs" />
     <Compile Include="equalizer.cs" />
     <Compile Include="MainActivity.cs" />
-    <Compile Include="Player.cs" />
+    <None Include="Player.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="side_player.cs" />
