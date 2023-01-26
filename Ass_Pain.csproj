@@ -68,12 +68,13 @@
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
     <Compile Include="APIThrottler.cs" />
-    <Compile Include="Class1.cs" />
+    <Compile Include="MediaService.cs" />
     <Compile Include="Interval.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Levenshtein.cs" />
     <Compile Include="MediaSessionCallback.cs" />
     <Compile Include="Local_notification_service.cs" />
+    <Compile Include="MyBroadcastReceiver.cs" />
     <Compile Include="NetworkManager.cs" />
     <Compile Include="Downloader.cs" />
     <Compile Include="FileManager.cs" />
@@ -85,6 +86,7 @@
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="side_player.cs" />
+    <Compile Include="StateHandler.cs" />
     <Compile Include="TagManager.cs" />
     <Compile Include="youtube.cs" />
   </ItemGroup>

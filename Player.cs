@@ -110,11 +110,6 @@ namespace Ass_Pain
 			player.Completion += NextSong;
 			player.Prepared += (sender, ea) =>
 			{
-                var request = manager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
-                if (request != AudioFocusRequest.Granted)
-                {
-                    // handle any failed requests
-                }
                 if (!session.Active)
                 {
                     session.Active = true;
@@ -307,7 +302,7 @@ namespace Ass_Pain
 		}
 
 		///<summary>
-		///Adds song or entire album/author as first to queue
+		///Prepends song or entire album/author to queue
 		///</summary>
 		public void PlayNext(string addition)
 		{

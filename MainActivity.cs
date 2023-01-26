@@ -35,6 +35,8 @@ namespace Ass_Pain
         public static Slovenska_prostituka player = new Slovenska_prostituka();
         public static NetworkManager nm = new NetworkManager();
         public static APIThrottler throttler = new APIThrottler();
+        public static MyBroadcastReceiver receiver;
+        public static StateHandler stateHandler = new StateHandler();
 
         DrawerLayout drawer;
 
@@ -152,16 +154,24 @@ namespace Ass_Pain
             }
 
 
-            new Thread(() => { nm.Listener(); }).Start();
-            new Thread(() => { FileManager.DiscoverFiles(); }).Start();
+            //new Thread(() => { nm.Listener(); }).Start();
+            //new Thread(() => { FileManager.DiscoverFiles(); }).Start();
             player.SetView(this);
+            stateHandler.SetView(this);
+            receiver = new MyBroadcastReceiver(this);
             IntentFilter intentFilter = new IntentFilter(AudioManager.ActionAudioBecomingNoisy);
-            RegisterReceiver(player, intentFilter);
+            RegisterReceiver(receiver, intentFilter);
+            StartService(new Intent(this, typeof(MediaService)));
+            StartService(new Intent(MediaService.ActionPlay, null, this, typeof(MediaService)));
 
+            //new Thread(() => { Thread.Sleep(10000); stateHandler.zastav(); }).Start();
+            //new Thread(() => { Thread.Sleep(7500); StartService(new Intent(MediaService.ActionPlay, null, this, typeof(MediaService))); }).Start();
+            //new Thread(() => { Thread.Sleep(1500); StartService(new Intent(MediaService.ActionGenerateQueue, null, this, typeof(MediaService))); }).Start();
 
             // notififcations
             Local_notification_service notif_service = new Local_notification_service();
             notif_service.song_control_notification();
+            //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
         }
 
         public override void OnBackPressed()

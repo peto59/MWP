@@ -34,7 +34,7 @@ Downloader.cs searchAPI add confirmation for user
 
 youtube.cs navigate back button
 
-
+DISABLE SESSION (session.Active = false) WHEN NEEDED
 
 
 public static async Task<(string, string, string, byte[])> SearchAPI(string name=null , string song = null, string album = null)
