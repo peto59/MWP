@@ -16,6 +16,11 @@ using Java.Lang;
 using Java.Security;
 using System.Runtime.Remoting.Contexts;
 using static Android.Drm.DrmStore;
+using TagLib.Flac;
+using Java.Util.Jar;
+using System.IO;
+using Android.Graphics;
+using Android.Icu.Text;
 
 namespace Ass_Pain
 {
@@ -82,7 +87,7 @@ namespace Ass_Pain
         ///</summary>
         public const string ActionClearQueue = "ActionClearQueue";
         ///<summary>
-        ///Moves playback of current song to <paramref name="value"/> time in milliseconds
+        ///Moves playback of current song intent extra int time in milliseconds
         ///</summary>
         public const string ActionSeekTo = "ActionSeekTo";
 
@@ -167,6 +172,8 @@ namespace Ass_Pain
             session.SetCallback(new MediaSessionCallback());
             session.SetFlags(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls);
 			MainActivity.stateHandler.SessionToken = session.SessionToken;
+            //session.SetMediaButtonBroadcastReceiver()
+            //session.SetSessionActivity()
         }
 
         ///<summary>
@@ -288,7 +295,7 @@ namespace Ass_Pain
                         List<string> prependList = intent.GetStringArrayExtra("prependList").ToList();
                         if (prependList == null)
                         {
-                            throw new ArgumentException("You need to specify either string or list addition");
+                            throw new ArgumentException("You need to specify either string or list prepend");
                         }
                         PlayNext(prependList);
                     }
@@ -300,6 +307,7 @@ namespace Ass_Pain
                     ClearQueue();
                     break;
             }
+            intent.Dispose();
 			return StartCommandResult.Sticky;
 		}
         private long GetAvailableActions()
@@ -332,10 +340,16 @@ namespace Ass_Pain
             {
                 position = mediaPlayer.CurrentPosition;
                 state = PlaybackStateCode.Playing;
+                side_player.SetStopButton(MainActivity.stateHandler.view);
+                MainActivity.stateHandler.cts.Cancel();
+                MainActivity.stateHandler.cts = new CancellationTokenSource();
+                side_player.StartMovingProgress(MainActivity.stateHandler.cts.Token, MainActivity.stateHandler.view);
             }
             else if (isPaused)
             {
                 state = PlaybackStateCode.Paused;
+                side_player.SetPlayButton(MainActivity.stateHandler.view);
+                MainActivity.stateHandler.cts.Cancel();
             }
             else if (isSkippingToNext)
             {
@@ -359,6 +373,44 @@ namespace Ass_Pain
             stateBuilder.SetState(state, position, 1.0f);
             session.SetPlaybackState(stateBuilder.Build());
         }
+
+        private void updateMetadata()
+        {
+            if (mediaPlayer != null && queue.Count > 0)
+            {
+                MediaMetadata.Builder metadataBuilder = new MediaMetadata.Builder();
+                var tfile = TagLib.File.Create(queue[index]);
+                // To provide most control over how an item is displayed set the
+                // display fields in the metadata
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplayTitle,
+                        tfile.Tag.Title);
+                // And at minimum the title and artist for legacy support
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle,
+                        tfile.Tag.Title);
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplaySubtitle,
+                        tfile.Tag.Album ?? tfile.Tag.Performers.FirstOrDefault());
+                MemoryStream ms = new MemoryStream(tfile.Tag.Pictures.FirstOrDefault().Data.Data);
+                metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyDisplayIcon,
+                        BitmapFactory.DecodeStream(ms));
+                // A small bitmap for the artwork is also recommended
+                metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyArt,
+                        BitmapFactory.DecodeStream(ms));
+                ms.Dispose();
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbum,
+                        tfile.Tag.Album);
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbumArtist,
+                        tfile.Tag.Performers.FirstOrDefault());
+                //Possible error in implementation
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyDuration,
+                        tfile.Tag.Length);
+                // Add any other fields you have for your data as well
+                session.SetMetadata(metadataBuilder.Build());
+                updatePlaybackState();
+                side_player.populate_side_bar(MainActivity.stateHandler.view);
+                tfile.Dispose();
+            }
+        }
+
 
 
         ///<summary>
@@ -392,11 +444,16 @@ namespace Ass_Pain
                 mediaPlayer.Prepare();
 			}
             mediaPlayer.Start();
-            MainActivity.stateHandler.cts.Cancel();
-            MainActivity.stateHandler.cts = new CancellationTokenSource();
-            side_player.StartMovingProgress(MainActivity.stateHandler.cts.Token, MainActivity.stateHandler.view);
-            side_player.SetStopButton(MainActivity.stateHandler.view);
-            isPaused = false;
+            
+            if (isPaused)
+            {
+                isPaused = false;
+                updatePlaybackState();
+            }
+            else
+            {
+                updateMetadata();
+            }
             isSkippingToNext = false;
             isSkippingToPrevious = false;
         }
@@ -408,8 +465,7 @@ namespace Ass_Pain
 		{
 			mediaPlayer.Pause();
 			isPaused = true;
-            side_player.SetPlayButton(MainActivity.stateHandler.view);
-            MainActivity.stateHandler.cts.Cancel();
+            updatePlaybackState();
         }
 
         ///<summary>
@@ -419,7 +475,8 @@ namespace Ass_Pain
 		{
 			mediaPlayer.Stop();
 			AbandonFocus();
-		}
+            updateMetadata();
+        }
 
         ///<summary>
         ///Plays bext song in queue
@@ -469,6 +526,7 @@ namespace Ass_Pain
         private void SeekTo(int millis)
         {
             mediaPlayer.SeekTo(millis);
+            updatePlaybackState();
         }
 
         ///<summary>

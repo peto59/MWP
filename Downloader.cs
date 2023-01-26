@@ -186,6 +186,7 @@ namespace Ass_Pain
                         tfile.Tag.Album = album;
                     }
                     tfile.Save();
+                    tfile.Dispose();
                     Snackbar.Make(view, $"Success: {videoTitle}", Snackbar.LengthLong)
                         .SetAction("Action", (View.IOnClickListener)null).Show();
                 }
