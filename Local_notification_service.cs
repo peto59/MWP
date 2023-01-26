@@ -28,8 +28,6 @@ namespace Ass_Pain
 
         private bool is_channel_init = false;
 
-        private MediaSessionCompat media_session;
-
         private void create_notification_channel()
         {
             if (Build.VERSION.SdkInt < BuildVersionCodes.O)
@@ -107,9 +105,8 @@ namespace Ass_Pain
             return image;
         }
 
-        public void song_control_notification()
+        public void song_control_notification(MediaSessionCompat.Token token)
         {
-            media_session = new MediaSessionCompat(AndroidApp.Context, "tag");
             
 
             if (!is_channel_init)
@@ -143,7 +140,7 @@ namespace Ass_Pain
               .AddAction(Resource.Drawable.previous, "Previous", null)
               .AddAction(Resource.Drawable.play, "play", null)
               .AddAction(Resource.Drawable.next, "next", null)
-              .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(media_session.SessionToken))
+              .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token))
               .SetDefaults((int)NotificationDefaults.Sound | (int)NotificationDefaults.Vibrate);
 
             

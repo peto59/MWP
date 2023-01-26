@@ -93,7 +93,10 @@ namespace Ass_Pain
 
         private MediaSession session = null ;
 		private MediaPlayer mediaPlayer = null;
-		private bool isFocusGranted = false;
+		private AudioManager audioManager = null;
+		private AudioFocusRequestClass audioFocusRequest = null;
+        private Local_notification_service notificationService = new Local_notification_service();
+        private bool isFocusGranted = false;
 		private bool isUsed = false;
 		private bool lostFocusDuringPlay = false;
 		private bool isPaused = false;
@@ -102,13 +105,12 @@ namespace Ass_Pain
 		private bool loopSingle = false;
         private bool isSkippingToNext = false;
         private bool isSkippingToPrevious = false;
-        private int index = 0;
+        private bool isBuffering = true;
+        private bool isNotificationCreated = false;
 		private int loopState = 0;
-		private AudioManager audioManager = null;
+        private int index = 0;
 		private List<string> queue = new List<string>();
 		private List<string> orignalQueue = new List<string>();
-		private AudioFocusRequestClass audioFocusRequest = null;
-        private bool isBuffering = true;
 
 		public override void OnCreate()
 		{
@@ -117,7 +119,7 @@ namespace Ass_Pain
 			InnitAudioManager();
 			InnitSession();
 			InnitFocusRequest();
-			MainActivity.stateHandler.setQueue(ref queue);
+            MainActivity.stateHandler.setQueue(ref queue);
 			MainActivity.stateHandler.setIndex(ref index);
 			Console.WriteLine("CREATING NEW SESSION");
         }
@@ -171,7 +173,6 @@ namespace Ass_Pain
 			session = new MediaSession(AndroidApp.Context, "MusicService");
             session.SetCallback(new MediaSessionCallback());
             session.SetFlags(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls);
-			MainActivity.stateHandler.SessionToken = session.SessionToken;
             //session.SetMediaButtonBroadcastReceiver()
             //session.SetSessionActivity()
         }
@@ -182,7 +183,7 @@ namespace Ass_Pain
         private void InnitFocusRequest()
 		{
             audioFocusRequest = new AudioFocusRequestClass.Builder(AudioFocus.Gain)
-                                               .SetAudioAttributes(new AudioAttributes.Builder().SetLegacyStreamType(Stream.Music).SetUsage(AudioUsageKind.Media).Build())
+                                               .SetAudioAttributes(new AudioAttributes.Builder().SetLegacyStreamType(Android.Media.Stream.Music).SetUsage(AudioUsageKind.Media).Build())
                                                .SetOnAudioFocusChangeListener(this)
                                                .Build();
         }
@@ -714,7 +715,7 @@ namespace Ass_Pain
 				}
 				else
 				{
-					var request = audioManager.RequestAudioFocus(this, Stream.Music, AudioFocus.Gain);
+					var request = audioManager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
 					if (request != AudioFocusRequest.Granted)
 					{
 						// handle any failed requests
@@ -797,10 +798,16 @@ namespace Ass_Pain
 				audioFocusRequest.Dispose();
 				audioFocusRequest = null;
 			}
-			isFocusGranted = false;
-			lostFocusDuringPlay = false;
-			isPaused = false;
-		}
+
+            isFocusGranted = false;
+            isUsed = false;
+            lostFocusDuringPlay = false;
+            isPaused = false;
+            isSkippingToNext = false;
+            isSkippingToPrevious = false;
+            isBuffering = true;
+            isNotificationCreated = false;
+        }
 
 		public override IBinder OnBind(Intent intent)
 		{

@@ -19,7 +19,6 @@ namespace Ass_Pain
 {
     public class StateHandler
     {
-        public MediaSession.Token SessionToken = null;
         public CancellationTokenSource cts = new CancellationTokenSource();
         public AppCompatActivity view;
         private MediaPlayer mediaPlayer = null;

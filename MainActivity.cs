@@ -167,8 +167,8 @@ namespace Ass_Pain
             //new Thread(() => { Thread.Sleep(1500); StartService(new Intent(MediaService.ActionGenerateQueue, null, this, typeof(MediaService))); }).Start();
 
             // notififcations
-            Local_notification_service notif_service = new Local_notification_service();
-            notif_service.song_control_notification();
+            //Local_notification_service notif_service = new Local_notification_service();
+            //notif_service.song_control_notification();
             //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
         }
 
