@@ -161,8 +161,8 @@ namespace Ass_Pain
             receiver = new MyBroadcastReceiver(this);
             IntentFilter intentFilter = new IntentFilter(AudioManager.ActionAudioBecomingNoisy);
             RegisterReceiver(receiver, intentFilter);
-            StartService(new Intent(this, typeof(MediaService)));
-            StartService(new Intent(MediaService.ActionPlay, null, this, typeof(MediaService)));
+            //StartService(new Intent(this, typeof(MediaService)));
+            //StartService(new Intent(MediaService.ActionPlay, null, this, typeof(MediaService)));
 
             //new Thread(() => { Thread.Sleep(10000); stateHandler.zastav(); }).Start();
             //new Thread(() => { Thread.Sleep(7500); StartService(new Intent(MediaService.ActionPlay, null, this, typeof(MediaService))); }).Start();

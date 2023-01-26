@@ -223,7 +223,7 @@ namespace Ass_Pain
 					}
 					else
 					{
-						List<string> sourceList = intent.GetStringArrayListExtra("source").ToList();
+						List<string> sourceList = intent.GetStringArrayExtra("sourceList").ToList();
 						if(sourceList == null)
 						{
 							throw new ArgumentException("You need to specify either string or list source");
@@ -265,7 +265,7 @@ namespace Ass_Pain
                     }
                     else
                     {
-                        List<string> additionList = intent.GetStringArrayListExtra("additionList").ToList();
+                        List<string> additionList = intent.GetStringArrayExtra("additionList").ToList();
                         if (additionList == null)
                         {
                             throw new ArgumentException("You need to specify either string or list addition");
@@ -281,7 +281,7 @@ namespace Ass_Pain
                     }
                     else
                     {
-                        List<string> prependList = intent.GetStringArrayListExtra("prependList").ToList();
+                        List<string> prependList = intent.GetStringArrayExtra("prependList").ToList();
                         if (prependList == null)
                         {
                             throw new ArgumentException("You need to specify either string or list addition");
