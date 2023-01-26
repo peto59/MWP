@@ -70,7 +70,7 @@ namespace Ass_Pain
                 .SetContentTitle("title")
                 .SetContentText("message")
                 .SetAutoCancel(true)
-                .SetContentIntent(pending)
+                .SetContentIntent(pending);
 
 
             NotificationManagerCompat manager = NotificationManagerCompat.From(AndroidApp.Context);
@@ -118,7 +118,7 @@ namespace Ass_Pain
             }
 
             Bitmap current_song_image = get_current_song_image();
-          
+
             NotificationCompat.Builder notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
               .SetSmallIcon(
                   Resource.Drawable.ic_menu_camera
@@ -131,10 +131,7 @@ namespace Ass_Pain
               .AddAction(Resource.Drawable.previous, "Previous", null)
               .AddAction(Resource.Drawable.play, "play", null)
               .AddAction(Resource.Drawable.next, "next", null)
-              .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token))
-              .SetDefaults((int)NotificationDefaults.Sound | (int)NotificationDefaults.Vibrate);
-
-            
+              .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token));
 
             manager = NotificationManagerCompat.From(AndroidApp.Context);
             manager.Notify(notification_id, notification_builder.Build());
