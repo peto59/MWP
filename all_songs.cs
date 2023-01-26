@@ -46,7 +46,6 @@ namespace Ass_Pain
 
         // Slovenska_prostituka player = MainActivity.player;
 
-        Local_notification_service notification_player;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -125,9 +124,6 @@ namespace Ass_Pain
 
             create_playlist.Click += new EventHandler(show_popup);
 
-
-
-            notification_player = new Local_notification_service();
         }
 
         public void set_buttons_color(int id)
@@ -422,7 +418,6 @@ namespace Ass_Pain
                             .PutExtra("sourceList", FileManager.GetSongs().ToArray())
                             .PutExtra("i", pr.Value)
                         );
-                        notification_player.song_control_notification();
                     }
                     else
                     {
@@ -431,7 +426,6 @@ namespace Ass_Pain
                            .PutExtra("sourceList", FileManager.GetSongs(where_are_you_are_you_are_you_are_you_are_you_are_.album).ToArray())
                            .PutExtra("i", pr.Value)
                         );
-                        notification_player.song_control_notification();
                     }
                     break;
                 }

@@ -27,6 +27,9 @@ namespace Ass_Pain
         private const string MESSAGE_KEY = "message";
 
         private bool is_channel_init = false;
+        private bool is_created = false;
+
+        NotificationManagerCompat manager;
 
         private void create_notification_channel()
         {
@@ -107,24 +110,13 @@ namespace Ass_Pain
 
         public void song_control_notification(MediaSessionCompat.Token token)
         {
-            
+            if (is_created)
+                return;
 
             if (!is_channel_init)
             {
                 create_notification_channel();
             }
-
-            RemoteViews view = new RemoteViews(AppInfo.PackageName, Resource.Layout.player_notification);
-
-            /*
-            NotificationCompat.Builder notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
-              .SetSmallIcon(
-                  Resource.Drawable.ic_menu_camera
-              )
-              .SetCustomContentView(view)
-              .SetOngoing(true)
-              .SetDefaults((int)NotificationDefaults.Sound | (int)NotificationDefaults.Vibrate);
-            */
 
             Bitmap current_song_image = get_current_song_image();
           
@@ -145,11 +137,19 @@ namespace Ass_Pain
 
             
 
-            NotificationManagerCompat manager = NotificationManagerCompat.From(AndroidApp.Context);
+            manager = NotificationManagerCompat.From(AndroidApp.Context);
             manager.Notify(notification_id, notification_builder.Build());
-
-
+            is_created = true;
         }
 
+
+        public void destroy_song_control()
+        {
+            if (is_created)
+            {
+                manager.Cancel(notification_id);
+                is_created = false;
+            }
+        }
     }
 }
