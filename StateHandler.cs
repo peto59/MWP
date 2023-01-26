@@ -123,7 +123,16 @@ namespace Ass_Pain
         ///</summary
         public bool IsPlaying
         {
-            get { return mediaPlayer.IsPlaying; }
+            get {
+                try
+                {
+                    return mediaPlayer.IsPlaying; 
+                } 
+                catch
+                {
+                    return false;
+                }
+            }
         }
 
         ///<summary>

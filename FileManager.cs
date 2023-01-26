@@ -310,6 +310,8 @@ namespace Ass_Pain
         ///</summary>
         public static (string album, string autor) GetAlbumAuthorFromPath(string path)
         {
+            if (path == string.Empty)
+                return (string.Empty, string.Empty);
             if (IsDirectory(path))
             {
                 return (GetNameFromPath(path), GetNameFromPath(Path.GetDirectoryName(path)));
