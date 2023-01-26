@@ -81,6 +81,10 @@ namespace Ass_Pain
         ///Clears queue and resets index to 0
         ///</summary>
         public const string ActionClearQueue = "ActionClearQueue";
+        ///<summary>
+        ///Moves playback of current song to <paramref name="value"/> time in milliseconds
+        ///</summary>
+        public const string ActionSeekTo = "ActionSeekTo";
 
         private MediaSession session = null ;
 		private MediaPlayer mediaPlayer = null;
@@ -289,6 +293,9 @@ namespace Ass_Pain
                         PlayNext(prependList);
                     }
                     break;
+                case ActionSeekTo:
+                    SeekTo(intent.GetIntExtra("millis", 0));
+                    break;
                 case ActionClearQueue:
                     ClearQueue();
                     break;
@@ -459,6 +466,10 @@ namespace Ass_Pain
             }
         }
 
+        private void SeekTo(int millis)
+        {
+            mediaPlayer.SeekTo(millis);
+        }
 
         ///<summary>
         ///Generates new queue from single song path or directory path and set index to 0

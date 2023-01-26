@@ -90,7 +90,7 @@ namespace Ass_Pain
         ///<summary>
         ///Moves playback of current song to <paramref name="value"/> time in milliseconds
         ///</summary>
-        public void SeekTo(int value)
+        /*public void SeekTo(int value)
         {
             try
             {
@@ -100,7 +100,7 @@ namespace Ass_Pain
             {
                 Console.WriteLine(ex.Message);
             }
-        }
+        }*/
 
         ///<summary>
         ///Returns current loop state
