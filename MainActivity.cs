@@ -52,7 +52,8 @@ namespace Ass_Pain
             {
                 Android.Manifest.Permission.ManageExternalStorage,
                 Android.Manifest.Permission.WriteExternalStorage,
-                Android.Manifest.Permission.ReadExternalStorage
+                Android.Manifest.Permission.ReadExternalStorage,
+                Android.Manifest.Permission.ForegroundService,
             };
 
 

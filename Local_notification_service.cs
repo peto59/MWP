@@ -23,21 +23,35 @@ namespace Ass_Pain
         private const string CHANNEL_DESCRIPTION = "description";
 
         private int notification_id = -1;
+        public int NotificationId
+        {
+            get { return notification_id; }
+        }
         private const string TITLE_KEY = "title";
         private const string MESSAGE_KEY = "message";
 
         private bool is_channel_init = false;
         private bool is_created = false;
+        public bool IsCreated
+        {
+            get { return is_created; }
+        }
         NotificationCompat.Builder notification_builder;
+        private Notification notification;
+        public Notification Notification
+        {
+            get { return notification; }
+        }
 
         NotificationManagerCompat manager;
 
         public void Notify()
         {
-            notification_builder.SetLargeIcon(
+            /*notification_builder.SetLargeIcon(
                     get_current_song_image()
-               );
-            manager.Notify(notification_id, notification_builder.Build());
+               );*/
+            notification = notification_builder.Build();
+            manager.Notify(notification_id, notification);
         }
 
         private void create_notification_channel()
@@ -150,7 +164,8 @@ namespace Ass_Pain
             
 
             manager = NotificationManagerCompat.From(AndroidApp.Context);
-            manager.Notify(notification_id, notification_builder.Build());
+            notification = notification_builder.Build();
+            manager.Notify(notification_id, notification);
             is_created = true;
         }
 
