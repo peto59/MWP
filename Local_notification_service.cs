@@ -28,8 +28,17 @@ namespace Ass_Pain
 
         private bool is_channel_init = false;
         private bool is_created = false;
+        NotificationCompat.Builder notification_builder;
 
         NotificationManagerCompat manager;
+
+        public void Notify()
+        {
+            notification_builder.SetLargeIcon(
+                    get_current_song_image()
+               );
+            manager.Notify(notification_id, notification_builder.Build());
+        }
 
         private void create_notification_channel()
         {
@@ -48,7 +57,7 @@ namespace Ass_Pain
         }
 
 
-        public void push_notification()
+        /*public void push_notification()
         {
             if (!is_channel_init)
             {
@@ -77,7 +86,7 @@ namespace Ass_Pain
             NotificationManagerCompat manager = NotificationManagerCompat.From(AndroidApp.Context);
             manager.Notify(notification_id, notification_builder.Build());
 
-        }
+        }*/
 
         private Bitmap get_current_song_image()
         {
@@ -119,21 +128,22 @@ namespace Ass_Pain
             }
 
             Bitmap current_song_image = get_current_song_image();
-          
-            NotificationCompat.Builder notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+
+            notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
               .SetSmallIcon(
                   Resource.Drawable.ic_menu_camera
               )
-              .SetContentTitle(FileManager.GetSongTitle(MainActivity.stateHandler.NowPlaying))
-              .SetContentText(FileManager.GetSongArtist(MainActivity.stateHandler.NowPlaying)[0])
+              //.SetContentTitle(FileManager.GetSongTitle(MainActivity.stateHandler.NowPlaying))
+              //.SetContentText(FileManager.GetSongArtist(MainActivity.stateHandler.NowPlaying)[0])
               .SetLargeIcon(
                     current_song_image
                )
-              .AddAction(Resource.Drawable.previous, "Previous", null)
-              .AddAction(Resource.Drawable.play, "play", null)
-              .AddAction(Resource.Drawable.next, "next", null)
-              .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token))
-              .SetDefaults((int)NotificationDefaults.Sound | (int)NotificationDefaults.Vibrate);
+              .AddAction(Resource.Drawable.previous, "Previous", PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable))
+              .AddAction(Resource.Drawable.play, "play", PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionTogglePlay, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable))
+              .AddAction(Resource.Drawable.next, "next", PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable))
+              .SetShowWhen(false)
+              .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token));
+              //.SetDefaults((int)NotificationDefaults.Sound | (int)NotificationDefaults.Vibrate);
 
             
 

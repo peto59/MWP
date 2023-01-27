@@ -189,6 +189,7 @@ namespace Ass_Pain
 			// basic  vars
 			string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
 			string current_song_path = MainActivity.stateHandler.NowPlaying;
+			Console.WriteLine($"SIDE BAR NOW PLAYING {current_song_path}");
 			float scale = context.Resources.DisplayMetrics.Density;
 
 			// sing title image
@@ -325,15 +326,14 @@ namespace Ass_Pain
 			 */
 
 			Bitmap image = null;
-			TagLib.File tagFile;
 
 			song_image.SetImageResource(Resource.Mipmap.ic_launcher);
 
 			try
 			{
-				Console.WriteLine($"now playing: {MainActivity.stateHandler.NowPlaying}");
-				tagFile = TagLib.File.Create(
-					MainActivity.stateHandler.NowPlaying
+				Console.WriteLine($"now playing: {current_song_path}");
+                TagLib.File tagFile = TagLib.File.Create(
+					current_song_path
 				);
 				MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
 				image = BitmapFactory.DecodeStream(ms);
@@ -343,12 +343,13 @@ namespace Ass_Pain
 					LinearLayout.LayoutParams.WrapContent
 				);
 				song_image.LayoutParameters = song_image_params;
-
-			}
+				ms.Dispose();
+                tagFile.Dispose();
+            }
 			catch (Exception ex)
 			{
 				Console.WriteLine(ex.Message);
-				Console.WriteLine($"Doesnt contain image: {MainActivity.stateHandler.NowPlaying}");
+				Console.WriteLine($"Doesnt contain image: {current_song_path}");
 			}
 
 			if (image == null)
@@ -361,7 +362,6 @@ namespace Ass_Pain
 				song_image.LayoutParameters = song_image_params;
 
 			}
-
 
 			// set the image
 			song_image.SetImageBitmap(image);
@@ -382,6 +382,14 @@ namespace Ass_Pain
                 const_time.Text = converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration);
                 sek.Max = MainActivity.stateHandler.Duration / 1000;
                 sek.SetProgress((MainActivity.stateHandler.CurrentPosition / 1000), true);
+                if (MainActivity.stateHandler.ProgTimeState)
+                {
+                    prog_time.Text = "-" + converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration - (sek.Progress * 1000));
+                }
+                else
+                {
+                    prog_time.Text = converts_seconds_to_seconds_and_minutes(sek.Progress);
+                }
                 sek.ProgressChanged += (object sender, SeekBar.ProgressChangedEventArgs e) =>
                 {
                     if (e.FromUser)
@@ -400,12 +408,11 @@ namespace Ass_Pain
 		public static void StartMovingProgress(CancellationToken token, AppCompatActivity context)
 		{
             SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
-            sek.SetProgress((MainActivity.stateHandler.CurrentPosition / 1000), true);
             TextView prog_time = context.FindViewById<TextView>(Resource.Id.progress_time);
             _ = Interval.SetIntervalAsync(() =>
 			{
-				sek.Progress += 1;
-				if (MainActivity.stateHandler.ProgTimeState)
+                sek.SetProgress((MainActivity.stateHandler.CurrentPosition / 1000), true);
+                if (MainActivity.stateHandler.ProgTimeState)
 				{
                     prog_time.Text = "-"+converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration - (sek.Progress * 1000));
                 }

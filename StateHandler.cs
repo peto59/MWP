@@ -75,8 +75,11 @@ namespace Ass_Pain
         public string NowPlaying
         {
             get {
+                Console.WriteLine($"queue count: {queue.Count}");
+                Console.WriteLine($"index: {index}");
                 if (queue.Count > 0 && queue.Count > index)
                 {
+                    Console.WriteLine($"my queue: {queue[index]}");
                     return queue[index];
                 }
                 else
