@@ -47,10 +47,6 @@ namespace Ass_Pain
 
         public void Notify()
         {
-            /*notification_builder.SetLargeIcon(
-                    get_current_song_image()
-               );*/
-
             notification_builder.MActions.Clear();
 
             notification_builder.AddAction(
@@ -164,8 +160,6 @@ namespace Ass_Pain
             {
                 create_notification_channel();
             }
-
-            Bitmap current_song_image = get_current_song_image();
 
             notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
               .SetSmallIcon(
