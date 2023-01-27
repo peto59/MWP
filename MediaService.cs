@@ -15,7 +15,6 @@ using System.Threading;
 using Java.Lang;
 using Java.Security;
 using System.Runtime.Remoting.Contexts;
-using static Android.Drm.DrmStore;
 using TagLib.Flac;
 using Java.Util.Jar;
 using System.IO;
@@ -108,7 +107,6 @@ namespace Ass_Pain
 		private bool isSkippingToNext = false;
 		private bool isSkippingToPrevious = false;
 		private bool isBuffering = true;
-		private bool isNotificationCreated = false;
 		private int loopState = 0;
 		private int index = 0;
 		private List<string> queue = new List<string>();
@@ -179,7 +177,6 @@ namespace Ass_Pain
 			session = new MediaSessionCompat(AndroidApp.Context, "MusicService");
 			session.SetCallback(new MediaSessionCallback());
 			session.SetFlags((int)(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls));
-			//session.SetMediaButtonBroadcastReceiver()
 			//session.SetSessionActivity()
 		}
 
@@ -395,34 +392,37 @@ namespace Ass_Pain
 			if (mediaPlayer != null && queue.Count > 0)
 			{
 				MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
-				var tfile = TagLib.File.Create(queue[index]);
-				// To provide most control over how an item is displayed set the
-				// display fields in the metadata
-				metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplayTitle,
-						tfile.Tag.Title);
-				// And at minimum the title and artist for legacy support
-				metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle,
-						tfile.Tag.Title);
-				metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplaySubtitle,
-						tfile.Tag.Album ?? tfile.Tag.Performers.FirstOrDefault());
-				MemoryStream ms = new MemoryStream(tfile.Tag.Pictures.FirstOrDefault().Data.Data);
-				metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyDisplayIcon,
-						BitmapFactory.DecodeStream(ms));
-				// A small bitmap for the artwork is also recommended
-				metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyArt,
-						BitmapFactory.DecodeStream(ms));
-                metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyAlbumArt,
-                        BitmapFactory.DecodeStream(ms));
-				metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbum,
-						tfile.Tag.Album);
-				metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbumArtist,
-						tfile.Tag.Performers.FirstOrDefault());
-				//Possible error in implementation
-				metadataBuilder.PutLong(MediaMetadata.MetadataKeyDuration,
-						mediaPlayer.Duration);
-                // Add any other fields you have for your data as well
-                session.SetMetadata(metadataBuilder.Build());
-				updatePlaybackState();
+				using (var tfile = TagLib.File.Create(queue[index]))
+				{
+					using(MemoryStream ms = new MemoryStream(tfile.Tag.Pictures.FirstOrDefault().Data.Data))
+					{
+						// To provide most control over how an item is displayed set the
+						// display fields in the metadata
+						metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplayTitle,
+								tfile.Tag.Title);
+						// And at minimum the title and artist for legacy support
+						metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle,
+								tfile.Tag.Title);
+						metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplaySubtitle,
+								tfile.Tag.Album ?? tfile.Tag.Performers.FirstOrDefault());
+						// A small bitmap for the artwork is also recommended
+						metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyArt,
+								BitmapFactory.DecodeStream(ms));
+						metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyAlbumArt,
+								BitmapFactory.DecodeStream(ms));
+						metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbum,
+								tfile.Tag.Album);
+						metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbumArtist,
+								tfile.Tag.Performers.FirstOrDefault());
+						//Possible error in implementation
+						metadataBuilder.PutLong(MediaMetadata.MetadataKeyDuration,
+								mediaPlayer.Duration);
+						// Add any other fields you have for your data as well
+						session.SetMetadata(metadataBuilder.Build());
+
+						updatePlaybackState();
+					}
+				}
 				/*tfile.Dispose();
                 ms.Dispose();*/
 			}
@@ -612,7 +612,7 @@ namespace Ass_Pain
 			{
 				queue.Add(addition);
 				MainActivity.stateHandler.setQueue(ref queue);
-				if (shuffle)
+                if (shuffle)
 				{
 					orignalQueue.Add(addition);
 				}
@@ -676,7 +676,7 @@ namespace Ass_Pain
 				tmp.AddRange(queue.Skip(index + 1));
                 queue = tmp;
 				MainActivity.stateHandler.setQueue(ref queue);
-			}
+            }
         }
 
 		///<summary>
@@ -702,7 +702,7 @@ namespace Ass_Pain
                     MainActivity.stateHandler.setIndex(ref index);
                     queue = orignalQueue;
                     MainActivity.stateHandler.setQueue(ref queue);
-					orignalQueue = new List<string>();
+                    orignalQueue = new List<string>();
 				}
 			}
 			shuffle = newShuffleState;
@@ -856,7 +856,6 @@ namespace Ass_Pain
 			isSkippingToNext = false;
 			isSkippingToPrevious = false;
 			isBuffering = true;
-			isNotificationCreated = false;
 		}
 
 		public override IBinder OnBind(Intent intent)

@@ -3,6 +3,7 @@ using Android.Content;
 using Android.Media.Session;
 using Android.OS;
 using Android.Runtime;
+using Android.Systems;
 using Android.Views;
 using Android.Widget;
 using Java.Util;
@@ -40,13 +41,16 @@ namespace Ass_Pain
         public override void OnPlay()
         {
             Console.WriteLine("OnPlay");
-            OnPlayImpl();
+            AndroidApp.Context.StartService(
+                            new Intent(MediaService.ActionPlay, null, AndroidApp.Context, typeof(MediaService))
+                        );
+            //OnPlayImpl();
         }
 
         public override void OnSkipToQueueItem(long id)
         {
             Console.WriteLine("OnSkipToQueueItem");
-            OnSkipToQueueItemImpl(id);
+            //OnSkipToQueueItemImpl(id);
         }
 
         public override void OnSeekTo(long pos)
@@ -63,43 +67,55 @@ namespace Ass_Pain
         public override void OnPlayFromMediaId(string mediaId, Bundle extras)
         {
             Console.WriteLine("OnPlayFromMediaId");
-            OnPlayFromMediaIdImpl(mediaId, extras);
+            //OnPlayFromMediaIdImpl(mediaId, extras);
         }
 
         public override void OnPause()
         {
             Console.WriteLine("OnPause");
-            OnPauseImpl();
+            AndroidApp.Context.StartService(
+                            new Intent(MediaService.ActionPause, null, AndroidApp.Context, typeof(MediaService))
+                        );
+            //OnPauseImpl();
         }
 
         public override void OnStop()
         {
             Console.WriteLine("OnStop");
-            OnStopImpl();
+            AndroidApp.Context.StartService(
+                            new Intent(MediaService.ActionStop, null, AndroidApp.Context, typeof(MediaService))
+                        );
+            //OnStopImpl();
         }
 
         public override void OnSkipToNext()
         {
             Console.WriteLine("OnSkipToNext");
-            OnSkipToNextImpl();
+            AndroidApp.Context.StartService(
+                            new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService))
+                        );
+            //OnSkipToNextImpl();
         }
 
         public override void OnSkipToPrevious()
         {
             Console.WriteLine("OnSkipToPrevious");
-            OnSkipToPreviousImpl();
+            AndroidApp.Context.StartService(
+                            new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService))
+                        );
+            //OnSkipToPreviousImpl();
         }
 
         public override void OnCustomAction(string action, Bundle extras)
         {
             Console.WriteLine("OnCustomAction");
-            OnCustomActionImpl(action, extras);
+            //OnCustomActionImpl(action, extras);
         }
 
         public override void OnPlayFromSearch(string query, Bundle extras)
         {
             Console.WriteLine("OnPlayFromSearch");
-            OnPlayFromSearchImpl(query, extras);
+            //OnPlayFromSearchImpl(query, extras);
         }
     }
 }
