@@ -137,7 +137,10 @@ namespace Ass_Pain
               .SetLargeIcon(
                     current_song_image
                )
-              .AddAction(Resource.Drawable.previous, "Previous", PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable))
+              .AddAction(
+                Resource.Drawable.previous, "Previous", 
+                PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+               )
               .AddAction(Resource.Drawable.play, "play", PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionTogglePlay, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable))
               .AddAction(Resource.Drawable.next, "next", PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable))
               .SetShowWhen(false)
