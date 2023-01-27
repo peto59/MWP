@@ -50,6 +50,31 @@ namespace Ass_Pain
             /*notification_builder.SetLargeIcon(
                     get_current_song_image()
                );*/
+
+            notification_builder.MActions.Clear();
+
+            notification_builder.AddAction(
+                Resource.Drawable.previous, "Previous",
+                PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+            );
+            if (MainActivity.stateHandler.IsPlaying)
+            {
+                notification_builder.AddAction(
+                    Resource.Drawable.pause_fill1_wght200_grad200_opsz48, "pause",
+                    PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPause, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                );
+            }
+            else
+            {
+                notification_builder.AddAction(
+                    Resource.Drawable.play, "play",
+                    PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionTogglePlay, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                );
+            }
+            notification_builder.AddAction(
+                Resource.Drawable.next, "next",
+                PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+            );
             notification = notification_builder.Build();
             manager.Notify(notification_id, notification);
         }
@@ -148,15 +173,9 @@ namespace Ass_Pain
               )
               //.SetContentTitle(FileManager.GetSongTitle(MainActivity.stateHandler.NowPlaying))
               //.SetContentText(FileManager.GetSongArtist(MainActivity.stateHandler.NowPlaying)[0])
-              .SetLargeIcon(
+              /*.SetLargeIcon(
                     current_song_image
-               )
-              .AddAction(
-                Resource.Drawable.previous, "Previous", 
-                PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
-               )
-              .AddAction(Resource.Drawable.play, "play", PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionTogglePlay, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable))
-              .AddAction(Resource.Drawable.next, "next", PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable))
+               )*/
               .SetShowWhen(false)
               .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token));
               //.SetDefaults((int)NotificationDefaults.Sound | (int)NotificationDefaults.Vibrate);
