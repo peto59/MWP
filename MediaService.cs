@@ -413,7 +413,6 @@ namespace Ass_Pain
 						BitmapFactory.DecodeStream(ms));
                 metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyAlbumArt,
                         BitmapFactory.DecodeStream(ms));
-                ms.Dispose();
 				metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbum,
 						tfile.Tag.Album);
 				metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbumArtist,
@@ -421,10 +420,11 @@ namespace Ass_Pain
 				//Possible error in implementation
 				metadataBuilder.PutLong(MediaMetadata.MetadataKeyDuration,
 						mediaPlayer.Duration);
-				// Add any other fields you have for your data as well
-				session.SetMetadata(metadataBuilder.Build());
+                // Add any other fields you have for your data as well
+                session.SetMetadata(metadataBuilder.Build());
 				updatePlaybackState();
-				tfile.Dispose();
+				/*tfile.Dispose();
+                ms.Dispose();*/
 			}
 		}
 
@@ -448,7 +448,12 @@ namespace Ass_Pain
 			{
 				session.Active = true;
 			}
-			notificationService.song_control_notification(session.SessionToken);
+			if (!notificationService.IsCreated)
+			{
+				notificationService.song_control_notification(session.SessionToken);
+                StartForeground(notificationService.NotificationId, notificationService.Notification);
+
+            }
 			if (mediaPlayer == null)
 			{
 				InnitPlayer();
