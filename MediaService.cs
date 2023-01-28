@@ -252,7 +252,8 @@ namespace Ass_Pain
 					break;
 				case ActionToggleLoop:
 					ToggleLoop(intent.GetIntExtra("loopState", 0));
-					break;
+                    Console.WriteLine("TOGLELOOP SWITCH");
+                    break;
 				case ActionTogglePlay:
 					if (mediaPlayer.IsPlaying)
 					{
@@ -311,7 +312,7 @@ namespace Ass_Pain
 					ClearQueue();
 					break;
 			}
-			intent.Dispose();
+            intent.Dispose();
 			return StartCommandResult.Sticky;
 		}
 		private long GetAvailableActions()
@@ -707,6 +708,10 @@ namespace Ass_Pain
 			}
 			shuffle = newShuffleState;
 			MainActivity.stateHandler.shuffle = newShuffleState;
+			if (notificationService.IsCreated)
+			{
+				notificationService.Notify();
+			}
 		}
 
 		///<summary>
@@ -734,7 +739,12 @@ namespace Ass_Pain
 			MainActivity.stateHandler.loopSingle = loopSingle;
 			MainActivity.stateHandler.loopAll = loopAll;
 			MainActivity.stateHandler.loopState = loopState;
-		}
+            if (notificationService.IsCreated)
+            {
+                notificationService.Notify();
+            }
+			Console.WriteLine("TOGLELOOP");
+        }
 
 		///<summary>
 		///Requests audio focus

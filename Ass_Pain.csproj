@@ -304,11 +304,6 @@
     <AndroidAsset Include="Assets\shuffle_on.png" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidResource Include="Resources\layout\player_notification.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-  </ItemGroup>
-  <ItemGroup>
     <AndroidResource Include="Resources\drawable\previous.xml" />
   </ItemGroup>
   <ItemGroup>
@@ -322,6 +317,15 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\pause_fill1_wght200_grad200_opsz48.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\no_repeat.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\repeat.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\repeat_one.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

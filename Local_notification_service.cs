@@ -45,13 +45,43 @@ namespace Ass_Pain
 
         NotificationManagerCompat manager;
 
+
+        private void add_loop_action(int loop_state, int draw, string type)
+        {
+            Console.WriteLine("LOOPACTION >>>>>>>>");
+            notification_builder.AddAction(
+                draw, type,
+                PendingIntent.GetService(
+                    AndroidApp.Context, 0,
+                    new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                    .PutExtra("loopState", loop_state), PendingIntentFlags.Mutable
+                )
+            );
+        }
+
         public void Notify()
         {
-            /*notification_builder.SetLargeIcon(
-                    get_current_song_image()
-               );*/
+            int loop_state = MainActivity.stateHandler.LoopState;
+            int shuffle_img = 0;
 
+            
             notification_builder.MActions.Clear();
+
+            if (MainActivity.stateHandler.IsShuffling)
+                shuffle_img = Resource.Drawable.repeat;
+            else
+                shuffle_img = Resource.Drawable.no_repeat;
+
+
+
+            notification_builder.AddAction(
+                  shuffle_img, "shuffle",
+                  PendingIntent.GetService(
+                      AndroidApp.Context, 0,
+                      new Intent(MediaService.ActionShuffle, null, AndroidApp.Context, typeof(MediaService))
+                      .PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling), PendingIntentFlags.Mutable
+                  )
+              );
 
             notification_builder.AddAction(
                 Resource.Drawable.previous, "Previous",
@@ -75,8 +105,18 @@ namespace Ass_Pain
                 Resource.Drawable.next, "next",
                 PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
             );
+
+            if (loop_state == 0)
+                add_loop_action(1, Resource.Drawable.no_repeat, "no_repeat");
+            else if (loop_state == 1)
+                add_loop_action(2, Resource.Drawable.repeat, "repeat");
+            else if (loop_state == 2)
+                add_loop_action(0, Resource.Drawable.repeat_one, "repeat_one");
+
             notification = notification_builder.Build();
             manager.Notify(notification_id, notification);
+
+            Console.WriteLine("NOTIFY RELOEAD");
         }
 
         private void create_notification_channel()
