@@ -205,8 +205,6 @@ namespace Ass_Pain
                 create_notification_channel();
             }
 
-            Bitmap current_song_image = get_current_song_image();
-
             notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
               .SetSmallIcon(
                   Resource.Drawable.ic_menu_camera
