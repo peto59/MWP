@@ -107,10 +107,21 @@ namespace Ass_Pain
 		private bool isSkippingToNext = false;
 		private bool isSkippingToPrevious = false;
 		private bool isBuffering = true;
+		private bool isShuffling = false;
 		private int loopState = 0;
-		private int index = 0;
-		private List<string> queue = new List<string>();
-		private List<string> orignalQueue = new List<string>();
+        private int i = 0;
+		private int Index
+		{
+			get { return i; }
+			set { i = value.KeepPositive(); MainActivity.stateHandler.setIndex(ref i); }
+		}
+		private List<string> q = new List<string>();
+        private List<string> Queue
+		{
+			get { return q; }
+			set { q = value; MainActivity.stateHandler.setQueue(ref q); }
+		}
+        private List<string> orignalQueue = new List<string>();
 
 		public override void OnCreate()
 		{
@@ -119,8 +130,6 @@ namespace Ass_Pain
 			InnitAudioManager();
 			InnitSession();
 			InnitFocusRequest();
-			MainActivity.stateHandler.setQueue(ref queue);
-			MainActivity.stateHandler.setIndex(ref index);
 			Console.WriteLine("CREATING NEW SESSION");
 		}
 		public override void OnDestroy()
@@ -156,7 +165,7 @@ namespace Ass_Pain
 			});
 			mediaPlayer.SeekComplete += delegate
 			{
-                updatePlaybackState();
+                UpdatePlaybackState();
             };
 			MainActivity.stateHandler.setMediaPlayer(ref mediaPlayer);
         }
@@ -204,12 +213,19 @@ namespace Ass_Pain
 					}
 					break;
 				case AudioFocus.Loss:
-					CleanUp();
+					//CleanUp();
+                    Pause();
 					isFocusGranted = false;
-					break;
+                    break;
 				case AudioFocus.LossTransient:
+					if (mediaPlayer != null)
+					{
+                        if (mediaPlayer.IsPlaying)
+                        {
+                            lostFocusDuringPlay = true;
+                        }
+                    }
 					Pause();
-					lostFocusDuringPlay = true;
 					break;
 				case AudioFocus.LossTransientCanDuck:
 					mediaPlayer.SetVolume(0.25f, 0.25f);
@@ -318,7 +334,7 @@ namespace Ass_Pain
 		private long GetAvailableActions()
 		{
 			long actions = PlaybackState.ActionPlay | PlaybackState.ActionSeekTo ;
-			if (queue == null || queue.Count == 0)
+			if (Queue == null || Queue.Count == 0)
 			{
 				return actions;
 			}
@@ -326,18 +342,18 @@ namespace Ass_Pain
 			{
 				actions |= PlaybackState.ActionPause | PlaybackState.ActionStop;
 			}
-			if (index > 0)
+			if (Index > 0)
 			{
 				actions |= PlaybackState.ActionSkipToPrevious;
 			}
-			if (queue.Count > index)
+			if (Queue.Count > Index)
 			{
 				actions |= PlaybackState.ActionSkipToNext;
 			}
 			return actions;
 		}
 
-		private void updatePlaybackState()
+		private void UpdatePlaybackState()
 		{
 			long position = PlaybackState.PlaybackPositionUnknown;
 			PlaybackStateCode state;
@@ -388,45 +404,41 @@ namespace Ass_Pain
 			notificationService.Notify();
 		}
 
-		private void updateMetadata()
+		private void UpdateMetadata()
 		{
-			if (mediaPlayer != null && queue.Count > 0)
+			if (mediaPlayer != null && Queue.Count > 0)
 			{
 				MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
-				using (var tfile = TagLib.File.Create(queue[index]))
-				{
-					using(MemoryStream ms = new MemoryStream(tfile.Tag.Pictures.FirstOrDefault().Data.Data))
-					{
-						// To provide most control over how an item is displayed set the
-						// display fields in the metadata
-						metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplayTitle,
-								tfile.Tag.Title);
-						// And at minimum the title and artist for legacy support
-						metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle,
-								tfile.Tag.Title);
-						metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplaySubtitle,
-								tfile.Tag.Album ?? tfile.Tag.Performers.FirstOrDefault());
-						// A small bitmap for the artwork is also recommended
-						metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyArt,
-								BitmapFactory.DecodeStream(ms));
-						metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyAlbumArt,
-								BitmapFactory.DecodeStream(ms));
-						metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbum,
-								tfile.Tag.Album);
-						metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbumArtist,
-								tfile.Tag.Performers.FirstOrDefault());
-						//Possible error in implementation
-						metadataBuilder.PutLong(MediaMetadata.MetadataKeyDuration,
-								mediaPlayer.Duration);
-						// Add any other fields you have for your data as well
-						session.SetMetadata(metadataBuilder.Build());
+                using var tfile = TagLib.File.Create(Queue[Index]);
+                using MemoryStream ms = new MemoryStream(tfile.Tag.Pictures.FirstOrDefault().Data.Data);
+                // To provide most control over how an item is displayed set the
+                // display fields in the metadata
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplayTitle,
+                        tfile.Tag.Title);
+                // And at minimum the title and artist for legacy support
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle,
+                        tfile.Tag.Title);
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplaySubtitle,
+                        tfile.Tag.Album ?? tfile.Tag.Performers.FirstOrDefault());
+                // A small bitmap for the artwork is also recommended
+                metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyArt,
+                        BitmapFactory.DecodeStream(ms));
+                metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyAlbumArt,
+                        BitmapFactory.DecodeStream(ms));
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbum,
+                        tfile.Tag.Album);
+                metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbumArtist,
+                        tfile.Tag.Performers.FirstOrDefault());
+                //Possible error in implementation
+                metadataBuilder.PutLong(MediaMetadata.MetadataKeyDuration,
+                        mediaPlayer.Duration);
+                // Add any other fields you have for your data as well
+                session.SetMetadata(metadataBuilder.Build());
 
-						updatePlaybackState();
-					}
-				}
-				/*tfile.Dispose();
+                UpdatePlaybackState();
+                /*tfile.Dispose();
                 ms.Dispose();*/
-			}
+            }
 		}
 
 
@@ -436,12 +448,15 @@ namespace Ass_Pain
 		///</summary>
 		private void Play()
 		{
-			if (queue.Count == 0)
+			if (Queue.Count == 0)
 			{
 				GenerateQueue(FileManager.GetSongs());
 			}
-			RequestFocus();
-			if(session == null)
+			if (!RequestFocus())
+			{
+				return;
+			}
+			if (session == null)
 			{
 				InnitSession();
 			}
@@ -464,7 +479,9 @@ namespace Ass_Pain
 				{
 					mediaPlayer.Reset();
 				}
-				mediaPlayer.SetDataSource(queue[index]);
+				Console.WriteLine($"SERVICE INDEX {Index}");
+                Console.WriteLine($"SERVICE QUEUE {Queue.Count}");
+                mediaPlayer.SetDataSource(Queue[Index]);
 				mediaPlayer.Prepare();
 			}
 			mediaPlayer.Start();
@@ -472,11 +489,11 @@ namespace Ass_Pain
 			if (isPaused)
 			{
 				isPaused = false;
-				updatePlaybackState();
+				UpdatePlaybackState();
 			}
 			else
 			{
-				updateMetadata();
+				UpdateMetadata();
 			}
 			isSkippingToNext = false;
 			isSkippingToPrevious = false;
@@ -489,7 +506,7 @@ namespace Ass_Pain
 		{
 			mediaPlayer.Pause();
 			isPaused = true;
-			updatePlaybackState();
+			UpdatePlaybackState();
 		}
 
 		///<summary>
@@ -511,16 +528,14 @@ namespace Ass_Pain
 			if(mediaPlayer != null)
 			{
 				isSkippingToNext = true;
-				if (queue.Count > index)
+				if (Queue.Count > Index)
 				{
-					index++;
-                    MainActivity.stateHandler.setIndex(ref index);
+					Index++;
                     Play();
 				}
 				else if (loopAll)
 				{
-					index = 0;
-                    MainActivity.stateHandler.setIndex(ref index);
+					Index = 0;
                     Play();
 				}
 				isSkippingToNext = false;
@@ -540,12 +555,7 @@ namespace Ass_Pain
 					return;
 				}
 				isSkippingToPrevious = true;
-				index -= 2;
-				if(index < 0)
-				{
-					index = 0;
-				}
-                MainActivity.stateHandler.setIndex(ref index);
+				Index = Index--.KeepPositive();
                 Play();
 				isSkippingToPrevious = false;
 			}
@@ -562,16 +572,14 @@ namespace Ass_Pain
 		///</summary>
 		public void GenerateQueue(string source)
 		{
-			index = 0;
-            MainActivity.stateHandler.setIndex(ref index);
+			Index = 0;
             if (FileManager.IsDirectory(source))
 			{
 				GenerateQueue(FileManager.GetSongs(source));
 			}
 			else
 			{
-				queue = new List<string> { source };
-                MainActivity.stateHandler.setQueue(ref queue);
+				Queue = new List<string> { source };
                 Play();
 			}
 		}
@@ -581,10 +589,8 @@ namespace Ass_Pain
 		///</summary>
 		public void GenerateQueue(List<string> source, int i = 0)
 		{
-			queue = source;
-            MainActivity.stateHandler.setQueue(ref queue);
-            index = i;
-            MainActivity.stateHandler.setIndex(ref index);
+			Queue = source;
+            Index = i;
             Shuffle(shuffle);
 			Play();
 		}
@@ -594,10 +600,8 @@ namespace Ass_Pain
 		///</summary>
 		public void ClearQueue()
 		{
-			queue = new List<string>();
-            MainActivity.stateHandler.setQueue(ref queue);
-            index = 0;
-            MainActivity.stateHandler.setIndex(ref index);
+			Queue = new List<string>();
+            Index = 0;
         }
 
 		///<summary>
@@ -611,8 +615,7 @@ namespace Ass_Pain
 			}
 			else
 			{
-				queue.Add(addition);
-				MainActivity.stateHandler.setQueue(ref queue);
+				Queue.Add(addition);
                 if (shuffle)
 				{
 					orignalQueue.Add(addition);
@@ -625,8 +628,7 @@ namespace Ass_Pain
 		///</summary>
 		public void AddToQueue(List<string> addition)
 		{
-			queue.AddRange(addition);
-            MainActivity.stateHandler.setQueue(ref queue);
+			Queue.AddRange(addition);
             if (shuffle)
 			{
 				orignalQueue.AddRange(addition);
@@ -644,11 +646,10 @@ namespace Ass_Pain
 			}
 			else
 			{
-				queue.Insert(index+1, addition);
-                MainActivity.stateHandler.setQueue(ref queue);
+				Queue.Insert(Index+1, addition);
                 if (shuffle)
 				{
-					orignalQueue.Insert(index+1, addition);
+					orignalQueue.Insert(Index+1, addition);
 				}
 			}
 
@@ -666,17 +667,16 @@ namespace Ass_Pain
 				additionTmp.AddRange(orignalQueue);
 				orignalQueue = additionTmp;
 			}
-			if(index >= queue.Count)
+			if(Index >= Queue.Count)
 			{
                 AddToQueue(addition);
 			}
 			else
 			{
-				List<string> tmp = queue.GetRange(0, index+1);
+				List<string> tmp = Queue.GetRange(0, Index+1);
 				tmp.AddRange(addition);
-				tmp.AddRange(queue.Skip(index + 1));
-                queue = tmp;
-				MainActivity.stateHandler.setQueue(ref queue);
+				tmp.AddRange(Queue.Skip(Index + 1));
+                Queue = tmp;
             }
         }
 
@@ -685,24 +685,26 @@ namespace Ass_Pain
 		///</summary>
 		public void Shuffle(bool newShuffleState)
 		{
-			if (newShuffleState && queue.Count > 0)
+            if(Queue.Count == 0) { return; }
+            while (isShuffling)
 			{
-				orignalQueue = queue;
-				string tmp = queue.Pop(index);
-				index = 0;
-                MainActivity.stateHandler.setIndex(ref index);
-                queue.Shuffle();
-				queue = queue.Prepend(tmp).ToList();
-                MainActivity.stateHandler.setQueue(ref queue);
+				System.Threading.Thread.Sleep(5);
+			}
+			isShuffling = true;
+			if (newShuffleState)
+			{
+				orignalQueue = Queue;
+				string tmp = Queue.Pop(Index);
+				Index = 0;
+                Queue.Shuffle();
+				Queue = Queue.Prepend(tmp).ToList();
             }
 			else
 			{
 				if (orignalQueue.Count > 0)
 				{
-					index = orignalQueue.IndexOf(queue[index]);
-                    MainActivity.stateHandler.setIndex(ref index);
-                    queue = orignalQueue;
-                    MainActivity.stateHandler.setQueue(ref queue);
+					Index = orignalQueue.IndexOf(Queue[Index]);
+                    Queue = orignalQueue;
                     orignalQueue = new List<string>();
 				}
 			}
@@ -712,7 +714,9 @@ namespace Ass_Pain
 			{
 				notificationService.Notify();
 			}
-		}
+            side_player.populate_side_bar(MainActivity.stateHandler.view);
+			isShuffling = false;
+        }
 
 		///<summary>
 		///Cycles through loop states based on <paramref name="state"/> value
@@ -743,13 +747,14 @@ namespace Ass_Pain
             {
                 notificationService.Notify();
             }
-			Console.WriteLine("TOGLELOOP");
+            side_player.populate_side_bar(MainActivity.stateHandler.view);
+            Console.WriteLine("TOGLELOOP");
         }
 
 		///<summary>
 		///Requests audio focus
 		///</summary>
-		private void RequestFocus()
+		private bool RequestFocus()
 		{
 			if (audioManager == null)
 			{
@@ -767,25 +772,33 @@ namespace Ass_Pain
 					if (!request.Equals(AudioFocus.Gain))
 					{
 						// handle any failed requests
+						return false;
 					}
 					else
 					{
 						isFocusGranted = true;
-					}
+                        return true;
+                    }
 				}
 				else
 				{
 					var request = audioManager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
 					if (request != AudioFocusRequest.Granted)
 					{
-						// handle any failed requests
-					}
+                        // handle any failed requests
+                        return false;
+                    }
 					else
 					{
 						isFocusGranted = true;
+						return true;
 					}
 				}
 			}
+			else
+			{
+                return true;
+            }
 		}
 
 		///<summary>

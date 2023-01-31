@@ -1,35 +1,25 @@
 ﻿using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
 using Android.Views;
-using Android.Widget;
-using Android.Media;
-using Android.Webkit;
-using Android.Graphics;
+using Com.Arthenica.Ffmpegkit;
+using Google.Android.Material.Snackbar;
+using Hqub.MusicBrainz.API.Entities;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
 using YoutubeExplode;
+using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
+using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
-using YoutubeExplode.Playlists;
-using Google.Android.Material.Snackbar;
-using Com.Arthenica.Ffmpegkit;
 using Signal = Com.Arthenica.Ffmpegkit.Signal;
-using System.Security.Cryptography;
-using Org.Apache.Http.Authentication;
-using Hqub.MusicBrainz.API;
-using Hqub.MusicBrainz.API.Entities.Collections;
-using Hqub.MusicBrainz.API.Entities;
-using YoutubeExplode.Channels;
 
 namespace Ass_Pain
 {
@@ -215,7 +205,7 @@ namespace Ass_Pain
                 return false;
             try
             {
-                var client = new HttpClient();
+                HttpClient client = new HttpClient();
                 HttpResponseMessage response = await client.GetAsync(url);
                 if (response.IsSuccessStatusCode)
                 {
@@ -285,189 +275,77 @@ namespace Ass_Pain
             Console.WriteLine("STARTING API SEARCH");
             name = "Mori Calliope Ch. hololive-EN";
             song = "[Original Rap] DEAD BEATS - Calliope Mori #holoMyth #hololiveEnglish";
-            try
+            HttpClient client = new HttpClient();
+            HttpResponseMessage response = await client.GetAsync("https://musicbrainz.org/ws/2/recording/?query=arid:8a9d0b90-951e-4ab8-b2dc-9d3618af3d28,recording:[Original%20Rap]%20DEAD%20BEATS%20-%20Calliope%20Mori%20#holoMyth%20#hololiveEnglish");
+            var stream = await response.Content.ReadAsStreamAsync();
+            /*XmlTextReader reader = new XmlTextReader(stream);
+            while (reader.Read())
             {
-                using (MusicBrainzClient client = new MusicBrainzClient())
+                switch (reader.NodeType)
                 {
-                    ArtistList artists = await client.Artists.SearchAsync(name, 20);
-                    //Console.WriteLine("Total matches for '{0}': {1}", name, artists.Count);
+                    case XmlNodeType.Element: // The node is an element.
+                        Console.Write("<" + reader.Name);
 
-                    int count = artists.Items.Count(a => a.Score == 100);
-
-                    //Console.WriteLine("Exact matches for '{0}': {1}", name, count);
-
-                    Artist artist;
-                    if (count > 1)
-                    {
-                        count = artists.Items.OrderByDescending(a => Levenshtein.Similarity(a.Name, name)).Count(a => a.Score == 1.0f);
-                        Console.WriteLine("Levenshtein matches for '{0}': {1}", name, count);
-                        if (count > 1)
-                        {
-                            count = artists.Items.OrderByDescending(a => Levenshtein.Similarity(a.Disambiguation, name)).Count(a => a.Score == 1.0f);
-                            Console.WriteLine("Levenshtein Disambiguation matches for '{0}': {1}", name, count);
-                            artist = artists.Items.OrderByDescending(a => Levenshtein.Similarity(a.Disambiguation, name)).First();
-                        }
-                        else
-                        {
-                            artist = artists.Items.OrderByDescending(a => Levenshtein.Similarity(a.Name, name)).First();
-                        }
-                    }
-                    else
-                    {
-                        artist = artists.Items.First();
-                    }
-                    Console.WriteLine($"{artist.Name} {artist.Id} {artist.Disambiguation}");
-                    Console.WriteLine();
-                    await Task.Delay(1000);
-                    var query = new QueryParameters<Recording>()
-                    {
-                        { "arid", artist.Id },
-                        { "recording", song }
-                    };
-
-                    var recordings = await client.Recordings.SearchAsync(query, 100);
-                    foreach(var recording in recordings)
-                    {
-                        Console.WriteLine(recording.Title);
-                    }
-                    if (recordings.Count == 0)
-                    {
-                        Console.WriteLine("No matches for recording");
-                        return (string.Empty, string.Empty, string.Empty, null);
-                    }
-                    Console.WriteLine("Total matches for recording '{0} by {1}': {2}", song, artist.Name, recordings.Count);
-                    var matches = recordings.Items.Where(r => r.Credits.Where(a => a.Artist.Id == artist.Id) != null ).Where(r => r.Title == song);
-                    Console.WriteLine("Total exact matches recording for '{0} by {1}': {2}", song, artist.Name, matches.Count());
-
-                    if (matches.Count() == 0)
-                    {
-                        //matches = recordings.Items.Where(r => r.Credits.Where(a => a.Artist.Id == artist.Id) != null).OrderByDescending(a => Levenshtein.Similarity(a.Title, song));
-                        /*var answer = from recording in recordings.Items
-                                     from credit in recording.Credits
-                                     where credit.Artist.Id == artist.Id
-                                     select recording;*/
-                        List<Recording> x = new List<Recording>();
-                        foreach(Recording recor in recordings.Items)
-                        {
-                            Console.WriteLine(recor.Title);
-                            foreach (var cred in recor.Credits)
-                            {
-                                if(cred.Artist.Id == artist.Id && recor.Releases != null)
-                                {
-                                    if (recor.Releases.Count > 0)
-                                    {
-                                        if (song.IndexOf("remix", StringComparison.OrdinalIgnoreCase) < 0)
-                                        {
-                                            if (recor.Title.IndexOf("remix", StringComparison.OrdinalIgnoreCase) < 0)
-                                            {
-                                                x.Add(recor);
-                                                Console.WriteLine(recor.Title);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            x.Add(recor);
-                                            Console.WriteLine(recor.Title);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        x = x.OrderByDescending(s => Levenshtein.Similarity(s.Title, song)).ToList();
-                        //Console.WriteLine($"LINQ matches: {answer.Count()}");
-                        foreach (var match in x)
-                        {
-                            try
-                            {
-                                Console.WriteLine($"TITLE: {match.Title}");
-                                Console.WriteLine($"RELEASES: {match.Releases.Count}");
-                            }
-                            catch(Exception ex)
-                            {
-                                Console.WriteLine(ex);
-                            }
-                        }
-                        matches = x;
-                        return (string.Empty, string.Empty, string.Empty, null);
-                    }
-                    using (HttpClient httpClient = new HttpClient())
-                    {
-                        foreach (Recording match in matches)
-                        {
-                            IEnumerable<Release> releases;
-                            if (album != null)
-                            {
-                                releases = match.Releases.OrderBy(r => Levenshtein.Similarity(r.Title, album));
-                                Console.WriteLine($"asdASDASD: {releases.First().ReleaseGroup.Title}");
-                            }
-                            else
-                            {
-                                releases = match.Releases.OrderBy(r => r.Date);
-                            }
-                            foreach (var release in releases)
-                            {
-                                //Console.WriteLine(release.);
-                                /*await Task.Delay(1000);
-                                var query2 = new QueryParameters<ReleaseGroup>()
-                                {
-                                    { "arid", artist.Id },
-                                    { "reid", release.Id }
-                                };
-
-                                var groups = await client.ReleaseGroups.SearchAsync(query2);
-
-                                Console.WriteLine($"release group matches {groups.Count}");
-
-                                var response = await httpClient.GetAsync($"https://coverartarchive.org/release-group/{groups.First().Id}");
-                                if (response.IsSuccessStatusCode)
-                                {
-                                    //show prompt for user to confirm image
-                                    //confimation granted
-                                    if (1 == 1)
-                                    {
-                                        MusicBrainzThumbnail thumbnail = Newtonsoft.Json.JsonConvert.DeserializeObject<MusicBrainzThumbnail>(await response.Content.ReadAsStringAsync());
-                                        string url = thumbnail.images.FirstOrDefault().image;
-                                        using (WebClient cli = new WebClient())
-                                        {
-                                            byte[] bytes = cli.DownloadData(url);
-                                            Console.WriteLine($"Returning: {artist.Name} {groups.First().Title} {System.IO.Path.GetExtension(url)} + bytes[]");
-                                            return (artist.Name, groups.First().Title, System.IO.Path.GetExtension(url), bytes);
-                                        }
-                                    }
-                                }*/
-
-                                var response = await httpClient.GetAsync($"https://coverartarchive.org/release/{release.Id}");
-                                if (response.IsSuccessStatusCode)
-                                {
-                                    //show prompt for user to confirm image
-                                    //confimation granted
-                                    if (1 == 1)
-                                    {
-                                        MusicBrainzThumbnail thumbnail = Newtonsoft.Json.JsonConvert.DeserializeObject<MusicBrainzThumbnail>(await response.Content.ReadAsStringAsync());
-                                        string url = thumbnail.images.FirstOrDefault().image;
-                                        string extension = System.IO.Path.GetExtension(url);
-                                        using (WebClient cli = new WebClient())
-                                        {
-                                            byte[] bytes = cli.DownloadData(url);
-                                            Console.WriteLine($"Returning: {artist.Name} {release.Title} {System.IO.Path.GetExtension(url)} + bytes[]");
-                                            return (artist.Name, release.Title, System.IO.Path.GetExtension(url), bytes);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        Console.WriteLine("Returning null");
-                        return (string.Empty, string.Empty, string.Empty, null);
-                    }
-                    //https://musicbrainz.org/doc/Cover_Art_Archive/API
-                    //https://stackoverflow.com/questions/13453678/how-to-get-album-image-using-musicbrainz
-                    //https://github.com/avatar29A/MusicBrainz/wiki/Example-4-Recordings
+                        while (reader.MoveToNextAttribute()) // Read the attributes.
+                            Console.Write(" " + reader.Name + "='" + reader.Value + "'");
+                        Console.Write(">");
+                        Console.WriteLine(">");
+                        break;
+                    case XmlNodeType.Text: //Display the text in each element.
+                        Console.WriteLine(reader.Value);
+                        break;
+                    case XmlNodeType.EndElement: //Display the end of the element.
+                        Console.Write("</" + reader.Name);
+                        Console.WriteLine(">");
+                        break;
                 }
-            } catch (Exception ex)
+            }*/
+            //stream.Seek(0, SeekOrigin.Begin);
+            //var fs = File.Create(Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath + "/pain.xml");
+            //stream.CopyTo(fs);
+            //fs.Close();
+            //var xdoc = new XDocument();
+            var xdoc = XDocument.Load(stream);
+            var ns = xdoc.Root.GetDefaultNamespace();
+            //Console.WriteLine($"COUNT: {xdoc.Descendants(ns + "recording")}");
+
+            //Console.WriteLine(xdoc.FirstNode);
+            /*foreach (XElement element in xdoc.Descendants("recording"))
             {
-                Console.WriteLine(ex);
-                return (string.Empty, string.Empty, string.Empty, null);
+                Console.WriteLine(element);
+            }*/
+            var recordings = xdoc.Descendants(ns + "recording");
+             var x = from recording in recordings
+                     from artists in recording.Descendants(ns + "artist-credit").Descendants(ns + "name-credit")
+                     from credits in artists.Descendants(ns + "artist").Where(des => des.Attribute("id").Value == "8a9d0b90-951e-4ab8-b2dc-9d3618af3d28")
+                     select credits;
+             foreach(var m in x)
+             {
+                 Console.WriteLine(m.Attribute("id").Value);
+             }
+            /*xmlDocument.Validate(new System.Xml.Schema.ValidationEventHandler((object sender, System.Xml.Schema.ValidationEventArgs args) =>
+            {
+                Console.WriteLine("VALIDATOR");
+                Console.WriteLine(args.Message);
+            }));*/
+            //xmlDocument.Save(Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath+"/pain.xml");
+            /*foreach(var x in xmlDocument.FirstChild.Attributes)
+            {
+                Console.WriteLine(x);
             }
+            foreach (XmlNode node in xmlDocument.SelectNodes("recording-list"))
+            {
+                foreach (XmlNode childNode in node.ChildNodes)
+                {
+                    foreach (var attr in childNode.Attributes)
+                        Console.WriteLine(attr);
+                }
+            }*/
+            Console.WriteLine("ENDING API SEARCH");
+            return (String.Empty, String.Empty, String.Empty, null);
+            //https://musicbrainz.org/doc/Cover_Art_Archive/API
+            //https://stackoverflow.com/questions/13453678/how-to-get-album-image-using-musicbrainz
+            //https://github.com/avatar29A/MusicBrainz/wiki/Example-4-Recordings
         }
         public static string Quote(this string s)
         {

@@ -170,7 +170,7 @@ namespace Ass_Pain
             // notififcations
             //Local_notification_service notif_service = new Local_notification_service();
             //notif_service.song_control_notification();
-            //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
+            new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
         }
 
         public override void OnBackPressed()

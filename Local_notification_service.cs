@@ -11,7 +11,7 @@ using System;
 using System.IO;
 using System.Runtime.Remoting.Contexts;
 using Xamarin.Essentials;
-using static Android.Renderscripts.ScriptGroup;
+//using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
 
 namespace Ass_Pain
@@ -45,39 +45,14 @@ namespace Ass_Pain
 
         NotificationManagerCompat manager;
 
-
-        private void add_loop_action(int loop_state, int draw, string type)
-        {
-            Console.WriteLine("LOOPACTION >>>>>>>>");
-            notification_builder.AddAction(
-                draw, type,
-                PendingIntent.GetService(
-                    AndroidApp.Context, 0,
-                    new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
-                    .PutExtra("loopState", loop_state), PendingIntentFlags.Mutable
-                )
-            );
-        }
-
         public void Notify()
         {
-            int loop_state = MainActivity.stateHandler.LoopState;
-            int shuffle_img = 0;
-
-            
             notification_builder.MActions.Clear();
 
-            if (MainActivity.stateHandler.IsShuffling)
-                shuffle_img = Resource.Drawable.repeat;
-            else
-                shuffle_img = Resource.Drawable.no_repeat;
-
-
-
             notification_builder.AddAction(
-                  shuffle_img, "shuffle",
+                  MainActivity.stateHandler.IsShuffling ? Resource.Drawable.repeat: Resource.Drawable.no_repeat, "shuffle",
                   PendingIntent.GetService(
-                      AndroidApp.Context, 0,
+                      AndroidApp.Context, Convert.ToInt32(MainActivity.stateHandler.IsShuffling),
                       new Intent(MediaService.ActionShuffle, null, AndroidApp.Context, typeof(MediaService))
                       .PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling), PendingIntentFlags.Mutable
                   )
@@ -106,12 +81,43 @@ namespace Ass_Pain
                 PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
             );
 
-            if (loop_state == 0)
-                add_loop_action(1, Resource.Drawable.no_repeat, "no_repeat");
-            else if (loop_state == 1)
-                add_loop_action(2, Resource.Drawable.repeat, "repeat");
-            else if (loop_state == 2)
-                add_loop_action(0, Resource.Drawable.repeat_one, "repeat_one");
+            int loopState = MainActivity.stateHandler.LoopState;
+            if (loopState == 0)
+            {
+                Console.WriteLine("no_repeat >>>>>>>>");
+                notification_builder.AddAction(
+                    Resource.Drawable.no_repeat, "no_repeat",
+                    PendingIntent.GetService(
+                        AndroidApp.Context, loopState,
+                        new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                        .PutExtra("loopState", 1), PendingIntentFlags.Mutable
+                    )
+                );
+            }
+            else if (loopState == 1)
+            {
+                Console.WriteLine("repeat >>>>>>>>");
+                notification_builder.AddAction(
+                    Resource.Drawable.repeat, "repeat",
+                    PendingIntent.GetService(
+                        AndroidApp.Context, loopState,
+                        new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                        .PutExtra("loopState", 2), PendingIntentFlags.Mutable
+                    )
+                );
+            }
+            else if (loopState == 2)
+            {
+                Console.WriteLine("repeat_one >>>>>>>>");
+                notification_builder.AddAction(
+                    Resource.Drawable.repeat_one, "repeat_one",
+                    PendingIntent.GetService(
+                        AndroidApp.Context, loopState,
+                        new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                        .PutExtra("loopState", 0), PendingIntentFlags.Mutable
+                    )
+                );
+            }
 
             notification = notification_builder.Build();
             manager.Notify(notification_id, notification);
@@ -133,66 +139,6 @@ namespace Ass_Pain
 
             NotificationManager manager = (NotificationManager)AndroidApp.Context.GetSystemService(AndroidApp.NotificationService);
             manager.CreateNotificationChannel(channel);
-        }
-
-
-        /*public void push_notification()
-        {
-            if (!is_channel_init)
-            {
-                create_notification_channel();
-            }
-
-            Intent intent = new Intent(AndroidApp.Context, typeof(MainActivity));
-            intent.PutExtra(TITLE_KEY, "title");
-            intent.PutExtra(MESSAGE_KEY, "message");
-            intent.AddFlags(ActivityFlags.ClearTop);
-
-            notification_id++;
-
-            PendingIntent pending = PendingIntent.GetActivity(AndroidApp.Context, notification_id, intent, PendingIntentFlags.OneShot);
-            NotificationCompat.Builder notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
-                .SetSmallIcon(
-                    Resource.Drawable.ic_menu_camera
-                )
-                .SetContentTitle("title")
-                .SetContentText("message")
-                .SetAutoCancel(true)
-                .SetContentIntent(pending);
-
-
-            NotificationManagerCompat manager = NotificationManagerCompat.From(AndroidApp.Context);
-            manager.Notify(notification_id, notification_builder.Build());
-
-        }*/
-
-        private Bitmap get_current_song_image()
-        {
-            Bitmap image = null;
-            TagLib.File tagFile;
-
-            try
-            {
-                Console.WriteLine($"now playing: {MainActivity.stateHandler.NowPlaying}");
-                tagFile = TagLib.File.Create(
-                    MainActivity.stateHandler.NowPlaying
-                );
-                MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
-                image = BitmapFactory.DecodeStream(ms);
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine($"Doesnt contain image: {MainActivity.stateHandler.NowPlaying}");
-            }
-
-            if (image == null)
-            {
-                image = BitmapFactory.DecodeStream(AndroidApp.Context.Assets.Open("music_placeholder.png"));
-            }
-
-            return image;
         }
 
         public void song_control_notification(MediaSessionCompat.Token token)
