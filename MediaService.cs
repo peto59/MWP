@@ -521,14 +521,19 @@ namespace Ass_Pain
 		}
 
 		///<summary>
-		///Plays bext song in queue
+		///Plays next song in queue
 		///</summary>
 		private void NextSong()
 		{
 			if(mediaPlayer != null)
 			{
+				if (loopSingle)
+				{
+					Play();
+					return;
+				}
 				isSkippingToNext = true;
-				if (Queue.Count > Index)
+				if (Queue.Count -1 > Index)
 				{
 					Index++;
                     Play();
@@ -555,7 +560,9 @@ namespace Ass_Pain
 					return;
 				}
 				isSkippingToPrevious = true;
-				Index = Index--.KeepPositive();
+				Index--;
+				Index = Index.KeepPositive();
+				Console.WriteLine($"Index in previous song: {Index}");
                 Play();
 				isSkippingToPrevious = false;
 			}
@@ -739,7 +746,7 @@ namespace Ass_Pain
 					loopSingle = true;
 					break;
 			}
-			mediaPlayer.Looping = loopSingle;
+			//mediaPlayer.Looping = loopSingle;
 			MainActivity.stateHandler.loopSingle = loopSingle;
 			MainActivity.stateHandler.loopAll = loopAll;
 			MainActivity.stateHandler.loopState = loopState;
@@ -769,9 +776,11 @@ namespace Ass_Pain
 						InnitFocusRequest();
 					}
 					var request = audioManager.RequestAudioFocus(audioFocusRequest);
-					if (!request.Equals(AudioFocus.Gain))
+					if (!request.Equals(AudioFocusRequest.Granted))
 					{
 						// handle any failed requests
+						Console.WriteLine("No focus");
+						Console.WriteLine(request);
 						return false;
 					}
 					else
@@ -786,6 +795,8 @@ namespace Ass_Pain
 					if (request != AudioFocusRequest.Granted)
 					{
                         // handle any failed requests
+                        Console.WriteLine("No focus");
+                        Console.WriteLine(request);
                         return false;
                     }
 					else
@@ -821,6 +832,7 @@ namespace Ass_Pain
 					var abandon = audioManager.AbandonAudioFocusRequest(audioFocusRequest);
 					if (!abandon.Equals(AudioFocus.Gain))
 					{
+					Console.WriteLine("No abandon");
 						// handle any failed requests
 					}
 					else
@@ -834,6 +846,7 @@ namespace Ass_Pain
 					if (abandon != AudioFocusRequest.Granted)
 					{
 						// handle any failed requests
+						Console.WriteLine("No abandon");
 					}
 					else
 					{
