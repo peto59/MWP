@@ -16,7 +16,7 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>True</Deterministic>
     <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
-    <TargetFrameworkVersion>v13.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v10.0</TargetFrameworkVersion>
     <AndroidClassParser>class-parse</AndroidClassParser>
     <AndroidCodegenTarget>XamarinAndroid</AndroidCodegenTarget>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
@@ -81,6 +81,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <Target Name="Install">
-  </Target>
 </Project>
