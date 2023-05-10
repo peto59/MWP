@@ -63,5 +63,31 @@ namespace Ass_Pain
             }
             return current;
         }
+        
+        ///<summary>
+        ///Keeps integer between <paramref name="min"/> and <paramref name="max"/>
+        ///</summary>
+        public static int Constraint(this int current, int min, int max)
+        {
+            if(current > max)
+            {
+                return 0;
+            }
+            if(current < 0)
+            {
+                return max;
+            }
+            return current;
+        }
+        
+        ///<summary>
+        ///Case-Insensitive comparison
+        ///</summary>
+        public static bool Contains(this string source, string toCheck, StringComparison comp)
+        {
+            return source?.IndexOf(toCheck, comp) >= 0;
+        }
+        
+        
     }
 }

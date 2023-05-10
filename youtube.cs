@@ -157,6 +157,10 @@ namespace Ass_Pain
             {
                 drawer.CloseDrawer(GravityCompat.Start);
             }
+            else if (web_view.CanGoBack())
+            {
+                web_view.GoBack();
+            }
             else
             {
                 base.OnBackPressed();

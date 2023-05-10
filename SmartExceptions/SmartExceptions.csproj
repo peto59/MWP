@@ -1,14 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
     <SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>8</LangVersion>
+    <LangVersion>default</LangVersion>
+    <TargetFramework>net48</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Additions\smart-exception-common-0.2.1.jar" />
     <None Remove="Additions\smart-exception-java-0.2.1.jar" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Mono.android-x64">
+      <Version>7.0.2.106</Version>
+    </PackageReference>
   </ItemGroup>
   
   <Target Name="Install">

@@ -4,10 +4,6 @@ Uprav NetworkManager file receive na viacero autorov
 
 Proccess multiple broadcast replies
 
-Add way to show images on authors
-
-fix storage permission wait
-
 Application.Context.GetExternalFilesDir(null).AbsolutePath
 
 add option to disable broadcast and listener on unknown networks
@@ -31,8 +27,6 @@ filemanager getAlbums Directory.EnumerateDirectories(author).toList()
 fix file discovery
 
 Downloader.cs searchAPI add confirmation for user
-
-youtube.cs navigate back button
 
 DISABLE SESSION (session.Active = false) WHEN NEEDED
 

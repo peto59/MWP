@@ -14,6 +14,7 @@ using Google.Android.Material.Snackbar;
 using Android.Webkit;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using AndroidX.AppCompat.Graphics.Drawable;
 using Android.Widget;
@@ -24,11 +25,11 @@ using System.Runtime.InteropServices;
 using Android.Content.PM;
 using Android.Media;
 using AndroidX.Core.App;
+using AndroidX.Core.Content;
 
 namespace Ass_Pain
 {
-
-
+    
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
@@ -48,129 +49,29 @@ namespace Ass_Pain
             AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
 
-            string[] PermissionsLocation =
-            {
-                Android.Manifest.Permission.ManageExternalStorage,
-                Android.Manifest.Permission.WriteExternalStorage,
-                Android.Manifest.Permission.ReadExternalStorage,
-                Android.Manifest.Permission.ForegroundService,
-            };
-
-
-            const int RequestLocationId = 1;
-            //string[] permission = { Android.Manifest.Permission.ManageExternalStorage };
-            //RequestPermissions(permission, 0);
-            if (ShouldShowRequestPermissionRationale(Android.Manifest.Permission.ManageExternalStorage))
-            {
-                //Explain to the user why we need to read the contacts
-                Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
-                        .SetAction("OK", v => RequestPermissions(PermissionsLocation, RequestLocationId))
-                        .Show();
-                return;
-            }
-            //Finally request permissions with the list of permissions and Id
-            RequestPermissions(PermissionsLocation, RequestLocationId);
-
-            try
-            {
-                while (!Android.OS.Environment.IsExternalStorageManager)
-                {
-                    Intent intent = new Intent();
-                    intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
-                    Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
-                    intent.SetData(uri);
-                    StartActivity(intent);
-                }
-            }catch(Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-                try
-                {
-                    Intent intent = new Intent();
-                    intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
-                    Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
-                    intent.SetData(uri);
-                    StartActivity(intent);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-            }
+            RequestMyPermission();
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
             fab.Click += FabOnClick;
 
-
-
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
             drawer.OpenDrawer(GravityCompat.Start);
             drawer.AddDrawerListener(toggle);
             toggle.SyncState();
 
-
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
-
-
+            
             side_player.populate_side_bar(this);
-
-
-            string privatePath = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
-
-            if (!Directory.Exists(path))
-            {
-                Console.WriteLine("Creating " + $"{path}");
-                Directory.CreateDirectory(path);
-            }
-
-            if (!Directory.Exists($"{privatePath}/tmp"))
-            {
-                Console.WriteLine("Creating " + $"{privatePath}/tmp");
-                Directory.CreateDirectory($"{privatePath}/tmp");
-            }
-
-            if (!File.Exists($"{privatePath}/trusted_hosts.json"))
-            {
-                File.WriteAllText($"{privatePath}/trusted_hosts.json", JsonConvert.SerializeObject(new List<string>()));
-            }
-
-            if (!File.Exists($"{privatePath}/sync_targets.json"))
-            {
-                File.WriteAllText($"{privatePath}/sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
-            }
-
-            if (!File.Exists($"{path}/aliases.json"))
-            {
-                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
-
-            }
-
-            if (!File.Exists($"{path}/playlists.json"))
-            {
-                File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
-            }
-
-
-            //new Thread(() => { nm.Listener(); }).Start();
-            //new Thread(() => { FileManager.DiscoverFiles(); }).Start();
-            stateHandler.SetView(this);
-            receiver = new MyBroadcastReceiver(this);
-            RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
-            StartService(new Intent(this, typeof(MediaService)));
-            //StartService(new Intent(MediaService.ActionPlay, null, this, typeof(MediaService)));
-
-            //new Thread(() => { Thread.Sleep(10000); stateHandler.zastav(); }).Start();
-            //new Thread(() => { Thread.Sleep(7500); StartService(new Intent(MediaService.ActionPlay, null, this, typeof(MediaService))); }).Start();
-            //new Thread(() => { Thread.Sleep(1500); StartService(new Intent(MediaService.ActionGenerateQueue, null, this, typeof(MediaService))); }).Start();
+            
+            //rest of the stuff that was here is in AfterReceivingPermissions()
 
             // notififcations
             //Local_notification_service notif_service = new Local_notification_service();
             //notif_service.song_control_notification();
-            new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
+            //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
         }
 
         public override void OnBackPressed()
@@ -244,6 +145,124 @@ namespace Ass_Pain
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+            bool shouldRequestAgain = false;
+            for(int i = 0; i < permissions.Length; i++)
+            {
+                Console.WriteLine($"Permission {permissions[i]}: {grantResults[i]}");
+                if (permissions[i] == Android.Manifest.Permission.ManageExternalStorage)
+                {
+                    continue;
+                }
+                if (grantResults[i] != Permission.Granted)
+                {
+                    shouldRequestAgain = true;
+                    break;
+                }
+            }
+
+            if (!Android.OS.Environment.IsExternalStorageManager || shouldRequestAgain)
+            {
+                RequestMyPermission();
+            }
+            else
+            {
+                AfterReceivingPermissions();
+            }
+        }
+
+        private async void RequestMyPermission()
+        {
+
+            if (ContextCompat.CheckSelfPermission(this, Android.Manifest.Permission.WriteExternalStorage) == (int)Permission.Granted)
+            {
+                return;
+            }
+            
+            string[] permissionsLocation =  {
+                Android.Manifest.Permission.ManageExternalStorage,
+                Android.Manifest.Permission.WriteExternalStorage,
+                Android.Manifest.Permission.ReadExternalStorage,
+                Android.Manifest.Permission.ForegroundService
+            };
+
+            
+
+            const int RequestLocationId = 1;
+            //string[] permission = { Android.Manifest.Permission.ManageExternalStorage };
+            //RequestPermissions(permission, 0);
+            //if (ShouldShowRequestPermissionRationale(Android.Manifest.Permission.ManageExternalStorage))
+            //{
+                //Explain to the user why we need to read the contacts
+                Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
+                    .SetAction("OK", v =>
+                    {
+                        if (!Android.OS.Environment.IsExternalStorageManager)
+                        {
+                            try
+                            {
+                                Intent intent = new Intent();
+                                intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
+                                Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
+                                intent.SetData(uri);
+                                StartActivity(intent);
+                            }catch(Exception ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                            }
+                        }
+                        RequestPermissions(permissionsLocation, RequestLocationId);
+                    }).Show(); 
+                //return;
+            //}
+            //Finally request permissions with the list of permissions and Id
+            //RequestPermissions(permissionsLocation, RequestLocationId);
+        }
+
+        private void AfterReceivingPermissions()
+        {
+            string privatePath = Application.Context.GetExternalFilesDir(null).AbsolutePath;
+            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+
+            if (!Directory.Exists(path))
+            {
+                Console.WriteLine("Creating " + $"{path}");
+                Directory.CreateDirectory(path);
+            }
+
+            if (!Directory.Exists($"{privatePath}/tmp"))
+            {
+                Console.WriteLine("Creating " + $"{privatePath}/tmp");
+                Directory.CreateDirectory($"{privatePath}/tmp");
+            }
+
+            if (!File.Exists($"{privatePath}/trusted_hosts.json"))
+            {
+                File.WriteAllText($"{privatePath}/trusted_hosts.json", JsonConvert.SerializeObject(new List<string>()));
+            }
+
+            if (!File.Exists($"{privatePath}/sync_targets.json"))
+            {
+                File.WriteAllText($"{privatePath}/sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
+            }
+
+            if (!File.Exists($"{path}/aliases.json"))
+            {
+                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
+
+            }
+
+            if (!File.Exists($"{path}/playlists.json"))
+            {
+                File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
+            }
+
+
+            //new Thread(() => { nm.Listener(); }).Start();
+            new Thread(() => { FileManager.DiscoverFiles(); }).Start();
+            stateHandler.SetView(this);
+            receiver = new MyBroadcastReceiver(this);
+            RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
+            StartService(new Intent(this, typeof(MediaService)));
         }
     }
 }

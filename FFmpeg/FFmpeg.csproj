@@ -16,7 +16,7 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>True</Deterministic>
     <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
-    <TargetFrameworkVersion>v10.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v13.0</TargetFrameworkVersion>
     <AndroidClassParser>class-parse</AndroidClassParser>
     <AndroidCodegenTarget>XamarinAndroid</AndroidCodegenTarget>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
@@ -27,7 +27,7 @@
     <MonoAndroidBinDirectory>/usr/lib/mono/xamarin-android/bin</MonoAndroidBinDirectory>
     <AndroidSdkDirectory>/home/Android/</AndroidSdkDirectory>
     <AndroidNdkDirectory>/home/Android/ndk</AndroidNdkDirectory>
-    <JavaSdkDirectory>/home/adam/Documents/jdk-11.0.18+10/</JavaSdkDirectory>
+    <JavaSdkDirectory>/home/JDK/</JavaSdkDirectory>
 
     <TargetFrameworkRootPath>/usr/lib/mono/xbuild-frameworks/</TargetFrameworkRootPath>
   </PropertyGroup>
@@ -39,7 +39,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AndroidSupportedAbis>x86;x86_64</AndroidSupportedAbis>
+    <AndroidSupportedAbis>armeabi-v7a;x86;arm64-v8a;x86_64</AndroidSupportedAbis>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <AndroidUseSharedRuntime>true</AndroidUseSharedRuntime>
   </PropertyGroup>
@@ -72,6 +72,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Jars\source.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Mono.android-x64">
+      <Version>7.0.2.106</Version>
+    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.Bindings.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
