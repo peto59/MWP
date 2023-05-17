@@ -32,18 +32,24 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Xml.Serialization;
+using Xamarin.Essentials;
+using NetworkAccess = Xamarin.Essentials.NetworkAccess;
+
 //using Android.Net;
 
 namespace Ass_Pain
 {
     public class NetworkManager
     {
+        private bool canSend = false;
         static Android.Net.Wifi.WifiManager wifiManager = (Android.Net.Wifi.WifiManager)Application.Context.GetSystemService(Service.WifiService);
 
         static Android.Net.DhcpInfo d = wifiManager.DhcpInfo;
-        static IPAddress myIP = new IPAddress(BitConverter.GetBytes(d.IpAddress));
-        List<IPAddress> connected = new List<IPAddress>{ { myIP } };
-        IPAddress GetBroadCastIP(IPAddress host, IPAddress mask)
+        private IPAddress myIP;
+        private List<IPAddress> connected;
+        private IPAddress broadcast;
+
+        static IPAddress GetBroadCastIP(IPAddress host, IPAddress mask)
         {
             byte[] broadcastIPBytes = new byte[4];
             byte[] hostBytes = host.GetAddressBytes();
@@ -57,16 +63,28 @@ namespace Ass_Pain
 
         public void Listener()
         {
+            Connectivity.ConnectivityChanged += OnWiFiChange;
+            GetConnectionInfo();
+            
+            
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.Q) {         
+                // Use new API here
+            } else {
+                // Use old API here
+            }
+            
             System.Timers.Timer aTimer = new System.Timers.Timer();
             aTimer.Interval = 20000;
 
             aTimer.Elapsed += SendBroadcast;
 
             aTimer.AutoReset = true;
-
-            //aTimer.Enabled = true;
-            Thread.Sleep(5000);
-            SendBroadcast();
+            if (false) //trusted network
+            {
+                aTimer.Enabled = true;
+            }
+            /*Thread.Sleep(5000);
+            SendBroadcast();*/
 
             Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             IPEndPoint iep = new IPEndPoint(IPAddress.Any, 8008);
@@ -78,12 +96,12 @@ namespace Ass_Pain
             try
             {
                 Start:
-                if (myIP.ToString() == "0.0.0.0")
+                if (canSend == false)
                 {
                     Thread.Sleep(20000);
                 }
 
-                while (myIP.ToString() != "0.0.0.0")
+                while (canSend)
                 {
                     Console.WriteLine("Waiting for broadcast");
                     sock.ReceiveFrom(buffer, ref groupEP);
@@ -97,6 +115,7 @@ namespace Ass_Pain
                         {
                             Console.WriteLine($"Exit pls2");
                             isAlreadyConneted = true;
+                            break;
                         }
                     }
                     if (isAlreadyConneted)
@@ -128,7 +147,7 @@ namespace Ass_Pain
         public void SendBroadcast(Object source = null, ElapsedEventArgs e = null)
         {
             
-            if (myIP.ToString() != "0.0.0.0")
+            if (canSend)
             {
                 Console.WriteLine("My IP IS: {0}", myIP.ToString());
                 Console.WriteLine("My MASK IS: {0}", new IPAddress(BitConverter.GetBytes(d.Netmask)).ToString());
@@ -137,15 +156,14 @@ namespace Ass_Pain
 
 
                 int broadcastPort = 8008;
-                IPAddress broadcastIp = GetBroadCastIP(myIP, new IPAddress(BitConverter.GetBytes(d.Netmask)));
-                IPEndPoint destinationEndpoint = new IPEndPoint(broadcastIp, broadcastPort);
+                IPEndPoint destinationEndpoint = new IPEndPoint(broadcast, broadcastPort);
                 Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
                 sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
                 sock.ReceiveTimeout = 2000;
                 byte[] buffer = new Byte[256];
 
                 int retries = 0;
-                int maxRetries = 3;
+                const int maxRetries = 3;
 
                 IPEndPoint iep = new IPEndPoint(IPAddress.Any, 8008);
                 EndPoint groupEP = (EndPoint)iep;
@@ -168,12 +186,12 @@ namespace Ass_Pain
                 }
 
 
-                IPAddress target_ip = ((IPEndPoint)groupEP).Address;
+                IPAddress targetIp = ((IPEndPoint)groupEP).Address;
                 string remoteHostname = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
 
-                connected.Add(target_ip);
+                connected.Add(targetIp);
 
-                P2PDecide(groupEP, target_ip, sock);
+                P2PDecide(groupEP, targetIp, sock);
                 
                 sock.Close();
             }
@@ -643,6 +661,8 @@ namespace Ass_Pain
             aes.Dispose();
             networkStream.Close();
             client.Close();
+            networkStream.Dispose();
+            client.Dispose();
             connected.Remove(server);
         }
 
@@ -700,7 +720,6 @@ namespace Ass_Pain
                 {
                     server = new TcpListener(ip, listenPort);
                     server.Start();
-                    MemoryStream memoryStream = new MemoryStream();
                     break;
                 }
                 catch
@@ -719,6 +738,26 @@ namespace Ass_Pain
             RSAParameters privKey = csp.ExportParameters(true);
             csp.Dispose();
             return (pubKey, privKey);
+        }
+
+        public void OnWiFiChange(object sender, ConnectivityChangedEventArgs e)
+        {
+            if (e.NetworkAccess == NetworkAccess.Internet || e.NetworkAccess == NetworkAccess.Local)
+            {
+                GetConnectionInfo();
+                canSend = true;
+            }
+            else
+            {
+                canSend = false;
+            }
+        }
+
+        private void GetConnectionInfo()
+        {
+            connected = new List<IPAddress>{ { myIP } };
+            myIP = new IPAddress(BitConverter.GetBytes(d.IpAddress));
+            broadcast = GetBroadCastIP(myIP, new IPAddress(BitConverter.GetBytes(d.Netmask)));
         }
     }
 }

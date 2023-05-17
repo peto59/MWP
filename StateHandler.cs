@@ -33,6 +33,8 @@ namespace Ass_Pain
             get; set;
         }
 
+        public List<Song> Songs = new List<Song>();
+
         ///<summary>
         ///Return current playback position
         ///</summary>

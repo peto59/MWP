@@ -27,19 +27,21 @@ namespace Ass_Pain
         {
             //return;
             Directory.CreateDirectory(music_folder);
-            if (!File.Exists($"{music_folder}/.nomedia"))
+            /*if (!File.Exists($"{music_folder}/.nomedia"))
             {
                 File.Create($"{music_folder}/.nomedia").Close();
-            }
+            }*/
             if(path == null)
             {
                 path = root;
             }
-            if(GetNameFromPath(path) == "Android")
+
+            var nameFromPath = GetNameFromPath(path);
+            if(nameFromPath == "Android")
             {
                 return;
             }
-            if (GetNameFromPath(path).StartsWith("."))
+            if (nameFromPath.StartsWith("."))
             {
                 return;
             }
@@ -47,27 +49,27 @@ namespace Ass_Pain
             {
                 return;
             }
-            if (GetNameFromPath(path) == "sound_recorder")
+            if (nameFromPath == "sound_recorder")
             {
                 return;
             }
-            if (GetNameFromPath(path) == "Notifications")
+            if (nameFromPath == "Notifications")
             {
                 return;
             }
-            if (GetNameFromPath(path) == "Recordings")
+            if (nameFromPath == "Recordings")
             {
                 return;
             }
-            if (GetNameFromPath(path) == "Ringtones")
+            if (nameFromPath == "Ringtones")
             {
                 return;
             }
-            if (GetNameFromPath(path) == "MIUI")
+            if (nameFromPath == "MIUI")
             {
                 return;
             }
-            if (GetNameFromPath(path) == "Alarms")
+            if (nameFromPath == "Alarms")
             {
                 return;
             }
@@ -122,6 +124,8 @@ namespace Ass_Pain
                         Directory.CreateDirectory($"{music_folder}/{artist}");
                         File.Move(file, $"{music_folder}/{artist}/{title}.mp3");
                     }
+                    
+                    
                 }
                 catch(Exception ex)
                 {
@@ -131,6 +135,41 @@ namespace Ass_Pain
             }
             //GetSongTitle(GetSongs());
         }
+
+        public static void GenerateList(string path = null)
+        {
+            if (path == null)
+            {
+                path = music_folder;
+            }
+            
+            Console.WriteLine(path);
+            
+            foreach (var dir in Directory.EnumerateDirectories(path))
+            {
+                GenerateList(dir);
+            }
+
+            foreach (var file in Directory.EnumerateFiles(path, "*.mp3"))
+            {
+                Console.WriteLine(file);
+                string[] artists;
+                var tfile = TagLib.File.Create(file);
+                if (tfile.Tag.Performers.Length == 0)
+                {
+                    artists = tfile.Tag.AlbumArtists;
+                }
+                else
+                {
+                    artists = tfile.Tag.Performers;    
+                }
+                var x = new Song(artists, tfile.Tag.Title, path, tfile.Tag.Album);
+                MainActivity.stateHandler.Songs.Add(x);
+                Console.WriteLine(x.ToString());
+                tfile.Dispose();
+            }
+        }
+        
         public static List<string> GetAuthors()
         {
             return Directory.EnumerateDirectories(music_folder).Where(author => !GetNameFromPath(author).StartsWith(".")).ToList();
@@ -193,13 +232,14 @@ namespace Ass_Pain
         ///</summary>
         public static List<string> GetAlbums(string author)
         {
-            List<string> albums = new List<string>();
+            /*List<string> albums = new List<string>();
             foreach (string album in Directory.EnumerateDirectories(author))
             {
                 Console.WriteLine(album);
                 albums.Add(album);
             }
-            return albums;
+            return albums;*/
+            return Directory.EnumerateDirectories(author).ToList();
         }
 
         ///<summary>
@@ -207,15 +247,11 @@ namespace Ass_Pain
         ///</summary>
         public static List<string> GetSongs()
         {
-            return Directory.EnumerateFiles(music_folder, "*.mp3", SearchOption.AllDirectories).ToList();
-            /*var mp3Files = Directory.EnumerateFiles(music_folder, "*.mp3", SearchOption.AllDirectories);
-            List<string> songs = new List<string>();
-            foreach (string currentFile in mp3Files)
+            /*foreach (var song in MainActivity.stateHandler.Songs)
             {
-                Console.WriteLine(currentFile);
-                songs.Add(currentFile);
-            }
-            return songs;*/
+                Console.WriteLine(song);
+            }*/
+            return Directory.EnumerateFiles(music_folder, "*.mp3", SearchOption.AllDirectories).ToList();
         }
 
         ///<summary>

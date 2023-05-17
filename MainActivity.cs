@@ -38,6 +38,7 @@ namespace Ass_Pain
         public static APIThrottler throttler = new APIThrottler();
         public static MyBroadcastReceiver receiver;
         public static StateHandler stateHandler = new StateHandler();
+        
 
         DrawerLayout drawer;
 
@@ -258,11 +259,12 @@ namespace Ass_Pain
 
 
             //new Thread(() => { nm.Listener(); }).Start();
-            new Thread(() => { FileManager.DiscoverFiles(); }).Start();
+            new Thread(() => { FileManager.DiscoverFiles(); FileManager.GenerateList(); }).Start();
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver(this);
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
             StartService(new Intent(this, typeof(MediaService)));
+            //StartForegroundService(new Intent(this, typeof(MediaService)));
         }
     }
 }
