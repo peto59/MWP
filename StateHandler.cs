@@ -34,6 +34,8 @@ namespace Ass_Pain
         }
 
         public List<Song> Songs = new List<Song>();
+        public List<Artist> Artists = new List<Artist>();
+        public List<Album> Albums = new List<Album>();
 
         ///<summary>
         ///Return current playback position

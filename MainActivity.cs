@@ -66,7 +66,7 @@ namespace Ass_Pain
             navigationView.SetNavigationItemSelectedListener(this);
             
             side_player.populate_side_bar(this);
-            
+
             //rest of the stuff that was here is in AfterReceivingPermissions()
 
             // notififcations
@@ -143,17 +143,17 @@ namespace Ass_Pain
         
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
+            
+            Console.WriteLine("OnRequestPermissionsResult Result");
+            
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             bool shouldRequestAgain = false;
+            
             for(int i = 0; i < permissions.Length; i++)
             {
                 Console.WriteLine($"Permission {permissions[i]}: {grantResults[i]}");
-                if (permissions[i] == Android.Manifest.Permission.ManageExternalStorage)
-                {
-                    continue;
-                }
                 if (grantResults[i] != Permission.Granted)
                 {
                     shouldRequestAgain = true;
@@ -173,28 +173,29 @@ namespace Ass_Pain
 
         private async void RequestMyPermission()
         {
-
-            if (ContextCompat.CheckSelfPermission(this, Android.Manifest.Permission.WriteExternalStorage) == (int)Permission.Granted)
-            {
-                return;
-            }
-            
             string[] permissionsLocation =  {
-                Android.Manifest.Permission.ManageExternalStorage,
                 Android.Manifest.Permission.WriteExternalStorage,
                 Android.Manifest.Permission.ReadExternalStorage,
                 Android.Manifest.Permission.ForegroundService
             };
 
+            bool exitFlag = true;
+
+            foreach (var perm in permissionsLocation)
+            {
+                exitFlag &=
+                    ContextCompat.CheckSelfPermission(this, perm) ==
+                    (int)Permission.Granted;
+            }
             
+            if (exitFlag && Android.OS.Environment.IsExternalStorageManager)
+            {
+                AfterReceivingPermissions();
+                return;
+            }
 
             const int RequestLocationId = 1;
-            //string[] permission = { Android.Manifest.Permission.ManageExternalStorage };
-            //RequestPermissions(permission, 0);
-            //if (ShouldShowRequestPermissionRationale(Android.Manifest.Permission.ManageExternalStorage))
-            //{
-                //Explain to the user why we need to read the contacts
-                Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
+            Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
                     .SetAction("OK", v =>
                     {
                         if (!Android.OS.Environment.IsExternalStorageManager)
@@ -212,11 +213,7 @@ namespace Ass_Pain
                             }
                         }
                         RequestPermissions(permissionsLocation, RequestLocationId);
-                    }).Show(); 
-                //return;
-            //}
-            //Finally request permissions with the list of permissions and Id
-            //RequestPermissions(permissionsLocation, RequestLocationId);
+                    }).Show();
         }
 
         private void AfterReceivingPermissions()
@@ -259,7 +256,29 @@ namespace Ass_Pain
 
 
             //new Thread(() => { nm.Listener(); }).Start();
-            new Thread(() => { FileManager.DiscoverFiles(); FileManager.GenerateList(); }).Start();
+            new Thread(() => {
+                FileManager.DiscoverFiles();
+                FileManager.GenerateList(FileManager.music_folder);
+
+                /*stateHandler.Songs = stateHandler.Songs.OrderBy(song => song.Name).ToList();
+                Console.WriteLine("----------------Alphabetically-------------------");
+                foreach (var song in stateHandler.Songs)
+                {
+                    Console.WriteLine(song.ToString());
+                }*/
+                
+                stateHandler.Songs = stateHandler.Songs.OrderByDate();
+                /*Console.WriteLine("----------------By Date-------------------");
+                foreach (var song in stateHandler.Songs)
+                {
+                    Console.WriteLine(song.ToString());
+                }*/
+                
+                foreach (var song in stateHandler.Songs.Where(song => song.Title.Contains("ミ", StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    Console.WriteLine(song.ToString());
+                }
+            }).Start();
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver(this);
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));

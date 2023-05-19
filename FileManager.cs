@@ -22,7 +22,7 @@ namespace Ass_Pain
     {
         static string root = (string)Android.OS.Environment.ExternalStorageDirectory;
         static string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-        static string music_folder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+        static public string music_folder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
         public static void DiscoverFiles(string path = null)
         {
             //return;
@@ -136,15 +136,9 @@ namespace Ass_Pain
             //GetSongTitle(GetSongs());
         }
 
-        public static void GenerateList(string path = null)
+        public static void GenerateList(string path)
         {
-            if (path == null)
-            {
-                path = music_folder;
-            }
-            
-            Console.WriteLine(path);
-            
+
             foreach (var dir in Directory.EnumerateDirectories(path))
             {
                 GenerateList(dir);
@@ -152,7 +146,6 @@ namespace Ass_Pain
 
             foreach (var file in Directory.EnumerateFiles(path, "*.mp3"))
             {
-                Console.WriteLine(file);
                 string[] artists;
                 var tfile = TagLib.File.Create(file);
                 if (tfile.Tag.Performers.Length == 0)
@@ -163,9 +156,48 @@ namespace Ass_Pain
                 {
                     artists = tfile.Tag.Performers;    
                 }
-                var x = new Song(artists, tfile.Tag.Title, path, tfile.Tag.Album);
-                MainActivity.stateHandler.Songs.Add(x);
-                Console.WriteLine(x.ToString());
+
+                List<Artist> artistsList = new List<Artist>();
+                if (artists.Length > 0)
+                {
+                    foreach (var artist in artists)
+                    {
+                        artistsList.Add(new Artist(artist));
+                    }
+                }
+                else
+                {
+                    artistsList.Add(new Artist("No Artist"));
+                }
+                
+                Song song;
+
+                if (!string.IsNullOrEmpty(tfile.Tag.Album))
+                {
+                    Album album = new Album(tfile.Tag.Album);
+                    song = new Song(artistsList, tfile.Tag.Title, File.GetCreationTime(file), file, album);
+                    album.AddSong(song);
+                    album.AddArtist(artistsList);
+                    foreach (var artist in artistsList)
+                    {
+                        artist.AddAlbum(album);
+                        artist.AddSong(song);
+                    }
+                    song.AddAlbum(album);
+                    MainActivity.stateHandler.Albums.Add(album);
+                }
+                else
+                {
+                    song = new Song(artistsList, tfile.Tag.Title, File.GetCreationTime(file), file);
+                    foreach (var artist in artistsList)
+                    {
+                        artist.AddSong(song);
+                    }
+                }
+                song.AddArtist(artistsList);
+
+                MainActivity.stateHandler.Songs.Add(song);
+                MainActivity.stateHandler.Artists.AddRange(artistsList);
                 tfile.Dispose();
             }
         }
@@ -508,7 +540,7 @@ namespace Ass_Pain
 
         public static string Sanitize(string value)
         {
-            return value.Replace("/", "").Replace("|", "").Replace("\\", "").Replace(":", "").Replace("*", "").Replace("\"", "").Replace("#", "").Replace("?", "").Replace("<", "").Replace(">", "").Trim(' ');
+            return value.Replace("/", "").Replace("|", "").Replace("\\", "").Replace(":", "").Replace("*", "").Replace("\"", "").Replace("#", "").Replace("?", "").Replace("<", "").Replace(">", "").Replace(" ", "").Trim(' ');
         }
 
         public static int GetAvailableFile(string name = "video")

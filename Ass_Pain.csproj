@@ -78,7 +78,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
+    <Compile Include="Album.cs" />
     <Compile Include="APIThrottler.cs" />
+    <Compile Include="Artist.cs" />
     <Compile Include="MediaService.cs" />
     <Compile Include="Interval.cs" />
     <Compile Include="Extensions.cs" />
@@ -97,6 +99,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="side_player.cs" />
     <Compile Include="Song.cs" />
+    <Compile Include="SongExtensions.cs" />
     <Compile Include="StateHandler.cs" />
     <Compile Include="TagManager.cs" />
     <Compile Include="youtube.cs" />

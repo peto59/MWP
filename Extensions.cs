@@ -6,6 +6,7 @@ using Android.Views;
 using Android.Widget;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
@@ -87,7 +88,5 @@ namespace Ass_Pain
         {
             return source?.IndexOf(toCheck, comp) >= 0;
         }
-        
-        
     }
 }
