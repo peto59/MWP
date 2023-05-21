@@ -267,17 +267,19 @@ namespace Ass_Pain
                     Console.WriteLine(song.ToString());
                 }*/
                 
-                stateHandler.Songs = stateHandler.Songs.OrderByDate();
-                /*Console.WriteLine("----------------By Date-------------------");
-                foreach (var song in stateHandler.Songs)
+                stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
+                //Console.WriteLine("----------------By Date-------------------");
+                /*foreach (var song in stateHandler.Songs)
+                {
+                    Console.WriteLine(song.ToString());
+                }*/
+                //Console.WriteLine("----------------Search-------------------");
+                /*foreach (var song in stateHandler.Songs.Search("ミ"))
                 {
                     Console.WriteLine(song.ToString());
                 }*/
                 
-                foreach (var song in stateHandler.Songs.Where(song => song.Title.Contains("ミ", StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    Console.WriteLine(song.ToString());
-                }
+
             }).Start();
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver(this);

@@ -47,18 +47,31 @@ namespace Ass_Pain
             }
         }
         
-        public static List<Song> Search( [NotNull] this List<Song> songs, string query, SongSearchType type)
+        public static IEnumerable<Song> Search( [NotNull] this List<Song> songs, string query)
         {
-            switch (type)
+            if (string.IsNullOrEmpty(query))
             {
-                case SongSearchType.Title:
-                    return songs.Where(song => song.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();
-                case SongSearchType.Author:
-                    return songs.OrderAlphabetically(true);
-                case SongSearchType.Album:
-                    return songs.OrderByDate();
-                default: return new List<Song>();
+                return songs;
             }
+            return songs.Where(song => song.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase));  
+        }
+        
+        public static List<Artist> Search( [NotNull] this List<Artist> artists, string query)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                return artists;
+            }
+            return artists.Where(artist => artist.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();  
+        }
+        
+        public static List<Album> Search( [NotNull] this List<Album> albums, string query)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                return albums;
+            }
+            return albums.Where(album  => album.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();  
         }
     }
 
@@ -68,11 +81,5 @@ namespace Ass_Pain
         AlphabeticallyReverse = 2,
         ByDate = 3,
         ByDateReverse = 4
-    }
-    public enum SongSearchType: byte
-    {
-        Title = 1,
-        Album = 2,
-        Author = 3
     }
 }

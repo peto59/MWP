@@ -1,20 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using Android.Provider;
+using Android.Graphics;
+using System.IO;
 
 namespace Ass_Pain
 {
     public class Song
     {
-        public List<Artist> Artists { get; }
+        public List<Artist> Artists { get; } = new List<Artist>();
         public Artist Artist
         {
             get
             {
-                return Artists.Count > 0 ? Artists[0] : new Artist("No Artist");
+                return Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
             }
         }
 
@@ -22,11 +20,11 @@ namespace Ass_Pain
         {
             get
             {
-                return Albums.Count > 0 ? Albums[0] : null;
+                return Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
             }
         }
 
-        public List<Album> Albums { get; }
+        public List<Album> Albums { get; } = new List<Album>();
         public string Name { get; }
         public string Title
         {
@@ -35,31 +33,84 @@ namespace Ass_Pain
         
         public DateTime DateCreated { get; }
         
-        public string Path { get;}
+        public string Path { get; }
+        public bool Initialized { get; } = true;
 
-
-        public void AddArtist(List<Artist> artists)
+        public void AddArtist(ref List<Artist> artists)
         {
             Artists.AddRange(artists);
         }
-        public void AddArtist(Artist artist)
+        public void AddArtist(ref Artist artist)
         {
             Artists.Add(artist);
         }
         
-        public void AddAlbum(List<Album> albums)
+        public void AddAlbum(ref List<Album> albums)
         {
             Albums.AddRange(albums);
         }
-        public void AddAlbum(Album album)
+        public void AddAlbum(ref Album album)
         {
             Albums.Add(album);
+        }
+
+        public Bitmap GetImage(bool shouldFallBack = true)
+        {
+            Bitmap image = null;
+            try
+            {
+                using TagLib.File tagFile = TagLib.File.Create(Path);
+                using MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+                image = BitmapFactory.DecodeStream(ms);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine($"Doesnt contain image: {Path}");
+            }
+
+            if (image == null && shouldFallBack)
+            {
+                foreach (Album album in Albums)
+                {
+                    if (!album.Initialized)
+                    {
+                        continue;
+                    }
+                    image = album.GetImage(false);
+                    if (image != null)
+                    {
+                        break;
+                    }
+                }
+
+                if (image == null)
+                {
+                    foreach (Artist artist in Artists)
+                    {
+                        if (!artist.Initialized)
+                        {
+                            continue;
+                        }
+                        image = artist.GetImage(false);
+                        if (image != null)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return image;
         }
 
         public Song(List<Artist> artists, string name, DateTime dateCreated, string path, Album album = null)
         {
             Artists = artists;
-            Albums = new List<Album> {album};
+            if (album != null)
+            {
+                Albums = new List<Album> {album};
+            }
             Name = name;
             DateCreated = dateCreated;
             Path = path;
@@ -67,7 +118,10 @@ namespace Ass_Pain
         public Song(Artist artist, string name, DateTime dateCreated, string path, Album album = null)
         {
             Artists = new List<Artist> {artist};
-            Albums = new List<Album> {album};
+            if (album != null)
+            {
+                Albums = new List<Album> {album};
+            }
             Name = name;
             DateCreated = dateCreated;
             Path = path;
@@ -90,11 +144,12 @@ namespace Ass_Pain
             Path = path;
         }
         
-        public Song(string name, DateTime dateCreated, string path)
+        public Song(string name, DateTime dateCreated, string path, bool initialized = true)
         {
             Name = name;
             DateCreated = dateCreated;
             Path = path;
+            Initialized = initialized;
         }
         
         public override bool Equals(object obj)
@@ -121,7 +176,14 @@ namespace Ass_Pain
         
         public override string ToString()
         {
-            return $"Song: title> {Name} author> {Artist} album> {Album} dateCreated> {DateCreated} path> {Path}";
+            //$"Song: title> {Name} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}"
+            /*string x = $"Song: title> {Name}";
+            x = $"{x} author> {Artist.Title}";
+            x = $"{x} album> {Album.Title}";
+            x = $"{x} dateCreated> {DateCreated}";
+            x = $"{x} path> {Path}";
+            return x;*/
+            return $"Song: title> {Name} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}";
         }
     }
 }

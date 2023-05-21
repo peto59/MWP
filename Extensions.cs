@@ -22,9 +22,7 @@ namespace Ass_Pain
             {
                 n--;
                 int k = rng.Next(n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
+                (list[k], list[n]) = (list[n], list[k]);
             }
         }
 
@@ -72,9 +70,9 @@ namespace Ass_Pain
         {
             if(current > max)
             {
-                return 0;
+                return min;
             }
-            if(current < 0)
+            if(current < min)
             {
                 return max;
             }

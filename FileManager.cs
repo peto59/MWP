@@ -146,6 +146,7 @@ namespace Ass_Pain
 
             foreach (var file in Directory.EnumerateFiles(path, "*.mp3"))
             {
+                //Console.WriteLine(file);
                 string[] artists;
                 var tfile = TagLib.File.Create(file);
                 if (tfile.Tag.Performers.Length == 0)
@@ -162,28 +163,44 @@ namespace Ass_Pain
                 {
                     foreach (var artist in artists)
                     {
-                        artistsList.Add(new Artist(artist));
+                        string part = Sanitize(GetAlias(artist));
+                        if(File.Exists($"{music_folder}/{part}/cover.jpg"))
+                            artistsList.Add(new Artist(artist, $"{music_folder}/{part}/cover.jpg"));
+                        else if(File.Exists($"{music_folder}/{part}/cover.png"))
+                            artistsList.Add(new Artist(artist, $"{music_folder}/{part}/cover.png"));
+                        else
+                            artistsList.Add(new Artist(artist, "Default"));
                     }
                 }
                 else
                 {
-                    artistsList.Add(new Artist("No Artist"));
+                    artistsList.Add(new Artist("No Artist", "Default"));
                 }
                 
                 Song song;
 
                 if (!string.IsNullOrEmpty(tfile.Tag.Album))
                 {
-                    Album album = new Album(tfile.Tag.Album);
+                    string artistPart = Sanitize(GetAlias(artistsList[0].Title));
+                    string albumPart = Sanitize(tfile.Tag.Album);
+                    Album album;
+                    
+                    if(File.Exists($"{music_folder}/{artistPart}/{albumPart}/cover.jpg"))
+                        album = new Album(tfile.Tag.Album, $"{music_folder}/{artistPart}/{albumPart}/cover.jpg");
+                    else if(File.Exists($"{music_folder}/{artistPart}/{albumPart}/cover.png"))
+                        album = new Album(tfile.Tag.Album, $"{music_folder}/{artistPart}/{albumPart}/cover.png");
+                    else
+                        album = new Album(tfile.Tag.Album, "Default");
+                    
                     song = new Song(artistsList, tfile.Tag.Title, File.GetCreationTime(file), file, album);
-                    album.AddSong(song);
-                    album.AddArtist(artistsList);
+                    album.AddSong(ref song);
+                    album.AddArtist(ref artistsList);
                     foreach (var artist in artistsList)
                     {
-                        artist.AddAlbum(album);
-                        artist.AddSong(song);
+                        artist.AddAlbum(ref album);
+                        artist.AddSong(ref song);
                     }
-                    song.AddAlbum(album);
+                    song.AddAlbum(ref album);
                     MainActivity.stateHandler.Albums.Add(album);
                 }
                 else
@@ -191,10 +208,10 @@ namespace Ass_Pain
                     song = new Song(artistsList, tfile.Tag.Title, File.GetCreationTime(file), file);
                     foreach (var artist in artistsList)
                     {
-                        artist.AddSong(song);
+                        artist.AddSong(ref song);
                     }
                 }
-                song.AddArtist(artistsList);
+                song.AddArtist(ref artistsList);
 
                 MainActivity.stateHandler.Songs.Add(song);
                 MainActivity.stateHandler.Artists.AddRange(artistsList);
