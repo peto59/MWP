@@ -294,7 +294,7 @@ namespace Ass_Pain
             receiver = new MyBroadcastReceiver(this);
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
             
-            var serviceIntent = new Intent(MediaService.ActionPlay, null, this, typeof(MediaService));
+            var serviceIntent = new Intent(this, typeof(MediaService));
             /*if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
                 StartForegroundService(serviceIntent);
@@ -303,12 +303,20 @@ namespace Ass_Pain
             {
                 StartService(serviceIntent);
             }*/
-            StartService(serviceIntent);
-            BindService(serviceIntent, ServiceConnection, Bind.AutoCreate);
-            //Thread.Sleep(5000);
-            //ServiceConnection.Binder?.Service?.Play();
-            Thread.Sleep(5000);
-            ServiceConnection.Binder?.Service?.NextSong();
+            StartForegroundService(serviceIntent);
+            var b = BindService(serviceIntent, ServiceConnection, Bind.Important);
+            Console.WriteLine($"BIND RESULT {b}");
+            if (b)
+            {
+                Thread.Sleep(5000);
+                Console.WriteLine($"SET: {ServiceConnection.Set}");
+            }
+            else
+            {
+                Console.WriteLine("Cannot Connect");
+            }
+            /*Thread.Sleep(5000);
+            ServiceConnection.Binder?.Service?.NextSong();*/
         }
     }
 }

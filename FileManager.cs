@@ -587,7 +587,7 @@ namespace Ass_Pain
 
         public static string Sanitize(string value)
         {
-            return value.Replace("/", "").Replace("|", "").Replace("\\", "").Replace(":", "").Replace("*", "").Replace("\"", "").Replace("#", "").Replace("?", "").Replace("<", "").Replace(">", "").Replace(" ", "").Trim(' ');
+            return value.Replace("/", "").Replace("|", "").Replace("\\", "").Replace(":", "").Replace("*", "").Replace("\"", "").Replace("#", "").Replace("?", "").Replace("<", "").Replace(">", "").Trim().Replace(" ", "_");
         }
 
         public static int GetAvailableFile(string name = "video")

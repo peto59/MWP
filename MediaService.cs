@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Java.Lang;
+//using Java.Lang;
 using Java.Security;
 using System.Runtime.Remoting.Contexts;
 using TagLib.Flac;
@@ -26,7 +26,7 @@ using Android.Support.V4.Media;
 
 namespace Ass_Pain
 {
-	[Service]
+	[Service(ForegroundServiceType = ForegroundService.TypeMediaPlayback)]
 	public class MediaService : Service, AudioManager.IOnAudioFocusChangeListener
 	{
 		///<summary>
@@ -131,6 +131,7 @@ namespace Ass_Pain
 			InnitAudioManager();
 			InnitSession();
 			InnitFocusRequest();
+			InnitNotification();
 			Console.WriteLine("CREATING NEW SESSION");
 		}
 		public override void OnDestroy()
@@ -199,6 +200,14 @@ namespace Ass_Pain
 											   .SetAudioAttributes(new AudioAttributes.Builder().SetLegacyStreamType(Android.Media.Stream.Music).SetUsage(AudioUsageKind.Media).Build())
 											   .SetOnAudioFocusChangeListener(this)
 											   .Build();
+		}
+
+		private void InnitNotification()
+		{
+			notificationService.song_control_notification(session.SessionToken);
+			StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
+			//android:foregroundServiceType="mediaPlayback"
+			//StartForeground(notificationService.NotificationId, notificationService.Notification);
 		}
 
 		public void OnAudioFocusChange([GeneratedEnum] AudioFocus focusChange)
@@ -468,26 +477,25 @@ namespace Ass_Pain
 			if (!notificationService.IsCreated)
 			{
 				notificationService.song_control_notification(session.SessionToken);
-                //StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
-                //android:foregroundServiceType="mediaPlayback"
-                StartForeground(notificationService.NotificationId, notificationService.Notification);
+				//StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
+				//android:foregroundServiceType="mediaPlayback"
+				StartForeground(notificationService.NotificationId, notificationService.Notification);
 			}
 			if (mediaPlayer == null)
 			{
 				InnitPlayer();
-			}else if (!isPaused)
+			}
+			if (!isPaused)
 			{
-				if (isUsed)
-				{
-					mediaPlayer.Reset();
-				}
+				mediaPlayer.Reset();
 				Console.WriteLine($"SERVICE INDEX {Index}");
-                Console.WriteLine($"SERVICE QUEUE {Queue.Count}");
-                mediaPlayer.SetDataSource(Queue[Index]);
+				Console.WriteLine($"SERVICE QUEUE {Queue.Count}");
+				
+				mediaPlayer.SetDataSource(Queue[Index]);
 				mediaPlayer.Prepare();
 			}
 			mediaPlayer.Start();
-			
+		
 			if (isPaused)
 			{
 				isPaused = false;
@@ -500,7 +508,7 @@ namespace Ass_Pain
 			isSkippingToNext = false;
 			isSkippingToPrevious = false;
 		}
-
+		
 		///<summary>
 		///Pauses playback
 		///</summary>
@@ -898,6 +906,7 @@ namespace Ass_Pain
 
 		public override IBinder OnBind(Intent intent)
 		{
+			Console.WriteLine("CONECTED");
 			return new MediaServiceBinder(this);
 		}
 	}
