@@ -92,16 +92,16 @@ namespace Ass_Pain
 		private bool isFocusGranted;
 		private bool isUsed;
 		private bool lostFocusDuringPlay;
-		private bool isPaused;
-		private bool shuffle;
+		public bool IsPaused { get; private set; }
+		public bool IsShuffled { get; private set; }
 		private bool loopAll;
 		private bool loopSingle;
 		private bool isSkippingToNext;
 		private bool isSkippingToPrevious;
 		private bool isBuffering = true;
-		private bool isShuffling;
-		private int loopState;
-        private int i;
+		public bool IsShuffling { get; private set; }
+		public int LoopState { get; private set; }
+		private int i;
 		private int Index
 		{
 			get => i;
@@ -337,7 +337,7 @@ namespace Ass_Pain
 			{
 				actions |= PlaybackState.ActionSkipToPrevious;
 			}
-			if (Queue.Count > Index)
+			if (Index < Queue.Count -1)
 			{
 				actions |= PlaybackState.ActionSkipToNext;
 			}
@@ -358,7 +358,7 @@ namespace Ass_Pain
 				MainActivity.stateHandler.cts = new CancellationTokenSource();
 				side_player.StartMovingProgress(MainActivity.stateHandler.cts.Token, MainActivity.stateHandler.view);
 			}
-			else if (isPaused)
+			else if (IsPaused)
 			{
                 Console.WriteLine("B");
                 state = PlaybackStateCode.Paused;
@@ -392,6 +392,14 @@ namespace Ass_Pain
 			if (stateBuilder != null)
 			{
 				stateBuilder.SetState((int)state, position, 1.0f);
+				int icon = LoopState switch
+				{
+					0 => Resource.Drawable.no_repeat,
+					1 => Resource.Drawable.repeat,
+					_ => Resource.Drawable.repeat_one
+				};
+				stateBuilder.AddCustomAction("loop", "loop", icon);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_repeat : Resource.Drawable.repeat);
 				session.SetPlaybackState(stateBuilder.Build());
 			}
 
@@ -410,33 +418,34 @@ namespace Ass_Pain
 				using MemoryStream ms = new MemoryStream(dataData);
 				
 				// A small bitmap for the artwork is also recommended
-				metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyArt,
+				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt,
 					BitmapFactory.DecodeStream(ms));
-				metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyAlbumArt,
+				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyAlbumArt,
 					BitmapFactory.DecodeStream(ms));
 			}
 			// To provide most control over how an item is displayed set the
 			// display fields in the metadata
-			metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplayTitle,
+			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplayTitle,
 				tfile.Tag.Title);
 			// And at minimum the title and artist for legacy support
-			metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle,
+			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyTitle,
 				tfile.Tag.Title);
-			metadataBuilder.PutString(MediaMetadata.MetadataKeyDisplaySubtitle,
+			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplaySubtitle,
 				tfile.Tag.Album ?? tfile.Tag.Performers.FirstOrDefault());
-			metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbum,
+			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAlbum,
 				tfile.Tag.Album);
-			metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbumArtist,
+			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAlbumArtist,
 				tfile.Tag.Performers.FirstOrDefault());
-			//Possible error in implementation
-			metadataBuilder.PutLong(MediaMetadata.MetadataKeyDuration,
+			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyArtist,
+				tfile.Tag.Performers.FirstOrDefault());
+			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAuthor,
+				tfile.Tag.Performers.FirstOrDefault());
+			metadataBuilder.PutLong(MediaMetadataCompat.MetadataKeyDuration,
 				mediaPlayer.Duration);
 			// Add any other fields you have for your data as well
 			session.SetMetadata(metadataBuilder.Build());
 
 			UpdatePlaybackState();
-			/*tfile.Dispose();
-                ms.Dispose();*/
 		}
 
 
@@ -473,7 +482,7 @@ namespace Ass_Pain
 			{
 				InnitPlayer();
 			}
-			if (!isPaused)
+			if (!IsPaused)
 			{
 				mediaPlayer.Reset();
 				Console.WriteLine($"SERVICE INDEX {Index}");
@@ -484,13 +493,13 @@ namespace Ass_Pain
 			}
 			mediaPlayer.Start();
 
-			if (!isPaused)
+			if (!IsPaused)
 			{
 				UpdateMetadata();
 			}
 			else
 			{
-				isPaused = false;
+				IsPaused = false;
 				UpdatePlaybackState();
 			}
 
@@ -504,7 +513,7 @@ namespace Ass_Pain
 		public void Pause()
 		{
 			mediaPlayer.Pause();
-			isPaused = true;
+			IsPaused = true;
 			UpdatePlaybackState();
 		}
 
@@ -531,6 +540,7 @@ namespace Ass_Pain
 				return;
 			}
 			isSkippingToNext = true;
+			IsPaused = false;
 			if (Queue.Count -1 > Index)
 			{
 				Index++;
@@ -556,6 +566,7 @@ namespace Ass_Pain
 				return;
 			}
 			isSkippingToPrevious = true;
+			IsPaused = false;
 			Index--;
 			Index = Index.KeepPositive();
 			Console.WriteLine($"Index in previous song: {Index}");
@@ -593,7 +604,7 @@ namespace Ass_Pain
 		{
 			Queue = source;
             Index = i;
-            Shuffle(shuffle);
+            Shuffle(IsShuffled);
 			Play();
 		}
 
@@ -618,7 +629,7 @@ namespace Ass_Pain
 			else
 			{
 				Queue.Add(addition);
-                if (shuffle)
+                if (IsShuffled)
 				{
 					originalQueue.Add(addition);
 				}
@@ -631,7 +642,7 @@ namespace Ass_Pain
 		public void AddToQueue(List<string> addition)
 		{
 			Queue.AddRange(addition);
-            if (shuffle)
+            if (IsShuffled)
 			{
 				originalQueue.AddRange(addition);
 			}
@@ -649,7 +660,7 @@ namespace Ass_Pain
 			else
 			{
 				Queue.Insert(Index+1, addition);
-                if (shuffle)
+                if (IsShuffled)
 				{
 					originalQueue.Insert(Index+1, addition);
 				}
@@ -662,7 +673,7 @@ namespace Ass_Pain
 		///</summary>
 		public void PlayNext(List<string> addition)
 		{
-			if (shuffle)
+			if (IsShuffled)
 			{
 				//opravit podla inej logiky nizsie
 				addition.AddRange(originalQueue);
@@ -687,11 +698,11 @@ namespace Ass_Pain
 		public void Shuffle(bool newShuffleState)
 		{
             if(Queue.Count == 0) { return; }
-            while (isShuffling)
+            while (IsShuffling)
 			{
 				System.Threading.Thread.Sleep(5);
 			}
-			isShuffling = true;
+			IsShuffling = true;
 			if (newShuffleState)
 			{
 				originalQueue = Queue;
@@ -709,14 +720,11 @@ namespace Ass_Pain
                     originalQueue = new List<string>();
 				}
 			}
-			shuffle = newShuffleState;
+			IsShuffled = newShuffleState;
 			MainActivity.stateHandler.shuffle = newShuffleState;
-			if (notificationService.IsCreated)
-			{
-				notificationService.Notify();
-			}
+			UpdatePlaybackState();
             side_player.populate_side_bar(MainActivity.stateHandler.view);
-			isShuffling = false;
+			IsShuffling = false;
         }
 
 		///<summary>
@@ -724,7 +732,8 @@ namespace Ass_Pain
 		///</summary>
 		public void ToggleLoop(int state)
 		{
-			loopState = state;
+			state %= 3;
+			LoopState = state;
 			switch (state)
 			{
 				case 0:
@@ -743,11 +752,8 @@ namespace Ass_Pain
 			//mediaPlayer.Looping = loopSingle;
 			MainActivity.stateHandler.loopSingle = loopSingle;
 			MainActivity.stateHandler.loopAll = loopAll;
-			MainActivity.stateHandler.loopState = loopState;
-            if (notificationService.IsCreated)
-            {
-                notificationService.Notify();
-            }
+			MainActivity.stateHandler.loopState = LoopState;
+            UpdatePlaybackState();
             side_player.populate_side_bar(MainActivity.stateHandler.view);
             Console.WriteLine("TOGGLE LOOP");
         }
@@ -877,7 +883,7 @@ namespace Ass_Pain
 			isFocusGranted = false;
 			isUsed = false;
 			lostFocusDuringPlay = false;
-			isPaused = false;
+			IsPaused = false;
 			isSkippingToNext = false;
 			isSkippingToPrevious = false;
 			isBuffering = true;

@@ -39,7 +39,7 @@ namespace Ass_Pain
         public static APIThrottler throttler = new APIThrottler();
         public static MyBroadcastReceiver receiver;
         public static StateHandler stateHandler = new StateHandler();
-        public static MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        public static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
         
         
 
