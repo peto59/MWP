@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Android.Graphics;
 using System.IO;
+using System.Linq;
 using Android.App;
 
 namespace Ass_Pain
@@ -28,15 +29,22 @@ namespace Ass_Pain
             }
         }
         public string ImgPath { get; }
-        public bool Initialized { get; } = true;
+        public bool Initialized { get; private set; } = true;
+        
+        public Bitmap Image
+        {
+            get { return GetImage(); }
+        }
         
         public void AddAlbum(ref List<Album> albums)
         {
+            //prepisat aby sa zabranilo duplicite
             Albums.AddRange(albums);
         }
         public void AddAlbum(ref Album album)
         {
-            Albums.Add(album);
+            if (!Albums.Contains(album))
+                Albums.Add(album);
         }
         
         public void AddSong(ref List<Song> songs)
@@ -46,6 +54,62 @@ namespace Ass_Pain
         public void AddSong(ref Song song)
         {
             Songs.Add(song);
+        }
+
+        public void RemoveSong(Song song)
+        {
+            Songs.Remove(song);
+        }
+        
+        public void RemoveSong(List<Song> songs)
+        {
+            songs.ForEach(RemoveSong);
+        }
+        
+        public void RemoveAlbum(Album album)
+        {
+            Albums.Remove(album);
+        }
+        
+        public void RemoveAlbum(List<Album> albums)
+        {
+            albums.ForEach(RemoveAlbum);
+        }
+        
+        ///<summary>
+        ///Nukes this object out of existence
+        ///</summary>
+        public void Nuke()
+        {
+            //var art = MainActivity.stateHandler.Artists.Select("No Artist")[0];
+            Songs.ForEach(song =>
+            {
+                song.RemoveArtist(this);
+                /*if (song.Artists.Count == 0)
+                {
+                    song.AddArtist(ref art);
+                }*/
+            });
+            Albums.ForEach(album =>
+            {
+                album.RemoveArtist(this);
+                /*if (album.Artists.Count == 0)
+                {
+                    album.AddArtist(ref art);
+                }*/
+            });
+            MainActivity.stateHandler.Artists.Remove(this);
+            Initialized = false;
+        }
+
+        public static string GetImagePath(string name)
+        {
+            string artistPart = FileManager.Sanitize(FileManager.GetAlias(name));
+            if (File.Exists($"{FileManager.music_folder}/{artistPart}/cover.jpg"))
+                return $"{FileManager.music_folder}/{artistPart}/cover.jpg";
+            if (File.Exists($"{FileManager.music_folder}/{artistPart}/cover.png"))
+                return $"{FileManager.music_folder}/{artistPart}/cover.png";
+            return "Default";
         }
         
         public Bitmap GetImage(bool shouldFallBack = true)
@@ -95,13 +159,19 @@ namespace Ass_Pain
                 }
                 if (image == null)
                 {
-                    image = BitmapFactory.DecodeStream(Application.Context.Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
+                    if (Application.Context.Assets != null)
+                        image = BitmapFactory.DecodeStream(
+                            Application.Context.Assets.Open(
+                                "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                image = BitmapFactory.DecodeStream(Application.Context.Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assetsthrow;
+                if (Application.Context.Assets != null)
+                    image = BitmapFactory.DecodeStream(
+                        Application.Context.Assets.Open(
+                            "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assetsthrow;
             }
             return image;
         }

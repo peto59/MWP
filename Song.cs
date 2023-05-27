@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Android.Graphics;
 using System.IO;
+using System.Linq;
 
 namespace Ass_Pain
 {
@@ -34,7 +35,12 @@ namespace Ass_Pain
         public DateTime DateCreated { get; }
         
         public string Path { get; }
-        public bool Initialized { get; } = true;
+        public bool Initialized { get; private set; } = true;
+        
+        public Bitmap Image
+        {
+            get { return GetImage(); }
+        }
 
         public void AddArtist(ref List<Artist> artists)
         {
@@ -52,6 +58,54 @@ namespace Ass_Pain
         public void AddAlbum(ref Album album)
         {
             Albums.Add(album);
+        }
+        
+        public void RemoveAlbum(Album album)
+        {
+            Albums.Remove(album);
+        }
+        
+        public void RemoveAlbum(List<Album> albums)
+        {
+            albums.ForEach(RemoveAlbum);
+        }
+        
+        public void RemoveArtist(Artist artist)
+        {
+            Artists.Remove(artist);
+        }
+        
+        public void RemoveArtist(List<Artist> artists)
+        {
+            artists.ForEach(RemoveArtist);
+        }
+
+        ///<summary>
+        ///Nukes this object out of existence
+        ///</summary>
+        public void Nuke()
+        {
+            Albums.ForEach(album =>
+            {
+                album.RemoveSong(this);
+                if (album.Songs.Count == 0)
+                {
+                    album.Nuke();
+                }
+
+            });
+            
+            Artists.ForEach(artist =>
+            {
+                artist.RemoveSong(this);
+                if (artist.Songs.Count == 0 && artist.Albums.Sum(album => album.Songs.Count) == 0)
+                {
+                    artist.Nuke();
+                }
+            });
+            
+            MainActivity.stateHandler.Songs.Remove(this);
+            Initialized = false;
         }
 
         public Bitmap GetImage(bool shouldFallBack = true)
@@ -150,6 +204,24 @@ namespace Ass_Pain
             DateCreated = dateCreated;
             Path = path;
             Initialized = initialized;
+        }
+
+        public Song(Song song, string name)
+        {
+            Artists = song.Artists;
+            Albums = song.Albums;
+            Name = name;
+            DateCreated = song.DateCreated;
+            Path = song.Path;
+        }
+        
+        public Song(Song song, string name, string path)
+        {
+            Artists = song.Artists;
+            Albums = song.Albums;
+            Name = name;
+            DateCreated = song.DateCreated;
+            Path = path;
         }
         
         public override bool Equals(object obj)

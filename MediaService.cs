@@ -18,6 +18,7 @@ using System.Runtime.Remoting.Contexts;
 using TagLib.Flac;
 using Java.Util.Jar;
 using System.IO;
+using Android.Content.PM;
 using Android.Graphics;
 using Android.Icu.Text;
 using Android.Support.V4.Media.Session;
@@ -134,8 +135,8 @@ namespace Ass_Pain
 		}
 		public override void OnDestroy()
 		{
-			base.OnDestroy();
 			CleanUp();
+			base.OnDestroy();
 		}
 
 		///<summary>
@@ -446,7 +447,7 @@ namespace Ass_Pain
 		///<summary>
 		///Requests focus and starts playing new song or resumes playback if playback was paused
 		///</summary>
-		private void Play()
+		public void Play()
 		{
 			if (Queue.Count == 0)
 			{
@@ -467,9 +468,10 @@ namespace Ass_Pain
 			if (!notificationService.IsCreated)
 			{
 				notificationService.song_control_notification(session.SessionToken);
+                //StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
+                //android:foregroundServiceType="mediaPlayback"
                 StartForeground(notificationService.NotificationId, notificationService.Notification);
-
-            }
+			}
 			if (mediaPlayer == null)
 			{
 				InnitPlayer();
@@ -502,7 +504,7 @@ namespace Ass_Pain
 		///<summary>
 		///Pauses playback
 		///</summary>
-		private void Pause()
+		public void Pause()
 		{
 			mediaPlayer.Pause();
 			isPaused = true;
@@ -523,7 +525,7 @@ namespace Ass_Pain
 		///<summary>
 		///Plays next song in queue
 		///</summary>
-		private void NextSong()
+		public void NextSong()
 		{
 			if(mediaPlayer != null)
 			{
@@ -896,7 +898,7 @@ namespace Ass_Pain
 
 		public override IBinder OnBind(Intent intent)
 		{
-			return null;
+			return new MediaServiceBinder(this);
 		}
 	}
 }

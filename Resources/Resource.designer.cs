@@ -4959,71 +4959,80 @@ namespace Ass_Pain
 			// aapt resource value: 0x7F0F001B
 			public const int action_settings = 2131689499;
 			
-			// aapt resource value: 0x7F0F001D
-			public const int appbar_scrolling_view_behavior = 2131689501;
+			// aapt resource value: 0x7F0F001E
+			public const int appbar_scrolling_view_behavior = 2131689502;
 			
 			// aapt resource value: 0x7F0F001C
-			public const int app_name = 2131689500;
+			public const int app_description = 2131689500;
 			
-			// aapt resource value: 0x7F0F001E
-			public const int bottom_sheet_behavior = 2131689502;
+			// aapt resource value: 0x7F0F001D
+			public const int app_name = 2131689501;
 			
 			// aapt resource value: 0x7F0F001F
-			public const int character_counter_content_description = 2131689503;
+			public const int bottom_sheet_behavior = 2131689503;
 			
 			// aapt resource value: 0x7F0F0020
-			public const int character_counter_pattern = 2131689504;
+			public const int character_counter_content_description = 2131689504;
 			
 			// aapt resource value: 0x7F0F0021
-			public const int copy_toast_msg = 2131689505;
+			public const int character_counter_pattern = 2131689505;
 			
 			// aapt resource value: 0x7F0F0022
-			public const int fab_transformation_scrim_behavior = 2131689506;
+			public const int copy_toast_msg = 2131689506;
 			
 			// aapt resource value: 0x7F0F0023
-			public const int fab_transformation_sheet_behavior = 2131689507;
+			public const int fab_transformation_scrim_behavior = 2131689507;
 			
 			// aapt resource value: 0x7F0F0024
-			public const int fallback_menu_item_copy_link = 2131689508;
+			public const int fab_transformation_sheet_behavior = 2131689508;
 			
 			// aapt resource value: 0x7F0F0025
-			public const int fallback_menu_item_open_in_browser = 2131689509;
+			public const int fallback_menu_item_copy_link = 2131689509;
 			
 			// aapt resource value: 0x7F0F0026
-			public const int fallback_menu_item_share_link = 2131689510;
+			public const int fallback_menu_item_open_in_browser = 2131689510;
 			
 			// aapt resource value: 0x7F0F0027
-			public const int hide_bottom_view_on_scroll_behavior = 2131689511;
+			public const int fallback_menu_item_share_link = 2131689511;
 			
 			// aapt resource value: 0x7F0F0028
-			public const int mtrl_chip_close_icon_content_description = 2131689512;
+			public const int hide_bottom_view_on_scroll_behavior = 2131689512;
 			
 			// aapt resource value: 0x7F0F0029
-			public const int navigation_drawer_close = 2131689513;
+			public const int mtrl_chip_close_icon_content_description = 2131689513;
 			
 			// aapt resource value: 0x7F0F002A
-			public const int navigation_drawer_open = 2131689514;
+			public const int navigation_drawer_close = 2131689514;
 			
 			// aapt resource value: 0x7F0F002B
-			public const int password_toggle_content_description = 2131689515;
+			public const int navigation_drawer_open = 2131689515;
 			
 			// aapt resource value: 0x7F0F002C
-			public const int path_password_eye = 2131689516;
+			public const int password_toggle_content_description = 2131689516;
 			
 			// aapt resource value: 0x7F0F002D
-			public const int path_password_eye_mask_strike_through = 2131689517;
+			public const int path_password_eye = 2131689517;
 			
 			// aapt resource value: 0x7F0F002E
-			public const int path_password_eye_mask_visible = 2131689518;
+			public const int path_password_eye_mask_strike_through = 2131689518;
 			
 			// aapt resource value: 0x7F0F002F
-			public const int path_password_strike_through = 2131689519;
+			public const int path_password_eye_mask_visible = 2131689519;
 			
 			// aapt resource value: 0x7F0F0030
-			public const int search_menu_title = 2131689520;
+			public const int path_password_strike_through = 2131689520;
 			
 			// aapt resource value: 0x7F0F0031
-			public const int status_bar_notification_info_overflow = 2131689521;
+			public const int search_menu_title = 2131689521;
+			
+			// aapt resource value: 0x7F0F0032
+			public const int service_description = 2131689522;
+			
+			// aapt resource value: 0x7F0F0033
+			public const int service_name = 2131689523;
+			
+			// aapt resource value: 0x7F0F0034
+			public const int status_bar_notification_info_overflow = 2131689524;
 			
 			static String()
 			{

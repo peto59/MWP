@@ -34,17 +34,17 @@ namespace Ass_Pain
         }
 
         ///<summary>
-		///If current number is more than <paramref name="max"/> it loops over to 0
+		///If current number is more than <paramref name="max"/> it loops over to <paramref name="min"/>
         ///<br/>
-        ///If current number is less than 0 it loops over to <paramref name="max"/>
+        ///If current number is less than <paramref name="min"/> it loops over to <paramref name="max"/>
 		///</summary>
-        public static int LoopOver(this int current, int max)
+        public static int LoopOver(this int current, int max, int min = 0)
         {
             if(current > max)
             {
-                return 0;
+                return min;
             }
-            if(current < 0)
+            if(current < min)
             {
                 return max;
             }
@@ -70,11 +70,11 @@ namespace Ass_Pain
         {
             if(current > max)
             {
-                return min;
+                return max;
             }
             if(current < min)
             {
-                return max;
+                return min;
             }
             return current;
         }

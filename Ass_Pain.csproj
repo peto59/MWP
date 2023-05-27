@@ -85,6 +85,8 @@
     <Compile Include="Interval.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Levenshtein.cs" />
+    <Compile Include="MediaServiceBinder.cs" />
+    <Compile Include="MediaServiceConnection.cs" />
     <Compile Include="MediaSessionCallback.cs" />
     <Compile Include="Local_notification_service.cs" />
     <Compile Include="MyBroadcastReceiver.cs" />

@@ -24,6 +24,7 @@ using AngleSharp.Html;
 using System.Runtime.InteropServices;
 using Android.Content.PM;
 using Android.Media;
+using Android.Provider;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
 
@@ -38,6 +39,8 @@ namespace Ass_Pain
         public static APIThrottler throttler = new APIThrottler();
         public static MyBroadcastReceiver receiver;
         public static StateHandler stateHandler = new StateHandler();
+        public static MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        
         
 
         DrawerLayout drawer;
@@ -257,6 +260,7 @@ namespace Ass_Pain
 
             //new Thread(() => { nm.Listener(); }).Start();
             new Thread(() => {
+                stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                 FileManager.DiscoverFiles();
                 FileManager.GenerateList(FileManager.music_folder);
 
@@ -268,8 +272,15 @@ namespace Ass_Pain
                 }*/
                 
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
+
+                /*Artist a = new Artist("otestuj ma", "default");
+                stateHandler.Artists.Add(a);
+                a = new Artist("specialny", "default");
+                stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
+                stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
+                stateHandler.Songs = stateHandler.Songs.Distinct().ToList();*/
                 //Console.WriteLine("----------------By Date-------------------");
-                /*foreach (var song in stateHandler.Songs)
+                /*foreach (var song in stateHandler.Artists)
                 {
                     Console.WriteLine(song.ToString());
                 }*/
@@ -278,14 +289,26 @@ namespace Ass_Pain
                 {
                     Console.WriteLine(song.ToString());
                 }*/
-                
-
             }).Start();
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver(this);
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
-            StartService(new Intent(this, typeof(MediaService)));
-            //StartForegroundService(new Intent(this, typeof(MediaService)));
+            
+            var serviceIntent = new Intent(MediaService.ActionPlay, null, this, typeof(MediaService));
+            /*if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+            {
+                StartForegroundService(serviceIntent);
+            }
+            else
+            {
+                StartService(serviceIntent);
+            }*/
+            StartService(serviceIntent);
+            BindService(serviceIntent, ServiceConnection, Bind.AutoCreate);
+            //Thread.Sleep(5000);
+            //ServiceConnection.Binder?.Service?.Play();
+            Thread.Sleep(5000);
+            ServiceConnection.Binder?.Service?.NextSong();
         }
     }
 }

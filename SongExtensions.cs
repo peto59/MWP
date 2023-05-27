@@ -73,6 +73,32 @@ namespace Ass_Pain
             }
             return albums.Where(album  => album.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();  
         }
+        
+        public static List<Song> Select( [NotNull] this List<Song> songs, string query)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                return songs;
+            }
+            return songs.Where(album  => album.Title == query).ToList();  
+        }
+        public static List<Artist> Select( [NotNull] this List<Artist> artists, string query)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                return artists;
+            }
+            return artists.Where(album  => album.Title == query).ToList();  
+        }
+        
+        public static List<Album> Select( [NotNull] this List<Album> albums, string query)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                return albums;
+            }
+            return albums.Where(album  => album.Title == query).ToList();  
+        }
     }
 
     public enum SongOrderType: byte

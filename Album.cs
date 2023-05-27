@@ -1,34 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System;
 using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using AndroidX.AppCompat.App;
-using AndroidX.AppCompat.Widget;
-using AndroidX.Core.View;
-using AndroidX.DrawerLayout.Widget;
-using Google.Android.Material.FloatingActionButton;
-using Google.Android.Material.Navigation;
-using Google.Android.Material.Snackbar;
 using Android.Graphics;
-using Android.Widget;
 using System.IO;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using Android.Service.Autofill;
-using Android.Icu.Number;
-using Org.Apache.Http.Conn;
-using Com.Arthenica.Ffmpegkit;
-using Android.Drm;
-using AngleSharp.Html.Dom;
-using Newtonsoft.Json;
-using System.Threading;
-using Org.Apache.Http.Authentication;
-using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
+using System.Linq;
 
 namespace Ass_Pain
 {
@@ -54,14 +29,22 @@ namespace Ass_Pain
         }
         
         public string ImgPath { get; }
-        public bool Initialized { get; } = true;
+        public bool Initialized { get; private set; } = true;
+        public Bitmap Image
+        {
+            get { return GetImage(); }
+        }
         
         public void AddArtist(ref List<Artist> artists)
         {
-            Artists.AddRange(artists);
+            foreach (var artist in artists.Where(artist => !Artists.Contains(artist)))
+            {
+                Artists.Add(artist);
+            }
         }
         public void AddArtist(ref Artist artist)
         {
+            //prepisat aby sa zabranilo duplicite
             Artists.Add(artist);
         }
         
@@ -72,6 +55,47 @@ namespace Ass_Pain
         public void AddSong(ref Song song)
         {
             Songs.Add(song);
+        }
+        
+        public void RemoveSong(Song song)
+        {
+            Songs.Remove(song);
+        }
+        
+        public void RemoveSong(List<Song> songs)
+        {
+            songs.ForEach(RemoveSong);
+        }
+        
+        public void RemoveArtist(Artist artist)
+        {
+            Artists.Remove(artist);
+        }
+        
+        public void RemoveArtist(List<Artist> artists)
+        {
+            artists.ForEach(RemoveArtist);
+        }
+        
+        ///<summary>
+        ///Nukes this object out of existence
+        ///</summary>
+        public void Nuke()
+        {
+            Songs.ForEach(song => song.RemoveAlbum(this));
+            Artists.ForEach(artist => artist.RemoveAlbum(this));
+            MainActivity.stateHandler.Albums.Remove(this);
+            Initialized = false;
+        }
+        
+        public static string GetImagePath(string name, string artistPart)
+        {
+            string albumPart = FileManager.Sanitize(name);
+            if (File.Exists($"{FileManager.music_folder}/{artistPart}/{albumPart}/cover.jpg"))
+                return $"{FileManager.music_folder}/{artistPart}/{albumPart}/cover.jpg";
+            if (File.Exists($"{FileManager.music_folder}/{artistPart}/{albumPart}/cover.png"))
+                return $"{FileManager.music_folder}/{artistPart}/{albumPart}/cover.png";
+            return "Default";
         }
 
         public Bitmap GetImage(bool shouldFallBack = true)
@@ -121,13 +145,19 @@ namespace Ass_Pain
                 }
                 if (image == null)
                 {
-                    image = BitmapFactory.DecodeStream(Application.Context.Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
+                    if (Application.Context.Assets != null)
+                        image = BitmapFactory.DecodeStream(
+                            Application.Context.Assets.Open(
+                                "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                image = BitmapFactory.DecodeStream(Application.Context.Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assetsthrow;
+                if (Application.Context.Assets != null)
+                    image = BitmapFactory.DecodeStream(
+                        Application.Context.Assets.Open(
+                            "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets
             }
             return image;
         }

@@ -21,12 +21,12 @@ namespace Ass_Pain
     internal static class FileManager
     {
         static string root = (string)Android.OS.Environment.ExternalStorageDirectory;
-        static string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-        static public string music_folder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+        static string path = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
+        static public string music_folder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
         public static void DiscoverFiles(string path = null)
         {
             //return;
-            Directory.CreateDirectory(music_folder);
+            //Directory.CreateDirectory(music_folder);
             /*if (!File.Exists($"{music_folder}/.nomedia"))
             {
                 File.Create($"{music_folder}/.nomedia").Close();
@@ -136,6 +136,9 @@ namespace Ass_Pain
             //GetSongTitle(GetSongs());
         }
 
+        ///<summary>
+        ///Creates virtual song topology in MainActivity.StateHandler
+        ///</summary>
         public static void GenerateList(string path)
         {
 
@@ -163,18 +166,24 @@ namespace Ass_Pain
                 {
                     foreach (var artist in artists)
                     {
+                        var inList = MainActivity.stateHandler.Artists.Select(artist);
+                        if (inList.Count > 0)
+                        {
+                            artistsList.Add(inList[0]);
+                            continue;
+                        }
                         string part = Sanitize(GetAlias(artist));
                         if(File.Exists($"{music_folder}/{part}/cover.jpg"))
-                            artistsList.Add(new Artist(artist, $"{music_folder}/{part}/cover.jpg"));
+                            artistsList.Add(new Artist(GetAlias(artist), $"{music_folder}/{part}/cover.jpg"));
                         else if(File.Exists($"{music_folder}/{part}/cover.png"))
-                            artistsList.Add(new Artist(artist, $"{music_folder}/{part}/cover.png"));
+                            artistsList.Add(new Artist(GetAlias(artist), $"{music_folder}/{part}/cover.png"));
                         else
-                            artistsList.Add(new Artist(artist, "Default"));
+                            artistsList.Add(new Artist(GetAlias(artist), "Default"));
                     }
                 }
                 else
                 {
-                    artistsList.Add(new Artist("No Artist", "Default"));
+                    artistsList.Add(MainActivity.stateHandler.Artists.Select("No Artist")[0]);
                 }
                 
                 Song song;
@@ -184,13 +193,21 @@ namespace Ass_Pain
                     string artistPart = Sanitize(GetAlias(artistsList[0].Title));
                     string albumPart = Sanitize(tfile.Tag.Album);
                     Album album;
-                    
-                    if(File.Exists($"{music_folder}/{artistPart}/{albumPart}/cover.jpg"))
-                        album = new Album(tfile.Tag.Album, $"{music_folder}/{artistPart}/{albumPart}/cover.jpg");
-                    else if(File.Exists($"{music_folder}/{artistPart}/{albumPart}/cover.png"))
-                        album = new Album(tfile.Tag.Album, $"{music_folder}/{artistPart}/{albumPart}/cover.png");
+
+                    var inListAlbum = MainActivity.stateHandler.Albums.Select(tfile.Tag.Album);
+                    if (inListAlbum.Count > 0)
+                    {
+                        album = inListAlbum[0];
+                    }
                     else
-                        album = new Album(tfile.Tag.Album, "Default");
+                    {
+                        if(File.Exists($"{music_folder}/{artistPart}/{albumPart}/cover.jpg"))
+                            album = new Album(tfile.Tag.Album, $"{music_folder}/{artistPart}/{albumPart}/cover.jpg");
+                        else if(File.Exists($"{music_folder}/{artistPart}/{albumPart}/cover.png"))
+                            album = new Album(tfile.Tag.Album, $"{music_folder}/{artistPart}/{albumPart}/cover.png");
+                        else
+                            album = new Album(tfile.Tag.Album, "Default");
+                    }
                     
                     song = new Song(artistsList, tfile.Tag.Title, File.GetCreationTime(file), file, album);
                     album.AddSong(ref song);
@@ -201,7 +218,12 @@ namespace Ass_Pain
                         artist.AddSong(ref song);
                     }
                     song.AddAlbum(ref album);
-                    MainActivity.stateHandler.Albums.Add(album);
+                    
+                    if (inListAlbum.Count == 0)
+                    {
+                        MainActivity.stateHandler.Albums.Add(album);
+                    }
+                    
                 }
                 else
                 {
@@ -214,7 +236,15 @@ namespace Ass_Pain
                 song.AddArtist(ref artistsList);
 
                 MainActivity.stateHandler.Songs.Add(song);
-                MainActivity.stateHandler.Artists.AddRange(artistsList);
+                foreach (var artist in artistsList)
+                {
+                    if (MainActivity.stateHandler.Artists.Select(artist.Title).Count == 0)
+                    {
+                        MainActivity.stateHandler.Artists.Add(artist);
+                    }
+                }
+
+                //MainActivity.stateHandler.Artists.AddRange(artistsList);
                 tfile.Dispose();
             }
         }
