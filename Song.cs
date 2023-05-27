@@ -123,35 +123,23 @@ namespace Ass_Pain
                 Console.WriteLine($"Doesnt contain image: {Path}");
             }
 
-            if (image == null && shouldFallBack)
+            if (image != null || !shouldFallBack) return image;
+            foreach (Album album in Albums.Where(album => album.Initialized))
             {
-                foreach (Album album in Albums)
+                image = album.GetImage(false);
+                if (image != null)
                 {
-                    if (!album.Initialized)
-                    {
-                        continue;
-                    }
-                    image = album.GetImage(false);
-                    if (image != null)
-                    {
-                        break;
-                    }
+                    break;
                 }
+            }
 
-                if (image == null)
+            if (image != null) return image;
+            foreach (Artist artist in Artists.Where(artist => artist.Initialized))
+            {
+                image = artist.GetImage(false);
+                if (image != null)
                 {
-                    foreach (Artist artist in Artists)
-                    {
-                        if (!artist.Initialized)
-                        {
-                            continue;
-                        }
-                        image = artist.GetImage(false);
-                        if (image != null)
-                        {
-                            break;
-                        }
-                    }
+                    break;
                 }
             }
 
@@ -226,9 +214,7 @@ namespace Ass_Pain
         
         public override bool Equals(object obj)
         {
-            var item = obj as Song;
-
-            if (item == null)
+            if (!(obj is Song item))
             {
                 return false;
             }

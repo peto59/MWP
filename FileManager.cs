@@ -1,28 +1,17 @@
 ﻿using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Service.QuickSettings;
-using Android.Views;
-using Android.Widget;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Text;
-//using static Android.Provider.MediaStore.Audio;
 
 namespace Ass_Pain
 {
     internal static class FileManager
     {
-        static string root = (string)Android.OS.Environment.ExternalStorageDirectory;
-        static string path = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
-        static public string music_folder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
+        private static readonly string Root = (string)Android.OS.Environment.ExternalStorageDirectory;
+        private static readonly string Path = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
+        public static readonly string MusicFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
         public static void DiscoverFiles(string path = null)
         {
             //return;
@@ -31,12 +20,9 @@ namespace Ass_Pain
             {
                 File.Create($"{music_folder}/.nomedia").Close();
             }*/
-            if(path == null)
-            {
-                path = root;
-            }
+            path ??= Root;
 
-            var nameFromPath = GetNameFromPath(path);
+            string nameFromPath = GetNameFromPath(path);
             if(nameFromPath == "Android")
             {
                 return;
@@ -49,40 +35,27 @@ namespace Ass_Pain
             {
                 return;
             }
-            if (nameFromPath == "sound_recorder")
+            switch (nameFromPath)
+            {
+                case "sound_recorder":
+                case "Notifications":
+                case "Recordings":
+                case "Ringtones":
+                case "MIUI":
+                case "Alarms":
+                    return;
+            }
+
+            if (path == MusicFolder)
             {
                 return;
             }
-            if (nameFromPath == "Notifications")
-            {
-                return;
-            }
-            if (nameFromPath == "Recordings")
-            {
-                return;
-            }
-            if (nameFromPath == "Ringtones")
-            {
-                return;
-            }
-            if (nameFromPath == "MIUI")
-            {
-                return;
-            }
-            if (nameFromPath == "Alarms")
-            {
-                return;
-            }
-            if (path == music_folder)
-            {
-                return;
-            }
-            foreach (var dir in Directory.EnumerateDirectories(path))
+            foreach (string dir in Directory.EnumerateDirectories(path))
             {
                 DiscoverFiles(dir);
             }
             
-            foreach (var file in Directory.EnumerateFiles(path, "*.mp3"))
+            foreach (string file in Directory.EnumerateFiles(path, "*.mp3"))
             {
                 try
                 {
@@ -95,34 +68,26 @@ namespace Ass_Pain
                     }
                     if (title.Contains(".mp3"))
                     {
-                        var tfile = TagLib.File.Create(file);
+                        using TagLib.File tfile = TagLib.File.Create(file);
                         tfile.Tag.Title = tfile.Tag.Title.Replace(".mp3", "");
                         title = tfile.Tag.Title;
                         tfile.Save();
                     }
                     title = Sanitize(title);
-                    string[] uartists = GetSongArtist(file);
-                    string artist;
-                    if (uartists.Length > 0)
-                    {
-                        artist = GetAlias(Sanitize(uartists[0]));
-                    }
-                    else
-                    {
-                        artist = "No Artist";
-                    }
+                    string[] unsanitizedArtists = GetSongArtist(file);
+                    string artist = unsanitizedArtists.Length > 0 ? GetAlias(Sanitize(unsanitizedArtists[0])) : "No Artist";
                     string uAlbum = GetSongAlbum(file);
                     Console.WriteLine("Moving " + file);
                     if (uAlbum != null)
                     {
                         string album = Sanitize(uAlbum);
-                        Directory.CreateDirectory($"{music_folder}/{artist}/{album}");
-                        File.Move(file, $"{music_folder}/{artist}/{album}/{title}.mp3");
+                        Directory.CreateDirectory($"{MusicFolder}/{artist}/{album}");
+                        File.Move(file, $"{MusicFolder}/{artist}/{album}/{title}.mp3");
                     }
                     else
                     {
-                        Directory.CreateDirectory($"{music_folder}/{artist}");
-                        File.Move(file, $"{music_folder}/{artist}/{title}.mp3");
+                        Directory.CreateDirectory($"{MusicFolder}/{artist}");
+                        File.Move(file, $"{MusicFolder}/{artist}/{title}.mp3");
                     }
                     
                     
@@ -142,41 +107,33 @@ namespace Ass_Pain
         public static void GenerateList(string path)
         {
 
-            foreach (var dir in Directory.EnumerateDirectories(path))
+            foreach (string dir in Directory.EnumerateDirectories(path))
             {
                 GenerateList(dir);
             }
 
-            foreach (var file in Directory.EnumerateFiles(path, "*.mp3"))
+            foreach (string file in Directory.EnumerateFiles(path, "*.mp3"))
             {
                 //Console.WriteLine(file);
-                string[] artists;
-                var tfile = TagLib.File.Create(file);
-                if (tfile.Tag.Performers.Length == 0)
-                {
-                    artists = tfile.Tag.AlbumArtists;
-                }
-                else
-                {
-                    artists = tfile.Tag.Performers;    
-                }
+                using TagLib.File tfile = TagLib.File.Create(file);
+                string[] artists = tfile.Tag.Performers.Length == 0 ? tfile.Tag.AlbumArtists : tfile.Tag.Performers;
 
                 List<Artist> artistsList = new List<Artist>();
                 if (artists.Length > 0)
                 {
-                    foreach (var artist in artists)
+                    foreach (string artist in artists)
                     {
-                        var inList = MainActivity.stateHandler.Artists.Select(artist);
+                        List<Artist> inList = MainActivity.stateHandler.Artists.Select(artist);
                         if (inList.Count > 0)
                         {
                             artistsList.Add(inList[0]);
                             continue;
                         }
                         string part = Sanitize(GetAlias(artist));
-                        if(File.Exists($"{music_folder}/{part}/cover.jpg"))
-                            artistsList.Add(new Artist(GetAlias(artist), $"{music_folder}/{part}/cover.jpg"));
-                        else if(File.Exists($"{music_folder}/{part}/cover.png"))
-                            artistsList.Add(new Artist(GetAlias(artist), $"{music_folder}/{part}/cover.png"));
+                        if(File.Exists($"{MusicFolder}/{part}/cover.jpg"))
+                            artistsList.Add(new Artist(GetAlias(artist), $"{MusicFolder}/{part}/cover.jpg"));
+                        else if(File.Exists($"{MusicFolder}/{part}/cover.png"))
+                            artistsList.Add(new Artist(GetAlias(artist), $"{MusicFolder}/{part}/cover.png"));
                         else
                             artistsList.Add(new Artist(GetAlias(artist), "Default"));
                     }
@@ -194,17 +151,17 @@ namespace Ass_Pain
                     string albumPart = Sanitize(tfile.Tag.Album);
                     Album album;
 
-                    var inListAlbum = MainActivity.stateHandler.Albums.Select(tfile.Tag.Album);
+                    List<Album> inListAlbum = MainActivity.stateHandler.Albums.Select(tfile.Tag.Album);
                     if (inListAlbum.Count > 0)
                     {
                         album = inListAlbum[0];
                     }
                     else
                     {
-                        if(File.Exists($"{music_folder}/{artistPart}/{albumPart}/cover.jpg"))
-                            album = new Album(tfile.Tag.Album, $"{music_folder}/{artistPart}/{albumPart}/cover.jpg");
-                        else if(File.Exists($"{music_folder}/{artistPart}/{albumPart}/cover.png"))
-                            album = new Album(tfile.Tag.Album, $"{music_folder}/{artistPart}/{albumPart}/cover.png");
+                        if(File.Exists($"{MusicFolder}/{artistPart}/{albumPart}/cover.jpg"))
+                            album = new Album(tfile.Tag.Album, $"{MusicFolder}/{artistPart}/{albumPart}/cover.jpg");
+                        else if(File.Exists($"{MusicFolder}/{artistPart}/{albumPart}/cover.png"))
+                            album = new Album(tfile.Tag.Album, $"{MusicFolder}/{artistPart}/{albumPart}/cover.png");
                         else
                             album = new Album(tfile.Tag.Album, "Default");
                     }
@@ -212,7 +169,7 @@ namespace Ass_Pain
                     song = new Song(artistsList, tfile.Tag.Title, File.GetCreationTime(file), file, album);
                     album.AddSong(ref song);
                     album.AddArtist(ref artistsList);
-                    foreach (var artist in artistsList)
+                    foreach (Artist artist in artistsList)
                     {
                         artist.AddAlbum(ref album);
                         artist.AddSong(ref song);
@@ -228,7 +185,7 @@ namespace Ass_Pain
                 else
                 {
                     song = new Song(artistsList, tfile.Tag.Title, File.GetCreationTime(file), file);
-                    foreach (var artist in artistsList)
+                    foreach (Artist artist in artistsList)
                     {
                         artist.AddSong(ref song);
                     }
@@ -236,12 +193,9 @@ namespace Ass_Pain
                 song.AddArtist(ref artistsList);
 
                 MainActivity.stateHandler.Songs.Add(song);
-                foreach (var artist in artistsList)
+                foreach (Artist artist in artistsList.Where(artist => MainActivity.stateHandler.Artists.Select(artist.Title).Count == 0))
                 {
-                    if (MainActivity.stateHandler.Artists.Select(artist.Title).Count == 0)
-                    {
-                        MainActivity.stateHandler.Artists.Add(artist);
-                    }
+                    MainActivity.stateHandler.Artists.Add(artist);
                 }
 
                 //MainActivity.stateHandler.Artists.AddRange(artistsList);
@@ -251,7 +205,7 @@ namespace Ass_Pain
         
         public static List<string> GetAuthors()
         {
-            return Directory.EnumerateDirectories(music_folder).Where(author => !GetNameFromPath(author).StartsWith(".")).ToList();
+            return Directory.EnumerateDirectories(MusicFolder).Where(author => !GetNameFromPath(author).StartsWith(".")).ToList();
             /*List<string> authors = new List<string>();
             foreach (string author in Directory.EnumerateDirectories(music_folder))
             {
@@ -268,7 +222,7 @@ namespace Ass_Pain
         {
             List<string> albums = new List<string>();
 
-            foreach (string author in Directory.EnumerateDirectories(music_folder))
+            foreach (string author in Directory.EnumerateDirectories(MusicFolder))
             {
                 albums.AddRange(Directory.EnumerateDirectories(author));
                 /*foreach (string album in Directory.EnumerateDirectories(author))
@@ -287,9 +241,9 @@ namespace Ass_Pain
         {
             if (IsDirectory(path))
             {
-                foreach (var playlistName in GetPlaylist())
+                foreach (string playlistName in GetPlaylist())
                 {
-                    foreach(var file in GetSongs(path))
+                    foreach(string file in GetSongs(path))
                     {
                         DeletePlaylist(playlistName, file);
                     }
@@ -299,7 +253,7 @@ namespace Ass_Pain
             else
             {
                 File.Delete(path);
-                foreach (var playlistName in GetPlaylist())
+                foreach (string playlistName in GetPlaylist())
                 {
                     DeletePlaylist(playlistName, path);
                 }
@@ -330,54 +284,47 @@ namespace Ass_Pain
             {
                 Console.WriteLine(song);
             }*/
-            return Directory.EnumerateFiles(music_folder, "*.mp3", SearchOption.AllDirectories).ToList();
+            return Directory.EnumerateFiles(MusicFolder, "*.mp3", SearchOption.AllDirectories).ToList();
         }
 
         ///<summary>
-        ///Gets all songs in album or all albumless songs for author
+        ///Gets all songs in album or all album-less songs for author
         ///</summary>
         public static List<string> GetSongs(string path)
         {
-            var mp3Files = Directory.EnumerateFiles(path, "*.mp3");
+            /*var mp3Files = Directory.EnumerateFiles(path, "*.mp3");
             List<string> songs = new List<string>();
             foreach (string currentFile in mp3Files)
             {
                 Console.WriteLine(currentFile);
                 songs.Add(currentFile);
             }
-            return songs;
+            return songs;*/
+            return Directory.EnumerateFiles(path, "*.mp3").ToList();
         }
 
         public static void SetSongTitle(string file)
         {
-            if (File.Exists(file))
-            {
-                var tfile = TagLib.File.Create(file);
-                tfile.Tag.Title = GetNameFromPath(file).Replace(".mp3", "");
-                tfile.Save();
-            }
+            if (!File.Exists(file)) return;
+            using TagLib.File tfile = TagLib.File.Create(file);
+            tfile.Tag.Title = GetNameFromPath(file).Replace(".mp3", "");
+            tfile.Save();
 
         }
 
         public static string GetSongTitle(string path)
         {
-            if (File.Exists(path))
-            {
-                var tfile = TagLib.File.Create(path);
-                return tfile.Tag.Title;
-            }
-            else
-            {
-                return "cant get title";
-            }
+            if (!File.Exists(path)) return "cant get title";
+            using TagLib.File tfile = TagLib.File.Create(path);
+            return tfile.Tag.Title;
         }
 
-        public static List<string> GetSongTitle(List<string> Files)
+        public static List<string> GetSongTitle(List<string> files)
         {
             List<string> titles = new List<string>();
-            foreach (string currentFile in Files)
+            foreach (string currentFile in files)
             {
-                var tfile = TagLib.File.Create(currentFile);
+                using TagLib.File tfile = TagLib.File.Create(currentFile);
                 titles.Add(tfile.Tag.Title);
             }
             return titles;
@@ -385,30 +332,16 @@ namespace Ass_Pain
 
         public static string GetSongAlbum(string path)
         {
-            if (File.Exists(path))
-            {
-                var tfile = TagLib.File.Create(path);
-                return tfile.Tag.Album;
-            }
-            else
-            {
-                return "cant get album";
-            }
+            if (!File.Exists(path)) return "cant get album";
+            using TagLib.File tfile = TagLib.File.Create(path);
+            return tfile.Tag.Album;
+
         }
         public static string[] GetSongArtist(string path)
         {
-            if (File.Exists(path))
-            {
-                var tfile = TagLib.File.Create(path);
-                if (tfile.Tag.Performers.Length == 0)
-                {
-                    return tfile.Tag.AlbumArtists;
-                }
-                return tfile.Tag.Performers;
-            }
-            else {
-                return new string[] { "cant get artist" };
-            }
+            if (!File.Exists(path)) return new[] { "cant get artist" };
+            using TagLib.File tfile = TagLib.File.Create(path);
+            return tfile.Tag.Performers.Length == 0 ? tfile.Tag.AlbumArtists : tfile.Tag.Performers;
         }
 
         ///<summary>
@@ -429,44 +362,43 @@ namespace Ass_Pain
                 return (string.Empty, string.Empty);
             if (IsDirectory(path))
             {
-                return (GetNameFromPath(path), GetNameFromPath(Path.GetDirectoryName(path)));
+                return (GetNameFromPath(path), GetNameFromPath(System.IO.Path.GetDirectoryName(path)));
             }
-            else
+
+            try
             {
-                try
-                {
-                    return (GetNameFromPath(Path.GetDirectoryName(path)), GetNameFromPath(Path.GetDirectoryName(Path.GetDirectoryName(path))));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    return ("", "");
-                }
-                
+                return (GetNameFromPath(System.IO.Path.GetDirectoryName(path)), GetNameFromPath(System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(path))));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return ("", "");
             }
         }
 
         public static bool IsDirectory(string path)
         {
-            return string.IsNullOrEmpty(Path.GetFileName(path)) || Directory.Exists(path);
+            return string.IsNullOrEmpty(System.IO.Path.GetFileName(path)) || Directory.Exists(path);
         }
 
         public static string GetAlias(string name)
         {
-            string json = File.ReadAllText($"{music_folder}/aliases.json");
-            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-            if (aliases.ContainsKey(name))
+            while (true)
             {
-                return GetAlias(aliases[name]);
+                string json = File.ReadAllText($"{MusicFolder}/aliases.json");
+                Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                if (aliases.TryGetValue(name, out string alias))
+                {
+                    name = alias;
+                    continue;
+                }
+
+                if (!aliases.TryGetValue(Sanitize(name), out alias)) return name;
+                name = alias;
             }
-            else if (aliases.ContainsKey(Sanitize(name)))
-            {
-                return GetAlias(aliases[Sanitize(name)]);
-            }
-            return name;
         }
 
-        // TODO : rercursive alias 
+        // TODO : recursive alias 
         public static void AddAlias(string name, string target)
         {
             if(name == target)
@@ -477,112 +409,109 @@ namespace Ass_Pain
 
             string nameFile = Sanitize(name);
 
-            string json = File.ReadAllText($"{music_folder}/aliases.json");
+            string json = File.ReadAllText($"{MusicFolder}/aliases.json");
             Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             aliases.Add(nameFile, author);
-            File.WriteAllTextAsync($"{music_folder}/aliases.json", JsonConvert.SerializeObject(aliases));
-            if (Directory.Exists($"{music_folder}/{author}"))
+            File.WriteAllTextAsync($"{MusicFolder}/aliases.json", JsonConvert.SerializeObject(aliases));
+            if (Directory.Exists($"{MusicFolder}/{author}"))
             {
-                foreach (string song in GetSongs($"{music_folder}/{nameFile}"))
+                foreach (string song in GetSongs($"{MusicFolder}/{nameFile}"))
                 {
                     FileInfo fi = new FileInfo(song);
-                    File.Move(song, $"{music_folder}/{author}/{fi.Name}");
+                    File.Move(song, $"{MusicFolder}/{author}/{fi.Name}");
                 }
-                foreach(string album in GetAlbums($"{music_folder}/{nameFile}"))
+                foreach(string album in GetAlbums($"{MusicFolder}/{nameFile}"))
                 {
                     string albumName = GetNameFromPath(album);
-                    if (Directory.Exists($"{music_folder}/{author}/{albumName}"))
+                    if (Directory.Exists($"{MusicFolder}/{author}/{albumName}"))
                     {
                         foreach (string song in GetSongs(album))
                         {
                             FileInfo fi = new FileInfo(song);
-                            File.Move(song, $"{music_folder}/{author}/{albumName}/{fi.Name}");
+                            File.Move(song, $"{MusicFolder}/{author}/{albumName}/{fi.Name}");
                         }
                     }
                     else
                     {
-                        Directory.Move(album, $"{music_folder}/{author}/{albumName}");
+                        Directory.Move(album, $"{MusicFolder}/{author}/{albumName}");
                     }
                 }
-                Directory.Delete($"{music_folder}/{nameFile}", true);
+                Directory.Delete($"{MusicFolder}/{nameFile}", true);
             }
             else
             {
-                Directory.Move($"{music_folder}/{nameFile}", $"{music_folder}/{author}");
+                Directory.Move($"{MusicFolder}/{nameFile}", $"{MusicFolder}/{author}");
             }
-            foreach (string song in GetSongs($"{music_folder}/{author}"))
+            foreach (string song in GetSongs($"{MusicFolder}/{author}"))
             {
-                var tfile = TagLib.File.Create($"{song}");
-                string[] autors = tfile.Tag.Performers;
-                for (int i = 0; i < autors.Length; i++)
+                using TagLib.File tfile = TagLib.File.Create($"{song}");
+                string[] authors = tfile.Tag.Performers;
+                for (int i = 0; i < authors.Length; i++)
                 {
-                    if (autors[i] == name)
+                    if (authors[i] == name)
                     {
-                        autors[i] = target;
+                        authors[i] = target;
                     }
                     else
                     {
                         //TODO: add symlink move
                         if (i == 0)
                         {
-                            continue;
                         }
                         //Android.Systems.Os.Symlink();
                     }
                 }
-                tfile.Tag.Performers = autors;
+                tfile.Tag.Performers = authors;
                 tfile.Save();
             }
         }
 
         public static void CreatePlaylist(string name)
         {
-            string json = File.ReadAllText($"{music_folder}/playlists.json");
+            string json = File.ReadAllText($"{MusicFolder}/playlists.json");
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             playlists.Add(name, new List<string>());
-            File.WriteAllTextAsync($"{music_folder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{MusicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
 
         public static void AddToPlaylist(string name, string song)
         {
-            string json = File.ReadAllText($"{music_folder}/playlists.json");
+            string json = File.ReadAllText($"{MusicFolder}/playlists.json");
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             playlists[name].Add(song);
-            File.WriteAllTextAsync($"{music_folder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{MusicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
 
         public static void AddToPlaylist(string name, List<string> songs)
         {
-            string json = File.ReadAllText($"{music_folder}/playlists.json");
+            string json = File.ReadAllText($"{MusicFolder}/playlists.json");
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             playlists[name].AddRange(songs);
-            File.WriteAllTextAsync($"{music_folder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{MusicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
 
 
         ///<summary>
-        ///Deletetes <paramref name="song"/> from <paramref name="playlist"/>
+        ///Deletes <paramref name="song"/> from <paramref name="playlist"/>
         ///</summary>
         public static void DeletePlaylist(string playlist, string song)
         {
-            string json = File.ReadAllText($"{music_folder}/playlists.json");
+            string json = File.ReadAllText($"{MusicFolder}/playlists.json");
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
-            if (playlists.ContainsKey(playlist))
-            {
-                playlists[playlist].Remove(song);
-                File.WriteAllTextAsync($"{music_folder}/playlists.json", JsonConvert.SerializeObject(playlists));
-            }
+            if (!playlists.TryGetValue(playlist, out List<string> playlist1)) return;
+            playlist1.Remove(song);
+            File.WriteAllTextAsync($"{MusicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
 
         ///<summary>
-        ///Deletetes <paramref name="playlist"/>
+        ///Deletes <paramref name="playlist"/>
         ///</summary>
         public static void DeletePlaylist(string playlist)
         {
-            string json = File.ReadAllText($"{music_folder}/playlists.json");
+            string json = File.ReadAllText($"{MusicFolder}/playlists.json");
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             playlists.Remove(playlist);
-            File.WriteAllTextAsync($"{music_folder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{MusicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
 
         public static string Sanitize(string value)
@@ -593,11 +522,11 @@ namespace Ass_Pain
         public static int GetAvailableFile(string name = "video")
         {
             int i = 0;
-            while (File.Exists($"{path}/tmp/{name}{i}.mp3"))
+            while (File.Exists($"{Path}/tmp/{name}{i}.mp3"))
             {
                 i++;
             }
-            string dest = $"{path}/tmp/{name}{i}.mp3";
+            string dest = $"{Path}/tmp/{name}{i}.mp3";
             File.Create(dest).Close();
             return i;
         }
@@ -612,64 +541,56 @@ namespace Ass_Pain
         ///</summary>
         public static List<string> GetPlaylist()
         {
-            string json = File.ReadAllText($"{music_folder}/playlists.json");
+            string json = File.ReadAllText($"{MusicFolder}/playlists.json");
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             return playlists.Keys.ToList();
         }
 
         ///<summary>
         ///Gets all songs in <paramref name="playlist"/>
-        ///<br>Returns <returns>empty List<string></returns> if <paramref name="playlist"/> doesn't exist</br>
+        ///<br>Returns <returns>empty List of strings</returns> if <paramref name="playlist"/> doesn't exist</br>
         ///</summary>
         public static List<string> GetPlaylist(string playlist)
         {
-            string json = File.ReadAllText($"{music_folder}/playlists.json");
+            string json = File.ReadAllText($"{MusicFolder}/playlists.json");
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
-            if (playlists.ContainsKey(playlist))
+            if (playlists.TryGetValue(playlist, out List<string> playlist1))
             {
-                return playlists[playlist];
+                return playlist1;
             }
             return new List<string>();
         }
         public static void AddSyncTarget(string host)
         {
             
-            string json = File.ReadAllText($"{path}/sync_targets.json");
+            string json = File.ReadAllText($"{Path}/sync_targets.json");
             Dictionary<string, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             targets.Add(host, GetSongs());
-            File.WriteAllTextAsync($"{path}/sync_targets.json", JsonConvert.SerializeObject(targets));
+            File.WriteAllTextAsync($"{Path}/sync_targets.json", JsonConvert.SerializeObject(targets));
         }
 
         public static void AddTrustedHost(string host)
         {
 
-            string json = File.ReadAllText($"{path}/trusted_hosts.json");
+            string json = File.ReadAllText($"{Path}/trusted_hosts.json");
             List<string> hosts = JsonConvert.DeserializeObject<List<string>>(json);
             hosts.Add(host);
-            File.WriteAllTextAsync($"{path}/trusted_hosts.json", JsonConvert.SerializeObject(hosts));
+            File.WriteAllTextAsync($"{Path}/trusted_hosts.json", JsonConvert.SerializeObject(hosts));
         }
 
         public static bool GetTrustedHost(string host)
         {
 
-            string json = File.ReadAllText($"{path}/trusted_hosts.json");
+            string json = File.ReadAllText($"{Path}/trusted_hosts.json");
             List<string> hosts = JsonConvert.DeserializeObject<List<string>>(json);
-            if (hosts.Contains(host))
-            {
-                return true;
-            }
-            return false;
+            return hosts.Contains(host);
         }
 
         public static (bool, List<string>) GetSyncSongs(string host)
         {
-            string json = File.ReadAllText($"{path}/sync_targets.json");
+            string json = File.ReadAllText($"{Path}/sync_targets.json");
             Dictionary<string, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
-            if (targets.ContainsKey(host))
-            {
-                return (true, targets[host]);
-            }
-            return (false, null);
+            return targets.TryGetValue(host, out List<string> target) ? (true, target) : (false, null);
         }
     }
 }

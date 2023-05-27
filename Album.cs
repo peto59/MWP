@@ -37,14 +37,14 @@ namespace Ass_Pain
         
         public void AddArtist(ref List<Artist> artists)
         {
-            foreach (var artist in artists.Where(artist => !Artists.Contains(artist)))
+            foreach (Artist artist in artists.Where(artist => !Artists.Contains(artist)))
             {
                 Artists.Add(artist);
             }
         }
         public void AddArtist(ref Artist artist)
         {
-            //prepisat aby sa zabranilo duplicite
+            //TODO: prepisat aby sa zabranilo duplicite
             Artists.Add(artist);
         }
         
@@ -91,10 +91,10 @@ namespace Ass_Pain
         public static string GetImagePath(string name, string artistPart)
         {
             string albumPart = FileManager.Sanitize(name);
-            if (File.Exists($"{FileManager.music_folder}/{artistPart}/{albumPart}/cover.jpg"))
-                return $"{FileManager.music_folder}/{artistPart}/{albumPart}/cover.jpg";
-            if (File.Exists($"{FileManager.music_folder}/{artistPart}/{albumPart}/cover.png"))
-                return $"{FileManager.music_folder}/{artistPart}/{albumPart}/cover.png";
+            if (File.Exists($"{FileManager.MusicFolder}/{artistPart}/{albumPart}/cover.jpg"))
+                return $"{FileManager.MusicFolder}/{artistPart}/{albumPart}/cover.jpg";
+            if (File.Exists($"{FileManager.MusicFolder}/{artistPart}/{albumPart}/cover.png"))
+                return $"{FileManager.MusicFolder}/{artistPart}/{albumPart}/cover.png";
             return "Default";
         }
 
@@ -106,20 +106,14 @@ namespace Ass_Pain
             {
                 if (!string.IsNullOrEmpty(ImgPath))
                 {
-                    using (var f = File.OpenRead(ImgPath))
-                    {
-                        image = BitmapFactory.DecodeStream(f);
-                        f.Close();
-                    }
+                    using FileStream f = File.OpenRead(ImgPath);
+                    image = BitmapFactory.DecodeStream(f);
+                    f.Close();
                 }
                 else if (shouldFallBack)
                 {
-                    foreach (Song song in Songs)
+                    foreach (Song song in Songs.Where(song => song.Initialized))
                     {
-                        if (!song.Initialized)
-                        {
-                            continue;
-                        }
                         image = song.GetImage(false);
                         if (image != null)
                         {
@@ -129,12 +123,8 @@ namespace Ass_Pain
 
                     if (image == null)
                     {
-                        foreach (Artist artist in Artists)
+                        foreach (Artist artist in Artists.Where(artist => artist.Initialized))
                         {
-                            if (!artist.Initialized)
-                            {
-                                continue;
-                            }
                             image = artist.GetImage(false);
                             if (image != null)
                             {
@@ -203,9 +193,7 @@ namespace Ass_Pain
         
         public override bool Equals(object obj)
         {
-            var item = obj as Album;
-
-            if (item == null)
+            if (!(obj is Album item))
             {
                 return false;
             }

@@ -132,7 +132,7 @@ namespace Ass_Pain
                 return;
             }
 
-            var channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationImportance.Low)
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationImportance.Low)
             {
                 Description = CHANNEL_DESCRIPTION
             };

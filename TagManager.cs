@@ -1,44 +1,35 @@
-﻿using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.IO;
 
 namespace Ass_Pain
 {
     internal class TagManager : IDisposable
     {
-        TagLib.File _tfile;
-        private bool _changed = false;
-        private Song _song;
-        private SongSave _saveFlags = SongSave.None;
+        private TagLib.File tfile;
+        private bool changed;
+        private Song song;
+        private SongSave saveFlags = SongSave.None;
 
         public TagManager(Song song)
         {
-            _tfile = TagLib.File.Create(song.Path);
-            _song = song;
+            tfile = TagLib.File.Create(song.Path);
+            this.song = song;
         }
 
         public string Title
         {
             get
             {
-                return _tfile.Tag.Title;
+                return tfile.Tag.Title;
             }
             set
             {
-                if(value != Title && !string.IsNullOrEmpty(value))
-                {
-                    _tfile.Tag.Title = value;
-                    _changed = true;
-                    _saveFlags |= SongSave.Title;
-                }
+                if (value == Title || string.IsNullOrEmpty(value)) return;
+                tfile.Tag.Title = value;
+                changed = true;
+                saveFlags |= SongSave.Title;
             }
         }
 
@@ -46,16 +37,14 @@ namespace Ass_Pain
         {
             get
             {
-                return _tfile.Tag.Performers.FirstOrDefault();
+                return tfile.Tag.Performers.FirstOrDefault();
             }
             set
             {
-                if (value != _tfile.Tag.Performers.FirstOrDefault() && !string.IsNullOrEmpty(value))
-                {
-                    _tfile.Tag.Performers = new[] { value };
-                    _changed = true;
-                    _saveFlags |= SongSave.Artist;
-                }
+                if (value == tfile.Tag.Performers.FirstOrDefault() || string.IsNullOrEmpty(value)) return;
+                tfile.Tag.Performers = new[] { value };
+                changed = true;
+                saveFlags |= SongSave.Artist;
             }
         }
 
@@ -63,16 +52,14 @@ namespace Ass_Pain
         {
             get
             {
-                return _tfile.Tag.Performers;
+                return tfile.Tag.Performers;
             }
             set
             {
-                if (!value.SequenceEqual(_tfile.Tag.Performers) && value.Length > 0)
-                {
-                    _tfile.Tag.Performers = value;
-                    _changed = true;
-                    _saveFlags |= SongSave.Artist;
-                }
+                if (value.SequenceEqual(tfile.Tag.Performers) || value.Length <= 0) return;
+                tfile.Tag.Performers = value;
+                changed = true;
+                saveFlags |= SongSave.Artist;
             }
         }
         
@@ -80,90 +67,87 @@ namespace Ass_Pain
         {
             get
             {
-                return _tfile.Tag.Album;
+                return tfile.Tag.Album;
             }
             set
             {
-                if (value != _tfile.Tag.Album && !string.IsNullOrEmpty(value))
-                {
-                    _tfile.Tag.Album = value;
-                    _changed = true;
-                    _saveFlags |= SongSave.Album;
-                    _saveFlags &= ~SongSave.NoAlbum;
-                }
+                if (value == tfile.Tag.Album || string.IsNullOrEmpty(value)) return;
+                tfile.Tag.Album = value;
+                changed = true;
+                saveFlags |= SongSave.Album;
+                saveFlags &= ~SongSave.NoAlbum;
             }
         }
 
         public void NoAlbum()
         {
-            //pridaj if iba ak album predtym bol nastaveny
-            _tfile.Tag.Album = null;
-            _changed = true;
-            _saveFlags |= SongSave.NoAlbum;
-            _saveFlags &= ~SongSave.Album;
+            //TODO: pridaj if iba ak album predtym bol nastaveny
+            tfile.Tag.Album = null;
+            changed = true;
+            saveFlags |= SongSave.NoAlbum;
+            saveFlags &= ~SongSave.Album;
         }
 
         public void Save()
         {
-            if (!_changed)
+            if (!changed)
             {   
                 return;
             }
 
-            _changed = false;
-            bool  movingFlag = _saveFlags.HasFlag(SongSave.Title) || _saveFlags.HasFlag(SongSave.Artist) ||
-                                    _saveFlags.HasFlag(SongSave.Album) || _saveFlags.HasFlag(SongSave.NoAlbum);
+            changed = false;
+            bool  movingFlag = saveFlags.HasFlag(SongSave.Title) || saveFlags.HasFlag(SongSave.Artist) ||
+                                    saveFlags.HasFlag(SongSave.Album) || saveFlags.HasFlag(SongSave.NoAlbum);
             
-            _tfile.Save();
+            tfile.Save();
 
-            string path = FileManager.music_folder;
+            string path = FileManager.MusicFolder;
 
             if (movingFlag)
             {
-                _song.Nuke();
+                song.Nuke();
             }
 
-            if (_saveFlags.HasFlag(SongSave.Artist))
+            if (saveFlags.HasFlag(SongSave.Artist))
             {
-                path = $"{path}/{FileManager.Sanitize(FileManager.GetAlias(_tfile.Tag.Performers.FirstOrDefault()))}";
+                path = $"{path}/{FileManager.Sanitize(FileManager.GetAlias(tfile.Tag.Performers.FirstOrDefault()))}";
             }
             else
             {
-                path = $"{path}/{FileManager.Sanitize(_song.Artists[0].Title)}";
+                path = $"{path}/{FileManager.Sanitize(song.Artists[0].Title)}";
             }
 
-            if (_saveFlags.HasFlag(SongSave.Album))
+            if (saveFlags.HasFlag(SongSave.Album))
             {
-                path = $"{path}/{FileManager.Sanitize(_tfile.Tag.Album)}";
-                //restore albums
+                path = $"{path}/{FileManager.Sanitize(tfile.Tag.Album)}";
             }
-            else if (!_saveFlags.HasFlag(SongSave.NoAlbum))
+            else if (!saveFlags.HasFlag(SongSave.NoAlbum))
             {
-                if (_song.Albums.Count > 0)
+                if (song.Albums.Count > 0)
                 {
-                    path = $"{path}/{FileManager.Sanitize(_song.Album.Title)}";
+                    path = $"{path}/{FileManager.Sanitize(song.Album.Title)}";
                 }
             }
 
 
             Song s;
-            if (_saveFlags.HasFlag(SongSave.Title))
+            if (saveFlags.HasFlag(SongSave.Title))
             {
                 
-                path = $"{path}/{FileManager.Sanitize(_tfile.Tag.Title)}";
-                s = new Song(_song, _tfile.Tag.Title, path);
+                path = $"{path}/{FileManager.Sanitize(tfile.Tag.Title)}";
+                s = new Song(song, tfile.Tag.Title, path);
 
             }else
             {
-                path = $"{path}/{FileManager.Sanitize(_song.Title)}";
-                s = new Song(_song, _song.Title, path);
+                path = $"{path}/{FileManager.Sanitize(song.Title)}";
+                s = new Song(song, song.Title, path);
             }
 
             Album a = null;
-            if (_saveFlags.HasFlag(SongSave.Album))
+            if (saveFlags.HasFlag(SongSave.Album))
             {
                 //restore albums
-                var inListAlbum = MainActivity.stateHandler.Albums.Select(_tfile.Tag.Album);
+                List<Album> inListAlbum = MainActivity.stateHandler.Albums.Select(tfile.Tag.Album);
                 if (inListAlbum.Count > 0)
                 {
                     a = inListAlbum[0];
@@ -171,49 +155,26 @@ namespace Ass_Pain
                 }
                 else
                 {
-                    a = new Album(_tfile.Tag.Album, Ass_Pain.Album.GetImagePath(_tfile.Tag.Album, FileManager.Sanitize(FileManager.GetAlias(_tfile.Tag.Performers.FirstOrDefault()))));
+                    a = new Album(tfile.Tag.Album, Ass_Pain.Album.GetImagePath(tfile.Tag.Album, FileManager.Sanitize(FileManager.GetAlias(tfile.Tag.Performers.FirstOrDefault()))));
                     a.AddSong(ref s);
                     MainActivity.stateHandler.Albums.Add(a);
                 }
                 s.AddAlbum(ref a);
             }
             
-            if (_saveFlags.HasFlag(SongSave.Artist))
+            if (saveFlags.HasFlag(SongSave.Artist))
             {
-                /*_song.Artists.ForEach(artist =>
-                {
-                    if (artist.Songs.Count == 0 && artist.Albums.Count == 0)
-                    {
-                        bool nuke = true;
-                        artist.Albums.ForEach(album =>
-                        {
-                            if (album.Songs.Count == 0)
-                            {
-                                album.Nuke();
-                            }
-                            else
-                            {
-                                nuke = false;
-                            }
-                        });
-                        if (nuke)
-                        {
-                            artist.Nuke();
-                        }
-                    }
-                });*/
-                
                 //restore artists
-                foreach (var performer in _tfile.Tag.Performers)
+                foreach (string performer in tfile.Tag.Performers)
                 {
                     Artist art;
-                    var alias = FileManager.GetAlias(performer);
-                    var inList = MainActivity.stateHandler.Artists.Select(alias);
+                    string alias = FileManager.GetAlias(performer);
+                    List<Artist> inList = MainActivity.stateHandler.Artists.Select(alias);
                     if (inList.Count > 0)
                     {
                         art = inList[0];
                         art.AddSong(ref s);
-                        if (_saveFlags.HasFlag(SongSave.Album))
+                        if (saveFlags.HasFlag(SongSave.Album))
                         {
                             a?.AddArtist(ref art);
                             if (art.Albums.Select(a?.Title).Count == 0)
@@ -226,7 +187,7 @@ namespace Ass_Pain
                     {
                         art = new Artist(alias, Ass_Pain.Artist.GetImagePath(FileManager.Sanitize(alias)));
                         art.AddSong(ref s);
-                        if (_saveFlags.HasFlag(SongSave.Album))
+                        if (saveFlags.HasFlag(SongSave.Album))
                         {
                             a?.AddArtist(ref art);
                             art.AddAlbum(ref a);
@@ -239,18 +200,18 @@ namespace Ass_Pain
             
             if (movingFlag)
             {
-                var inList = MainActivity.stateHandler.Songs.Select(s.Title);
+                List<Song> inList = MainActivity.stateHandler.Songs.Select(s.Title);
                 if (inList.Count == 0)
                 {
                     MainActivity.stateHandler.Songs.Add(s);
                 }
-                File.Move(_song.Path, path);
-                _song.Artists.ForEach(o => o.AddSong(ref s));
-                _song.Albums.ForEach(o => o.AddSong(ref s));
-                _song = s;
+                File.Move(song.Path, path);
+                song.Artists.ForEach(o => o.AddSong(ref s));
+                song.Albums.ForEach(o => o.AddSong(ref s));
+                song = s;
             }
 
-            _saveFlags = SongSave.None;
+            saveFlags = SongSave.None;
         }
 
         public void Dispose()
@@ -266,17 +227,17 @@ namespace Ass_Pain
                 Save();
                 
                 // Dispose of managed resources
-                if (_tfile != null)
+                if (tfile != null)
                 {
-                    _tfile.Dispose();
-                    _tfile = null;
+                    tfile.Dispose();
+                    tfile = null;
                 }
             }
 
             // Dispose of unmanaged resources (if any)
 
             // Set fields to null (optional)
-            _song = null;
+            song = null;
         }
 
         
@@ -287,7 +248,7 @@ namespace Ass_Pain
     }
 
     [Flags]
-    enum SongSave
+    internal enum SongSave
     {
         None = 0,
         Title = 1,

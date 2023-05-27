@@ -27,6 +27,7 @@ using System.Threading;
 using Org.Apache.Http.Authentication;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
+using Android.Util;
 
 
 namespace Ass_Pain
@@ -338,7 +339,7 @@ namespace Ass_Pain
                 );
             lin.LayoutParameters = lin_params;
 
-            var albums = FileManager.GetAlbums();
+            List<string> albums = FileManager.GetAlbums();
 
             int[] button_margins = { 50, 50, 50, 0 };
             int[] name_margins = { 50, 50, 50, 50 };
@@ -378,7 +379,7 @@ namespace Ass_Pain
             );
             lin.LayoutParameters = lin_params;
 
-            var authors = FileManager.GetAuthors();
+            List<string> authors = FileManager.GetAuthors();
 
             int[] button_margins = { 50, 50, 50, 0 };
             int[] name_margins = { 50, 50, 50, 50 };
@@ -477,7 +478,7 @@ namespace Ass_Pain
             Android.App.AlertDialog.Builder alert = new Android.App.AlertDialog.Builder(this);
             alert.SetView(view);
 
-            var user_data = view.FindViewById<EditText>(Resource.Id.editText);
+            EditText user_data = view.FindViewById<EditText>(Resource.Id.editText);
             alert.SetCancelable(false).SetPositiveButton("submit", delegate
             {
                 FileManager.CreatePlaylist(user_data.Text);
@@ -512,7 +513,7 @@ namespace Ass_Pain
             TextView author = view.FindViewById<TextView>(Resource.Id.author_name);
             author.Text = author_n;
 
-            var user_input = view.FindViewById<EditText>(Resource.Id.user_author);
+            EditText user_input = view.FindViewById<EditText>(Resource.Id.user_author);
             Button sub = view.FindViewById<Button>(Resource.Id.submit_alias);
             sub.Click += delegate
             {
@@ -546,8 +547,8 @@ namespace Ass_Pain
 
             LinearLayout ln = view.FindViewById<LinearLayout>(Resource.Id.playlists_list_la);
 
-            var plas = FileManager.GetPlaylist();
-            foreach (var p in plas)
+            List<string> plas = FileManager.GetPlaylist();
+            foreach (string p in plas)
             {
                 LinearLayout ln_in = new LinearLayout(this);
                 ln_in.Orientation = Orientation.Vertical;
@@ -600,11 +601,11 @@ namespace Ass_Pain
 
             submit.Click += (sender, e) =>
             {
-                foreach (var s in selected_playlists)
+                foreach (string s in selected_playlists)
                 {
                     Console.WriteLine(s + " " + selected_playlists.Count);
 
-                    var pla_songs = FileManager.GetPlaylist(s);
+                    List<string> pla_songs = FileManager.GetPlaylist(s);
                     if (pla_songs.Contains(path))
                         Toast.MakeText(this, "already exists in : " + s, ToastLength.Short).Show();
                     else
@@ -792,7 +793,7 @@ namespace Ass_Pain
                     where_are_you_are_you_are_you_are_you_are_you_are_.location = "main";
                     where_are_you_are_you_are_you_are_you_are_you_are_.album = "";
 
-                    var display_metrics = Resources.DisplayMetrics;
+                    DisplayMetrics display_metrics = Resources.DisplayMetrics;
                     int display_width = display_metrics.WidthPixels;
 
                     //作家
@@ -821,7 +822,7 @@ namespace Ass_Pain
                     album_scroll_params.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
                     album_scroll.LayoutParameters = album_scroll_params;
 
-                    var all_albums = FileManager.GetAlbums();
+                    List<string> all_albums = FileManager.GetAlbums();
                     LinearLayout album_lin = album_tiles(scale);
                     album_scroll.AddView(album_lin);
 
@@ -858,7 +859,7 @@ namespace Ass_Pain
 
                     if (path_for_01 != null)
                     {
-                        var album_songs = FileManager.GetSongs(path_for_01);
+                        List<string> album_songs = FileManager.GetSongs(path_for_01);
                         for (int i = 0; i < album_songs.Count; i++)
                         {
 
@@ -903,7 +904,7 @@ namespace Ass_Pain
                     LinearLayout lin = new LinearLayout(this);
                     
                     
-                    var albums = FileManager.GetAlbums(path_for_01);
+                    List<string> albums = FileManager.GetAlbums(path_for_01);
                     Parallel.For(0, albums.Count, i =>
                     {
 
@@ -1056,7 +1057,7 @@ namespace Ass_Pain
                     List<Tuple<LinearLayout, int>> lazy_buffer = new List<Tuple<LinearLayout, int>>();
 
                     
-                    var list_songs = FileManager.GetSongs();
+                    List<string> list_songs = FileManager.GetSongs();
                     for (int i = 0; i < list_songs.Count; i++)
                     {
 
@@ -1074,7 +1075,7 @@ namespace Ass_Pain
 
                     }
 
-                    for (var i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
+                    for (int i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
                     {
                         song_tiles_image_set(lazy_buffer[i].Item1, list_songs[lazy_buffer[i].Item2], scale, 150, 100, all_songs_button_margins, "song", 15, all_songs_name_margins);
                         all_songs_ln_main.AddView(lazy_buffer[i].Item1);
@@ -1084,15 +1085,15 @@ namespace Ass_Pain
 
                     all_songs_scroll.ScrollChange += (sender, e) =>
                     {
-                        var view = all_songs_ln_main.GetChildAt(all_songs_ln_main.ChildCount - 1);
-                        var top_detect = all_songs_scroll.ScrollY;
-                        var bottom_detect = view.Bottom - (all_songs_scroll.Height + all_songs_scroll.ScrollY);
+                        View view = all_songs_ln_main.GetChildAt(all_songs_ln_main.ChildCount - 1);
+                        int top_detect = all_songs_scroll.ScrollY;
+                        int bottom_detect = view.Bottom - (all_songs_scroll.Height + all_songs_scroll.ScrollY);
 
                         if (bottom_detect == 0 && lazy_buffer.Count != 0)
                         {
                             Console.WriteLine("loading new");
 
-                            for (var i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
+                            for (int i = 0; i < Math.Min(5, lazy_buffer.Count); i++)
                             {
                                 song_tiles_image_set(lazy_buffer[i].Item1, list_songs[lazy_buffer[i].Item2], scale, 150, 100, all_songs_button_margins, "song", 17, all_songs_name_margins);
                                 all_songs_ln_main.AddView(lazy_buffer[i].Item1);
@@ -1136,7 +1137,7 @@ namespace Ass_Pain
                     int[] playlist_card_margins = { 0, 50, 0, 0 };
 
 
-                    var playlists = FileManager.GetPlaylist();
+                    List<string> playlists = FileManager.GetPlaylist();
                     Parallel.ForEach(playlists, playlist =>
                     {
 
@@ -1231,9 +1232,9 @@ namespace Ass_Pain
                     int[] in_playlist_card_margins = { 0, 50, 0, 0 };
 
 
-                    var plyalist_songs = FileManager.GetPlaylist(path_for_01);
+                    List<string> plyalist_songs = FileManager.GetPlaylist(path_for_01);
 
-                    for (var i = 0; i < plyalist_songs.Count; i++)
+                    for (int i = 0; i < plyalist_songs.Count; i++)
                     {
 
                         if (FileManager.GetSongTitle(plyalist_songs[i]) != "cant get title")

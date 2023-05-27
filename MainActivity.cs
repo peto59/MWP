@@ -31,7 +31,7 @@ using AndroidX.Core.Content;
 namespace Ass_Pain
 {
     
-    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
+    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true, Description = "@string/app_description")]
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         // public static Slovenska_prostituka player = new Slovenska_prostituka();
@@ -184,7 +184,7 @@ namespace Ass_Pain
 
             bool exitFlag = true;
 
-            foreach (var perm in permissionsLocation)
+            foreach (string perm in permissionsLocation)
             {
                 exitFlag &=
                     ContextCompat.CheckSelfPermission(this, perm) ==
@@ -262,7 +262,7 @@ namespace Ass_Pain
             new Thread(() => {
                 stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                 FileManager.DiscoverFiles();
-                FileManager.GenerateList(FileManager.music_folder);
+                FileManager.GenerateList(FileManager.MusicFolder);
 
                 /*stateHandler.Songs = stateHandler.Songs.OrderBy(song => song.Name).ToList();
                 Console.WriteLine("----------------Alphabetically-------------------");
@@ -294,7 +294,7 @@ namespace Ass_Pain
             receiver = new MyBroadcastReceiver(this);
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
             
-            var serviceIntent = new Intent(this, typeof(MediaService));
+            Intent serviceIntent = new Intent(this, typeof(MediaService));
             /*if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
                 StartForegroundService(serviceIntent);
@@ -304,7 +304,7 @@ namespace Ass_Pain
                 StartService(serviceIntent);
             }*/
             StartForegroundService(serviceIntent);
-            var b = BindService(serviceIntent, ServiceConnection, Bind.Important);
+            bool b = BindService(serviceIntent, ServiceConnection, Bind.Important);
             Console.WriteLine($"BIND RESULT {b}");
             if (b)
             {
