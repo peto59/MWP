@@ -85,7 +85,7 @@ namespace Ass_Pain
 		public const string ActionSeekTo = "ActionSeekTo";
 
 		private MediaSessionCompat session;
-		private MediaPlayer mediaPlayer;
+		public MediaPlayer mediaPlayer { get; private set; };
 		private AudioManager audioManager;
 		private AudioFocusRequestClass audioFocusRequest;
 		private readonly Local_notification_service notificationService = new Local_notification_service();
@@ -94,24 +94,24 @@ namespace Ass_Pain
 		private bool lostFocusDuringPlay;
 		public bool IsPaused { get; private set; }
 		public bool IsShuffled { get; private set; }
-		private bool loopAll;
-		private bool loopSingle;
+		public bool loopAll { get; private set; }
+		public bool loopSingle { get; private set; }
 		private bool isSkippingToNext;
 		private bool isSkippingToPrevious;
 		private bool isBuffering = true;
 		public bool IsShuffling { get; private set; }
 		public int LoopState { get; private set; }
 		private int i;
-		private int Index
+		public int Index
 		{
 			get => i;
-			set { i = value.KeepPositive(); MainActivity.stateHandler.setIndex(ref i); }
+			private set { i = value.KeepPositive(); MainActivity.stateHandler.setIndex(ref i); }
 		}
 		private List<string> q = new List<string>();
-        private List<string> Queue
+        public List<string> Queue
 		{
 			get => q;
-			set { q = value; MainActivity.stateHandler.setQueue(ref q); }
+			private set { q = value; MainActivity.stateHandler.setQueue(ref q); }
 		}
         private List<string> originalQueue = new List<string>();
 
@@ -568,7 +568,9 @@ namespace Ass_Pain
 			isSkippingToPrevious = true;
 			IsPaused = false;
 			Index--;
-			Index = Index.KeepPositive();
+			if(Index < 0 && loopAll){
+				Index == Queue.Count -1;
+			}
 			Console.WriteLine($"Index in previous song: {Index}");
 			Play();
 			isSkippingToPrevious = false;

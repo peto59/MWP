@@ -61,10 +61,13 @@ namespace Ass_Pain
                       )
                   );
 
-                notificationBuilder.AddAction(
-                    Resource.Drawable.previous, "Previous",
-                    PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
-                );
+                if((MainActivity.ServiceConnection.Binder?.Service?.Index > 0 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
+                    notificationBuilder.AddAction(
+                        Resource.Drawable.previous, "Previous",
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                    );
+                }
+
                 if (MainActivity.stateHandler.IsPlaying)
                 {
                     notificationBuilder.AddAction(
@@ -80,10 +83,12 @@ namespace Ass_Pain
                     );
                 }
                 
-                notificationBuilder.AddAction(
-                    Resource.Drawable.next, "next",
-                    PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
-                );
+                if((MainActivity.ServiceConnection.Binder?.Service?.Index < MainActivity.ServiceConnection.Binder?.Service?.Queue.Count -1 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
+                    notificationBuilder.AddAction(
+                        Resource.Drawable.next, "next",
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                    );
+                }
 
                 int loopState = MainActivity.stateHandler.LoopState;
                 switch (loopState)

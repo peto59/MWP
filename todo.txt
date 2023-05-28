@@ -22,13 +22,14 @@ windows DoesKeyExists close key
 
 enable timer on listener in network manager
 
-filemanager getAlbums Directory.EnumerateDirectories(author).toList()
 
 fix file discovery
 
 Downloader.cs searchAPI add confirmation for user
 
 DISABLE SESSION (session.Active = false) WHEN NEEDED
+
+predefinuj service na nieco nech nemusis vkuse pisat MainActivity.ServiceConnection.Binder?.Service?
 
 
 public static async Task<(string, string, string, byte[])> SearchAPI(string name=null , string song = null, string album = null)
