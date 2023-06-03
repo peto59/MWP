@@ -85,10 +85,11 @@ namespace Ass_Pain
 		public const string ActionSeekTo = "ActionSeekTo";
 
 		private MediaSessionCompat session;
-		public MediaPlayer mediaPlayer { get; private set; };
+		public MediaPlayer mediaPlayer { get; private set; }
 		private AudioManager audioManager;
 		private AudioFocusRequestClass audioFocusRequest;
 		private readonly Local_notification_service notificationService = new Local_notification_service();
+		public long Actions { get; private set; }
 		private bool isFocusGranted;
 		private bool isUsed;
 		private bool lostFocusDuringPlay;
@@ -153,7 +154,8 @@ namespace Ass_Pain
 			{
                 UpdatePlaybackState();
             };
-			MainActivity.stateHandler.setMediaPlayer(ref mediaPlayer);
+			MediaPlayer m = mediaPlayer;
+			MainActivity.stateHandler.setMediaPlayer(ref m);
         }
 
 		///<summary>
@@ -188,10 +190,34 @@ namespace Ass_Pain
 
 		private void InnitNotification()
 		{
+			
+			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
+			metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, MainActivity.stateHandler.Artists[0].Image);
+			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplayTitle, "No Song");
+			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplaySubtitle, "No Artist");
+			session.SetMetadata(metadataBuilder.Build());
+			
+			const long position = PlaybackState.PlaybackPositionUnknown;
+			const PlaybackStateCode state = PlaybackStateCode.None;
+
+			PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
+					.SetActions(GetAvailableActions());
+			if (stateBuilder != null)
+			{
+				stateBuilder.SetState((int)state, position, 1.0f);
+				int icon = LoopState switch
+				{
+					0 => Resource.Drawable.no_repeat,
+					1 => Resource.Drawable.repeat,
+					_ => Resource.Drawable.repeat_one
+				};
+				stateBuilder.AddCustomAction("loop", "loop", icon);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_repeat : Resource.Drawable.repeat);
+				session.SetPlaybackState(stateBuilder.Build());
+			}
+
 			notificationService.song_control_notification(session.SessionToken);
 			StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
-			//android:foregroundServiceType="mediaPlayback"
-			//StartForeground(notificationService.NotificationId, notificationService.Notification);
 		}
 
 		public void OnAudioFocusChange([GeneratedEnum] AudioFocus focusChange)
@@ -324,24 +350,33 @@ namespace Ass_Pain
 		}
 		private long GetAvailableActions()
 		{
-			long actions = PlaybackState.ActionPlay | PlaybackState.ActionSeekTo ;
+			if (mediaPlayer == null)
+			{
+				InnitPlayer();
+			}
+			if (mediaPlayer is { IsPlaying: true })
+			{
+				Actions = PlaybackState.ActionPause | PlaybackState.ActionStop;
+			}else{
+				Actions = PlaybackState.ActionPlay;
+			}
+			
 			if (Queue == null || Queue.Count == 0)
 			{
-				return actions;
+				return Actions;
 			}
-			if (mediaPlayer.IsPlaying)
+			
+			Actions |= PlaybackState.ActionSeekTo;
+			
+			if ((Index > 0 || loopAll) && !loopSingle)
 			{
-				actions |= PlaybackState.ActionPause | PlaybackState.ActionStop;
+				Actions |= PlaybackState.ActionSkipToPrevious;
 			}
-			if (Index > 0)
+			if ((Index < Queue.Count -1 || loopAll) && !loopSingle)
 			{
-				actions |= PlaybackState.ActionSkipToPrevious;
+				Actions |= PlaybackState.ActionSkipToNext;
 			}
-			if (Index < Queue.Count -1)
-			{
-				actions |= PlaybackState.ActionSkipToNext;
-			}
-			return actions;
+			return Actions;
 		}
 
 		private void UpdatePlaybackState()
@@ -487,7 +522,12 @@ namespace Ass_Pain
 				mediaPlayer.Reset();
 				Console.WriteLine($"SERVICE INDEX {Index}");
 				Console.WriteLine($"SERVICE QUEUE {Queue.Count}");
-				
+
+				if (!File.Exists(Queue[Index]))
+				{
+					NextSong();
+					return;
+				}
 				mediaPlayer.SetDataSource(Queue[Index]);
 				mediaPlayer.Prepare();
 			}
@@ -569,7 +609,7 @@ namespace Ass_Pain
 			IsPaused = false;
 			Index--;
 			if(Index < 0 && loopAll){
-				Index == Queue.Count -1;
+				Index = Queue.Count -1;
 			}
 			Console.WriteLine($"Index in previous song: {Index}");
 			Play();
@@ -702,7 +742,7 @@ namespace Ass_Pain
             if(Queue.Count == 0) { return; }
             while (IsShuffling)
 			{
-				System.Threading.Thread.Sleep(5);
+				Thread.Sleep(5);
 			}
 			IsShuffling = true;
 			if (newShuffleState)
@@ -893,7 +933,6 @@ namespace Ass_Pain
 
 		public override IBinder OnBind(Intent intent)
 		{
-			Console.WriteLine("CONNECTED");
 			return new MediaServiceBinder(this);
 		}
 	}

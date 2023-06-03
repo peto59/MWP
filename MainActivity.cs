@@ -304,14 +304,7 @@ namespace Ass_Pain
                 StartService(serviceIntent);
             }*/
             StartForegroundService(serviceIntent);
-            bool b = BindService(serviceIntent, ServiceConnection, Bind.Important);
-            Console.WriteLine($"BIND RESULT {b}");
-            if (b)
-            {
-                Thread.Sleep(5000);
-                Console.WriteLine($"SET: {ServiceConnection.Set}");
-            }
-            else
+            if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
             {
                 Console.WriteLine("Cannot Connect");
             }

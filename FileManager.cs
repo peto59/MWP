@@ -12,6 +12,9 @@ namespace Ass_Pain
         private static readonly string Root = (string)Android.OS.Environment.ExternalStorageDirectory;
         private static readonly string Path = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
         public static readonly string MusicFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
+        //private static readonly string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string( System.IO.Path.GetInvalidFileNameChars() ) + new string( System.IO.Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>");
+        //private static readonly string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", invalidChars );
+        private static readonly string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", System.Text.RegularExpressions.Regex.Escape(new string( System.IO.Path.GetInvalidFileNameChars() ) + new string( System.IO.Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>") );
         public static void DiscoverFiles(string path = null)
         {
             //return;
@@ -75,7 +78,7 @@ namespace Ass_Pain
                     }
                     title = Sanitize(title);
                     string[] unsanitizedArtists = GetSongArtist(file);
-                    string artist = unsanitizedArtists.Length > 0 ? GetAlias(Sanitize(unsanitizedArtists[0])) : "No Artist";
+                    string artist = unsanitizedArtists.Length > 0 ? Sanitize(GetAlias(unsanitizedArtists[0])) : "No Artist";
                     string uAlbum = GetSongAlbum(file);
                     Console.WriteLine("Moving " + file);
                     if (uAlbum != null)
@@ -516,7 +519,9 @@ namespace Ass_Pain
 
         public static string Sanitize(string value)
         {
-            return value.Replace("/", "").Replace("|", "").Replace("\\", "").Replace(":", "").Replace("*", "").Replace("\"", "").Replace("#", "").Replace("?", "").Replace("<", "").Replace(">", "").Trim().Replace(" ", "_");
+            value = System.Text.RegularExpressions.Regex.Replace( value, invalidRegStr, "" );
+            return System.Text.RegularExpressions.Regex.Replace(value, @"\s+|_{2,}", "_").Trim().Replace("_-_", "_").Replace(",_", ",");
+            //return value.Replace("/", "").Replace("|", "").Replace("\\", "").Replace(":", "").Replace("*", "").Replace("\"", "").Replace("#", "").Replace("?", "").Replace("<", "").Replace(">", "").Trim().Replace(" ", "_");
         }
 
         public static int GetAvailableFile(string name = "video")

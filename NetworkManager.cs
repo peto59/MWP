@@ -598,7 +598,7 @@ namespace Ass_Pain
 
 
                         string name = FileManager.Sanitize(FileManager.GetSongTitle(path));
-                        string artist = FileManager.GetAlias(FileManager.Sanitize(FileManager.GetSongArtist(path)[0]));
+                        string artist = FileManager.Sanitize(FileManager.GetAlias(FileManager.GetSongArtist(path)[0]));
                         string unAlbum = FileManager.GetSongAlbum(path);
                         if(unAlbum == null)
                         {

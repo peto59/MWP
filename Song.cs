@@ -44,20 +44,28 @@ namespace Ass_Pain
 
         public void AddArtist(ref List<Artist> artists)
         {
-            Artists.AddRange(artists);
+            foreach (Artist artist in artists.Where(artist => !Artists.Contains(artist)))
+            {
+                Artists.Add(artist);
+            }
         }
         public void AddArtist(ref Artist artist)
         {
-            Artists.Add(artist);
+            if(!Artists.Contains(artist))
+                Artists.Add(artist);
         }
         
         public void AddAlbum(ref List<Album> albums)
         {
-            Albums.AddRange(albums);
+            foreach (Album album in albums.Where(album => !Albums.Contains(album)))
+            {
+                Albums.Add(album);
+            }
         }
         public void AddAlbum(ref Album album)
         {
-            Albums.Add(album);
+            if (!Albums.Contains(album))
+                Albums.Add(album);
         }
         
         public void RemoveAlbum(Album album)

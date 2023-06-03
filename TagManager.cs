@@ -81,7 +81,8 @@ namespace Ass_Pain
 
         public void NoAlbum()
         {
-            //TODO: pridaj if iba ak album predtym bol nastaveny
+            if (string.IsNullOrEmpty(tfile.Tag.Album))
+                return;
             tfile.Tag.Album = null;
             changed = true;
             saveFlags |= SongSave.NoAlbum;

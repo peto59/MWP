@@ -60,11 +60,14 @@ namespace Ass_Pain
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
             // get intent sent from side bar to navigate author
+            if (Intent != null)
             {
-                string intent_author = Intent.GetStringExtra("link_author");
-                if (intent_author != "")
-                    populate_grid(0.2f, intent_author);
-
+                string intentAuthor = Intent.GetStringExtra("link_author");
+                if (!string.IsNullOrEmpty(intentAuthor))
+                    populate_grid(0.2f, intentAuthor);
+                string action = Intent.GetStringExtra("action");
+                if (action == "openDrawer")
+                    drawer.OpenDrawer(GravityCompat.Start);
             }
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(

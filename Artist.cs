@@ -38,8 +38,10 @@ namespace Ass_Pain
         
         public void AddAlbum(ref List<Album> albums)
         {
-            //TODO: prepisat aby sa zabranilo duplicite
-            Albums.AddRange(albums);
+            foreach (Album album in albums.Where(album => !Albums.Contains(album)))
+            {
+                Albums.Add(album);
+            }
         }
         public void AddAlbum(ref Album album)
         {
@@ -49,11 +51,15 @@ namespace Ass_Pain
         
         public void AddSong(ref List<Song> songs)
         {
-            Songs.AddRange(songs);
+            foreach (Song song in songs.Where(song => !Songs.Contains(song)))
+            {
+                Songs.Add(song);
+            }
         }
         public void AddSong(ref Song song)
         {
-            Songs.Add(song);
+            if (!Songs.Contains(song))
+                Songs.Add(song);
         }
 
         public void RemoveSong(Song song)

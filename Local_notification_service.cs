@@ -13,6 +13,8 @@ using System.Runtime.Remoting.Contexts;
 using Xamarin.Essentials;
 //using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
+using Context = Android.Content.Context;
+using TaskStackBuilder = AndroidX.Core.App.TaskStackBuilder;
 
 namespace Ass_Pain
 {
@@ -127,11 +129,9 @@ namespace Ass_Pain
                         );
                         break;
                 }
+                notification = notificationBuilder.Build();
             }
-
-            notification = notificationBuilder.Build();
             manager.Notify(notification_id, notification);
-
             Console.WriteLine("NOTIFY RELOAD");
         }
 
@@ -160,12 +160,22 @@ namespace Ass_Pain
             {
                 create_notification_channel();
             }
+            
+            Intent songsIntent = new Intent(AndroidApp.Context, typeof(all_songs)).PutExtra("action", "openDrawer");
+            TaskStackBuilder stackBuilder = TaskStackBuilder.Create(AndroidApp.Context);
+            stackBuilder.AddNextIntentWithParentStack(songsIntent);
+            PendingIntent songsPendingIntent =
+                stackBuilder.GetPendingIntent(0,
+                    (int) (PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable));
+
 
             notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
                 .SetSmallIcon(
                     Resource.Drawable.ic_menu_camera
                 )
                 .SetShowWhen(false)
+                //.SetSilent(true)
+                .SetContentIntent(songsPendingIntent)
                 .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token));
 
             manager = NotificationManagerCompat.From(AndroidApp.Context);

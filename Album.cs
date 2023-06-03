@@ -44,17 +44,21 @@ namespace Ass_Pain
         }
         public void AddArtist(ref Artist artist)
         {
-            //TODO: prepisat aby sa zabranilo duplicite
-            Artists.Add(artist);
+            if(!Artists.Contains(artist))
+                Artists.Add(artist);
         }
         
         public void AddSong(ref List<Song> songs)
         {
-            Songs.AddRange(songs);
+            foreach (Song song in songs.Where(song => !Songs.Contains(song)))
+            {
+                Songs.Add(song);
+            }
         }
         public void AddSong(ref Song song)
         {
-            Songs.Add(song);
+            if (!Songs.Contains(song))
+                Songs.Add(song);
         }
         
         public void RemoveSong(Song song)
