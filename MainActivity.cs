@@ -24,6 +24,7 @@ using System.Runtime.InteropServices;
 using Android.Content.PM;
 using Android.Media;
 using AndroidX.Core.App;
+using Com.Geecko.Fpcalc;
 
 namespace Ass_Pain
 {
