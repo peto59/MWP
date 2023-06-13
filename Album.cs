@@ -108,7 +108,7 @@ namespace Ass_Pain
 
             try
             {
-                if (!string.IsNullOrEmpty(ImgPath))
+                if (!string.IsNullOrEmpty(ImgPath) && ImgPath != "Default")
                 {
                     using FileStream f = File.OpenRead(ImgPath);
                     image = BitmapFactory.DecodeStream(f);

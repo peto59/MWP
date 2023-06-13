@@ -290,6 +290,19 @@ namespace Ass_Pain
                 {
                     Console.WriteLine(song.ToString());
                 }*/
+                /*foreach (var song in stateHandler.Songs.Search("dark hour"))
+                {
+                    Console.WriteLine(song.Path);
+                }
+                try
+                {
+                    
+                    Console.WriteLine($"FINGERPRINT: {FpCalc.InvokeFpCalc(new []{"-length", "16", $"{stateHandler.Songs.Search("dark hour").First().Path}"})}");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }*/
             }).Start();
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver(this);
@@ -304,6 +317,7 @@ namespace Ass_Pain
             {
                 StartService(serviceIntent);
             }*/
+            
             StartForegroundService(serviceIntent);
             if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
             {

@@ -110,7 +110,7 @@ namespace Ass_Pain
 
         ///<summary>
         ///Returns current loop state
-        ///</summary
+        ///</summary>
         public int LoopState
         {
             get { return loopState; }
@@ -118,7 +118,7 @@ namespace Ass_Pain
 
         ///<summary>
         ///Return bool based on if shuffling is enabled
-        ///</summary
+        ///</summary>
         public bool IsShuffling
         {
             get { return shuffle; }
@@ -126,7 +126,7 @@ namespace Ass_Pain
 
         ///<summary>
         ///Return bool whether playback is currently active
-        ///</summary
+        ///</summary>
         public bool IsPlaying
         {
             get {
@@ -143,7 +143,7 @@ namespace Ass_Pain
 
         ///<summary>
         ///Sets view to current screen's view
-        ///</summary
+        ///</summary>
         public void SetView(AppCompatActivity new_view)
         {
             view = new_view;

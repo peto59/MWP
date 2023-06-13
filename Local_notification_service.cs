@@ -162,11 +162,11 @@ namespace Ass_Pain
             }
             
             Intent songsIntent = new Intent(AndroidApp.Context, typeof(all_songs)).PutExtra("action", "openDrawer");
-            TaskStackBuilder stackBuilder = TaskStackBuilder.Create(AndroidApp.Context);
+            /*TaskStackBuilder stackBuilder = TaskStackBuilder.Create(AndroidApp.Context);
             stackBuilder.AddNextIntentWithParentStack(songsIntent);
             PendingIntent songsPendingIntent =
                 stackBuilder.GetPendingIntent(0,
-                    (int) (PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable));
+                    (int) (PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable));*/
 
 
             notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
@@ -175,7 +175,7 @@ namespace Ass_Pain
                 )
                 .SetShowWhen(false)
                 //.SetSilent(true)
-                .SetContentIntent(songsPendingIntent)
+                .SetContentIntent(PendingIntent.GetActivity(AndroidApp.Context, 57, songsIntent, PendingIntentFlags.Immutable))
                 .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token));
 
             manager = NotificationManagerCompat.From(AndroidApp.Context);
