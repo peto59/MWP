@@ -89,6 +89,7 @@
     <Compile Include="MediaServiceConnection.cs" />
     <Compile Include="MediaSessionCallback.cs" />
     <Compile Include="Local_notification_service.cs" />
+    <Compile Include="MusicBaseClass.cs" />
     <Compile Include="MyBroadcastReceiver.cs" />
     <Compile Include="NetworkManager.cs" />
     <Compile Include="Downloader.cs" />

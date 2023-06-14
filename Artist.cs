@@ -7,9 +7,9 @@ using Android.App;
 
 namespace Ass_Pain
 {
-    public class Artist
+    public class Artist : MusicBaseClass
     {
-        public string Title { get; }
+        public new string Title { get; }
 
         public List<Song> Songs { get; } = new List<Song>();
         public Song Song
@@ -31,7 +31,7 @@ namespace Ass_Pain
         public string ImgPath { get; }
         public bool Initialized { get; private set; } = true;
         
-        public Bitmap Image
+        public new Bitmap Image
         {
             get { return GetImage(); }
         }
@@ -112,7 +112,7 @@ namespace Ass_Pain
             return "Default";
         }
         
-        public Bitmap GetImage(bool shouldFallBack = true)
+        public override Bitmap GetImage(bool shouldFallBack = true)
         {
             Bitmap image = null;
 

@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Ass_Pain
 {
-    public class Song
+    public class Song : MusicBaseClass
     {
         public List<Artist> Artists { get; } = new List<Artist>();
         public Artist Artist
@@ -27,7 +27,7 @@ namespace Ass_Pain
 
         public List<Album> Albums { get; } = new List<Album>();
         public string Name { get; }
-        public string Title
+        public new string Title
         {
             get { return Name; }
         }
@@ -37,7 +37,7 @@ namespace Ass_Pain
         public string Path { get; }
         public bool Initialized { get; private set; } = true;
         
-        public Bitmap Image
+        public new Bitmap Image
         {
             get { return GetImage(); }
         }
@@ -108,7 +108,7 @@ namespace Ass_Pain
             Initialized = false;
         }
 
-        public Bitmap GetImage(bool shouldFallBack = true)
+        public override Bitmap GetImage(bool shouldFallBack = true)
         {
             Bitmap image = null;
             try

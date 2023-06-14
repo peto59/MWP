@@ -272,7 +272,6 @@ namespace Ass_Pain
                 }*/
                 
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
-
                 /*Artist a = new Artist("otestuj ma", "default");
                 stateHandler.Artists.Add(a);
                 a = new Artist("specialny", "default");
