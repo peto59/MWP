@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
+using Android.App;
 
 namespace Ass_Pain
 {
@@ -125,6 +126,13 @@ namespace Ass_Pain
 
         public override Bitmap GetImage(bool shouldFallBack = true)
         {
+            if (Path == "Default")
+            {
+                if (Application.Context.Assets != null)
+                    return BitmapFactory.DecodeStream(
+                        Application.Context.Assets.Open(
+                            "music_placeholder.png"));
+            }
             Bitmap image = null;
             try
             {
@@ -138,7 +146,7 @@ namespace Ass_Pain
                 Console.WriteLine($"Doesnt contain image: {Path}");
             }
 
-            if (image != null || !shouldFallBack) return image;
+            if (image != null) return image;
             foreach (Album album in Albums.Where(album => album.Initialized))
             {
                 image = album.GetImage(false);
