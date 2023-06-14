@@ -9,7 +9,7 @@ namespace Ass_Pain
 {
     public class Artist : MusicBaseClass
     {
-        public new string Title { get; }
+        public override string Title { get; }
 
         public List<Song> Songs { get; } = new List<Song>();
         public Song Song
@@ -31,7 +31,7 @@ namespace Ass_Pain
         public string ImgPath { get; }
         public bool Initialized { get; private set; } = true;
         
-        public new Bitmap Image
+        public override Bitmap Image
         {
             get { return GetImage(); }
         }

@@ -27,7 +27,7 @@ namespace Ass_Pain
 
         public List<Album> Albums { get; } = new List<Album>();
         public string Name { get; }
-        public new string Title
+        public override string Title
         {
             get { return Name; }
         }
@@ -37,7 +37,7 @@ namespace Ass_Pain
         public string Path { get; }
         public bool Initialized { get; private set; } = true;
         
-        public new Bitmap Image
+        public override Bitmap Image
         {
             get { return GetImage(); }
         }

@@ -24,6 +24,7 @@ using Signal = Com.Arthenica.Ffmpegkit.Signal;
 
 namespace Ass_Pain
 {
+    // TODO: add new song to state handler
     internal static class Downloader
     {
         private static readonly string Path = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;

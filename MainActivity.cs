@@ -139,7 +139,13 @@ namespace Ass_Pain
                 intent.PutExtra("link_author", "");
                 StartActivity(intent);
             }
-
+            else if (id == Resource.Id.nav_share) // share
+            {
+                Intent intent = new Intent(this, typeof(share));
+                intent.PutExtra("link_author", "");
+                StartActivity(intent);
+            }
+            
 
             drawer.CloseDrawer(GravityCompat.Start);
             return true;

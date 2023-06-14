@@ -211,6 +211,11 @@ namespace Ass_Pain
             {
                 drawer.CloseDrawer(GravityCompat.Start);
             }
+            else if (id == Resource.Id.nav_share) // share
+            {
+                Intent intent = new Intent(this, typeof(share));
+                StartActivity(intent);
+            }
 
 
             drawer.CloseDrawer(GravityCompat.Start);
