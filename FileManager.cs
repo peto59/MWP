@@ -564,7 +564,15 @@ namespace Ass_Pain
                 List<Song> x = new List<Song>();
                 foreach (var song in playlist1)
                 {
-                    x.AddRange(MainActivity.stateHandler.Songs.Where(a => a.Path == song));
+                    var y = MainActivity.stateHandler.Songs.Where(a => a.Path == song);
+                    if (y.Any())
+                    {
+                        x.AddRange(y);
+                    }
+                    else
+                    {
+                        DeletePlaylist(playlist, song);
+                    }
                 }
                 return x;
             }
