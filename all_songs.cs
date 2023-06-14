@@ -63,9 +63,9 @@ namespace Ass_Pain
             // get intent sent from side bar to navigate author
             if (Intent != null)
             {
-                string intentAuthor = Intent.GetStringExtra("link_author");
-                if (!string.IsNullOrEmpty(intentAuthor))
-                    populate_grid(0.2f, intentAuthor);
+                int intentAuthor = Intent.GetIntExtra("link_author", 0);
+                if (intentAuthor != 0)
+                    populate_grid(0.2f, MainActivity.stateHandler.Artists.First(a => a.GetHashCode() == intentAuthor));
                 string action = Intent.GetStringExtra("action");
                 if (action == "openDrawer")
                     drawer.OpenDrawer(GravityCompat.Start);
@@ -243,12 +243,14 @@ namespace Ass_Pain
 
                 album_buttons.Add(ln_in, artist);
             }
-            else
+            else if (musics is Song song)
             {
-                Song song = musics as Song;
-                ln_in.Click += new EventHandler(songs_button_clicked);
-                    
-
+                ln_in.Click += delegate(object sender, EventArgs args)
+                {
+                    Console.WriteLine("song clicked");
+                    songs_button_clicked(sender, args);
+                };
+                
                 ln_in.LongClick += (sender, e) =>
                 {
                     show_popup_song_edit(sender, e, song, lin_for_delete, ln_in);
@@ -337,20 +339,22 @@ namespace Ass_Pain
         public void songs_button_clicked(Object sender, EventArgs e)
         {
             LinearLayout pressedButtoon = (LinearLayout)sender;
-
+            Console.WriteLine(pressedButtoon);
+            
             foreach (KeyValuePair<LinearLayout, int> pr in song_buttons)
             {
+                Console.WriteLine(pr.Key);
                 if (pr.Key == pressedButtoon)
                 {
+                    Console.WriteLine(where_are_you_are_you_are_you_are_you_are_you_are_);
                     if (where_are_you_are_you_are_you_are_you_are_you_are_.album is "all")
                     {
-                        MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.stateHandler.Songs);
-
+                        MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.stateHandler.Songs, pr.Value);
                     }
                     else
                     {
                         if (where_are_you_are_you_are_you_are_you_are_you_are_.album is Album album)
-                            MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(album);
+                            MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(album, pr.Value);
                     }
                     break;
                 }
@@ -574,7 +578,7 @@ namespace Ass_Pain
             di.Hide();
         }
 
-        public void are_you_sure(object sender, EventArgs e, string path, Android.App.AlertDialog di, LinearLayout lin_from_delete, LinearLayout lin_for_delete, string is_what)
+        public void are_you_sure(object sender, EventArgs e, Song song, Android.App.AlertDialog di, LinearLayout lin_from_delete, LinearLayout lin_for_delete)
         {
             Console.WriteLine("popup clicked");
 
@@ -588,7 +592,7 @@ namespace Ass_Pain
 
             TextView txt = view.FindViewById<TextView>(Resource.Id.are_you_sure_text);
             txt.SetTextColor(Color.White);
-            txt.Text = "Deleting: " + FileManager.GetNameFromPath(path); 
+            txt.Text = "Deleting: " + song.Title;
 
             Button yes = view.FindViewById<Button>(Resource.Id.yes_daddy);
             yes.Background.SetColorFilter(
@@ -598,11 +602,11 @@ namespace Ass_Pain
 
             yes.Click += delegate
             {
-                FileManager.Delete(path);
+                song.Delete();
                 dialog.Hide();
                 deleting_song(sender, e, di);
 
-                if (is_what == "song")
+                if (song is Song)
                     lin_from_delete.RemoveView(lin_for_delete);
                 else
                 {
@@ -612,7 +616,7 @@ namespace Ass_Pain
                 }
                     
 
-                Toast.MakeText(this, $"{path} has been deleted", ToastLength.Short).Show();
+                Toast.MakeText(this, $"{song.Title} has been deleted", ToastLength.Short).Show();
             };
             
             Button no = view.FindViewById<Button>(Resource.Id.you_are_not_sure);
@@ -662,34 +666,30 @@ namespace Ass_Pain
                     Console.WriteLine(path);
 
                 };
+                
+                Button add_to_qu = view.FindViewById<Button>(Resource.Id.add_to_qu);
+                Button delete = view.FindViewById<Button>(Resource.Id.delete);
+                add_to_qu.Background.SetColorFilter(
+                    Color.Rgb(255, 76, 41),
+                    PorterDuff.Mode.Multiply
+                ); add_to_qu.SetTextColor(Color.Black);
+                delete.Background.SetColorFilter(
+                    Color.Rgb(255, 76, 41),
+                    PorterDuff.Mode.Multiply
+                ); delete.SetTextColor(Color.Black);
+
+                // handle clicked
+                add_to_qu.Click += (sender, e) =>
+                {
+                    MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song);
+                };
+                delete.Click += (sender, e) =>
+                {
+                    are_you_sure(sender, e, song, dialog, lin_from_delet, lin_for_delete);
+                };
             }
 
 
-            Button add_to_qu = view.FindViewById<Button>(Resource.Id.add_to_qu);
-            Button delete = view.FindViewById<Button>(Resource.Id.delete);
-            add_to_qu.Background.SetColorFilter(
-                Color.Rgb(255, 76, 41),
-                PorterDuff.Mode.Multiply
-            ); add_to_qu.SetTextColor(Color.Black);
-            delete.Background.SetColorFilter(
-                Color.Rgb(255, 76, 41),
-                PorterDuff.Mode.Multiply
-            ); delete.SetTextColor(Color.Black);
-
-            // handle clicked
-
-           
-            add_to_qu.Click += (sender, e) =>
-            {
-                StartService(
-                    new Intent(MediaService.ActionAddToQueue, null, this, typeof(MediaService))
-                    .PutExtra("addition", path)
-                );
-            };
-            delete.Click += (sender, e) =>
-            {
-                are_you_sure(sender, e, path, dialog, lin_from_delet, lin_for_delete, what_is);
-            };
 
 
             /*
@@ -1093,8 +1093,7 @@ namespace Ass_Pain
                     in_playlist_scroll_params.SetMargins(0, scroll_view_height, 0, 0);
                     in_playlist_scroll_params.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
                     in_playlist_scroll.LayoutParameters = in_playlist_scroll_params;
-
-
+                    
                     LinearLayout in_playlist_ln_main = new LinearLayout(this);
                     in_playlist_ln_main.Orientation = Orientation.Vertical;
                     RelativeLayout.LayoutParams in_playlist_ln_main_params = new RelativeLayout.LayoutParams(

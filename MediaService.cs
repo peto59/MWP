@@ -596,18 +596,21 @@ namespace Ass_Pain
 		{
 			Queue = new List<Song> { source };
 			Index = i;
+			Play();
 		}
 		
 		public void GenerateQueue(List<Song> source, int i = 0)
 		{
 			Queue = source;
 			Index = i;
+			Play();
 		}
 		
 		public void GenerateQueue(MusicBaseContainer source, int i = 0)
 		{
 			Queue = source.Songs;
 			Index = i;
+			Play();
 		}
 
 		///<summary>

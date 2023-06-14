@@ -215,8 +215,13 @@ namespace Ass_Pain
 			song_author.Click += (sender, e) =>
 			{
 				Intent intent = new Intent(context, typeof(all_songs));
-				intent.PutExtra("link_author", $"{path}/{autor}");
-				context.StartActivity(intent);
+				int? x = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.GetHashCode();
+				if (x is { } hash)
+				{
+					intent.PutExtra("link_author", hash);
+					context.StartActivity(intent);
+				}
+				
 			};
 				
 			song_album.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Album.Title;
@@ -323,42 +328,11 @@ namespace Ass_Pain
 
 			song_image.SetImageResource(Resource.Mipmap.ic_launcher);
 
-			try
-			{
-				Console.WriteLine($"now playing: {current_song_path}");
-                TagLib.File tagFile = TagLib.File.Create(
-					current_song_path
-				);
-				MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
-				image = BitmapFactory.DecodeStream(ms);
-
-				LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(
-					LinearLayout.LayoutParams.WrapContent,
-					LinearLayout.LayoutParams.WrapContent
-				);
-				song_image.LayoutParameters = song_image_params;
-				ms.Dispose();
-                tagFile.Dispose();
-            }
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex.Message);
-				Console.WriteLine($"Doesnt contain image: {current_song_path}");
-			}
-
-			if (image == null)
-			{
-				image = BitmapFactory.DecodeStream(context.Assets.Open("music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
-				LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(
-				   (int)(120 * scale + 0.5f),
-				   (int)(120 * scale + 0.5f)
-				);
-				song_image.LayoutParameters = song_image_params;
-
-			}
+			
 
 			// set the image
-			song_image.SetImageBitmap(image);
+			song_image.SetImageBitmap(
+				MainActivity.ServiceConnection?.Binder?.Service?.Current.Image);
 
 
             // progress song
