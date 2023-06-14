@@ -161,7 +161,7 @@ namespace Ass_Pain
                 create_notification_channel();
             }
             
-            Intent songsIntent = new Intent(AndroidApp.Context, typeof(all_songs)).PutExtra("action", "openDrawer");
+            Intent songsIntent = new Intent(AndroidApp.Context, typeof(AllSongs)).PutExtra("action", "openDrawer");
             /*TaskStackBuilder stackBuilder = TaskStackBuilder.Create(AndroidApp.Context);
             stackBuilder.AddNextIntentWithParentStack(songsIntent);
             PendingIntent songsPendingIntent =

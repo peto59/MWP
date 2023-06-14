@@ -86,7 +86,7 @@ namespace Ass_Pain
 
             if (id == Resource.Id.nav_camera) // home
             {
-                Intent intent = new Intent(this, typeof(all_songs));
+                Intent intent = new Intent(this, typeof(AllSongs));
                 StartActivity(intent);
             }
             else if (id == Resource.Id.nav_gallery) // equalizer

@@ -214,7 +214,7 @@ namespace Ass_Pain
 			song_author.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.Title;
 			song_author.Click += (sender, e) =>
 			{
-				Intent intent = new Intent(context, typeof(all_songs));
+				Intent intent = new Intent(context, typeof(AllSongs));
 				int? x = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.GetHashCode();
 				if (x is { } hash)
 				{
