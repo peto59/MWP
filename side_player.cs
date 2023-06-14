@@ -326,9 +326,13 @@ namespace Ass_Pain
 
 			Bitmap image = null;
 
-			song_image.SetImageResource(Resource.Mipmap.ic_launcher);
+			// song_image.SetImageResource(Resource.Mipmap.ic_launcher);
 
-			
+			LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(
+				(int)(120 * scale + 0.5f),
+				(int)(120 * scale + 0.5f)
+			);
+			song_image.LayoutParameters = song_image_params;
 
 			// set the image
 			song_image.SetImageBitmap(
