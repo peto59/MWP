@@ -324,8 +324,6 @@ namespace Ass_Pain
 			 * Get Image from image to display
 			 */
 
-			Bitmap image = null;
-
 			// song_image.SetImageResource(Resource.Mipmap.ic_launcher);
 
 			LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(

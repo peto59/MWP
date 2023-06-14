@@ -339,14 +339,10 @@ namespace Ass_Pain
         public void songs_button_clicked(Object sender, EventArgs e)
         {
             LinearLayout pressedButtoon = (LinearLayout)sender;
-            Console.WriteLine(pressedButtoon);
-            
             foreach (KeyValuePair<LinearLayout, int> pr in song_buttons)
             {
-                Console.WriteLine(pr.Key);
                 if (pr.Key == pressedButtoon)
                 {
-                    Console.WriteLine(where_are_you_are_you_are_you_are_you_are_you_are_);
                     if (where_are_you_are_you_are_you_are_you_are_you_are_.album is "all")
                     {
                         MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.stateHandler.Songs, pr.Value);
@@ -407,15 +403,17 @@ namespace Ass_Pain
             alert.SetView(view);
 
             EditText user_data = view.FindViewById<EditText>(Resource.Id.editText);
-            alert.SetCancelable(false).SetPositiveButton("submit", delegate
+            alert.SetCancelable(false)
+                ?.SetPositiveButton("submit", delegate
             {
                 FileManager.CreatePlaylist(user_data.Text);
                 Toast.MakeText(
                     this, user_data.Text + " Created successfully",
                     ToastLength.Short
-                ).Show();
+                )
+                    ?.Show();
             })
-                .SetNegativeButton("cancel", delegate
+                ?.SetNegativeButton("cancel", delegate
                 {
                     alert.Dispose();
                 });

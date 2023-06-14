@@ -128,6 +128,7 @@ namespace Ass_Pain
         {
             if (Path == "Default")
             {
+                Console.WriteLine($"null????: {Application.Context.Assets != null}");
                 if (Application.Context.Assets != null)
                     return BitmapFactory.DecodeStream(
                         Application.Context.Assets.Open(
@@ -147,6 +148,14 @@ namespace Ass_Pain
             }
 
             if (image != null) return image;
+            if (!shouldFallBack)
+            {
+                Console.WriteLine($"null????: {Application.Context.Assets != null}");
+                if (Application.Context.Assets != null)
+                    return BitmapFactory.DecodeStream(
+                        Application.Context.Assets.Open(
+                            "music_placeholder.png"));
+            }
             foreach (Album album in Albums.Where(album => album.Initialized))
             {
                 image = album.GetImage(false);
