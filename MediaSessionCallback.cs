@@ -109,6 +109,25 @@ namespace Ass_Pain
         public override void OnCustomAction(string action, Bundle extras)
         {
             Console.WriteLine("OnCustomAction");
+            try
+            {
+                switch (action)
+                {
+                    case "loop":
+                        MainActivity.ServiceConnection.Binder?.Service?.ToggleLoop(MainActivity.ServiceConnection.Binder.Service.LoopState + 1);
+                        break;
+                    case "shuffle":
+                        MainActivity.ServiceConnection.Binder?.Service?.Shuffle(!MainActivity.ServiceConnection.Binder.Service.IsShuffled);
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
             //OnCustomActionImpl(action, extras);
         }
 

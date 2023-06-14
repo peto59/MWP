@@ -427,7 +427,7 @@ namespace Ass_Pain
                         Console.WriteLine("2");
                         networkStream.Read(recCommand, 0, 256);
                         Console.WriteLine("21");
-                        var a = decryptor.Decrypt(recCommand, true);
+                        byte[] a = decryptor.Decrypt(recCommand, true);
                         Console.WriteLine("22");
                         command = BitConverter.ToInt32(a, 0);
                         Console.WriteLine($"command for AES {command}");
@@ -589,7 +589,7 @@ namespace Ass_Pain
                             msDecrypt.Position = 0;
                             using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aes.CreateDecryptor(), CryptoStreamMode.Read))
                             {
-                                using (var stream = new FileStream(path, FileMode.Append))
+                                using (FileStream stream = new FileStream(path, FileMode.Append))
                                 {
                                     csDecrypt.CopyTo(stream);
                                 }
@@ -598,7 +598,7 @@ namespace Ass_Pain
 
 
                         string name = FileManager.Sanitize(FileManager.GetSongTitle(path));
-                        string artist = FileManager.GetAlias(FileManager.Sanitize(FileManager.GetSongArtist(path)[0]));
+                        string artist = FileManager.Sanitize(FileManager.GetAlias(FileManager.GetSongArtist(path)[0]));
                         string unAlbum = FileManager.GetSongAlbum(path);
                         if(unAlbum == null)
                         {

@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <TargetFramework>net6.0-android</TargetFramework>
+<!--    <PublishTrimmed>true</PublishTrimmed>-->
+    <TargetFramework>net13.0-android</TargetFramework>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
@@ -55,7 +56,7 @@
     <AndroidSupportedAbis>armeabi-v7a;x86;arm64-v8a;x86_64</AndroidSupportedAbis>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
+    <DebugSymbols>false</DebugSymbols>
     <DebugType>portable</DebugType>
     <Optimize>True</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -66,6 +67,11 @@
     <AndroidUseSharedRuntime>False</AndroidUseSharedRuntime>
     <AndroidLinkMode>SdkOnly</AndroidLinkMode>
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+    <AndroidSupportedAbis>armeabi-v7a;x86;arm64-v8a;x86_64</AndroidSupportedAbis>
+    <AndroidLinkTool>r8</AndroidLinkTool>
+    <PlatformTarget>x64</PlatformTarget>
+    <DocumentationFile>bin\Release\Ass_Pain.xml</DocumentationFile>
+    <AndroidCreatePackagePerAbi>false</AndroidCreatePackagePerAbi>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -248,6 +254,10 @@
     <AndroidResource Include="Resources\drawable\rounded.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Chromaprint\Chromaprint.csproj">
+      <Project>{fa8d9fc8-ac13-41dc-bfaa-f7674d350601}</Project>
+      <Name>Chromaprint</Name>
+    </ProjectReference>
     <ProjectReference Include="FFmpeg\FFmpeg.csproj">
       <Project>{a2ede33d-4a77-4f05-a761-ff32462d0c13}</Project>
       <Name>FFmpeg</Name>
@@ -347,6 +357,11 @@
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\repeat_one.xml" />
   </ItemGroup>
+<!--  <ItemGroup>-->
+<!--    <TrimmableAssembly Include="Ass_Pain" />-->
+<!--    <TrimmableAssembly Include="FFmpeg" />-->
+<!--  </ItemGroup>-->
+
   <Target Name="Install">
   </Target>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />

@@ -27,11 +27,12 @@ using Android.Media;
 using Android.Provider;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
+using Com.Geecko.Fpcalc;
 
 namespace Ass_Pain
 {
     
-    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
+    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true, Description = "@string/app_description")]
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         // public static Slovenska_prostituka player = new Slovenska_prostituka();
@@ -39,7 +40,7 @@ namespace Ass_Pain
         public static APIThrottler throttler = new APIThrottler();
         public static MyBroadcastReceiver receiver;
         public static StateHandler stateHandler = new StateHandler();
-        public static MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        public static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
         
         
 
@@ -184,7 +185,7 @@ namespace Ass_Pain
 
             bool exitFlag = true;
 
-            foreach (var perm in permissionsLocation)
+            foreach (string perm in permissionsLocation)
             {
                 exitFlag &=
                     ContextCompat.CheckSelfPermission(this, perm) ==
@@ -262,7 +263,7 @@ namespace Ass_Pain
             new Thread(() => {
                 stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                 FileManager.DiscoverFiles();
-                FileManager.GenerateList(FileManager.music_folder);
+                FileManager.GenerateList(FileManager.MusicFolder);
 
                 /*stateHandler.Songs = stateHandler.Songs.OrderBy(song => song.Name).ToList();
                 Console.WriteLine("----------------Alphabetically-------------------");
@@ -288,12 +289,25 @@ namespace Ass_Pain
                 {
                     Console.WriteLine(song.ToString());
                 }*/
+                /*foreach (var song in stateHandler.Songs.Search("dark hour"))
+                {
+                    Console.WriteLine(song.Path);
+                }
+                try
+                {
+                    
+                    Console.WriteLine($"FINGERPRINT: {FpCalc.InvokeFpCalc(new []{"-length", "16", $"{stateHandler.Songs.Search("dark hour").First().Path}"})}");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }*/
             }).Start();
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver(this);
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
             
-            var serviceIntent = new Intent(MediaService.ActionPlay, null, this, typeof(MediaService));
+            Intent serviceIntent = new Intent(this, typeof(MediaService));
             /*if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
                 StartForegroundService(serviceIntent);
@@ -302,12 +316,14 @@ namespace Ass_Pain
             {
                 StartService(serviceIntent);
             }*/
-            StartService(serviceIntent);
-            BindService(serviceIntent, ServiceConnection, Bind.AutoCreate);
-            //Thread.Sleep(5000);
-            //ServiceConnection.Binder?.Service?.Play();
-            Thread.Sleep(5000);
-            ServiceConnection.Binder?.Service?.NextSong();
+            
+            StartForegroundService(serviceIntent);
+            if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
+            {
+                Console.WriteLine("Cannot Connect");
+            }
+            /*Thread.Sleep(5000);
+            ServiceConnection.Binder?.Service?.NextSong();*/
         }
     }
 }

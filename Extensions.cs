@@ -17,6 +17,7 @@ namespace Ass_Pain
         private static Random rng = new Random();
         public static void Shuffle<T>(this IList<T> list)
         {
+            //TODO: figure out where one of the elements disappears to;
             int n = list.Count;
             while (n > 1)
             {

@@ -44,20 +44,28 @@ namespace Ass_Pain
 
         public void AddArtist(ref List<Artist> artists)
         {
-            Artists.AddRange(artists);
+            foreach (Artist artist in artists.Where(artist => !Artists.Contains(artist)))
+            {
+                Artists.Add(artist);
+            }
         }
         public void AddArtist(ref Artist artist)
         {
-            Artists.Add(artist);
+            if(!Artists.Contains(artist))
+                Artists.Add(artist);
         }
         
         public void AddAlbum(ref List<Album> albums)
         {
-            Albums.AddRange(albums);
+            foreach (Album album in albums.Where(album => !Albums.Contains(album)))
+            {
+                Albums.Add(album);
+            }
         }
         public void AddAlbum(ref Album album)
         {
-            Albums.Add(album);
+            if (!Albums.Contains(album))
+                Albums.Add(album);
         }
         
         public void RemoveAlbum(Album album)
@@ -123,35 +131,23 @@ namespace Ass_Pain
                 Console.WriteLine($"Doesnt contain image: {Path}");
             }
 
-            if (image == null && shouldFallBack)
+            if (image != null || !shouldFallBack) return image;
+            foreach (Album album in Albums.Where(album => album.Initialized))
             {
-                foreach (Album album in Albums)
+                image = album.GetImage(false);
+                if (image != null)
                 {
-                    if (!album.Initialized)
-                    {
-                        continue;
-                    }
-                    image = album.GetImage(false);
-                    if (image != null)
-                    {
-                        break;
-                    }
+                    break;
                 }
+            }
 
-                if (image == null)
+            if (image != null) return image;
+            foreach (Artist artist in Artists.Where(artist => artist.Initialized))
+            {
+                image = artist.GetImage(false);
+                if (image != null)
                 {
-                    foreach (Artist artist in Artists)
-                    {
-                        if (!artist.Initialized)
-                        {
-                            continue;
-                        }
-                        image = artist.GetImage(false);
-                        if (image != null)
-                        {
-                            break;
-                        }
-                    }
+                    break;
                 }
             }
 
@@ -226,9 +222,7 @@ namespace Ass_Pain
         
         public override bool Equals(object obj)
         {
-            var item = obj as Song;
-
-            if (item == null)
+            if (!(obj is Song item))
             {
                 return false;
             }

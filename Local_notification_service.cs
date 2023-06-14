@@ -13,6 +13,8 @@ using System.Runtime.Remoting.Contexts;
 using Xamarin.Essentials;
 //using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
+using Context = Android.Content.Context;
+using TaskStackBuilder = AndroidX.Core.App.TaskStackBuilder;
 
 namespace Ass_Pain
 {
@@ -22,7 +24,7 @@ namespace Ass_Pain
         private const string CHANNEL_NAME = "Notifications";
         private const string CHANNEL_DESCRIPTION = "description";
 
-        private int notification_id = -1;
+        private int notification_id = 1;
         public int NotificationId
         {
             get { return notification_id; }
@@ -36,7 +38,7 @@ namespace Ass_Pain
         {
             get { return is_created; }
         }
-        NotificationCompat.Builder notification_builder;
+        NotificationCompat.Builder notificationBuilder;
         private Notification notification;
         public Notification Notification
         {
@@ -47,82 +49,90 @@ namespace Ass_Pain
 
         public void Notify()
         {
-            notification_builder.MActions.Clear();
+            if (Build.VERSION.SdkInt < BuildVersionCodes.Tiramisu)
+            {
+               
+                notificationBuilder.MActions?.Clear();
 
-            notification_builder.AddAction(
-                  MainActivity.stateHandler.IsShuffling ? Resource.Drawable.repeat: Resource.Drawable.no_repeat, "shuffle",
-                  PendingIntent.GetService(
-                      AndroidApp.Context, Convert.ToInt32(MainActivity.stateHandler.IsShuffling),
-                      new Intent(MediaService.ActionShuffle, null, AndroidApp.Context, typeof(MediaService))
-                      .PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling), PendingIntentFlags.Mutable
-                  )
-              );
+                notificationBuilder.AddAction(
+                      MainActivity.stateHandler.IsShuffling ? Resource.Drawable.repeat: Resource.Drawable.no_repeat, "shuffle",
+                      PendingIntent.GetService(
+                          AndroidApp.Context, Convert.ToInt32(MainActivity.stateHandler.IsShuffling),
+                          new Intent(MediaService.ActionShuffle, null, AndroidApp.Context, typeof(MediaService))
+                          .PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling), PendingIntentFlags.Mutable
+                      )
+                  );
 
-            notification_builder.AddAction(
-                Resource.Drawable.previous, "Previous",
-                PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
-            );
-            if (MainActivity.stateHandler.IsPlaying)
-            {
-                notification_builder.AddAction(
-                    Resource.Drawable.pause_fill1_wght200_grad200_opsz48, "pause",
-                    PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPause, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
-                );
-            }
-            else
-            {
-                notification_builder.AddAction(
-                    Resource.Drawable.play, "play",
-                    PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionTogglePlay, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
-                );
-            }
-            notification_builder.AddAction(
-                Resource.Drawable.next, "next",
-                PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
-            );
+                if((MainActivity.ServiceConnection.Binder?.Service?.Index > 0 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
+                    notificationBuilder.AddAction(
+                        Resource.Drawable.previous, "Previous",
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                    );
+                }
 
-            int loopState = MainActivity.stateHandler.LoopState;
-            if (loopState == 0)
-            {
-                Console.WriteLine("no_repeat >>>>>>>>");
-                notification_builder.AddAction(
-                    Resource.Drawable.no_repeat, "no_repeat",
-                    PendingIntent.GetService(
-                        AndroidApp.Context, loopState,
-                        new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
-                        .PutExtra("loopState", 1), PendingIntentFlags.Mutable
-                    )
-                );
-            }
-            else if (loopState == 1)
-            {
-                Console.WriteLine("repeat >>>>>>>>");
-                notification_builder.AddAction(
-                    Resource.Drawable.repeat, "repeat",
-                    PendingIntent.GetService(
-                        AndroidApp.Context, loopState,
-                        new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
-                        .PutExtra("loopState", 2), PendingIntentFlags.Mutable
-                    )
-                );
-            }
-            else if (loopState == 2)
-            {
-                Console.WriteLine("repeat_one >>>>>>>>");
-                notification_builder.AddAction(
-                    Resource.Drawable.repeat_one, "repeat_one",
-                    PendingIntent.GetService(
-                        AndroidApp.Context, loopState,
-                        new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
-                        .PutExtra("loopState", 0), PendingIntentFlags.Mutable
-                    )
-                );
-            }
+                if (MainActivity.stateHandler.IsPlaying)
+                {
+                    notificationBuilder.AddAction(
+                        Resource.Drawable.pause_fill1_wght200_grad200_opsz48, "pause",
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPause, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                    );
+                }
+                else
+                {
+                    notificationBuilder.AddAction(
+                        Resource.Drawable.play, "play",
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionTogglePlay, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                    );
+                }
+                
+                if((MainActivity.ServiceConnection.Binder?.Service?.Index < MainActivity.ServiceConnection.Binder?.Service?.Queue.Count -1 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
+                    notificationBuilder.AddAction(
+                        Resource.Drawable.next, "next",
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                    );
+                }
 
-            notification = notification_builder.Build();
+                int loopState = MainActivity.stateHandler.LoopState;
+                switch (loopState)
+                {
+                    case 0:
+                        Console.WriteLine("no_repeat >>>>>>>>");
+                        notificationBuilder.AddAction(
+                            Resource.Drawable.no_repeat, "no_repeat",
+                            PendingIntent.GetService(
+                                AndroidApp.Context, loopState,
+                                new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                                    .PutExtra("loopState", 1), PendingIntentFlags.Mutable
+                            )
+                        );
+                        break;
+                    case 1:
+                        Console.WriteLine("repeat >>>>>>>>");
+                        notificationBuilder.AddAction(
+                            Resource.Drawable.repeat, "repeat",
+                            PendingIntent.GetService(
+                                AndroidApp.Context, loopState,
+                                new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                                    .PutExtra("loopState", 2), PendingIntentFlags.Mutable
+                            )
+                        );
+                        break;
+                    case 2:
+                        Console.WriteLine("repeat_one >>>>>>>>");
+                        notificationBuilder.AddAction(
+                            Resource.Drawable.repeat_one, "repeat_one",
+                            PendingIntent.GetService(
+                                AndroidApp.Context, loopState,
+                                new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                                    .PutExtra("loopState", 0), PendingIntentFlags.Mutable
+                            )
+                        );
+                        break;
+                }
+                notification = notificationBuilder.Build();
+            }
             manager.Notify(notification_id, notification);
-
-            Console.WriteLine("NOTIFY RELOEAD");
+            Console.WriteLine("NOTIFY RELOAD");
         }
 
         private void create_notification_channel()
@@ -132,7 +142,7 @@ namespace Ass_Pain
                 return;
             }
 
-            var channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationImportance.Low)
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationImportance.Low)
             {
                 Description = CHANNEL_DESCRIPTION
             };
@@ -150,24 +160,26 @@ namespace Ass_Pain
             {
                 create_notification_channel();
             }
-
-            notification_builder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
-              .SetSmallIcon(
-                  Resource.Drawable.ic_menu_camera
-              )
-              //.SetContentTitle(FileManager.GetSongTitle(MainActivity.stateHandler.NowPlaying))
-              //.SetContentText(FileManager.GetSongArtist(MainActivity.stateHandler.NowPlaying)[0])
-              /*.SetLargeIcon(
-                    current_song_image
-               )*/
-              .SetShowWhen(false)
-              .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token));
-              //.SetDefaults((int)NotificationDefaults.Sound | (int)NotificationDefaults.Vibrate);
-
             
+            Intent songsIntent = new Intent(AndroidApp.Context, typeof(all_songs)).PutExtra("action", "openDrawer");
+            /*TaskStackBuilder stackBuilder = TaskStackBuilder.Create(AndroidApp.Context);
+            stackBuilder.AddNextIntentWithParentStack(songsIntent);
+            PendingIntent songsPendingIntent =
+                stackBuilder.GetPendingIntent(0,
+                    (int) (PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable));*/
+
+
+            notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+                .SetSmallIcon(
+                    Resource.Drawable.ic_menu_camera
+                )
+                .SetShowWhen(false)
+                //.SetSilent(true)
+                .SetContentIntent(PendingIntent.GetActivity(AndroidApp.Context, 57, songsIntent, PendingIntentFlags.Immutable))
+                .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token));
 
             manager = NotificationManagerCompat.From(AndroidApp.Context);
-            notification = notification_builder.Build();
+            notification = notificationBuilder.Build();
             manager.Notify(notification_id, notification);
             is_created = true;
         }
@@ -175,11 +187,9 @@ namespace Ass_Pain
 
         public void destroy_song_control()
         {
-            if (is_created)
-            {
-                manager.Cancel(notification_id);
-                is_created = false;
-            }
+            if (!is_created) return;
+            manager.Cancel(notification_id);
+            is_created = false;
         }
     }
 }
