@@ -172,6 +172,11 @@ namespace Ass_Pain
             return image;
         }
 
+        public void AddAlias(string newAlias)
+        {
+            FileManager.AddAlias(newAlias, Title);
+        }
+
         public Artist(string title, Song song, Album album, string imgPath)
         {
             Title = title;

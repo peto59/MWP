@@ -650,6 +650,26 @@ namespace Ass_Pain
 			Play();
 		}
 
+		public void GenerateQueue(Song source, int i = 0)
+		{
+			
+		}
+		
+		public void GenerateQueue(List<Song> source, int i = 0)
+		{
+			
+		}
+		
+		public void GenerateQueue(Artist source, int i = 0)
+		{
+			
+		}
+		
+		public void GenerateQueue(Album source, int i = 0)
+		{
+			
+		}
+
 		///<summary>
 		///Clears queue and resets index to 0
 		///</summary>
