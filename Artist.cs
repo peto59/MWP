@@ -7,11 +7,11 @@ using Android.App;
 
 namespace Ass_Pain
 {
-    public class Artist : MusicBaseClass
+    public class Artist : MusicBaseContainer
     {
         public override string Title { get; }
 
-        public List<Song> Songs { get; } = new List<Song>();
+        public override List<Song> Songs { get; } = new List<Song>();
         public Song Song
         {
             get

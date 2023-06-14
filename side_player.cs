@@ -188,8 +188,6 @@ namespace Ass_Pain
 		{
 			// basic  vars
 			string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
-			string current_song_path = MainActivity.stateHandler.NowPlaying;
-			Console.WriteLine($"SIDE BAR NOW PLAYING {current_song_path}");
 			float scale = context.Resources.DisplayMetrics.Density;
 
 			// sing title image
@@ -211,21 +209,17 @@ namespace Ass_Pain
 
 
 			song_title.LayoutParameters = song_title_params;
-			song_title.Text = FileManager.GetSongTitle(current_song_path);
-
-			(string album, string autor) = FileManager.GetAlbumAuthorFromPath(current_song_path);
-			if (FileManager.GetSongArtist(current_song_path).Length != 0)
+			song_title.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Title;
+			
+			song_author.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.Title;
+			song_author.Click += (sender, e) =>
 			{
-				song_author.Text = FileManager.GetSongArtist(current_song_path)[0];
-				song_author.Click += (sender, e) =>
-				{
-					Intent intent = new Intent(context, typeof(all_songs));
-					intent.PutExtra("link_author", $"{path}/{autor}");
-					context.StartActivity(intent);
-				};
-			}
+				Intent intent = new Intent(context, typeof(all_songs));
+				intent.PutExtra("link_author", $"{path}/{autor}");
+				context.StartActivity(intent);
+			};
 				
-			song_album.Text = FileManager.GetSongAlbum(current_song_path);
+			song_album.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Album.Title;
 
 			/* 
 			 * player buttons

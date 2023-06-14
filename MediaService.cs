@@ -34,12 +34,7 @@ namespace Ass_Pain
 		///Stops playing and abandons focus
 		///</summary>
 		public const string ActionStop = "ActionStop";
-
-		///<summary>
-		///Generates new queue based on Intent extra params and sets index to Intent extra params or resets index to 0
-		///</summary>
-		public const string ActionGenerateQueue = "ActionGenerateQueue";
-
+		
 		///<summary>
 		///Shuffles or unshuffles queue and updates shuffling for all new queues oposite to last state
 		///</summary>
@@ -64,16 +59,6 @@ namespace Ass_Pain
 		///Plays previous song in queue
 		///</summary>
 		public const string ActionPreviousSong = "ActionPreviousSong";
-
-		///<summary>
-		///Adds song or list of songs from either list or directory path based on Intent extra params to the end of the queue
-		///</summary>
-		public const string ActionAddToQueue = "ActionAddToQueue";
-
-		///<summary>
-		///Adds song or list of songs from either list or directory path based on Intent extra params to the start of the queue
-		///</summary>
-		public const string ActionPlayNext = "ActionPlayNext";
 
 		///<summary>
 		///Clears queue and resets index to 0
@@ -108,15 +93,13 @@ namespace Ass_Pain
 			get => i;
 			private set { i = value.KeepPositive(); MainActivity.stateHandler.setIndex(ref i); }
 		}
-		private List<string> q = new List<string>();
-        public List<string> Queue
-		{
-			get => q;
-			private set { q = value; MainActivity.stateHandler.setQueue(ref q); }
-		}
-        private List<string> originalQueue = new List<string>();
+		// private List<Song> q = new List<Song>();
+		public List<Song> Queue = new List<Song>();
+        private List<Song> originalQueue = new List<Song>();
 
-		public override void OnCreate()
+        public Song Current => Queue[Index];
+
+        public override void OnCreate()
 		{
 			base.OnCreate();
 			InnitPlayer();
@@ -263,23 +246,6 @@ namespace Ass_Pain
 				case ActionStop:
 					Stop();
 					break;
-				case ActionGenerateQueue:
-					string source = intent.GetStringExtra("source");
-					if(source != null)
-					{
-						GenerateQueue(source);
-					}
-					else
-					{
-						List<string> sourceList = intent.GetStringArrayExtra("sourceList")!.ToList();
-						if(sourceList == null)
-						{
-							throw new ArgumentException("You need to specify either string or list source");
-						}
-						int intExtra = intent.GetIntExtra("i", 0);
-						GenerateQueue(sourceList, intExtra);
-					}
-					break;
 				case ActionShuffle:
 					Shuffle(intent.GetBooleanExtra("shuffle", false));
 					break;
@@ -305,38 +271,6 @@ namespace Ass_Pain
 					break;
 				case ActionPreviousSong:
 					PreviousSong();
-					break;
-				case ActionAddToQueue:
-					string addition = intent.GetStringExtra("addition");
-					if (addition != null)
-					{
-						AddToQueue(addition);
-					}
-					else
-					{
-						List<string> additionList = intent.GetStringArrayExtra("additionList")!.ToList();
-						if (additionList == null)
-						{
-							throw new ArgumentException("You need to specify either string or list addition");
-						}
-						AddToQueue(additionList);
-					}
-					break;
-				case ActionPlayNext:
-					string prepend = intent.GetStringExtra("prepend");
-					if (prepend != null)
-					{
-						PlayNext(prepend);
-					}
-					else
-					{
-						List<string> prependList = intent.GetStringArrayExtra("prependList")!.ToList();
-						if (prependList == null)
-						{
-							throw new ArgumentException("You need to specify either string or list prepend");
-						}
-						PlayNext(prependList);
-					}
 					break;
 				case ActionSeekTo:
 					SeekTo(intent.GetIntExtra("millis", 0));
@@ -446,35 +380,28 @@ namespace Ass_Pain
 		{
 			if (mediaPlayer == null || Queue.Count <= 0) return;
 			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
-			using TagLib.File tfile = TagLib.File.Create(Queue[Index]);
-			byte[] dataData = tfile.Tag.Pictures.FirstOrDefault()?.Data.Data;
-			if (dataData != null)
-			{
-				using MemoryStream ms = new MemoryStream(dataData);
-				
-				// A small bitmap for the artwork is also recommended
-				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt,
-					BitmapFactory.DecodeStream(ms));
-				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyAlbumArt,
-					BitmapFactory.DecodeStream(ms));
-			}
+			Song song = Queue[Index];
+			metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt,
+				song.Image);
+			metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyAlbumArt,
+				song.Image);
 			// To provide most control over how an item is displayed set the
 			// display fields in the metadata
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplayTitle,
-				tfile.Tag.Title);
+				song.Title);
 			// And at minimum the title and artist for legacy support
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyTitle,
-				tfile.Tag.Title);
+				song.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplaySubtitle,
-				tfile.Tag.Album ?? tfile.Tag.Performers.FirstOrDefault());
+				song.Album + song.Artist.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAlbum,
-				tfile.Tag.Album);
+				song.Album.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAlbumArtist,
-				tfile.Tag.Performers.FirstOrDefault());
+				song.Artist.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyArtist,
-				tfile.Tag.Performers.FirstOrDefault());
+				song.Artist.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAuthor,
-				tfile.Tag.Performers.FirstOrDefault());
+				song.Artist.Title);
 			metadataBuilder.PutLong(MediaMetadataCompat.MetadataKeyDuration,
 				mediaPlayer.Duration);
 			// Add any other fields you have for your data as well
@@ -492,7 +419,8 @@ namespace Ass_Pain
 		{
 			if (Queue.Count == 0)
 			{
-				GenerateQueue(FileManager.GetSongs());
+				//generate queue
+				Queue = MainActivity.stateHandler.Songs;
 			}
 			if (!RequestFocus())
 			{
@@ -523,12 +451,12 @@ namespace Ass_Pain
 				Console.WriteLine($"SERVICE INDEX {Index}");
 				Console.WriteLine($"SERVICE QUEUE {Queue.Count}");
 
-				if (!File.Exists(Queue[Index]))
-				{
-					NextSong();
-					return;
-				}
-				mediaPlayer.SetDataSource(Queue[Index]);
+				// if (!File.Exists(Queue[Index].Path))
+				// {
+				// 	NextSong();
+				// 	return;
+				// }
+				mediaPlayer.SetDataSource(Current.Path);
 				mediaPlayer.Prepare();
 			}
 			mediaPlayer.Start();
@@ -625,49 +553,47 @@ namespace Ass_Pain
 		///<summary>
 		///Generates new queue from single song path or directory path and set index to 0
 		///</summary>
-		public void GenerateQueue(string source)
-		{
-			Index = 0;
-            if (FileManager.IsDirectory(source))
-			{
-				GenerateQueue(FileManager.GetSongs(source));
-			}
-			else
-			{
-				Queue = new List<string> { source };
-                Play();
-			}
-		}
+		// public void GenerateQueue(string source)
+		// {
+		// 	Index = 0;
+  //           if (FileManager.IsDirectory(source))
+		// 	{
+		// 		GenerateQueue(FileManager.GetSongs(source));
+		// 	}
+		// 	else
+		// 	{
+		// 		Queue = new List<string> { source };
+  //               Play();
+		// 	}
+		// }
 
 		///<summary>
 		///Generates new queue from list and resets index to 0
 		///</summary>
-		public void GenerateQueue(List<string> source, int i = 0)
-		{
-			Queue = source;
-            Index = i;
-            Shuffle(IsShuffled);
-			Play();
-		}
+		// public void GenerateQueue(List<string> source, int i = 0)
+		// {
+		// 	Queue = source;
+  //           Index = i;
+  //           Shuffle(IsShuffled);
+		// 	Play();
+		// }
 
 		public void GenerateQueue(Song source, int i = 0)
 		{
-			
+			Queue = new List<Song> { source };
+			Index = i;
 		}
 		
 		public void GenerateQueue(List<Song> source, int i = 0)
 		{
-			
+			Queue = source;
+			Index = i;
 		}
 		
-		public void GenerateQueue(Artist source, int i = 0)
+		public void GenerateQueue(MusicBaseContainer source, int i = 0)
 		{
-			
-		}
-		
-		public void GenerateQueue(Album source, int i = 0)
-		{
-			
+			Queue = source.Songs;
+			Index = i;
 		}
 
 		///<summary>
@@ -675,33 +601,26 @@ namespace Ass_Pain
 		///</summary>
 		public void ClearQueue()
 		{
-			Queue = new List<string>();
+			Queue = new List<Song>();
             Index = 0;
         }
 
 		///<summary>
 		///Adds single track or entire album/author to the end of queue from <paramref name="addition"/> path
 		///</summary>
-		public void AddToQueue(string addition)
+		public void AddToQueue(Song addition)
 		{
-			if (FileManager.IsDirectory(addition))
+			Queue.Add(addition);
+            if (IsShuffled)
 			{
-				AddToQueue(FileManager.GetSongs(addition));
-			}
-			else
-			{
-				Queue.Add(addition);
-                if (IsShuffled)
-				{
-					originalQueue.Add(addition);
-				}
+				originalQueue.Add(addition);
 			}
 		}
 
 		///<summary>
 		///Adds list of songs to the end of queue from <paramref name="addition"/>
 		///</summary>
-		public void AddToQueue(List<string> addition)
+		public void AddToQueue(List<Song> addition)
 		{
 			Queue.AddRange(addition);
             if (IsShuffled)
@@ -710,22 +629,20 @@ namespace Ass_Pain
 			}
 		}
 
+		public void AddToQueue(MusicBaseContainer obj)
+		{
+			AddToQueue(obj.Songs);
+		}
+
 		///<summary>
 		///Prepends song or entire album/author to queue
 		///</summary>
-		public void PlayNext(string addition)
+		public void PlayNext(Song addition)
 		{
-			if (FileManager.IsDirectory(addition))
+			Queue.Insert(Index+1, addition);
+            if (IsShuffled)
 			{
-				PlayNext(FileManager.GetSongs(addition));
-			}
-			else
-			{
-				Queue.Insert(Index+1, addition);
-                if (IsShuffled)
-				{
-					originalQueue.Insert(Index+1, addition);
-				}
+				originalQueue.Insert(Index+1, addition);
 			}
 
 		}
@@ -733,11 +650,11 @@ namespace Ass_Pain
 		///<summary>
 		///Adds song list as first to queue
 		///</summary>
-		public void PlayNext(List<string> addition)
+		public void PlayNext(List<Song> addition)
 		{
 			if (IsShuffled)
 			{
-				//opravit podla inej logiky nizsie
+				//TODO: opravit podla inej logiky nizsie
 				addition.AddRange(originalQueue);
 				originalQueue = addition;
 			}
@@ -747,12 +664,17 @@ namespace Ass_Pain
 			}
 			else
 			{
-				List<string> tmp = Queue.GetRange(0, Index+1);
+				List<Song> tmp = Queue.GetRange(0, Index+1);
 				tmp.AddRange(addition);
 				tmp.AddRange(Queue.Skip(Index + 1));
                 Queue = tmp;
             }
         }
+
+		public void PlayNext(MusicBaseContainer addition)
+		{
+			PlayNext(addition.Songs);
+		}
 
 		///<summary>
 		///Shuffles or unshuffles queue and updates shuffling for all new queues based on <paramref name="newShuffleState"/> state
@@ -768,7 +690,7 @@ namespace Ass_Pain
 			if (newShuffleState)
 			{
 				originalQueue = Queue;
-				string tmp = Queue.Pop(Index);
+				Song tmp = Queue.Pop(Index);
 				Index = 0;
                 Queue.Shuffle();
 				Queue = Queue.Prepend(tmp).ToList();
@@ -779,7 +701,7 @@ namespace Ass_Pain
 				{
 					Index = originalQueue.IndexOf(Queue[Index]);
                     Queue = originalQueue;
-                    originalQueue = new List<string>();
+                    originalQueue = new List<Song>();
 				}
 			}
 			IsShuffled = newShuffleState;
@@ -812,8 +734,6 @@ namespace Ass_Pain
 					break;
 			}
 			//mediaPlayer.Looping = loopSingle;
-			MainActivity.stateHandler.loopSingle = loopSingle;
-			MainActivity.stateHandler.loopAll = loopAll;
 			MainActivity.stateHandler.loopState = LoopState;
             UpdatePlaybackState();
             side_player.populate_side_bar(MainActivity.stateHandler.view);

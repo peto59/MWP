@@ -93,6 +93,7 @@ namespace Ass_Pain
         ///</summary>
         public void Nuke()
         {
+            //TODO: delete from queue pripadne aj inde
             Albums.ForEach(album =>
             {
                 album.RemoveSong(this);
@@ -114,6 +115,12 @@ namespace Ass_Pain
             
             MainActivity.stateHandler.Songs.Remove(this);
             Initialized = false;
+        }
+
+        public void Delete()
+        {
+            Nuke();
+            FileManager.Delete(Path);
         }
 
         public override Bitmap GetImage(bool shouldFallBack = true)
@@ -239,7 +246,7 @@ namespace Ass_Pain
         {
             return HashCode.Combine(Artists, Albums, Name, DateCreated, Path);
         }
-        
+
         public override string ToString()
         {
             //$"Song: title> {Name} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}"

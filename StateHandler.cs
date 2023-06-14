@@ -23,9 +23,9 @@ namespace Ass_Pain
         public AppCompatActivity view;
         private MediaPlayer mediaPlayer = null;
         public bool shuffle = false;
-        public bool loopAll = false;
-        public bool loopSingle = false;
-        private List<string> queue = new List<string>();
+        // public bool loopAll = false;
+        // public bool loopSingle = false;
+        // private List<string> queue = new List<string>();
         private int index = 0;
         public int loopState = 0;
         public bool ProgTimeState
@@ -76,22 +76,22 @@ namespace Ass_Pain
         ///<summary>
         ///Returns path to currently playing song or empty string if no playback is active
         ///</summary>
-        public string NowPlaying
-        {
-            get {
-                Console.WriteLine($"queue count: {queue.Count}");
-                Console.WriteLine($"index: {index}");
-                if (queue.Count > 0 && queue.Count > index)
-                {
-                    Console.WriteLine($"my queue: {queue[index]}");
-                    return queue[index];
-                }
-                else
-                {
-                    return string.Empty;
-                }
-            }
-        }
+        // public string NowPlaying
+        // {
+        //     get {
+        //         Console.WriteLine($"queue count: {queue.Count}");
+        //         Console.WriteLine($"index: {index}");
+        //         if (queue.Count > 0 && queue.Count > index)
+        //         {
+        //             Console.WriteLine($"my queue: {queue[index]}");
+        //             return queue[index];
+        //         }
+        //         else
+        //         {
+        //             return string.Empty;
+        //         }
+        //     }
+        // }
 
         ///<summary>
         ///Moves playback of current song to <paramref name="value"/> time in milliseconds
@@ -154,10 +154,10 @@ namespace Ass_Pain
             mediaPlayer = x;
         }
 
-        public void setQueue(ref List<string> x)
-        {
-            queue = x;
-        }
+        // public void setQueue(ref List<string> x)
+        // {
+        //     queue = x;
+        // }
 
         public void setIndex(ref int x)
         {

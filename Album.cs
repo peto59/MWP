@@ -7,10 +7,10 @@ using System.Linq;
 
 namespace Ass_Pain
 {
-    public class Album : MusicBaseClass
+    public class Album : MusicBaseContainer
     {
         public override string Title { get; }
-        public List<Song> Songs { get; } = new List<Song>();
+        public override List<Song> Songs { get; } = new List<Song>();
         public Song Song
         {
             get
