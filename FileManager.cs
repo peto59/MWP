@@ -555,15 +555,20 @@ namespace Ass_Pain
         ///Gets all songs in <paramref name="playlist"/>
         ///<br>Returns <returns>empty List of strings</returns> if <paramref name="playlist"/> doesn't exist</br>
         ///</summary>
-        public static List<string> GetPlaylist(string playlist)
+        public static List<Song> GetPlaylist(string playlist)
         {
             string json = File.ReadAllText($"{MusicFolder}/playlists.json");
             Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             if (playlists.TryGetValue(playlist, out List<string> playlist1))
             {
-                return playlist1;
+                List<Song> x = new List<Song>();
+                foreach (var song in playlist1)
+                {
+                    x.AddRange(MainActivity.stateHandler.Songs.Where(a => a.Path == song));
+                }
+                return x;
             }
-            return new List<string>();
+            return new List<Song>();
         }
         public static void AddSyncTarget(string host)
         {
