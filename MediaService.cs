@@ -97,7 +97,21 @@ namespace Ass_Pain
 		public List<Song> Queue = new List<Song>();
         private List<Song> originalQueue = new List<Song>();
 
-        public Song Current => Queue[Index];
+        public Song Current
+        {
+	        get
+	        {
+		        try
+		        {
+			        return Queue[Index];
+		        }
+		        catch (Exception e)
+		        {
+			        Console.WriteLine(e.ToString());
+			        return new Song("No Name", new DateTime(), "Default");
+		        }
+	        }
+        }
 
         public override void OnCreate()
 		{
