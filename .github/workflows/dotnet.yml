@@ -45,6 +45,7 @@ jobs:
       with:
           name: artifact
           path: bin/Release/**Signed.apk
+    - name: Release
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
