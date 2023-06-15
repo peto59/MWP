@@ -19,6 +19,7 @@ namespace Ass_Pain
         {
             //Directory.CreateDirectory(music_folder);
             
+            
             path ??= Root;
 
             string nameFromPath = GetNameFromPath(path);
