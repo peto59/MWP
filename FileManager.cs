@@ -19,10 +19,6 @@ namespace Ass_Pain
         {
             //return;
             //Directory.CreateDirectory(music_folder);
-            /*if (!File.Exists($"{music_folder}/.nomedia"))
-            {
-                File.Create($"{music_folder}/.nomedia").Close();
-            }*/
             path ??= Root;
 
             string nameFromPath = GetNameFromPath(path);
