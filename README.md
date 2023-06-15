@@ -1,5 +1,5 @@
 # Ass_Pain
-[![.NET](https://github.com/peto59/Ass_Pain/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/peto59/Ass_Pain/actions/workflows/dotnet.yml)
+[![Build](https://github.com/peto59/Ass_Pain/actions/workflows/buildArtifactsAndRelease.yml/badge.svg)](https://github.com/peto59/Ass_Pain/actions/workflows/buildArtifactsAndRelease.yml)
 
 All powerful, all knowing app for playing music, editing ID3 tags and much more.
  ```diff
