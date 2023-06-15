@@ -20,7 +20,7 @@ namespace Ass_Pain
             }
         }
 
-        public List<Album> Albums { get; } = new List<Album>();
+        public List<Album> Albums { get; } = new List<Album> {new Album("Uncategorized", "Default", true, false)};
         public Album Album
         {
             get

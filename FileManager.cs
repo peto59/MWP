@@ -187,7 +187,14 @@ namespace Ass_Pain
                 }
                 else
                 {
-                    song = new Song(artistsList, tfile.Tag.Title, File.GetCreationTime(file), file);
+                    List<Album> albums = new List<Album>();
+                    artistsList.ForEach(artist =>
+                    {
+                        albums.Add(artist.Albums.Select("Uncategorized")[0]);
+                    });
+                    song = new Song(artistsList, tfile.Tag.Title, File.GetCreationTime(file), file, albums);
+                    albums.ForEach(album => album.AddSong(ref song));
+                    artistsList.ForEach(artist => artist.AddSong(ref song));
                     foreach (Artist artist in artistsList)
                     {
                         artist.AddSong(ref song);

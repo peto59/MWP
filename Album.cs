@@ -30,6 +30,7 @@ namespace Ass_Pain
         
         public string ImgPath { get; }
         public bool Initialized { get; private set; } = true;
+        public bool Showable { get; private set; } = true;
         public override Bitmap Image
         {
             get { return GetImage(); }
@@ -188,11 +189,12 @@ namespace Ass_Pain
             ImgPath = imgPath;
         }
         
-        public Album(string title, string imgPath, bool initialized = true)
+        public Album(string title, string imgPath, bool initialized = true, bool showable = true)
         {
             Title = title;
             ImgPath = imgPath;
             Initialized = initialized;
+            Showable = showable;
         }
         
         public override bool Equals(object obj)
