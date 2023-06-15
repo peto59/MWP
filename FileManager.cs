@@ -17,7 +17,6 @@ namespace Ass_Pain
         private static readonly string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", System.Text.RegularExpressions.Regex.Escape(new string( System.IO.Path.GetInvalidFileNameChars() ) + new string( System.IO.Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>") );
         public static void DiscoverFiles(string path = null)
         {
-            //return;
             //Directory.CreateDirectory(music_folder);
             path ??= Root;
 
