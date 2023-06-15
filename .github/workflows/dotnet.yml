@@ -31,9 +31,9 @@ jobs:
     - name: Install dependencies
       run: nuget restore Ass_Pain.sln
 
-    - name: Build
-      run: msbuild Ass_Pain.csproj /t:PackageForAndroid /p:Configuration=Debug
-    - name: Sign
+#    - name: Build
+#      run: msbuild Ass_Pain.csproj /t:PackageForAndroid /p:Configuration=Release
+    - name: BuildAndSign
       uses: bradyjoslin/xamarinandroid-signedbuild-action@v1
       with:
           csproj_path: Ass_Pain.csproj
@@ -51,6 +51,7 @@ jobs:
       with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
+          title: "${{ github.event.head_commit.message }}"
           files: |
             LICENSE.txt
-            *Signed.apk
+            bin/Release/**Signed.apk
