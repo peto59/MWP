@@ -109,7 +109,10 @@ namespace Ass_Pain
 
                 // ReSharper disable once InconsistentNaming
                 Task<FFmpegSession> FFmpegTask = Task.Run(() => FFmpegKit.Execute($"-i {Path}/tmp/unprocessed{i}.mp3 -i {Path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -loglevel quiet -y '{Path}/tmp/video{i}.mp3'"));
-                _ = FFmpegTask.ContinueWith(notification.Stage3(poradieVPlayliste));
+                _ = FFmpegTask.ContinueWith(task =>
+                {
+                    notification.Stage3(poradieVPlayliste);
+                });
 
                 (string author, string albumName, string albumCoverExtension, byte[] albumCover) = await searchTask;
                 string fileName = FileManager.Sanitize(videoTitle);
@@ -176,7 +179,6 @@ namespace Ass_Pain
 
                 if (session.ReturnCode is { IsSuccess: true })
                 {
-                    notification.Stage4();
                     View view = (View)sender;
                     try
                     {
@@ -204,9 +206,65 @@ namespace Ass_Pain
                     tfile.Dispose();
                     Snackbar.Make(view, $"Success: {videoTitle}", Snackbar.LengthLong)
                         .SetAction("Action", (View.IOnClickListener)null).Show();
+                    
+                    
+                    
+                    Artist artist;
+                    List<Artist> artistList = MainActivity.stateHandler.Artists.Select(FileManager.GetAlias(author));
+                    if (artistList.Any())
+                    {
+                        artist = artistList[0];
+                    }
+                    else
+                    {
+                        if(File.Exists($"{FileManager.MusicFolder}/{authorPath}/cover.jpg"))
+                            artist = new Artist(FileManager.GetAlias(author), $"{FileManager.MusicFolder}/{authorPath}/cover.jpg");
+                        else if(File.Exists($"{FileManager.MusicFolder}/{authorPath}/cover.png"))
+                            artist = new Artist(FileManager.GetAlias(author), $"{FileManager.MusicFolder}/{authorPath}/cover.png");
+                        else
+                            artist = new Artist(FileManager.GetAlias(author), "Default");
+                        MainActivity.stateHandler.Artists.Add(artist);
+                    }
+
+                    Song song = new Song(artist, videoTitle, File.GetCreationTime(output), output);
+                    artist.AddSong(ref song);
+                    MainActivity.stateHandler.Songs.Add(song);
+                    
+                    Album albumObj;
+                    if (album != null)
+                    {
+                        List<Album> albumList = MainActivity.stateHandler.Albums.Select(album);
+                        if (albumList.Any())
+                        {
+                            albumObj = albumList[0];
+                            albumObj.AddSong(ref song);
+                            albumObj.AddArtist(ref artist);
+                        }
+                        else
+                        {
+                            string album_name = FileManager.Sanitize(album);
+                            if(File.Exists($"{FileManager.MusicFolder}/{authorPath}/{album_name}/cover.jpg"))
+                                albumObj = new Album(tfile.Tag.Album, song, artist, $"{FileManager.MusicFolder}/{authorPath}/{album_name}/cover.jpg");
+                            else if(File.Exists($"{FileManager.MusicFolder}/{authorPath}/{album_name}/cover.png"))
+                                albumObj = new Album(tfile.Tag.Album, song, artist, $"{FileManager.MusicFolder}/{authorPath}/{album_name}/cover.png");
+                            else
+                                albumObj = new Album(tfile.Tag.Album, song, artist, "Default");
+                            MainActivity.stateHandler.Albums.Add(albumObj);
+                        }
+                    }
+                    else
+                    {
+                        albumObj = artist.Albums.Select("Uncategorized")[0];
+                    }
+                    song.AddAlbum(ref albumObj);
+                    artist.AddAlbum(ref albumObj);
+                    
+                    notification.Stage4(true, string.Empty, poradieVPlayliste);
+                    
                 }
                 else
                 {
+                    notification.Stage4(false, $"{session.ReturnCode?.Value}", poradieVPlayliste);
                     File.Delete($"{Path}/tmp/video{i}.mp3");
                     if (session.ReturnCode == null) return;
                     Console.WriteLine($"FFmpeg failed with status code {session.ReturnCode.Value}");
@@ -217,6 +275,7 @@ namespace Ass_Pain
             }
             catch (Exception ex)
             {
+                notification.Stage4(false, $"{ex.Message}", poradieVPlayliste);
                 Console.WriteLine($"BIG EROOOOOOOOR: {ex.Message}");
                 View view = (View)sender;
                 Snackbar.Make(view, $"Failed: {videoTitle}", Snackbar.LengthLong)
