@@ -33,3 +33,22 @@ jobs:
 
     - name: Build
       run: msbuild Ass_Pain.csproj /t:PackageForAndroid /p:Configuration=Debug
+    - name: Sign
+    - uses: bradyjoslin/xamarinandroid-signedbuild-action@v1
+      with:
+          csproj_path: Ass_Pain.csproj
+          signing_keystore: ${{ secrets.KEYSTORE }}
+          keystore_password: ${{ secrets.KEYSTORE_PASS }}
+          signing_key_alias: ${{ secrets.KEY_ALIAS }}
+          signing_key_password: ${{ secrets.KEY_PASS }}
+    - uses: actions/upload-artifact@v3
+      with:
+          name: artifact
+          path: bin/Release/**Signed.apk
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          files: |
+            LICENSE.txt
+            *Signed.apk
