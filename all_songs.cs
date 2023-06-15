@@ -242,7 +242,11 @@ namespace Ass_Pain
             }
             else if (musics is Song song)
             {
-                lnIn.Click += songs_button_clicked;
+                lnIn.Click += (sender, e) =>
+                {
+                    Console.WriteLine("song button clicked");
+                    songs_button_clicked(sender, e);
+                };
                 lnIn.LongClick += (sender, e) =>
                 {
                     show_popup_song_edit(sender, e, song, linForDelete, lnIn);
@@ -793,8 +797,11 @@ namespace Ass_Pain
                     int[] nameMargins = { 50, 50, 50, 50 };
                     int[] cardMargins = { 0, 50, 0, 0 };
 
+                    
                     if (obj is Album album)
                     {
+                        whereAreYouAreYouAreYouAreYouAreYouAre.album = album;
+                        
                         for (int i = 0; i < album.Songs.Count; i++)
                         {
 
