@@ -12,7 +12,8 @@ namespace Ass_Pain
         private int NOTIFICATION_ID { get; }
         private readonly string CHANNEL_ID = "location_notification";
 
-        private bool isSingle;
+        private bool isSingle = true;
+        private int videoCount = 1;
 
         private NotificationManagerCompat manager;
         
@@ -24,8 +25,15 @@ namespace Ass_Pain
                 randomId = StateHandler.Rng.Next(10000);
             }
             NOTIFICATION_ID = randomId;
+        }
 
+        public DownloadNotification(int cnt) : this()
+        {
+            if(cnt == 0)
+                return;
 
+            isSingle = false;
+            videoCount = cnt;
         }
 
         public DownloadNotification(bool isSingle) : this()
