@@ -41,8 +41,10 @@ namespace Ass_Pain
                 IReadOnlyList<PlaylistVideo> videos = await youtube.Playlists.GetVideosAsync(playlist.Id);
                 int a = FileManager.GetAvailableFile("playlistThumb");
                 string ext = GetImage(playlist.Thumbnails.AsEnumerable(), $"{Path}/tmp", $"playlistThumb{a}");
-                foreach (PlaylistVideo video in videos)
+                DownloadNotification notification = new DownloadNotification(videos.Count);
+                for (int index = 0; index < videos.Count; index++)
                 {
+                    PlaylistVideo video = videos[index];
                     string author = FileManager.Sanitize(FileManager.GetAlias(video.Author.ChannelTitle));
                     bool getAuthorImage;
                     if (authors.Contains(author))
@@ -54,8 +56,14 @@ namespace Ass_Pain
                         authors.Add(author);
                         getAuthorImage = true;
                     }
+
                     int i = FileManager.GetAvailableFile();
-                    new Thread(() => { DownloadVideo(sender, e, video.Url, i, video.Id, video.Title, video.Author.ChannelTitle, getAuthorImage, video.Author.ChannelId, playlist.Title, a, video == videos.Last(), ext); }).Start();
+                    new Thread(() =>
+                    {
+                        DownloadVideo(sender, e, video.Url, i, video.Id, video.Title, video.Author.ChannelTitle,
+                            getAuthorImage, video.Author.ChannelId, notification, playlist.Title, a,
+                            video == videos.Last(), ext, index);
+                    }).Start();
                 }
             }
             else if (url.Contains("watch"))
@@ -63,7 +71,7 @@ namespace Ass_Pain
                 YoutubeClient youtube = new YoutubeClient();
                 Video video = await youtube.Videos.GetAsync(url);
                 int i = FileManager.GetAvailableFile();
-                new Thread(() => { DownloadVideo(sender, e, url, i, video.Id, video.Title, video.Author.ChannelTitle, true, video.Author.ChannelId); }).Start();
+                new Thread(() => { DownloadVideo(sender, e, url, i, video.Id, video.Title, video.Author.ChannelTitle, true, video.Author.ChannelId, new DownloadNotification()); }).Start();
             }
             else
             {
@@ -72,10 +80,12 @@ namespace Ass_Pain
         }
 
 
-        private static async void DownloadVideo(object sender, EventArgs e, string url, int i, VideoId videoId, string videoTitle, string channelName, bool getAuthorImage, ChannelId channelId, string album = null, int a = 0, bool last = false, string playlistCoverExtension = null)
+        private static async void DownloadVideo(object sender, EventArgs e, string url, int i, VideoId videoId, string videoTitle, string channelName, bool getAuthorImage, ChannelId channelId, DownloadNotification notification, string album = null, int a = 0, bool last = false, string playlistCoverExtension = null, int? poradieVPlayliste = null)
         {
             try
             {
+                Progress<double> downloadProgress = new Progress<double>();
+                notification.Stage1(downloadProgress, videoTitle, poradieVPlayliste);
                 Task imageTask = GetImage(i, videoId);
                 //var searchTask = SearchAPI(channelName, videoTitle, album);
                 Task<(string, string, string, byte[])> searchTask = MainActivity.throttler.Throttle(new List<string> { channelName, videoTitle, album });
@@ -83,16 +93,28 @@ namespace Ass_Pain
                 YoutubeClient youtube = new YoutubeClient();
                 StreamManifest streamManifest = await youtube.Videos.Streams.GetManifestAsync(url);
                 IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-                await youtube.Videos.Streams.DownloadAsync(streamInfo, $"{Path}/tmp/unprocessed{i}.mp3");
-
+                await youtube.Videos.Streams.DownloadAsync(streamInfo, $"{Path}/tmp/unprocessed{i}.mp3", downloadProgress);
                 FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu);
                 await imageTask;
+                int length;
+                
+                string s = FFprobeKit
+                    .Execute(
+                        $"-i {Path}/tmp/unprocessed{i}.mp3 -show_entries format=duration -v quiet -of csv=\"p=0\"")
+                    ?.Output;
+                length = s != null ? int.Parse(s) : 100;
+                
+                StatisticsCallback callback = new StatisticsCallback(length, poradieVPlayliste, notification);
+                FFmpegKitConfig.EnableStatisticsCallback(callback);
+
+                // ReSharper disable once InconsistentNaming
                 Task<FFmpegSession> FFmpegTask = Task.Run(() => FFmpegKit.Execute($"-i {Path}/tmp/unprocessed{i}.mp3 -i {Path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -loglevel quiet -y '{Path}/tmp/video{i}.mp3'"));
+                _ = FFmpegTask.ContinueWith(notification.Stage3(poradieVPlayliste));
 
                 (string author, string albumName, string albumCoverExtension, byte[] albumCover) = await searchTask;
                 string fileName = FileManager.Sanitize(videoTitle);
                 string authorPath;
-                if (author == String.Empty)
+                if (author == string.Empty)
                 {
                     author = channelName;
                     authorPath = FileManager.Sanitize(FileManager.GetAlias(channelName));
@@ -112,7 +134,7 @@ namespace Ass_Pain
                     if (!File.Exists($"{MusicPath}/{authorPath}/{album_name}/cover.jpg") && !File.Exists($"{MusicPath}/{authorPath}/{album_name}/cover.png"))
                     {
                         File.Create($"{MusicPath}/{authorPath}/{album_name}/cover{albumCoverExtension ?? playlistCoverExtension ?? ".jpg"}").Close();
-                        if (albumCoverExtension != String.Empty)
+                        if (albumCoverExtension != string.Empty)
                         {
                             _ = Task.Run(() => { File.WriteAllBytes($"{MusicPath}/{authorPath}/{album_name}/cover{albumCoverExtension}", albumCover); });
                         }
@@ -154,6 +176,7 @@ namespace Ass_Pain
 
                 if (session.ReturnCode is { IsSuccess: true })
                 {
+                    notification.Stage4();
                     View view = (View)sender;
                     try
                     {
@@ -369,6 +392,30 @@ namespace Ass_Pain
             }
 
             return s[..4];
+        }
+    }
+
+    public class StatisticsCallback : IStatisticsCallback
+    {
+        public StatisticsCallback(int duration, int? poradieVPlayliste, DownloadNotification notification)
+        {
+            Duration = duration;
+            PoradieVPlayliste = poradieVPlayliste;
+            Notification = notification;
+        }
+        public void Dispose()
+        {
+            //throw new NotImplementedException();
+        }
+
+        public IntPtr Handle { get; }
+        private int Duration { get; }
+        private int? PoradieVPlayliste { get; }
+        private DownloadNotification Notification { get; }
+        public void Apply(Statistics statistics)
+        {
+            // statistics.Time;
+            Notification.stage2(statistics.Time / Duration * 100);
         }
     }
 

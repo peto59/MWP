@@ -18,8 +18,6 @@ namespace Ass_Pain
         public static void DiscoverFiles(string path = null)
         {
             //Directory.CreateDirectory(music_folder);
-            
-            
             path ??= Root;
 
             string nameFromPath = GetNameFromPath(path);

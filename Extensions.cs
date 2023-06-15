@@ -14,7 +14,6 @@ namespace Ass_Pain
 {
     internal static class Extensions
     {
-        private static Random rng = new Random();
         public static void Shuffle<T>(this IList<T> list)
         {
             //TODO: figure out where one of the elements disappears to;
@@ -22,7 +21,7 @@ namespace Ass_Pain
             while (n > 1)
             {
                 n--;
-                int k = rng.Next(n + 1);
+                int k = StateHandler.Rng.Next(n + 1);
                 (list[k], list[n]) = (list[n], list[k]);
             }
         }

@@ -87,22 +87,13 @@ namespace Ass_Pain
         ///</summary>
         public void Nuke()
         {
-            //var art = MainActivity.stateHandler.Artists.Select("No Artist")[0];
             Songs.ForEach(song =>
             {
                 song.RemoveArtist(this);
-                /*if (song.Artists.Count == 0)
-                {
-                    song.AddArtist(ref art);
-                }*/
             });
             Albums.ForEach(album =>
             {
                 album.RemoveArtist(this);
-                /*if (album.Artists.Count == 0)
-                {
-                    album.AddArtist(ref art);
-                }*/
             });
             MainActivity.stateHandler.Artists.Remove(this);
             Initialized = false;

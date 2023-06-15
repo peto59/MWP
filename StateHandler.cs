@@ -19,9 +19,11 @@ namespace Ass_Pain
 {
     public class StateHandler
     {
+        public static Random Rng = new Random();
         public CancellationTokenSource cts = new CancellationTokenSource();
         public AppCompatActivity view;
         private MediaPlayer mediaPlayer = null;
+        private List<int> NotificationIDs = new List<int>();
         public bool shuffle = false;
         // public bool loopAll = false;
         // public bool loopSingle = false;

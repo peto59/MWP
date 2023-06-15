@@ -12,11 +12,7 @@ namespace Ass_Pain
         ///</summary>
         public static List<Song> OrderAlphabetically( [NotNull] this List<Song> songs, bool reverse = false)
         {
-            if (reverse)
-            {
-                return songs.OrderByDescending(song => song.Name).ToList();
-            }
-            return songs.OrderBy(song => song.Name).ToList();
+            return reverse ? songs.OrderByDescending(song => song.Name).ToList() : songs.OrderBy(song => song.Name).ToList();
         }
         
         ///<summary>
@@ -24,80 +20,48 @@ namespace Ass_Pain
         ///</summary>
         public static List<Song> OrderByDate( [NotNull] this List<Song> songs, bool reverse = false)
         {
-            if (!reverse)
-            {
-                return songs.OrderByDescending(song => song.DateCreated).ToList();
-            }
-            return songs.OrderBy(song => song.DateCreated).ToList();
+            return reverse ? songs.OrderBy(song => song.DateCreated).ToList() : songs.OrderByDescending(song => song.DateCreated).ToList();
         }
         
         public static List<Song> Order( [NotNull] this List<Song> songs, SongOrderType type)
         {
-            switch (type)
+            return type switch
             {
-                case SongOrderType.Alphabetically:
-                    return songs.OrderAlphabetically();
-                case SongOrderType.AlphabeticallyReverse:
-                    return songs.OrderAlphabetically(true);
-                case SongOrderType.ByDate:
-                    return songs.OrderByDate();
-                case SongOrderType.ByDateReverse:
-                    return songs.OrderByDate(true);
-                default: return songs;
-            }
+                SongOrderType.Alphabetically => songs.OrderAlphabetically(),
+                SongOrderType.AlphabeticallyReverse => songs.OrderAlphabetically(true),
+                SongOrderType.ByDate => songs.OrderByDate(),
+                SongOrderType.ByDateReverse => songs.OrderByDate(true),
+                _ => songs
+            };
         }
         
         public static IEnumerable<Song> Search( [NotNull] this List<Song> songs, string query)
         {
-            if (string.IsNullOrEmpty(query))
-            {
-                return songs;
-            }
-            return songs.Where(song => song.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase));  
+            return string.IsNullOrEmpty(query) ? songs : songs.Where(song => song.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase));
         }
         
         public static List<Artist> Search( [NotNull] this List<Artist> artists, string query)
         {
-            if (string.IsNullOrEmpty(query))
-            {
-                return artists;
-            }
-            return artists.Where(artist => artist.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();  
+            return string.IsNullOrEmpty(query) ? artists : artists.Where(artist => artist.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();
         }
         
         public static List<Album> Search( [NotNull] this List<Album> albums, string query)
         {
-            if (string.IsNullOrEmpty(query))
-            {
-                return albums;
-            }
-            return albums.Where(album  => album.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();  
+            return string.IsNullOrEmpty(query) ? albums : albums.Where(album  => album.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();
         }
         
         public static List<Song> Select( [NotNull] this List<Song> songs, string query)
         {
-            if (string.IsNullOrEmpty(query))
-            {
-                return songs;
-            }
-            return songs.Where(album  => album.Title == query).ToList();  
+            return string.IsNullOrEmpty(query) ? songs : songs.Where(album  => album.Title == query).ToList();
         }
         public static List<Artist> Select( [NotNull] this List<Artist> artists, string query)
         {
-            if (string.IsNullOrEmpty(query))
-            {
-                return artists;
-            }
-            return artists.Where(album  => album.Title == query).ToList();  
+            return !string.IsNullOrEmpty(query) ? artists.Where(album => album.Title == query).ToList() : artists;
         }
         
         public static List<Album> Select( [NotNull] this List<Album> albums, string query)
         {
-            if (string.IsNullOrEmpty(query))
-            {
-                return albums;
-            }
-            return albums.Where(album  => album.Title == query).ToList();  
+            return string.IsNullOrEmpty(query) ? albums : albums.Where(album  => album.Title == query).ToList();
         }
     }
 
