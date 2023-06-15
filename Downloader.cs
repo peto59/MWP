@@ -415,7 +415,7 @@ namespace Ass_Pain
         public void Apply(Statistics statistics)
         {
             // statistics.Time;
-            Notification.stage2(statistics.Time / Duration * 100);
+            Notification.Stage2(statistics.Time / Duration * 100);
         }
     }
 

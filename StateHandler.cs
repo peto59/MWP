@@ -23,7 +23,7 @@ namespace Ass_Pain
         public CancellationTokenSource cts = new CancellationTokenSource();
         public AppCompatActivity view;
         private MediaPlayer mediaPlayer = null;
-        private List<int> NotificationIDs = new List<int>();
+        public List<int> NotificationIDs = new List<int>();
         public bool shuffle = false;
         // public bool loopAll = false;
         // public bool loopSingle = false;

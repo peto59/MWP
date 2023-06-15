@@ -77,6 +77,9 @@ namespace Ass_Pain
             //Local_notification_service notif_service = new Local_notification_service();
             //notif_service.song_control_notification();
             //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
+
+            DownloadNotification down_not = new DownloadNotification(true);
+            
         }
 
         public override void OnBackPressed()

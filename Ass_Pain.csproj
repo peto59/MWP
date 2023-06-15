@@ -87,6 +87,7 @@
     <Compile Include="Album.cs" />
     <Compile Include="APIThrottler.cs" />
     <Compile Include="Artist.cs" />
+    <Compile Include="DownloadNotification.cs" />
     <Compile Include="MediaService.cs" />
     <Compile Include="Interval.cs" />
     <Compile Include="Extensions.cs" />
@@ -131,6 +132,7 @@
     <AndroidResource Include="Resources\layout\content_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\download_notification_single.xml" />
     <AndroidResource Include="Resources\layout\nav_header_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
@@ -200,7 +202,7 @@
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.0.0.1" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
     <PackageReference Include="YoutubeExplode">
-      <Version>6.2.14</Version>
+      <Version>6.2.15</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
