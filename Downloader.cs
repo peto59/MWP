@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using Com.Geecko.Fpcalc;
 using YoutubeExplode;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
@@ -346,14 +347,25 @@ namespace Ass_Pain
             return ".png";
         }
 
+        private static async Task<string> GetMusicBrainzIDFromFingerprint(string filePath)
+        {
+            string fingerPrint = FpCalc.InvokeFpCalc(new []{"-json", $"{filePath}"});
+            
+            using HttpClient client = new HttpClient();
+            HttpResponseMessage response = await client.GetAsync("https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={}&fingerprint={}&meta=recordingids");
+            return "asd";
+
+        }
+
         public static async Task<(string, string, string, byte[])> SearchAPI(string name=null , string song = null, string album = null)
         {
             Console.WriteLine("STARTING API SEARCH");
             name = "Mori Calliope Ch. hololive-EN";
             song = "[Original Rap] DEAD BEATS - Calliope Mori #holoMyth #hololiveEnglish";
-            HttpClient client = new HttpClient();
+            using HttpClient client = new HttpClient();
             HttpResponseMessage response = await client.GetAsync("https://musicbrainz.org/ws/2/recording/?query=arid:8a9d0b90-951e-4ab8-b2dc-9d3618af3d28,recording:[Original%20Rap]%20DEAD%20BEATS%20-%20Calliope%20Mori%20#holoMyth%20#hololiveEnglish");
             Stream stream = await response.Content.ReadAsStreamAsync();
+            //https://musicbrainz.org/ws/2/artist/8a9d0b90-951e-4ab8-b2dc-9d3618af3d28?inc=releases
             /*XmlTextReader reader = new XmlTextReader(stream);
             while (reader.Read())
             {

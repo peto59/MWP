@@ -154,7 +154,7 @@ namespace Ass_Pain
             return true;
         }
         
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
+        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
         {
             
             Console.WriteLine("OnRequestPermissionsResult Result");
@@ -216,7 +216,7 @@ namespace Ass_Pain
                             try
                             {
                                 Intent intent = new Intent();
-                                intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
+                                intent.SetAction(Settings.ActionManageAppAllFilesAccessPermission);
                                 Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
                                 intent.SetData(uri);
                                 StartActivity(intent);
@@ -272,7 +272,10 @@ namespace Ass_Pain
             new Thread(() => {
                 stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                 FileManager.DiscoverFiles();
-                FileManager.GenerateList(FileManager.MusicFolder);
+                if (stateHandler.Songs.Count < FileManager.GetSongs().Count)
+                {
+                    FileManager.GenerateList(FileManager.MusicFolder);
+                }
 
                 /*stateHandler.Songs = stateHandler.Songs.OrderBy(song => song.Name).ToList();
                 Console.WriteLine("----------------Alphabetically-------------------");

@@ -54,6 +54,7 @@
     <BundleAssemblies>false</BundleAssemblies>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <AndroidSupportedAbis>armeabi-v7a;x86;arm64-v8a;x86_64</AndroidSupportedAbis>
+    <DocumentationFile>bin\Debug\Ass_Pain.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
