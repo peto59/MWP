@@ -326,15 +326,16 @@ namespace Ass_Pain
 
 			// song_image.SetImageResource(Resource.Mipmap.ic_launcher);
 
-			LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(
-				(int)(120 * scale + 0.5f),
-				(int)(120 * scale + 0.5f)
-			);
-			song_image.LayoutParameters = song_image_params;
+			// LinearLayout.LayoutParams song_image_params = new LinearLayout.LayoutParams(
+			// 	(int)(120 * scale + 0.5f),
+			// 	(int)(120 * scale + 0.5f)
+			// );
+			// song_image.LayoutParameters = song_image_params;
 
 			// set the image
 			song_image.SetImageBitmap(
-				MainActivity.ServiceConnection?.Binder?.Service?.Current.Image);
+				MainActivity.ServiceConnection?.Binder?.Service?.Current.Image
+			);
 
 
             // progress song
