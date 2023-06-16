@@ -55,7 +55,7 @@ namespace Ass_Pain
                 notificationBuilder.MActions?.Clear();
 
                 notificationBuilder.AddAction(
-                      MainActivity.stateHandler.IsShuffling ? Resource.Drawable.repeat: Resource.Drawable.no_repeat, "shuffle",
+                      MainActivity.stateHandler.IsShuffling ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2, "shuffle",
                       PendingIntent.GetService(
                           AndroidApp.Context, Convert.ToInt32(MainActivity.stateHandler.IsShuffling),
                           new Intent(MediaService.ActionShuffle, null, AndroidApp.Context, typeof(MediaService))

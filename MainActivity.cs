@@ -79,6 +79,8 @@ namespace Ass_Pain
             //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
 
             DownloadNotification down_not = new DownloadNotification(true);
+            Progress<double> prog = new Progress<double>();
+            down_not.stage1_song(prog, "something");
             
         }
 
