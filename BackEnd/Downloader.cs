@@ -34,9 +34,13 @@ namespace Ass_Pain
         public static async void Download(object sender, EventArgs e, string url)
         {
             List<string> authors = new List<string>();
+            View view = (View)sender;
             //APIThrottler throttler = new APIThrottler();
             if (url.Contains("playlist"))
             {
+                Snackbar.Make(view, $"Download started", Snackbar.LengthLong)
+                        .SetAction("Action", (View.IOnClickListener)null).Show();
+
                 YoutubeClient youtube = new YoutubeClient();
                 Playlist playlist = await youtube.Playlists.GetAsync(url);
                 IReadOnlyList<PlaylistVideo> videos = await youtube.Playlists.GetVideosAsync(playlist.Id);
@@ -69,6 +73,8 @@ namespace Ass_Pain
             }
             else if (url.Contains("watch"))
             {
+                Snackbar.Make(view, $"Download started", Snackbar.LengthLong)
+                        .SetAction("Action", (View.IOnClickListener)null).Show();
                 YoutubeClient youtube = new YoutubeClient();
                 Video video = await youtube.Videos.GetAsync(url);
                 int i = FileManager.GetAvailableFile();
@@ -76,7 +82,9 @@ namespace Ass_Pain
             }
             else
             {
-                throw new ArgumentException($"{url} is not video or playlist");
+                Snackbar.Make(view, $"This is neither video nor playlist", Snackbar.LengthLong)
+                        .SetAction("Action", (View.IOnClickListener)null).Show();
+                //throw new ArgumentException($"{url} is not video or playlist");
             }
         }
 
@@ -98,12 +106,17 @@ namespace Ass_Pain
                 FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu);
                 await imageTask;
                 int length;
-                
-                string s = FFprobeKit
-                    .Execute(
-                        $"-i {Path}/tmp/unprocessed{i}.mp3 -show_entries format=duration -v quiet -of csv=\"p=0\"")
-                    ?.Output;
-                length = s != null ? int.Parse(s) : 100;
+
+                string s = FFprobeKit.Execute($"-i {Path}/tmp/unprocessed{i}.mp3 -show_entries format=duration -v quiet -of csv=\"p=0\"")?.Output;
+
+                try
+                {
+                    length = s != null ? (int)float.Parse(s) : 170;
+                }
+                catch
+                {
+                    length = 170; //random song duration of 2:50
+                }
                 
                 StatisticsCallback callback = new StatisticsCallback(length, poradieVPlayliste, notification);
                 FFmpegKitConfig.EnableStatisticsCallback(callback);
@@ -468,6 +481,13 @@ namespace Ass_Pain
 
     public class StatisticsCallback : Java.Lang.Object, IStatisticsCallback
     {
+
+        ///<summary>
+        ///Creates new Callback instance
+        ///<paramref name="duration"/> is in seconds
+        ///<paramref name="poradieVPlayliste"/> can be null
+        ///Should be created for every instance of FFmpeg
+        ///</summary>
         public StatisticsCallback(int duration, int? poradieVPlayliste, DownloadNotification notification)
         {
             Duration = duration;
@@ -479,7 +499,11 @@ namespace Ass_Pain
         private DownloadNotification Notification { get; }
         public void Apply(Statistics statistics)
         {
-            Notification.Stage2(statistics.Time / Duration * 100, PoradieVPlayliste);
+#if DEBUG
+            Console.WriteLine($"Percentage: {(statistics.Time / Duration / 10).Constraint(0, 100)}");
+            //Console.WriteLine(statistics.ToString());
+#endif
+            Notification.Stage2((statistics.Time / Duration / 10).Constraint(0,100), PoradieVPlayliste);
         }
     }
 
