@@ -22,6 +22,9 @@ using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using Signal = Com.Arthenica.Ffmpegkit.Signal;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -201,7 +204,9 @@ namespace Ass_Pain
                     catch
                     {
                         File.Delete($"{Path}/tmp/video{i}.mp3");
-                        Console.WriteLine("Video already exists");
+#if DEBUG
+                        MyConsole.WriteLine("Video already exists");
+#endif
                         Snackbar.Make(view, $"Exists: {videoTitle}", Snackbar.LengthLong)
                             .SetAction("Action", (View.IOnClickListener)null).Show();
                         return;
@@ -281,7 +286,9 @@ namespace Ass_Pain
                     notification.Stage4(false, $"{session.ReturnCode?.Value}", poradieVPlayliste);
                     File.Delete($"{Path}/tmp/video{i}.mp3");
                     if (session.ReturnCode == null) return;
-                    Console.WriteLine($"FFmpeg failed with status code {session.ReturnCode.Value}");
+#if DEBUG
+                    MyConsole.WriteLine($"FFmpeg failed with status code {session.ReturnCode.Value}");
+#endif
                     View view = (View)sender;
                     Snackbar.Make(view, $"{session.ReturnCode.Value} Failed: {videoTitle}", Snackbar.LengthLong)
                         .SetAction("Action", (View.IOnClickListener)null).Show();
@@ -290,7 +297,9 @@ namespace Ass_Pain
             catch (Exception ex)
             {
                 notification.Stage4(false, $"{ex.Message}", poradieVPlayliste);
-                Console.WriteLine($"BIG EROOOOOOOOR: {ex.Message}");
+#if DEBUG
+                MyConsole.WriteLine($"BIG EROOOOOOOOR: {ex.Message}");
+#endif
                 View view = (View)sender;
                 Snackbar.Make(view, $"Failed: {videoTitle}", Snackbar.LengthLong)
                         .SetAction("Action", (View.IOnClickListener)null).Show();
@@ -372,7 +381,9 @@ namespace Ass_Pain
 
         public static async Task<(string, string, string, byte[])> SearchAPI(string name=null , string song = null, string album = null)
         {
-            Console.WriteLine("STARTING API SEARCH");
+#if DEBUG
+            MyConsole.WriteLine("STARTING API SEARCH");
+#endif
             name = "Mori Calliope Ch. hololive-EN";
             song = "[Original Rap] DEAD BEATS - Calliope Mori #holoMyth #hololiveEnglish";
             using HttpClient client = new HttpClient();
@@ -442,7 +453,9 @@ namespace Ass_Pain
                         Console.WriteLine(attr);
                 }
             }*/
-            Console.WriteLine("ENDING API SEARCH");
+#if DEBUG
+            MyConsole.WriteLine("ENDING API SEARCH");
+#endif
             return (String.Empty, String.Empty, String.Empty, null);
             //https://musicbrainz.org/doc/Cover_Art_Archive/API
             //https://stackoverflow.com/questions/13453678/how-to-get-album-image-using-musicbrainz
@@ -484,7 +497,7 @@ namespace Ass_Pain
 
         ///<summary>
         ///Creates new Callback instance
-        ///<paramref name="duration"/> is in seconds
+        ///<paramref name="duration"/> in seconds
         ///<paramref name="poradieVPlayliste"/> can be null
         ///Should be created for every instance of FFmpeg
         ///</summary>
@@ -500,8 +513,8 @@ namespace Ass_Pain
         public void Apply(Statistics statistics)
         {
 #if DEBUG
-            Console.WriteLine($"Percentage: {(statistics.Time / Duration / 10).Constraint(0, 100)}");
-            //Console.WriteLine(statistics.ToString());
+            MyConsole.WriteLine($"Percentage: {(statistics.Time / Duration / 10).Constraint(0, 100)}");
+            //MyConsole.WriteLine(statistics.ToString());
 #endif
             Notification.Stage2((statistics.Time / Duration / 10).Constraint(0,100), PoradieVPlayliste);
         }

@@ -30,6 +30,9 @@ using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using Android.Util;
 using Debug = System.Diagnostics.Debug;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 
 namespace Ass_Pain
@@ -244,7 +247,9 @@ namespace Ass_Pain
             {
                 lnIn.Click += (sender, e) =>
                 {
-                    Console.WriteLine("song button clicked");
+#if DEBUG
+                    MyConsole.WriteLine("song button clicked");
+#endif
                     songs_button_clicked(sender, e);
                 };
                 lnIn.LongClick += (sender, e) =>
@@ -390,7 +395,9 @@ namespace Ass_Pain
 
         private void show_popup(object sender, EventArgs e)
         {
-            Console.WriteLine("popup clicked");
+#if DEBUG
+            MyConsole.WriteLine("popup clicked");
+#endif
 
             LayoutInflater ifl = LayoutInflater.From(this);
             View view = ifl?.Inflate(Resource.Layout.new_playlist_popup, null);
@@ -422,7 +429,9 @@ namespace Ass_Pain
 
         private void add_alias_popup(string authorN)
         {
-            Console.WriteLine("popup clicked");
+#if DEBUG
+            MyConsole.WriteLine("popup clicked");
+#endif
 
             LayoutInflater ifl = LayoutInflater.From(this);
             View view = ifl?.Inflate(Resource.Layout.add_alias_popup, null);
@@ -456,7 +465,9 @@ namespace Ass_Pain
 
         public void list_playlists_popup(object sender, EventArgs e, Song song)
         {
-            Console.WriteLine("popup clicked");
+#if DEBUG
+            MyConsole.WriteLine("popup clicked");
+#endif
             float scale = Resources.DisplayMetrics.Density;
 
             LayoutInflater ifl = LayoutInflater.From(this);
@@ -485,17 +496,23 @@ namespace Ass_Pain
 
                 lnIn.Click += (o, eventArgs) =>
                 {
-                    Console.WriteLine(song);
+#if DEBUG
+                    MyConsole.WriteLine(song.ToString());
+#endif
                     if (selectedPlaylists.Contains(p))
                     {
                         selectedPlaylists.Remove(p);
                         lnIn.SetBackgroundResource(Resource.Drawable.rounded_light);
-                        Console.WriteLine("removed : " + p);
+#if DEBUG
+                        MyConsole.WriteLine("removed : " + p);
+#endif
                     }
                     else
                     {
                         selectedPlaylists.Add(p);
-                        Console.WriteLine("added: " + p);
+#if DEBUG
+                        MyConsole.WriteLine("added: " + p);
+#endif
                         lnIn.SetBackgroundResource(Resource.Drawable.rounded_dark);
 
                     }
@@ -524,7 +541,9 @@ namespace Ass_Pain
             {
                 foreach (string s in selectedPlaylists)
                 {
-                    Console.WriteLine(s + " " + selectedPlaylists.Count);
+#if DEBUG
+                    MyConsole.WriteLine(s + " " + selectedPlaylists.Count);
+#endif
 
                     List<Song> plaSongs = FileManager.GetPlaylist((string)s);
                     if (plaSongs.Any(a => a.Equals(song)))
@@ -573,7 +592,9 @@ namespace Ass_Pain
 
         private void are_you_sure(object sender, EventArgs e, Song song, Android.App.AlertDialog di, LinearLayout linFromDelete, LinearLayout linForDelete)
         {
-            Console.WriteLine("popup clicked");
+#if DEBUG
+            MyConsole.WriteLine("popup clicked");
+#endif
 
 
             LayoutInflater ifl = LayoutInflater.From(this);
@@ -628,7 +649,9 @@ namespace Ass_Pain
 
         public void show_popup_song_edit(object sender, EventArgs e, MusicBaseClass path, LinearLayout linFromDelet, LinearLayout linForDelete)
         {
-            Console.WriteLine("popup clicked");
+#if DEBUG
+            MyConsole.WriteLine("popup clicked");
+#endif
 
             LayoutInflater ifl = LayoutInflater.From(this);
             View view;
@@ -656,7 +679,9 @@ namespace Ass_Pain
                 {
                     dialog.Hide();
                     list_playlists_popup(sender, e, song);
-                    Console.WriteLine(path);
+#if DEBUG
+                    MyConsole.WriteLine(path.ToString());
+#endif
 
                 };
                 
@@ -827,7 +852,9 @@ namespace Ass_Pain
                     }
                     else
                     {
-                        Console.WriteLine("bad path, ln; 845");
+#if DEBUG
+                        MyConsole.WriteLine("bad path, ln; 845");
+#endif
                     }
 
 
@@ -841,7 +868,9 @@ namespace Ass_Pain
                     {
                         HorizontalScrollView hr = new HorizontalScrollView(this);
                         int hrHeight;
-                        Console.WriteLine(artist.Title + " " + artist.Albums.Count);
+#if DEBUG
+                        MyConsole.WriteLine(artist.Title + " " + artist.Albums.Count);
+#endif
                         if (artist.Albums.Count < 2)
                             hrHeight = 0;
                         else
@@ -996,7 +1025,9 @@ namespace Ass_Pain
 
                         if (bottomDetect == 0 && lazyBuffer.Count != 0)
                         {
-                            Console.WriteLine("loading new");
+#if DEBUG
+                            MyConsole.WriteLine("loading new");
+#endif
 
                             for (int i = 0; i < Math.Min(5, lazyBuffer.Count); i++)
                             {
@@ -1096,8 +1127,9 @@ namespace Ass_Pain
                         lnIn.AddView(songsCount);
 
                         playlistLnMain.AddView(lnIn);
-
-                        Console.WriteLine("pl name: " + playlist);
+#if DEBUG
+                        MyConsole.WriteLine("pl name: " + playlist);
+#endif
                     });
                    
 

@@ -89,6 +89,7 @@
     <Compile Include="Helpers\APIThrottler.cs" />
     <Compile Include="DatatypesAndExtensions\Artist.cs" />
     <Compile Include="DownloadNotification.cs" />
+    <Compile Include="Helpers\MyConsole.cs" />
     <Compile Include="Player\MediaService.cs" />
     <Compile Include="Helpers\Interval.cs" />
     <Compile Include="DatatypesAndExtensions\Extensions.cs" />

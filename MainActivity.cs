@@ -27,7 +27,9 @@ using Android.Media;
 using Android.Provider;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
-using Com.Geecko.Fpcalc;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -158,8 +160,9 @@ namespace Ass_Pain
         
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
         {
-            
-            Console.WriteLine("OnRequestPermissionsResult Result");
+#if DEBUG
+            MyConsole.WriteLine("OnRequestPermissionsResult Result");
+#endif
             
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
@@ -168,7 +171,9 @@ namespace Ass_Pain
             
             for(int i = 0; i < permissions.Length; i++)
             {
-                Console.WriteLine($"Permission {permissions[i]}: {grantResults[i]}");
+#if DEBUG
+                MyConsole.WriteLine($"Permission {permissions[i]}: {grantResults[i]}");
+#endif
                 if (grantResults[i] != Permission.Granted)
                 {
                     shouldRequestAgain = true;
@@ -224,7 +229,9 @@ namespace Ass_Pain
                                 StartActivity(intent);
                             }catch(Exception ex)
                             {
-                                Console.WriteLine(ex.ToString());
+#if DEBUG
+                                MyConsole.WriteLine(ex.ToString());
+#endif
                             }
                         }
                         RequestPermissions(permissionsLocation, RequestLocationId);
@@ -238,13 +245,17 @@ namespace Ass_Pain
 
             if (!Directory.Exists(path))
             {
-                Console.WriteLine("Creating " + $"{path}");
+#if DEBUG
+                MyConsole.WriteLine("Creating " + $"{path}");
+#endif
                 Directory.CreateDirectory(path);
             }
 
             if (!Directory.Exists($"{privatePath}/tmp"))
             {
-                Console.WriteLine("Creating " + $"{privatePath}/tmp");
+#if DEBUG
+                MyConsole.WriteLine("Creating " + $"{privatePath}/tmp");
+#endif
                 Directory.CreateDirectory($"{privatePath}/tmp");
             }
 
@@ -334,7 +345,9 @@ namespace Ass_Pain
             StartForegroundService(serviceIntent);
             if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
             {
-                Console.WriteLine("Cannot Connect");
+#if DEBUG
+                MyConsole.WriteLine("Cannot connect to MediaService");
+#endif
             }
             /*Thread.Sleep(5000);
             ServiceConnection.Binder?.Service?.NextSong();*/

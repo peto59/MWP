@@ -4,6 +4,9 @@ using Android.Graphics;
 using System.IO;
 using System.Linq;
 using Android.App;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -128,7 +131,9 @@ namespace Ass_Pain
         {
             if (Path == "Default")
             {
-                Console.WriteLine($"null????: {Application.Context.Assets != null}");
+#if DEBUG
+                MyConsole.WriteLine($"null????: {Application.Context.Assets != null}");
+#endif
                 if (Application.Context.Assets != null)
                     return BitmapFactory.DecodeStream(
                         Application.Context.Assets.Open(
@@ -143,14 +148,18 @@ namespace Ass_Pain
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine($"Doesnt contain image: {Path}");
+#if DEBUG
+                MyConsole.WriteLine(ex.Message);
+                MyConsole.WriteLine($"Doesnt contain image: {Path}");
+#endif
             }
 
             if (image != null) return image;
             if (!shouldFallBack)
             {
-                Console.WriteLine($"null????: {Application.Context.Assets != null}");
+#if DEBUG
+                MyConsole.WriteLine($"null????: {Application.Context.Assets != null}");
+#endif
                 if (Application.Context.Assets != null)
                     return BitmapFactory.DecodeStream(
                         Application.Context.Assets.Open(

@@ -30,6 +30,9 @@ using Xamarin.Essentials;
 using Android.Views.Inspectors;
 using System.Threading;
 using Java.Util;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -365,7 +368,9 @@ namespace Ass_Pain
                 {
                     if (e.FromUser)
                     {
-                        Console.WriteLine(sek.Progress);
+#if DEBUG
+                        MyConsole.WriteLine(sek.Progress.ToString());
+#endif
 						context.StartService(
 							new Intent(MediaService.ActionSeekTo, null, context, typeof(MediaService))
 							.PutExtra("millis", sek.Progress * 1000)

@@ -11,6 +11,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using AndroidApp = Android.App.Application;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -28,7 +31,9 @@ namespace Ass_Pain
         }
         public override void OnReceive(Context context, Intent intent)
         {
-            Console.WriteLine("noisy");
+#if DEBUG
+            MyConsole.WriteLine("noisy");
+#endif
             view.StartService(new Intent(MediaService.ActionPause, null, view, typeof(MediaService)));
             //player.Pause();
         }

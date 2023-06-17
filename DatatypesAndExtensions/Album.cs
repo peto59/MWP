@@ -4,6 +4,9 @@ using Android.App;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -148,7 +151,9 @@ namespace Ass_Pain
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+#if DEBUG
+                MyConsole.WriteLine(e.ToString());
+#endif
                 if (Application.Context.Assets != null)
                     image = BitmapFactory.DecodeStream(
                         Application.Context.Assets.Open(

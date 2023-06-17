@@ -34,6 +34,9 @@ using System.Security.Cryptography;
 using System.Xml.Serialization;
 using Xamarin.Essentials;
 using NetworkAccess = Xamarin.Essentials.NetworkAccess;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 //using Android.Net;
 
@@ -103,7 +106,9 @@ namespace Ass_Pain
 
                 while (canSend)
                 {
-                    Console.WriteLine("Waiting for broadcast");
+#if DEBUG
+                    MyConsole.WriteLine("Waiting for broadcast");
+#endif
                     sock.ReceiveFrom(buffer, ref groupEP);
 
 
@@ -122,9 +127,10 @@ namespace Ass_Pain
                     {
                         continue;
                     }
-
-                    Console.WriteLine($"Received broadcast from {groupEP}");
-                    Console.WriteLine($" {Encoding.UTF8.GetString(buffer)}");
+#if DEBUG
+                    MyConsole.WriteLine($"Received broadcast from {groupEP}");
+                    MyConsole.WriteLine($" {Encoding.UTF8.GetString(buffer)}");
+#endif
 
                     sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), groupEP);
 
@@ -136,7 +142,9 @@ namespace Ass_Pain
             }
             catch (SocketException e)
             {
-                Console.WriteLine(e);
+#if DEBUG
+                MyConsole.WriteLine(e.ToString());
+#endif
             }
             finally
             {
@@ -149,9 +157,11 @@ namespace Ass_Pain
             
             if (canSend)
             {
-                Console.WriteLine("My IP IS: {0}", myIP.ToString());
-                Console.WriteLine("My MASK IS: {0}", new IPAddress(BitConverter.GetBytes(d.Netmask)).ToString());
-                Console.WriteLine("My BROADCAST IS: {0}", GetBroadCastIP(myIP, new IPAddress(BitConverter.GetBytes(d.Netmask))));
+#if DEBUG
+                MyConsole.WriteLine("My IP IS: {0}", myIP.ToString());
+                MyConsole.WriteLine("My MASK IS: {0}", new IPAddress(BitConverter.GetBytes(d.Netmask)).ToString());
+                MyConsole.WriteLine("My BROADCAST IS: {0}", GetBroadCastIP(myIP, new IPAddress(BitConverter.GetBytes(d.Netmask))).ToString());
+#endif
 
 
 
@@ -181,7 +191,9 @@ namespace Ass_Pain
                 if (retries == maxRetries)
                 {
                     sock.Close();
-                    Console.WriteLine("No reply");
+#if DEBUG
+                    MyConsole.WriteLine("No reply");
+#endif
                     return;
                 }
 
@@ -197,7 +209,9 @@ namespace Ass_Pain
             }
             else
             {
-                Console.WriteLine("No Wifi");
+#if DEBUG
+                MyConsole.WriteLine("No Wifi");
+#endif
             }
         }
 
@@ -210,12 +224,16 @@ namespace Ass_Pain
                 String data = null;
 
                 // Enter the listening loop.
-                Console.Write("Waiting for a connection... ");
+#if DEBUG
+                MyConsole.WriteLine("Waiting for a connection... ");
+#endif
 
                 // Perform a blocking call to accept requests.
                 // You could also use server.AcceptSocket() here.
                 TcpClient client = server.AcceptTcpClient();
-                Console.WriteLine("Connected!");
+#if DEBUG
+                MyConsole.WriteLine("Connected!");
+#endif
 
 
                 // Get a stream object for reading and writing
@@ -234,7 +252,9 @@ namespace Ass_Pain
                 {
                     // Translate data bytes to a UTF8 string.
                     data = Encoding.UTF8.GetString(bytes, 0, i);
-                    Console.WriteLine("Received: {0}", data);
+#if DEBUG
+                    MyConsole.WriteLine("Received: {0}", data);
+#endif
 
 
                     //message = Encoding.UTF8.GetBytes("hi");
@@ -260,12 +280,16 @@ namespace Ass_Pain
                             goto End;
                         //break;
                         default:
-                            Console.WriteLine(data);
+#if DEBUG
+                            MyConsole.WriteLine(data);
+#endif
                             break;
                     }
                 }
             End:
-                Console.WriteLine("END");
+#if DEBUG
+                MyConsole.WriteLine("END");
+#endif
                 connected.Remove(target_ip);
                 // Shutdown and end connection
                 networkStream.Close();
@@ -273,7 +297,9 @@ namespace Ass_Pain
             }
             catch (SocketException ex)
             {
-                Console.WriteLine("SocketException: {0}", ex);
+#if DEBUG
+                MyConsole.WriteLine($"SocketException: {ex}");
+#endif
             }
             finally
             {
@@ -285,7 +311,9 @@ namespace Ass_Pain
 
         private async Task Client(IPAddress server, int port)
         {
-            Console.WriteLine($"Connecting to: {server}:{port}");
+#if DEBUG
+            MyConsole.WriteLine($"Connecting to: {server}:{port}");
+#endif
             TcpClient client = new TcpClient(server.ToString(), port);
             NetworkStream networkStream = client.GetStream();
             int command = 0;
@@ -328,7 +356,9 @@ namespace Ass_Pain
                         command = BitConverter.ToInt32(recCommand, 0);
                     }
                 }
-                Console.WriteLine("Received command: {0}", command);
+#if DEBUG
+                MyConsole.WriteLine($"Received command: {command}");
+#endif
                 if (files.Count > 0)
                 {
 
@@ -338,7 +368,9 @@ namespace Ass_Pain
                     sendCommand = BitConverter.GetBytes(100);
                     sendCommand = encryptor.Encrypt(sendCommand, true);
                     networkStream.Write(sendCommand, 0, sendCommand.Length);
-                    Console.WriteLine("send end");
+#if DEBUG
+                    MyConsole.WriteLine("send end");
+#endif
                 }
                 else
                 {
@@ -352,7 +384,9 @@ namespace Ass_Pain
                         }
                         catch
                         {
-                            Console.WriteLine("shut");
+#if DEBUG
+                            MyConsole.WriteLine("shut");
+#endif
                             Thread.Sleep(100);
                         }
                     }
@@ -365,7 +399,9 @@ namespace Ass_Pain
                         byte[] data = new byte[length];
                         networkStream.Read(data, 0, length);
                         remoteHostname = Encoding.UTF8.GetString(data, 0, length);
-                        Console.WriteLine($"hostname {remoteHostname}");
+#if DEBUG
+                        MyConsole.WriteLine($"hostname {remoteHostname}");
+#endif
                         //SecureStorage.RemoveAll();
                         //add some statement to retrieve existing key;
                         string storedPrivKey, storedPubKey;
@@ -385,7 +421,9 @@ namespace Ass_Pain
                         }
                         else
                         {
-                            Console.WriteLine("generating keys");
+#if DEBUG
+                            MyConsole.WriteLine("generating keys");
+#endif
                             (string pubKeyString, RSAParameters privKey) = CreateKeyPair();
                             networkStream.Write(BitConverter.GetBytes(11), 0, 4);
                             data = Encoding.UTF8.GetBytes(pubKeyString);
@@ -399,7 +437,9 @@ namespace Ass_Pain
 
                             networkStream.Read(recCommand, 0, 4);
                             command = BitConverter.ToInt32(recCommand);
-                            Console.WriteLine($"command for enc {command}");
+#if DEBUG
+                            MyConsole.WriteLine($"command for enc {command}");
+#endif
                             if (command != 11)
                             {
                                 throw new Exception("wrong order to establish cypher");
@@ -408,7 +448,9 @@ namespace Ass_Pain
                             length = BitConverter.ToInt32(recLength, 0);
                             data = new byte[length];
                             //networkStream.Read(data, 0, length);
-                            Console.WriteLine($"Read {networkStream.Read(data, 0, length)}");
+#if DEBUG
+                            MyConsole.WriteLine($"Read {networkStream.Read(data, 0, length)}");
+#endif
                             decryptor.ImportParameters(privKey);
                             pubKeyString = Encoding.UTF8.GetString(data, 0, length);
                             encryptor.FromXmlString(pubKeyString);
@@ -417,31 +459,49 @@ namespace Ass_Pain
                             SecureStorage.SetAsync($"{remoteHostname}_privkey", decryptor.ToXmlString(true)).Wait();
                             SecureStorage.SetAsync($"{remoteHostname}_pubkey", pubKeyString).Wait();
                         }
-                        //Console.WriteLine($"{decryptor.ToXmlString(true)}\n{encryptor.ToXmlString(false)}");
-                        Console.WriteLine("1");
+#if DEBUG
+                        //MyConsole.WriteLine($"{decryptor.ToXmlString(true)}\n{encryptor.ToXmlString(false)}");
+                        MyConsole.WriteLine("1");
+#endif
                         while (!networkStream.DataAvailable)
                         {
-                            Console.WriteLine("wt");
+#if DEBUG
+                            MyConsole.WriteLine("wt");
+#endif
                             Thread.Sleep(10);
                         }
-                        Console.WriteLine("2");
+#if DEBUG
+                        MyConsole.WriteLine("2");
+#endif
                         networkStream.Read(recCommand, 0, 256);
-                        Console.WriteLine("21");
+#if DEBUG
+                        MyConsole.WriteLine("21");
+#endif
                         byte[] a = decryptor.Decrypt(recCommand, true);
-                        Console.WriteLine("22");
+#if DEBUG
+                        MyConsole.WriteLine("22");
+#endif
                         command = BitConverter.ToInt32(a, 0);
-                        Console.WriteLine($"command for AES {command}");
-                        Console.WriteLine("23");
+#if DEBUG
+                        MyConsole.WriteLine($"command for AES {command}");
+                        MyConsole.WriteLine("23");
+#endif
                         if (command != 12)
                         {
                             throw new Exception("wrong order to establish cypher AES");
                         }
-                        Console.WriteLine("3");
+#if DEBUG
+                        MyConsole.WriteLine("3");
+#endif
                         aes.KeySize = 256;
-                        Console.WriteLine("waiting");
+#if DEBUG
+                        MyConsole.WriteLine("waiting");
+#endif
                         while (!networkStream.DataAvailable)
                         {
-                            Console.WriteLine("wt2");
+#if DEBUG
+                            MyConsole.WriteLine("wt2");
+#endif
                             Thread.Sleep(10);
                         }
                         networkStream.Read(recLength, 0, 256);
@@ -452,7 +512,9 @@ namespace Ass_Pain
                         networkStream.Write(sendCommand, 0, sendCommand.Length);
 
                         encrypted = true;
-                        Console.WriteLine("ecnrypted");
+#if DEBUG
+                        MyConsole.WriteLine("ecnrypted");
+#endif
 
                         (bool exists, List<string> songs) = FileManager.GetSyncSongs(remoteHostname);
                         if (exists)
@@ -494,7 +556,9 @@ namespace Ass_Pain
                                 networkStream.Read(recLength, 0, 256);
                                 ivBuffer = decryptor.Decrypt(recLength, true);
                             } while (ivBuffer.Length == 4);
-                            Console.WriteLine($"length IV {ivBuffer.Length}");
+#if DEBUG
+                            MyConsole.WriteLine($"length IV {ivBuffer.Length}");
+#endif
                             aes.IV = ivBuffer;
 
 
@@ -525,13 +589,17 @@ namespace Ass_Pain
                             }
                             string json = Encoding.UTF8.GetString(decBuffer);
 
-                            
-                            Console.WriteLine(json);
+
+#if DEBUG
+                            MyConsole.WriteLine(json);
+#endif
                             List<string> recSongs = JsonConvert.DeserializeObject<List<string>>(json);
                             bool x = false;
                             foreach(string s in recSongs)
                             {
-                                Console.WriteLine(s);
+#if DEBUG
+                                MyConsole.WriteLine(s);
+#endif
                             }
                             x = true;
                             if (x) //present some form of user check if they really want to receive files
@@ -559,13 +627,17 @@ namespace Ass_Pain
 
                         byte[] recFileLength = new byte[256];
                         networkStream.Read(recFileLength, 0, 256);
-                        //Console.WriteLine($"rec ;en {decryptor.Decrypt(recFileLength, true).Length}");
+#if DEBUG
+                        //MyConsole.WriteLine($"rec ;en {decryptor.Decrypt(recFileLength, true).Length}");
+#endif
                         Int64 fileLength = BitConverter.ToInt64(decryptor.Decrypt(recFileLength, true), 0);
                         if(fileLength > 4000000000){
                             throw new Exception("You can't receive files larger than 4GB on Android");
                         }
                         int readLength;
-                        Console.WriteLine($"File size {fileLength}");
+#if DEBUG
+                        MyConsole.WriteLine($"File size {fileLength}");
+#endif
 
                         using(MemoryStream msDecrypt = new MemoryStream())
                         {
@@ -627,10 +699,14 @@ namespace Ass_Pain
                         }
                         break;
                     case 100: //end
-                        Console.WriteLine("got end");
+#if DEBUG
+                        MyConsole.WriteLine("got end");
+#endif
                         if (files.Count > 0)//if work to do
                         {
-                            Console.WriteLine("Still work to do");
+#if DEBUG
+                            MyConsole.WriteLine("Still work to do");
+#endif
                             continue;
                         }
                         try
@@ -642,20 +718,26 @@ namespace Ass_Pain
                         }
                         catch
                         {
-                            Console.WriteLine("Disconnected");
+#if DEBUG
+                            MyConsole.WriteLine("Disconnected");
+#endif
                         }
                         networkStream.Close();
                         client.Close();
                         goto End;
                     //break;
                     default: //wait or uninplemented
-                        Console.WriteLine($"default: {command}");
+#if DEBUG
+                        MyConsole.WriteLine($"default: {command}");
+#endif
                         break;
                 }
             }
         End:
             // Close everything.
-            Console.WriteLine("END");
+#if DEBUG
+            MyConsole.WriteLine("END");
+#endif
             encryptor.Dispose();
             decryptor.Dispose();
             aes.Dispose();
@@ -675,10 +757,14 @@ namespace Ass_Pain
             {
                 state = new Random().Next(0, 2);
                 sock.SendTo(BitConverter.GetBytes(state), groupEP);
-                Console.WriteLine($"sending {state} to {((IPEndPoint)groupEP).Address}");
+#if DEBUG
+                MyConsole.WriteLine($"sending {state} to {((IPEndPoint)groupEP).Address}");
+#endif
                 sock.ReceiveFrom(buffer, ref endPoint);
-                Console.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
-                Console.WriteLine($"debug: {((IPEndPoint)endPoint).Address}  {target_ip}  {!((IPEndPoint)endPoint).Address.Equals(target_ip)}");
+#if DEBUG
+                MyConsole.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
+                MyConsole.WriteLine($"debug: {((IPEndPoint)endPoint).Address}  {target_ip}  {!((IPEndPoint)endPoint).Address.Equals(target_ip)}");
+#endif
                 while (!((IPEndPoint)endPoint).Address.Equals(target_ip))
                 {
                     sock.ReceiveFrom(buffer, ref endPoint);
@@ -691,7 +777,9 @@ namespace Ass_Pain
                         if (state == 0)
                         {
                             //server
-                            Console.WriteLine("Server");
+#if DEBUG
+                            MyConsole.WriteLine("Server");
+#endif
                             (TcpListener server, int listenPort) = StartServer(myIP);
                             sock.SendTo(BitConverter.GetBytes(listenPort), groupEP);
                             new Thread(() => { Server(server, target_ip); }).Start();
@@ -699,7 +787,9 @@ namespace Ass_Pain
                         else
                         {
                             //client
-                            Console.WriteLine("Client");
+#if DEBUG
+                            MyConsole.WriteLine("Client");
+#endif
                             sock.ReceiveFrom(buffer, ref groupEP);
                             int sendPort = BitConverter.ToInt32(buffer);
                             new Thread(() => { _ = Client(((IPEndPoint)groupEP).Address, sendPort); }).Start();
@@ -727,7 +817,9 @@ namespace Ass_Pain
                     listenPort = new Random().Next(1024, 65535);
                 }
             }
-            Console.WriteLine(listenPort);
+#if DEBUG
+            MyConsole.WriteLine(listenPort.ToString());
+#endif
             return (server, listenPort);
         }
 

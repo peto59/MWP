@@ -14,6 +14,9 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.Support.V4.Media.Session;
 using Android.Support.V4.Media;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -107,7 +110,9 @@ namespace Ass_Pain
 		        }
 		        catch (Exception e)
 		        {
-			        Console.WriteLine(e.ToString());
+#if DEBUG
+                    MyConsole.WriteLine(e.ToString());
+#endif
 			        return new Song("No Name", new DateTime(), "Default");
 		        }
 	        }
@@ -121,7 +126,9 @@ namespace Ass_Pain
 			InnitSession();
 			InnitFocusRequest();
 			InnitNotification();
-			Console.WriteLine("CREATING NEW SESSION");
+#if DEBUG
+            MyConsole.WriteLine("CREATING NEW SESSION");
+#endif
 		}
 		public override void OnDestroy()
 		{
@@ -265,7 +272,9 @@ namespace Ass_Pain
 					break;
 				case ActionToggleLoop:
 					ToggleLoop(intent.GetIntExtra("loopState", 0));
-                    Console.WriteLine("TOGGLE LOOP SWITCH");
+#if DEBUG
+                    MyConsole.WriteLine("TOGGLE LOOP SWITCH");
+#endif
                     break;
 				case ActionTogglePlay:
 					if (mediaPlayer.IsPlaying)
@@ -333,7 +342,9 @@ namespace Ass_Pain
 			PlaybackStateCode state;
 			if (mediaPlayer is { IsPlaying: true })
 			{
-				Console.WriteLine("A");
+#if DEBUG
+                MyConsole.WriteLine("A");
+#endif
 				position = mediaPlayer.CurrentPosition;
 				state = PlaybackStateCode.Playing;
 				side_player.SetStopButton(MainActivity.stateHandler.view);
@@ -343,7 +354,9 @@ namespace Ass_Pain
 			}
 			else if (IsPaused)
 			{
-                Console.WriteLine("B");
+#if DEBUG
+                MyConsole.WriteLine("B");
+#endif
                 state = PlaybackStateCode.Paused;
                 position = mediaPlayer.CurrentPosition;
                 side_player.SetPlayButton(MainActivity.stateHandler.view);
@@ -351,22 +364,30 @@ namespace Ass_Pain
 			}
 			else if (isSkippingToNext)
 			{
-                Console.WriteLine("C");
+#if DEBUG
+                MyConsole.WriteLine("C");
+#endif
                 state = PlaybackStateCode.SkippingToNext;
 			}
 			else if (isSkippingToPrevious)
 			{
-                Console.WriteLine("D");
+#if DEBUG
+                MyConsole.WriteLine("D");
+#endif
                 state = PlaybackStateCode.SkippingToPrevious;
 			}
 			else if (isBuffering)
 			{
-                Console.WriteLine("E");
+#if DEBUG
+                MyConsole.WriteLine("E");
+#endif
                 state = PlaybackStateCode.Buffering;
 			}
 			else
 			{
-                Console.WriteLine("F");
+#if DEBUG
+                MyConsole.WriteLine("F");
+#endif
                 state = PlaybackStateCode.None;
 			}
 
@@ -433,8 +454,7 @@ namespace Ass_Pain
 		{
 			if (Queue.Count == 0)
 			{
-				//generate queue
-				Queue = MainActivity.stateHandler.Songs;
+				GenerateQueue(MainActivity.stateHandler.Songs);
 			}
 			if (!RequestFocus())
 			{
@@ -462,15 +482,18 @@ namespace Ass_Pain
 			if (!IsPaused)
 			{
 				mediaPlayer.Reset();
-				Console.WriteLine($"SERVICE INDEX {Index}");
-				Console.WriteLine($"SERVICE QUEUE {Queue.Count}");
+#if DEBUG
+                MyConsole.WriteLine($"SERVICE INDEX {Index}");
+                MyConsole.WriteLine($"SERVICE QUEUE {Queue.Count}");
+#endif
 
-				// if (!File.Exists(Queue[Index].Path))
-				// {
-				// 	NextSong();
-				// 	return;
-				// }
-				mediaPlayer.SetDataSource(Current.Path);
+
+                // if (!File.Exists(Queue[Index].Path))
+                // {
+                // 	NextSong();
+                // 	return;
+                // }
+                mediaPlayer.SetDataSource(Current.Path);
 				mediaPlayer.Prepare();
 			}
 			mediaPlayer.Start();
@@ -553,15 +576,21 @@ namespace Ass_Pain
 			if(Index < 0 && loopAll){
 				Index = Queue.Count -1;
 			}
-			Console.WriteLine($"Index in previous song: {Index}");
-			Play();
+#if DEBUG
+            MyConsole.WriteLine($"Index in previous song: {Index}");
+#endif
+
+            Play();
 			isSkippingToPrevious = false;
 		}
 
 		private void SeekTo(int millis)
 		{
-			Console.WriteLine("SEEEEEKING");
-			mediaPlayer.SeekTo(millis);
+#if DEBUG
+            MyConsole.WriteLine("SEEEEEKING");
+#endif
+
+            mediaPlayer.SeekTo(millis);
 		}
 
 		///<summary>
@@ -754,7 +783,9 @@ namespace Ass_Pain
 			MainActivity.stateHandler.loopState = LoopState;
             UpdatePlaybackState();
             side_player.populate_side_bar(MainActivity.stateHandler.view);
-            Console.WriteLine("TOGGLE LOOP");
+#if DEBUG
+            MyConsole.WriteLine("TOGGLE LOOP");
+#endif
         }
 
 		///<summary>
@@ -779,10 +810,13 @@ namespace Ass_Pain
 					AudioFocusRequest request = audioManager.RequestAudioFocus(audioFocusRequest);
 					if (!request.Equals(AudioFocusRequest.Granted))
 					{
-						// handle any failed requests
-						Console.WriteLine("No focus");
-						Console.WriteLine(request);
-						return false;
+                        // handle any failed requests
+#if DEBUG
+                        MyConsole.WriteLine("No focus");
+                        MyConsole.WriteLine(request.ToString());
+#endif
+
+                        return false;
 					}
 					isFocusGranted = true;
 					return true;
@@ -793,9 +827,11 @@ namespace Ass_Pain
 					AudioFocusRequest request = audioManager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
 					if (request != AudioFocusRequest.Granted)
 					{
-						// handle any failed requests
-						Console.WriteLine("No focus");
-						Console.WriteLine(request);
+                        // handle any failed requests
+#if DEBUG
+                        MyConsole.WriteLine("No focus");
+                        MyConsole.WriteLine(request.ToString());
+#endif
 						return false;
 					}
 					isFocusGranted = true;
@@ -827,7 +863,9 @@ namespace Ass_Pain
 				AudioFocusRequest abandon = audioManager.AbandonAudioFocusRequest(audioFocusRequest);
 				if (!abandon.Equals(AudioFocus.Gain))
 				{
-					Console.WriteLine("No abandon");
+#if DEBUG
+                    MyConsole.WriteLine("No abandon");
+#endif
 					// handle any failed requests
 				}
 				else
@@ -840,8 +878,10 @@ namespace Ass_Pain
 				AudioFocusRequest abandon = audioManager.AbandonAudioFocus(this);
 				if (abandon != AudioFocusRequest.Granted)
 				{
-					// handle any failed requests
-					Console.WriteLine("No abandon");
+                    // handle any failed requests
+#if DEBUG
+                    MyConsole.WriteLine("No abandon");
+#endif
 				}
 				else
 				{

@@ -1,4 +1,7 @@
 ﻿using Android.App;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -57,7 +60,9 @@ namespace Ass_Pain
             {
                 try
                 {
-                    Console.WriteLine($"Processing: {file}");
+#if DEBUG
+                    MyConsole.WriteLine($"Processing: {file}");
+#endif
                     string title = GetSongTitle(file);
                     if (title == null)
                     {
@@ -75,7 +80,9 @@ namespace Ass_Pain
                     string[] unsanitizedArtists = GetSongArtist(file);
                     string artist = unsanitizedArtists.Length > 0 ? Sanitize(GetAlias(unsanitizedArtists[0])) : "No Artist";
                     string uAlbum = GetSongAlbum(file);
-                    Console.WriteLine("Moving " + file);
+#if DEBUG
+                    MyConsole.WriteLine("Moving " + file);
+#endif
                     if (uAlbum != null)
                     {
                         string album = Sanitize(uAlbum);
@@ -92,8 +99,10 @@ namespace Ass_Pain
                 }
                 catch(Exception ex)
                 {
-                    Console.WriteLine($"error: {file}");
-                    Console.WriteLine(ex);
+#if DEBUG
+                    MyConsole.WriteLine($"error: {file}");
+                    MyConsole.WriteLine(ex.ToString());
+#endif
                 }
             }
             //GetSongTitle(GetSongs());
@@ -376,7 +385,9 @@ namespace Ass_Pain
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+#if DEBUG
+                MyConsole.WriteLine(e.ToString());
+#endif
                 return ("", "");
             }
         }

@@ -13,6 +13,9 @@ using System.Linq;
 using System.Runtime.Remoting.Contexts;
 using System.Text;
 using AndroidApp = Android.App.Application;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -40,75 +43,101 @@ namespace Ass_Pain
 
         public override void OnPlay()
         {
-            Console.WriteLine("OnPlay");
+#if DEBUG
+            MyConsole.WriteLine("OnPlay");
+#endif
             AndroidApp.Context.StartService(
                             new Intent(MediaService.ActionPlay, null, AndroidApp.Context, typeof(MediaService))
                         );
             //OnPlayImpl();
+            base.OnPlay();
         }
 
         public override void OnSkipToQueueItem(long id)
         {
-            Console.WriteLine("OnSkipToQueueItem");
+#if DEBUG
+            MyConsole.WriteLine("OnSkipToQueueItem");
+#endif
             //OnSkipToQueueItemImpl(id);
+            base.OnSkipToQueueItem(id);
         }
 
         public override void OnSeekTo(long pos)
         {
-            Console.WriteLine("OnSeekTo");
-            Console.WriteLine($"POSTION: {pos}");
+#if DEBUG
+            MyConsole.WriteLine("OnSeekTo");
+            MyConsole.WriteLine($"POSTION: {pos}");
+#endif
             AndroidApp.Context.StartService(
                             new Intent(MediaService.ActionSeekTo, null, AndroidApp.Context, typeof(MediaService))
                             .PutExtra("millis", (int)pos)
                         );
             //OnSeekToImpl(pos);
+            base.OnSeekTo(pos);
         }
 
         public override void OnPlayFromMediaId(string mediaId, Bundle extras)
         {
-            Console.WriteLine("OnPlayFromMediaId");
+#if DEBUG
+            MyConsole.WriteLine("OnPlayFromMediaId");
+#endif
             //OnPlayFromMediaIdImpl(mediaId, extras);
+            base.OnPlayFromMediaId(mediaId, extras);
         }
 
         public override void OnPause()
         {
-            Console.WriteLine("OnPause");
+#if DEBUG
+            MyConsole.WriteLine("OnPause");
+#endif
             AndroidApp.Context.StartService(
                             new Intent(MediaService.ActionPause, null, AndroidApp.Context, typeof(MediaService))
                         );
             //OnPauseImpl();
+            base.OnPause();
         }
 
         public override void OnStop()
         {
-            Console.WriteLine("OnStop");
+#if DEBUG
+            MyConsole.WriteLine("OnStop");
+#endif
             AndroidApp.Context.StartService(
                             new Intent(MediaService.ActionStop, null, AndroidApp.Context, typeof(MediaService))
                         );
             //OnStopImpl();
+            base.OnStop();
         }
 
         public override void OnSkipToNext()
         {
-            Console.WriteLine("OnSkipToNext");
+#if DEBUG
+            MyConsole.WriteLine("OnSkipToNext");
+#endif
             AndroidApp.Context.StartService(
                             new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService))
                         );
             //OnSkipToNextImpl();
+            base.OnSkipToNext();
         }
 
         public override void OnSkipToPrevious()
         {
-            Console.WriteLine("OnSkipToPrevious");
+#if DEBUG
+            MyConsole.WriteLine("OnSkipToPrevious");
+#endif
             AndroidApp.Context.StartService(
                             new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService))
                         );
             //OnSkipToPreviousImpl();
+            base.OnSkipToPrevious();
         }
 
         public override void OnCustomAction(string action, Bundle extras)
         {
-            Console.WriteLine("OnCustomAction");
+#if DEBUG
+            MyConsole.WriteLine("OnCustomAction");
+#endif
             try
             {
                 switch (action)
@@ -125,16 +154,23 @@ namespace Ass_Pain
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-                throw;
+#if DEBUG
+                MyConsole.WriteLine(e.ToString());
+#endif
+                //throw;
             }
             //OnCustomActionImpl(action, extras);
+            base.OnCustomAction(action, extras);
         }
 
         public override void OnPlayFromSearch(string query, Bundle extras)
         {
-            Console.WriteLine("OnPlayFromSearch");
+#if DEBUG
+            MyConsole.WriteLine("OnPlayFromSearch");
+#endif
+
             //OnPlayFromSearchImpl(query, extras);
+            base.OnPlayFromSearch(query, extras);
         }
     }
 }

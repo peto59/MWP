@@ -15,6 +15,9 @@ using Xamarin.Essentials;
 using AndroidApp = Android.App.Application;
 using Context = Android.Content.Context;
 using TaskStackBuilder = AndroidX.Core.App.TaskStackBuilder;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -96,7 +99,9 @@ namespace Ass_Pain
                 switch (loopState)
                 {
                     case 0:
-                        Console.WriteLine("no_repeat >>>>>>>>");
+#if DEBUG
+                        MyConsole.WriteLine("no_repeat >>>>>>>>");
+#endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.no_repeat, "no_repeat",
                             PendingIntent.GetService(
@@ -107,7 +112,9 @@ namespace Ass_Pain
                         );
                         break;
                     case 1:
-                        Console.WriteLine("repeat >>>>>>>>");
+#if DEBUG
+                        MyConsole.WriteLine("repeat >>>>>>>>");
+#endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.repeat, "repeat",
                             PendingIntent.GetService(
@@ -118,7 +125,9 @@ namespace Ass_Pain
                         );
                         break;
                     case 2:
-                        Console.WriteLine("repeat_one >>>>>>>>");
+#if DEBUG
+                        MyConsole.WriteLine("repeat_one >>>>>>>>");
+#endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.repeat_one, "repeat_one",
                             PendingIntent.GetService(
@@ -132,7 +141,9 @@ namespace Ass_Pain
                 notification = notificationBuilder.Build();
             }
             manager.Notify(notification_id, notification);
-            Console.WriteLine("NOTIFY RELOAD");
+#if DEBUG
+            MyConsole.WriteLine("NOTIFY RELOAD");
+#endif
         }
 
         private void create_notification_channel()
