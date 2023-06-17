@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-<!--    <PublishTrimmed>true</PublishTrimmed>-->
-<!--    <TargetFramework>net13.0-android</TargetFramework>-->
+    <!--    <PublishTrimmed>true</PublishTrimmed>-->
+    <!--    <TargetFramework>net13.0-android</TargetFramework>-->
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
@@ -34,7 +34,6 @@
     <AndroidSdkDirectory>/home/Android/</AndroidSdkDirectory>
     <AndroidNdkDirectory>/home/Android/ndk</AndroidNdkDirectory>
     <JavaSdkDirectory>/home/JDK/</JavaSdkDirectory>
-
     <TargetFrameworkRootPath>/usr/lib/mono/xbuild-frameworks/</TargetFrameworkRootPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -85,24 +84,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
-    <Compile Include="Album.cs" />
-    <Compile Include="APIThrottler.cs" />
-    <Compile Include="Artist.cs" />
+    <Compile Include="DatatypesAndExtensions\Album.cs" />
+    <Compile Include="Helpers\APIThrottler.cs" />
+    <Compile Include="DatatypesAndExtensions\Artist.cs" />
     <Compile Include="DownloadNotification.cs" />
-    <Compile Include="MediaService.cs" />
-    <Compile Include="Interval.cs" />
-    <Compile Include="Extensions.cs" />
-    <Compile Include="Levenshtein.cs" />
-    <Compile Include="MediaServiceBinder.cs" />
-    <Compile Include="MediaServiceConnection.cs" />
-    <Compile Include="MediaSessionCallback.cs" />
+    <Compile Include="Player\MediaService.cs" />
+    <Compile Include="Helpers\Interval.cs" />
+    <Compile Include="DatatypesAndExtensions\Extensions.cs" />
+    <Compile Include="Helpers\Levenshtein.cs" />
+    <Compile Include="Player\MediaServiceBinder.cs" />
+    <Compile Include="Player\MediaServiceConnection.cs" />
+    <Compile Include="Player\MediaSessionCallback.cs" />
     <Compile Include="Local_notification_service.cs" />
-    <Compile Include="MusicBaseClass.cs" />
-    <Compile Include="MyBroadcastReceiver.cs" />
-    <Compile Include="NetworkManager.cs" />
-    <Compile Include="Downloader.cs" />
-    <Compile Include="FileManager.cs" />
-    <Compile Include="HelloWebViewClient.cs" />
+    <Compile Include="DatatypesAndExtensions\MusicBaseClass.cs" />
+    <Compile Include="Player\MyBroadcastReceiver.cs" />
+    <Compile Include="BackEnd\NetworkManager.cs" />
+    <Compile Include="BackEnd\Downloader.cs" />
+    <Compile Include="BackEnd\FileManager.cs" />
+    <Compile Include="Helpers\HelloWebViewClient.cs" />
     <Compile Include="all_songs.cs" />
     <Compile Include="equalizer.cs" />
     <Compile Include="MainActivity.cs" />
@@ -110,10 +109,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="share.cs" />
     <Compile Include="side_player.cs" />
-    <Compile Include="Song.cs" />
-    <Compile Include="SongExtensions.cs" />
-    <Compile Include="StateHandler.cs" />
-    <Compile Include="TagManager.cs" />
+    <Compile Include="DatatypesAndExtensions\Song.cs" />
+    <Compile Include="DatatypesAndExtensions\SongExtensions.cs" />
+    <Compile Include="BackEnd\StateHandler.cs" />
+    <Compile Include="BackEnd\TagManager.cs" />
     <Compile Include="youtube.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -372,11 +371,10 @@
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\repeat_one.xml" />
   </ItemGroup>
-<!--  <ItemGroup>-->
-<!--    <TrimmableAssembly Include="Ass_Pain" />-->
-<!--    <TrimmableAssembly Include="FFmpeg" />-->
-<!--  </ItemGroup>-->
-
+  <!--  <ItemGroup>-->
+  <!--    <TrimmableAssembly Include="Ass_Pain" />-->
+  <!--    <TrimmableAssembly Include="FFmpeg" />-->
+  <!--  </ItemGroup>-->
   <Target Name="Install">
   </Target>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
