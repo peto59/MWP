@@ -50,14 +50,6 @@ namespace Ass_Pain
             
         }
 
-        public void stage1_playlist(Progress<double> progress, string title, int? poradieVPlayliste = null)
-        {
-            progress.ProgressChanged += delegate(object sender, double d)
-            {
-                
-            };
-        }
-        
         private void create_notification_channel()
         {
             if (Build.VERSION.SdkInt < BuildVersionCodes.O)
@@ -73,7 +65,19 @@ namespace Ass_Pain
             NotificationManager manager = (NotificationManager)AndroidApp.Context.GetSystemService(AndroidApp.NotificationService);
             manager.CreateNotificationChannel(channel);
         }
-
+        
+        
+        /*
+         * stage 1
+         * progress bar
+         */
+        private void stage1_playlist(Progress<double> progress, string title, int? poradieVPlayliste = null)
+        {
+            progress.ProgressChanged += delegate(object sender, double d)
+            {
+                
+            };
+        }
         public void stage1_song(Progress<double> progress, string title)
         {
             create_notification_channel();
@@ -85,17 +89,28 @@ namespace Ass_Pain
                 .SetSmallIcon(
                     Resource.Drawable.ic_menu_camera
                 )
-                .SetCustomContentView(view)
+                .SetContentTitle("Song Downloand")
+                .SetContentText(title + " is downloading")
                 .SetShowWhen(false);
             
-
             manager = NotificationManagerCompat.From(AndroidApp.Context);
-            Notification notification = notificationBuilder.Build();
-            manager.Notify(11050, notification);
+            
+            progress.ProgressChanged += delegate(object sender, double d)
+            {
+                notificationBuilder.SetProgress(100, (int)d, false);
+                // Notification notification = notificationBuilder.Build();
+                manager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
+            };
+            
+
         }
 
         
 
+        /*
+         * stage 2
+         * progress bar
+         */
         public void stage2_song(int precentage)
         {
             
@@ -106,6 +121,10 @@ namespace Ass_Pain
         }
         
         
+        /*
+         * stage 3
+         * text
+         */
         public void stage3_song()
         {
             
@@ -116,7 +135,10 @@ namespace Ass_Pain
         }
         
         
-        
+        /*
+         * stage 4
+         * text
+         */
         public void stage4_song(bool success, string message)
         {
             
@@ -127,7 +149,13 @@ namespace Ass_Pain
         }
         
         
-        
+      
+        /// <summary>
+        /// stage 1 of song downloading, progress bar
+        /// </summary>
+        /// <param name="progress"></param>
+        /// <param name="title"></param>
+        /// <param name="poradieVPlayliste"></param>
         public void Stage1(Progress<double> progress, string title, int? poradieVPlayliste = null)
         {
             if (!isSingle)
@@ -141,6 +169,11 @@ namespace Ass_Pain
                 stage1_song(progress, title);
             }
         }
+        /// <summary>
+        /// stage 2 of song downloading, progress bar, but with percentage
+        /// </summary>
+        /// <param name="precentage"></param>
+        /// <param name="poradieVPlayliste"></param>
         public void Stage2(int precentage, int? poradieVPlayliste = null)
         {
             if (!isSingle)
@@ -154,6 +187,10 @@ namespace Ass_Pain
                 stage2_song(precentage);
             }
         }
+        /// <summary>
+        /// stage 3 is for song download processing notification text status
+        /// </summary>
+        /// <param name="poradieVPlayliste"></param>
         public void Stage3(int? poradieVPlayliste = null)
         {
             if (!isSingle)
@@ -167,6 +204,12 @@ namespace Ass_Pain
                 stage3_song();
             }
         }
+        /// <summary>
+        /// stage 4 is final message for user to notify him about song download completition
+        /// </summary>
+        /// <param name="success"></param>
+        /// <param name="message"></param>
+        /// <param name="poradieVPlayliste"></param>
         public void Stage4(bool success, string message, int? poradieVPlayliste = null)
         {
             if (!isSingle)
