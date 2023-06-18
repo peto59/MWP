@@ -566,8 +566,12 @@ namespace Ass_Pain
 
         ///<summary>
         ///Gets all songs in <paramref name="playlist"/>
-        ///<br>Returns <returns>empty List of strings</returns> if <paramref name="playlist"/> doesn't exist</br>
+        ///<br>Returns empty List of strings if <paramref name="playlist"/> doesn't exist</br>
         ///</summary>
+        ///<param name="playlist">Name of playlist from which you want to get songs</param>
+        ///<returns>
+        ///<see cref="List{Song}"/> of <see cref="Song"/> or empty <see cref="List{Song}"/>
+        ///</returns>
         public static List<Song> GetPlaylist(string playlist)
         {
             string json = File.ReadAllText($"{MusicFolder}/playlists.json");

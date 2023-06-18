@@ -496,11 +496,11 @@ namespace Ass_Pain
     {
 
         ///<summary>
-        ///Creates new Callback instance
-        ///<paramref name="duration"/> in seconds
-        ///<paramref name="poradieVPlayliste"/> can be null
-        ///Should be created for every instance of FFmpeg
+        ///Creates new Callback instance which should be created for every instance of FFmpeg
         ///</summary>
+        ///<param name="duration">Duration of whole video in seconds</param>
+        ///<param name="poradieVPlayliste">Number of element in playlist, can be null</param>
+        ///<param name="notification">Notification on which progress should be displayed</param>
         public StatisticsCallback(int duration, int? poradieVPlayliste, DownloadNotification notification)
         {
             Duration = duration;
