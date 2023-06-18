@@ -6,6 +6,10 @@ using AndroidX.Core.App;
 //using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
 
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
+
 namespace Ass_Pain
 {
     public class DownloadNotification
@@ -18,10 +22,11 @@ namespace Ass_Pain
 
         private bool isSingle = true;
         private int videoCount = 1;
+        private string currentSongTitle;
 
         NotificationCompat.Builder notificationBuilder;
         private NotificationManagerCompat manager;
-        
+
         public DownloadNotification()
         {
             int randomId = StateHandler.Rng.Next(10000);
@@ -71,38 +76,44 @@ namespace Ass_Pain
          * stage 1
          * progress bar
          */
+        private void stage1_song(Progress<double> progress, string title)
+        {
+            this.currentSongTitle = title;
+            create_notification_channel();
+            
+            RemoteViews view = new RemoteViews(Application.Context.PackageName,
+                Resource.Layout.download_notification_single);
+
+            manager = NotificationManagerCompat.From(AndroidApp.Context);
+            
+            progress.ProgressChanged += delegate(object sender, double d)
+            {
+                notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+                    .SetSmallIcon(
+                        Resource.Drawable.ic_menu_camera
+                    )
+                    .SetContentTitle("Initializing")
+                    .SetContentText(currentSongTitle)
+                    .SetOngoing(true)
+                    .SetShowWhen(false);
+                notificationBuilder.SetProgress(100, (int)(d * 100), false);
+                
+#if DEBUG
+                Helpers.MyConsole.WriteLine(((int)(d * 100)).ToString());
+#endif
+                
+                // Notification notification = notificationBuilder.Build();
+                manager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
+            };
+            
+
+        }
         private void stage1_playlist(Progress<double> progress, string title, int? poradieVPlayliste = null)
         {
             progress.ProgressChanged += delegate(object sender, double d)
             {
                 
             };
-        }
-        public void stage1_song(Progress<double> progress, string title)
-        {
-            create_notification_channel();
-            
-            RemoteViews view = new RemoteViews(Application.Context.PackageName,
-                Resource.Layout.download_notification_single);
-
-            notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
-                .SetSmallIcon(
-                    Resource.Drawable.ic_menu_camera
-                )
-                .SetContentTitle("Song Downloand")
-                .SetContentText(title + " is downloading")
-                .SetShowWhen(false);
-            
-            manager = NotificationManagerCompat.From(AndroidApp.Context);
-            
-            progress.ProgressChanged += delegate(object sender, double d)
-            {
-                notificationBuilder.SetProgress(100, (int)d, false);
-                // Notification notification = notificationBuilder.Build();
-                manager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
-            };
-            
-
         }
 
         
@@ -111,11 +122,26 @@ namespace Ass_Pain
          * stage 2
          * progress bar
          */
-        public void stage2_song(int precentage)
+        private void stage2_song(int percentage)
         {
-            
+            notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+                .SetSmallIcon(
+                    Resource.Drawable.ic_menu_camera
+                )
+                .SetContentTitle("Downloading")
+                .SetContentText(currentSongTitle)
+                .SetOngoing(true)
+                .SetShowWhen(false);
+            notificationBuilder.SetProgress(100, percentage, false);
+                
+#if DEBUG
+            Helpers.MyConsole.WriteLine(percentage.ToString());
+#endif
+                
+            // Notification notification = notificationBuilder.Build();
+            manager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
         }
-        public void stage2_playlist(int precentage, int? poradieVPlayliste)
+        private void stage2_playlist(int percentage, int? poradieVPlayliste)
         {
             
         }
@@ -125,11 +151,21 @@ namespace Ass_Pain
          * stage 3
          * text
          */
-        public void stage3_song()
+        private void stage3_song()
         {
-            
+            notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+                .SetSmallIcon(
+                    Resource.Drawable.ic_menu_camera
+                )
+                .SetContentTitle("Processing...")
+                .SetContentText(currentSongTitle)
+                .SetOngoing(true)
+                .SetShowWhen(false);
+
+            // Notification notification = notificationBuilder.Build();
+            manager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
         }
-        public void stage3_playlist(int? poradieVPlayliste)
+        private void stage3_playlist(int? poradieVPlayliste)
         {
             
         }
@@ -139,11 +175,28 @@ namespace Ass_Pain
          * stage 4
          * text
          */
-        public void stage4_song(bool success, string message)
+        private void stage4_song(bool success, string message)
         {
+            notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+                .SetSmallIcon(
+                    Resource.Drawable.ic_menu_camera
+                )
+                .SetContentText(currentSongTitle)
+                .SetOngoing(true)
+                .SetShowWhen(false);
+            if (success)
+            {
+                notificationBuilder.SetContentTitle("Success");
+                manager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
+            }
+            else
+            {
+                notificationBuilder.SetContentTitle("Fail");
+                manager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
+            }
             
         }
-        public void stage4_playlist(bool success, string message, int? poradieVPlayliste)
+        private void stage4_playlist(bool success, string message, int? poradieVPlayliste)
         {
             
         }
