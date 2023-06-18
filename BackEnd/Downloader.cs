@@ -23,6 +23,7 @@ using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using Signal = Com.Arthenica.Ffmpegkit.Signal;
 #if DEBUG
+using System.Diagnostics;
 using Ass_Pain.Helpers;
 #endif
 
@@ -121,11 +122,15 @@ namespace Ass_Pain
                     length = 170; //random song duration of 2:50
                 }
                 
-                StatisticsCallback callback = new StatisticsCallback(length, poradieVPlayliste, notification);
-                FFmpegKitConfig.EnableStatisticsCallback(callback);
 
                 // ReSharper disable once InconsistentNaming
-                Task<FFmpegSession> FFmpegTask = Task.Run(() => FFmpegKit.Execute($"-i {Path}/tmp/unprocessed{i}.mp3 -i {Path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -loglevel quiet -y '{Path}/tmp/video{i}.mp3'"));
+                Task<FFmpegSession> FFmpegTask = Task.Run(() =>
+                {
+                    StatisticsCallback callback = new StatisticsCallback(length, poradieVPlayliste, notification);
+                    FFmpegKitConfig.EnableStatisticsCallback(callback);
+                    FFmpegKitConfig.FfmpegExecute(FFmpegKit.Execute($"-i {Path}/tmp/unprocessed{i}.mp3 -i {Path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -loglevel quiet -y '{Path}/tmp/video{i}.mp3'"));
+                    return (FFmpegSession)FFmpegKitConfig.LastSession;
+                });
                 _ = FFmpegTask.ContinueWith(task =>
                 {
                     notification.Stage3(poradieVPlayliste);
@@ -298,7 +303,12 @@ namespace Ass_Pain
             {
                 notification.Stage4(false, $"{ex.Message}", poradieVPlayliste);
 #if DEBUG
-                MyConsole.WriteLine($"BIG EROOOOOOOOR: {ex.Message}");
+                StackTrace st = new StackTrace(ex, true);
+                // Get the top stack frame
+                StackFrame frame = st.GetFrame(st.FrameCount -1 );
+                // Get the line number from the stack frame
+                int line = frame.GetFileLineNumber();
+                MyConsole.WriteLine($"[tryCatch line: {line}]BIG EROOOOOOOOR: {ex}");
 #endif
                 View view = (View)sender;
                 Snackbar.Make(view, $"Failed: {videoTitle}", Snackbar.LengthLong)
@@ -381,6 +391,7 @@ namespace Ass_Pain
 
         public static async Task<(string, string, string, byte[])> SearchAPI(string name=null , string song = null, string album = null)
         {
+            return (String.Empty, String.Empty, String.Empty, null);
 #if DEBUG
             MyConsole.WriteLine("STARTING API SEARCH");
 #endif
