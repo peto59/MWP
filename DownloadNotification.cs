@@ -16,25 +16,26 @@ namespace Ass_Pain
     {
         private int NOTIFICATION_ID { get; }
         
-        private const string CHANNEL_ID = "local_notification_channel";
-        private const string CHANNEL_NAME = "Notifications";
+        private const string CHANNEL_ID          = "local_notification_channel";
+        private const string CHANNEL_NAME        = "Notifications";
         private const string CHANNEL_DESCRIPTION = "description";
+        private const int    SUMARRY_ID          = 1147;
+        private const string GROUP_KEY           = "com.android.ass_pain.DOWNNLOAD_GROUP";
 
         private bool isSingle = true;
         private int videoCount = 1;
+        private int songFinalCount = 0;
         private string currentSongTitle;
+        private string[] currentSongTitles;
+        private int[] playlistNotifIDS;
 
         NotificationCompat.Builder notificationBuilder;
         private NotificationManagerCompat manager;
 
         public DownloadNotification()
         {
-            int randomId = StateHandler.Rng.Next(10000);
-            while (MainActivity.stateHandler.NotificationIDs.Contains(randomId))
-            {
-                randomId = StateHandler.Rng.Next(10000);
-            }
-            NOTIFICATION_ID = randomId;
+            NOTIFICATION_ID = RANDOM_ID();
+            create_notification_channel();
         }
 
         public DownloadNotification(int cnt) : this()
@@ -46,15 +47,23 @@ namespace Ass_Pain
             videoCount = cnt;
             manager = NotificationManagerCompat.From(AndroidApp.Context);
 
-        }
+            if (!isSingle)
+            {
+                currentSongTitles = new string[cnt];
+                playlistNotifIDS = new int[cnt];
+                
+                Notification summaryNotification = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+                    .SetContentTitle("Song Donwload Summary")
+                    .SetSmallIcon(Resource.Drawable.ic_menu_camera)
+                    .SetContentText(songFinalCount + " / " + videoCount)
+                    .SetGroup(GROUP_KEY)
+                    .SetGroupSummary(true)
+                    .Build();
+                manager.Notify(SUMARRY_ID, summaryNotification);
+            }
 
-        public DownloadNotification(bool isSingle) : this()
-        {
-            this.isSingle = isSingle;
-            manager = NotificationManagerCompat.From(AndroidApp.Context);
-            
         }
-
+        
         private void create_notification_channel()
         {
             if (Build.VERSION.SdkInt < BuildVersionCodes.O)
@@ -70,6 +79,17 @@ namespace Ass_Pain
             NotificationManager manager = (NotificationManager)AndroidApp.Context.GetSystemService(AndroidApp.NotificationService);
             manager.CreateNotificationChannel(channel);
         }
+
+        private int RANDOM_ID()
+        {
+            int randomId = StateHandler.Rng.Next(10000);
+            while (MainActivity.stateHandler.NotificationIDs.Contains(randomId))
+            {
+                randomId = StateHandler.Rng.Next(10000);
+            }
+
+            return randomId;
+        }
         
         
         /*
@@ -79,13 +99,7 @@ namespace Ass_Pain
         private void stage1_song(Progress<double> progress, string title)
         {
             this.currentSongTitle = title;
-            create_notification_channel();
-            
-            RemoteViews view = new RemoteViews(Application.Context.PackageName,
-                Resource.Layout.download_notification_single);
 
-            manager = NotificationManagerCompat.From(AndroidApp.Context);
-            
             progress.ProgressChanged += delegate(object sender, double d)
             {
                 notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
@@ -110,10 +124,26 @@ namespace Ass_Pain
         }
         private void stage1_playlist(Progress<double> progress, string title, int? poradieVPlayliste = null)
         {
+            if (poradieVPlayliste != null) this.currentSongTitles[(int)poradieVPlayliste] = title;
+            if (poradieVPlayliste != null) this.playlistNotifIDS[(int)poradieVPlayliste] = RANDOM_ID();
             progress.ProgressChanged += delegate(object sender, double d)
             {
-                
+                if (poradieVPlayliste != null)
+                {
+                    notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+                        .SetSmallIcon(
+                            Resource.Drawable.ic_menu_camera
+                        )
+                        .SetContentTitle("Initializing")
+                        .SetContentText(currentSongTitles[(int)poradieVPlayliste])
+                        .SetGroup(GROUP_KEY)
+                        .SetShowWhen(false);
+                    notificationBuilder.SetProgress(100, (int)(d * 100), false);
+                    manager.Notify(playlistNotifIDS[(int)poradieVPlayliste], notificationBuilder.Build());
+                }
             };
+            
+            
         }
 
         
@@ -143,6 +173,23 @@ namespace Ass_Pain
         }
         private void stage2_playlist(int percentage, int? poradieVPlayliste)
         {
+            if (poradieVPlayliste != null)
+            {
+#if DEBUG
+                Helpers.MyConsole.WriteLine(poradieVPlayliste + " " + currentSongTitles[(int)poradieVPlayliste] + " " + playlistNotifIDS[(int)poradieVPlayliste]);
+#endif
+                
+                notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+                    .SetSmallIcon(
+                        Resource.Drawable.ic_menu_camera
+                    )
+                    .SetContentTitle("Downloading")
+                    .SetContentText(currentSongTitles[(int)poradieVPlayliste])
+                    .SetGroup(GROUP_KEY)
+                    .SetShowWhen(false);
+                notificationBuilder.SetProgress(100, percentage, false);
+                manager.Notify(playlistNotifIDS[(int)poradieVPlayliste], notificationBuilder.Build());
+            }
             
         }
         
@@ -161,13 +208,22 @@ namespace Ass_Pain
                 .SetContentText(currentSongTitle)
                 .SetOngoing(true)
                 .SetShowWhen(false);
-
-            // Notification notification = notificationBuilder.Build();
             manager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
         }
         private void stage3_playlist(int? poradieVPlayliste)
         {
-            
+            if (poradieVPlayliste != null)
+            {
+                notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+                    .SetSmallIcon(
+                        Resource.Drawable.ic_menu_camera
+                    )
+                    .SetContentTitle("Processing...")
+                    .SetContentText(currentSongTitles[(int)poradieVPlayliste])
+                    .SetGroup(GROUP_KEY)
+                    .SetShowWhen(false);
+                manager.Notify(playlistNotifIDS[(int)poradieVPlayliste], notificationBuilder.Build());
+            }
         }
         
         
@@ -182,7 +238,7 @@ namespace Ass_Pain
                     Resource.Drawable.ic_menu_camera
                 )
                 .SetContentText(currentSongTitle)
-                .SetOngoing(true)
+                .SetOngoing(false)
                 .SetShowWhen(false);
             if (success)
             {
@@ -204,7 +260,7 @@ namespace Ass_Pain
         
       
         /// <summary>
-        /// stage 1 of song downloading, progress bar
+        /// stage 1 of song downloading, initialization progress bar
         /// </summary>
         /// <param name="progress"></param>
         /// <param name="title"></param>
