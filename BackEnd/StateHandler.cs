@@ -25,6 +25,7 @@ namespace Ass_Pain
         private MediaPlayer mediaPlayer = null;
         public List<int> NotificationIDs = new List<int>();
         public bool shuffle = false;
+        public Dictionary<long, (int?, int)> SessionIdToPlaylistOrderMapping = new Dictionary<long, (int?, int)>();
         // public bool loopAll = false;
         // public bool loopSingle = false;
         // private List<string> queue = new List<string>();

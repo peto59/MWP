@@ -42,6 +42,7 @@ namespace Ass_Pain
             //APIThrottler throttler = new APIThrottler();
             if (url.Contains("playlist"))
             {
+                
                 Snackbar.Make(view, $"Download started", Snackbar.LengthLong)
                         .SetAction("Action", (View.IOnClickListener)null).Show();
 
@@ -51,6 +52,8 @@ namespace Ass_Pain
                 int a = FileManager.GetAvailableFile("playlistThumb");
                 string ext = GetImage(playlist.Thumbnails.AsEnumerable(), $"{Path}/tmp", $"playlistThumb{a}");
                 DownloadNotification notification = new DownloadNotification(videos.Count);
+                StatisticsCallback callback = new StatisticsCallback(notification);
+                FFmpegKitConfig.EnableStatisticsCallback(callback);
                 for (int index = 0; index < videos.Count; index++)
                 {
                     PlaylistVideo video = videos[index];
@@ -82,7 +85,10 @@ namespace Ass_Pain
                 YoutubeClient youtube = new YoutubeClient();
                 Video video = await youtube.Videos.GetAsync(url);
                 int i = FileManager.GetAvailableFile();
-                new Thread(() => { DownloadVideo(sender, e, url, i, video.Id, video.Title, video.Author.ChannelTitle, true, video.Author.ChannelId, new DownloadNotification()); }).Start();
+                DownloadNotification notification = new DownloadNotification();
+                StatisticsCallback callback = new StatisticsCallback(notification);
+                FFmpegKitConfig.EnableStatisticsCallback(callback);
+                new Thread(() => { DownloadVideo(sender, e, url, i, video.Id, video.Title, video.Author.ChannelTitle, true, video.Author.ChannelId, notification); }).Start();
             }
             else
             {
@@ -109,27 +115,27 @@ namespace Ass_Pain
                 await youtube.Videos.Streams.DownloadAsync(streamInfo, $"{Path}/tmp/unprocessed{i}.mp3", downloadProgress);
                 FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu);
                 await imageTask;
-                int length;
+                int duration;
 
                 string s = FFprobeKit.Execute($"-i {Path}/tmp/unprocessed{i}.mp3 -show_entries format=duration -v quiet -of csv=\"p=0\"")?.Output;
 
                 try
                 {
-                    length = s != null ? (int)float.Parse(s) : 170;
+                    duration = s != null ? (int)float.Parse(s) : 170;
                 }
                 catch
                 {
-                    length = 170; //random song duration of 2:50
+                    duration = 170; //random song duration of 2:50
                 }
                 
-
                 // ReSharper disable once InconsistentNaming
                 Task<FFmpegSession> FFmpegTask = Task.Run(() =>
                 {
-                    StatisticsCallback callback = new StatisticsCallback(length, poradieVPlayliste, notification);
-                    FFmpegKitConfig.EnableStatisticsCallback(callback);
-                    FFmpegKitConfig.FfmpegExecute(FFmpegKit.Execute($"-i {Path}/tmp/unprocessed{i}.mp3 -i {Path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -loglevel quiet -y '{Path}/tmp/video{i}.mp3'"));
-                    return (FFmpegSession)FFmpegKitConfig.LastSession;
+                    // FFmpegSession session = FFmpegKit.Execute($"-i {Path}/tmp/unprocessed{i}.mp3 -i {Path}/tmp/file{i}.jpg -map 0:0 -map 1:0 -c:a libmp3lame -id3v2_version 4 -write_xing 0 -loglevel quiet -y '{Path}/tmp/video{i}.mp3'");
+                    FFmpegSession session = new FFmpegSession(new []{"-i", $"{Path}/tmp/unprocessed{i}.mp3", "-i", $"{Path}/tmp/file{i}.jpg", "-map", "0:0", "-map", "1:0", "-c:a", "libmp3lame", "-id3v2_version", "4", "-write_xing", "0", "-loglevel", "quiet", "-y", $"{Path}/tmp/video{i}.mp3"});
+                    MainActivity.stateHandler.SessionIdToPlaylistOrderMapping.Add(session.SessionId, (poradieVPlayliste, duration));
+                    FFmpegKitConfig.FfmpegExecute(session);
+                    return session;
                 });
                 _ = FFmpegTask.ContinueWith(task =>
                 {
@@ -292,10 +298,10 @@ namespace Ass_Pain
                     File.Delete($"{Path}/tmp/video{i}.mp3");
                     if (session.ReturnCode == null) return;
 #if DEBUG
-                    MyConsole.WriteLine($"FFmpeg failed with status code {session.ReturnCode.Value}");
+                    MyConsole.WriteLine($"FFmpeg failed with status code {session.ReturnCode} {session.Output} {session}");
 #endif
                     View view = (View)sender;
-                    Snackbar.Make(view, $"{session.ReturnCode.Value} Failed: {videoTitle}", Snackbar.LengthLong)
+                    Snackbar.Make(view, $"{session.ReturnCode} Failed: {videoTitle}", Snackbar.LengthLong)
                         .SetAction("Action", (View.IOnClickListener)null).Show();
                 }
             }
@@ -509,29 +515,30 @@ namespace Ass_Pain
         ///<summary>
         ///Creates new Callback instance which should be created for every instance of FFmpeg
         ///</summary>
-        ///<param name="duration">Duration of whole video in seconds</param>
-        ///<param name="poradieVPlayliste">Number of element in playlist, can be null</param>
         ///<param name="notification">Notification on which progress should be displayed</param>
-        public StatisticsCallback(int duration, int? poradieVPlayliste, DownloadNotification notification)
+        public StatisticsCallback(DownloadNotification notification)
         {
-            Duration = duration;
-            PoradieVPlayliste = poradieVPlayliste;
             Notification = notification;
+            #if DEBUG
+            MyConsole.WriteLine("Creating new callback");
+            #endif
         }
-        private int Duration { get; }
-        private int? PoradieVPlayliste { get; }
         private DownloadNotification Notification { get; }
         public void Apply(Statistics statistics)
         {
+            (int? poradieVPlayliste, int duration) = MainActivity.stateHandler.SessionIdToPlaylistOrderMapping[statistics.SessionId];
 #if DEBUG
-            MyConsole.WriteLine($"Percentage: {(statistics.Time / Duration / 10).Constraint(0, 100)}");
-            //MyConsole.WriteLine(statistics.ToString());
+            MyConsole.WriteLine($"Percentage: {(statistics.Time / duration / 10).Constraint(0, 100)}");
+            MyConsole.WriteLine(statistics.ToString());
 #endif
-            Notification.Stage2((statistics.Time / Duration / 10).Constraint(0,100), PoradieVPlayliste);
+            Notification.Stage2((statistics.Time / duration / 10).Constraint(0,100), poradieVPlayliste);
         }
     }
 
+#pragma warning disable CS1591
     [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedType.Global")]
     public class Image
     {
         public List<string> types { get; set; }
@@ -546,6 +553,8 @@ namespace Ass_Pain
     }
 
     [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedType.Global")]
     public class MusicBrainzThumbnail
     {
         public List<Image> images { get; set; }
@@ -553,9 +562,12 @@ namespace Ass_Pain
     }
 
     [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedType.Global")]
     public class Thumbnails
     {
         public string large { get; set; }
         public string small { get; set; }
     }
+#pragma warning restore CS1591
 }
