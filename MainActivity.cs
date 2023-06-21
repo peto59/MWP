@@ -171,11 +171,9 @@ namespace Ass_Pain
 #if DEBUG
                 MyConsole.WriteLine($"Permission {permissions[i]}: {grantResults[i]}");
 #endif
-                if (grantResults[i] != Permission.Granted)
-                {
-                    shouldRequestAgain = true;
-                    break;
-                }
+                if (grantResults[i] == Permission.Granted) continue;
+                shouldRequestAgain = true;
+                break;
             }
 
             if (!Android.OS.Environment.IsExternalStorageManager || shouldRequestAgain)
@@ -196,22 +194,15 @@ namespace Ass_Pain
                 Android.Manifest.Permission.ForegroundService
             };
 
-            bool exitFlag = true;
+            bool exitFlag = permissionsLocation.Aggregate(true, (current, perm) => current & ContextCompat.CheckSelfPermission(this, perm) == (int)Permission.Granted);
 
-            foreach (string perm in permissionsLocation)
-            {
-                exitFlag &=
-                    ContextCompat.CheckSelfPermission(this, perm) ==
-                    (int)Permission.Granted;
-            }
-            
             if (exitFlag && Android.OS.Environment.IsExternalStorageManager)
             {
                 AfterReceivingPermissions();
                 return;
             }
 
-            const int RequestLocationId = 1;
+            const int requestLocationId = 1;
             Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
                     .SetAction("OK", v =>
                     {
@@ -231,7 +222,7 @@ namespace Ass_Pain
 #endif
                             }
                         }
-                        RequestPermissions(permissionsLocation, RequestLocationId);
+                        RequestPermissions(permissionsLocation, requestLocationId);
                     }).Show();
         }
 
@@ -276,7 +267,6 @@ namespace Ass_Pain
             {
                 File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
-
 
             //new Thread(() => { nm.Listener(); }).Start();
             new Thread(() => {
@@ -330,6 +320,7 @@ namespace Ass_Pain
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
             
             Intent serviceIntent = new Intent(this, typeof(MediaService));
+            
             /*if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
                 StartForegroundService(serviceIntent);
