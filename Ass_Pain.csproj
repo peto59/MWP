@@ -87,6 +87,8 @@
     <Compile Include="accept_songs.cs" />
     <Compile Include="BackEnd\SettingsManager.cs" />
     <Compile Include="DatatypesAndExtensions\Album.cs" />
+    <Compile Include="DatatypesAndExtensions\ChromaprintResult.cs" />
+    <Compile Include="DatatypesAndExtensions\Setting.cs" />
     <Compile Include="Helpers\APIThrottler.cs" />
     <Compile Include="DatatypesAndExtensions\Artist.cs" />
     <Compile Include="DownloadNotification.cs" />

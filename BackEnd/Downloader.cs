@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using Com.Geecko.Fpcalc;
+using Newtonsoft.Json;
 using YoutubeExplode;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
@@ -35,7 +36,7 @@ namespace Ass_Pain
         private static readonly string Path = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
         private static readonly string MusicPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
 
-        public static async void Download(object sender, EventArgs e, string url)
+        public static async void Download(object sender, EventArgs e, string url, DownloadActions action)
         {
             List<string> authors = new List<string>();
             View view = (View)sender;
@@ -385,12 +386,12 @@ namespace Ass_Pain
             return ".png";
         }
 
-        private static async Task<string> GetMusicBrainzIDFromFingerprint(string filePath)
+        public static async Task<string> GetMusicBrainzIDFromFingerprint(string filePath)
         {
-            string fingerPrint = FpCalc.InvokeFpCalc(new []{"-json", $"{filePath}"});
-            
+            ChromaprintResult result = JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new []{"-json", $"{filePath}"}));
             using HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync("https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={}&fingerprint={}&meta=recordingids");
+            HttpResponseMessage response = await client.GetAsync($"https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={result.duration}&fingerprint={result.fingerprint}&meta=recordingids");
+            MyConsole.WriteLine(response.Content.ToString());
             return "asd";
 
         }
