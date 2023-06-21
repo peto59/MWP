@@ -8,33 +8,33 @@ namespace Ass_Pain
         private const string ShareName = "AssPainSharedPreferences";
 
 
-        private static readonly Setting<bool> shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", false);
+        /*private static readonly Setting<bool> shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", false);
         public static bool ShouldUseChromaprintAtDownload
         {
             get => shouldUseChromaprintAtDownload.Value;
             set => shouldUseChromaprintAtDownload.Value = value;
         }
-        
-        private static readonly Setting<bool> shouldUseMusicBrainzAtDownload = new BoolSetting(ShareName, "ShouldUseMusicBrainzAtDownload", false);
-        public static bool ShouldUseMusicBrainzAtDownload
-        {
-            get => shouldUseMusicBrainzAtDownload.Value;
-            set => shouldUseMusicBrainzAtDownload.Value = value;
-        }
-        
+
         private static readonly Setting<bool> shouldUseChromaprintAtDiscover = new BoolSetting(ShareName, "ShouldUseChromaprintAtDiscover", false);
         public static bool ShouldUseChromaprintAtDiscover
         {
             get => shouldUseChromaprintAtDiscover.Value;
             set => shouldUseChromaprintAtDiscover.Value = value;
-        }
+        }*/
         
-        private static readonly Setting<bool> shouldUseMusicBrainzAtDiscover = new BoolSetting(ShareName, "ShouldUseMusicBrainzAtDiscover", false);
-        public static bool ShouldUseMusicBrainzAtDiscover
+        private static readonly Setting<int> defaultDownloadAction = new IntSetting(ShareName, "defaultDownloadAction", (int)DownloadActions.DownloadOnly);
+        public static DownloadActions DefaultDownloadAction
         {
-            get => shouldUseMusicBrainzAtDiscover.Value;
-            set => shouldUseMusicBrainzAtDiscover.Value = value;
+            get => (DownloadActions)defaultDownloadAction.Value;
+            set => defaultDownloadAction.Value = (int)value;
         }
+    }
+
+    internal enum DownloadActions
+    {
+        DownloadOnly,
+        DownloadWithMbid,
+        Downloadmp4
     }
     
     internal abstract class Setting<T>
@@ -65,6 +65,17 @@ namespace Ass_Pain
         public BoolSetting(string shareName, string key, bool defaultValue) : base(shareName, key, defaultValue) {}
 
         public override bool Value
+        {
+            get => Preferences.Get(Key, DefaultValue, ShareName);
+            set => Preferences.Set(Key, value, ShareName);
+        }
+    }
+    
+    internal class IntSetting : Setting<int>
+    {
+        public IntSetting(string shareName, string key, int defaultValue) : base(shareName, key, defaultValue) {}
+
+        public override int Value
         {
             get => Preferences.Get(Key, DefaultValue, ShareName);
             set => Preferences.Set(Key, value, ShareName);
