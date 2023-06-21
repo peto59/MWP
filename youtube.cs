@@ -18,6 +18,7 @@ using Xamarin.Essentials;
 using Android.Widget;
 using Android.Graphics;
 using AndroidX.Core.App;
+using Google.Android.Material.Chip;
 
 namespace Ass_Pain
 {
@@ -64,18 +65,7 @@ namespace Ass_Pain
             web_view.Settings.JavaScriptEnabled = true;
             web_view.SetWebViewClient(new HelloWebViewClient());
             web_view.LoadUrl("https://www.youtube.com/");
-
-            download = FindViewById<Android.Widget.Button>(Resource.Id.download);
-            download.Click += (sender, ea) =>
-            {
-                Downloader.Download(sender, ea, web_view.Url);
-            };
-            download.Visibility = ViewStates.Invisible;
-            download.Background.SetColorFilter(
-                Color.Rgb(255, 76, 41),
-                PorterDuff.Mode.Multiply
-            );
-
+            
             try
             {
                 if (Accelerometer.IsMonitoring)
@@ -104,26 +94,55 @@ namespace Ass_Pain
 
 
             FloatingActionButton download_popup_show = FindViewById<FloatingActionButton>(Resource.Id.fab);
-            download_popup_show.Background.SetColorFilter(
-                Color.Rgb(255, 76, 41),
-                PorterDuff.Mode.Multiply
-            );
+            Button mp4 = FindViewById<Button>(Resource.Id.mp4_btn);
+            Button music_brainz = FindViewById<Button>(Resource.Id.music_brainz_btn);
+            Button download_casual = FindViewById<Button>(Resource.Id.download_basic_btn);
 
-            int down_vis = 0;
-            download_popup_show.Click += delegate {
-                if (down_vis == 0)
-                { 
-                
-                    down_vis = 1;
-                    download.Visibility = ViewStates.Visible;
+            download_casual.Visibility = ViewStates.Invisible;
+            mp4.Visibility = ViewStates.Invisible;
+            music_brainz.Visibility = ViewStates.Invisible;
+            
+            mp4.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            music_brainz.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            download_casual.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            
+            bool visi_state = false;
+            download_popup_show.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            download_popup_show.Click += delegate(object sender, EventArgs args)
+            {
+                if (visi_state)
+                {
+                    download_casual.Visibility = ViewStates.Invisible;
+                    mp4.Visibility = ViewStates.Invisible;
+                    music_brainz.Visibility = ViewStates.Invisible;
+                    visi_state = false;
+                }
+                else
+                    Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadOnly);
+            };
+
+            download_popup_show.LongClick += delegate(object sender, View.LongClickEventArgs args)
+            {
+                if (!visi_state)
+                {
+                    download_casual.Visibility = ViewStates.Visible;
+                    mp4.Visibility = ViewStates.Visible;
+                    music_brainz.Visibility = ViewStates.Visible;
+                    visi_state = true;
                 }
                 else
                 {
-                    down_vis = 0;
-                    download.Visibility = ViewStates.Invisible;
-
+                    download_casual.Visibility = ViewStates.Invisible;
+                    mp4.Visibility = ViewStates.Invisible;
+                    music_brainz.Visibility = ViewStates.Invisible;
                 }
+
             };
+
+            download_casual.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadOnly); };
+            mp4.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.Downloadmp4); };
+            music_brainz.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadWithMbid); };
+
         }
 
 
