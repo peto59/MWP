@@ -2,7 +2,7 @@
 using Android.Views;
 using Com.Arthenica.Ffmpegkit;
 using Google.Android.Material.Snackbar;
-using Hqub.MusicBrainz.API.Entities;
+// using Hqub.MusicBrainz.API.Entities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,6 +17,7 @@ using System.Xml;
 using System.Xml.Linq;
 using Com.Geecko.Fpcalc;
 using Newtonsoft.Json;
+using TagLib.Id3v2;
 using YoutubeExplode;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
@@ -137,10 +138,17 @@ namespace Ass_Pain
                     FFmpegSession session = new FFmpegSession(new []{"-i", $"{Path}/tmp/unprocessed{i}.mp3", "-i", $"{Path}/tmp/file{i}.jpg", "-map", "0:0", "-map", "1:0", "-c:a", "libmp3lame", "-id3v2_version", "4", "-write_xing", "0", "-loglevel", "quiet", "-y", $"{Path}/tmp/video{i}.mp3"});
                     MainActivity.stateHandler.SessionIdToPlaylistOrderMapping.Add(session.SessionId, (poradieVPlayliste, duration));
                     FFmpegKitConfig.FfmpegExecute(session);
+                    notification.Stage3(poradieVPlayliste);
+#if DEBUG
+                    MyConsole.WriteLine($"ffmpeg finished {poradieVPlayliste}");
+#endif
                     return session;
                 });
                 _ = FFmpegTask.ContinueWith(task =>
                 {
+#if DEBUG
+                    MyConsole.WriteLine($"ffmpeg finished2 {poradieVPlayliste}");
+#endif
                     notification.Stage3(poradieVPlayliste);
                 });
 
@@ -230,6 +238,10 @@ namespace Ass_Pain
                     string[] authors = { FileManager.GetAlias(author) };
                     tfile.Tag.Performers = authors;
                     tfile.Tag.AlbumArtists = authors;
+                    //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
+                    //Tag custom = (Tag) tfile.GetTag(TagLib.TagTypes.Id3v2);
+                    //PrivateFrame p = PrivateFrame.Get(custom, "MusicBrainzRecordingId", true);
+
                     if (album != null)
                     {
                         tfile.Tag.Album = album;
@@ -392,25 +404,40 @@ namespace Ass_Pain
             ChromaprintResult chromaprintResult = JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new []{"-json", $"{filePath}"}));
             using HttpClient client = new HttpClient();
             HttpResponseMessage response = await client.GetAsync($"https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={(int)chromaprintResult.duration}&fingerprint={chromaprintResult.fingerprint}&meta=recordings+releasegroups+compress");
+            if (!response.IsSuccessStatusCode) return string.Empty;
             Stream stream = await response.Content.ReadAsStreamAsync();
             //https://musicbrainz.org/ws/2/artist/8a9d0b90-951e-4ab8-b2dc-9d3618af3d28?inc=releases
             
             XDocument xdoc = XDocument.Load(stream);
 
-            xdoc.Root.Descendants("results").Descendants("result").Descendants("recordings").Descendants("recording").Descendants("id").First().Value 
-            xdoc.Root.Descendants("results").Descendants("result").Descendants("score").First().Value
+            //xdoc.Root.Descendants("results").Descendants("result").Descendants("recordings").Descendants("recording").Descendants("id").First().Value 
+            //xdoc.Root.Descendants("results").Descendants("result").Descendants("score").First().Value
             //https://coverartarchive.org/release-group/f9dc140a-8653-4930-8538-a7b916960391
-            IEnumerable<XElement> results = xdoc.Descendants("results");
-            IEnumerable<(string title, string id, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id, string type)> releaseGroups)>
-                x; /*= 
-                from result in results.Descendants("result").OrderByDescending(result => float.Parse(result.Descendants("score").First().Value))
-                from recording in result.Descendants("recordings").Descendants("recordings")
-                from id in recording.Descendants(ns + "id")
-                select id;*/
-            foreach(XElement m in x)
-            {
-                MyConsole.WriteLine(m.Value);
-            }
+            //IEnumerable<(string title, string id, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id)> releaseGroups)>
+            
+            IEnumerable<(string title, string recordingId, string trackId, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id )> releaseGroups)> results = 
+                from result in xdoc.Descendants("result")
+                from recording in result.Descendants("recording")
+                select (
+                    recording.Elements("title").First().Value, 
+                    recording.Elements("id").First().Value,
+                    result.Elements("id").First().Value,
+                    from artist in recording.Elements("artist") select ( 
+                        artist.Elements("title").First().Value,
+                        artist.Elements("id").First().Value
+                        ),
+                    from releaseGroup in recording.Elements("releasegroup") select ( 
+                        releaseGroup.Elements("title").First().Value,
+                        releaseGroup.Elements("id").First().Value
+                    )
+                );
+            
+            response = await client.GetAsync($"https://coverartarchive.org/release-group/{results.First().releaseGroups.First().id}");
+            Console.WriteLine($"Status: {response.StatusCode}");
+            if (!response.IsSuccessStatusCode) return string.Empty;
+            
+            CoverArt coverArtResult = JsonConvert.DeserializeObject<CoverArt>(await response.Content.ReadAsStringAsync());
+            Console.WriteLine($"Image: {coverArtResult.images.Where(image => image.approved).First().thumbnails.large}");
 
             return "asd";
 
@@ -514,11 +541,11 @@ namespace Ass_Pain
             return "\"" + s + "\"";
         }
 
-        static bool IsOfficial(Release r)
-        {
-            return !string.IsNullOrEmpty(r.Date) && !string.IsNullOrEmpty(r.Status)
-                 && r.Status.Equals("Official", StringComparison.OrdinalIgnoreCase);
-        }
+        // static bool IsOfficial(Release r)
+        // {
+        //     return !string.IsNullOrEmpty(r.Date) && !string.IsNullOrEmpty(r.Status)
+        //          && r.Status.Equals("Official", StringComparison.OrdinalIgnoreCase);
+        // }
         public static string ToShortDate(this string s)
         {
             if (string.IsNullOrEmpty(s) || s.Length < 4)
@@ -547,12 +574,21 @@ namespace Ass_Pain
         private DownloadNotification Notification { get; }
         public void Apply(Statistics statistics)
         {
-            (int? poradieVPlayliste, int duration) = MainActivity.stateHandler.SessionIdToPlaylistOrderMapping[statistics.SessionId];
+            try
+            {
+                (int? poradieVPlayliste, int duration) = MainActivity.stateHandler.SessionIdToPlaylistOrderMapping[statistics.SessionId];
 #if DEBUG
-            MyConsole.WriteLine($"Percentage: {(statistics.Time / duration / 10).Constraint(0, 100)}");
-            MyConsole.WriteLine(statistics.ToString());
+                MyConsole.WriteLine($"Percentage: {(statistics.Time / duration / 10).Constraint(0, 100)}");
+                MyConsole.WriteLine(statistics.ToString());
 #endif
-            Notification.Stage2((statistics.Time / duration / 10).Constraint(0,100), poradieVPlayliste);
+                Notification.Stage2((statistics.Time / duration / 10).Constraint(0,100), poradieVPlayliste);
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e.ToString());
+#endif
+            }
         }
     }
 

@@ -13,7 +13,7 @@ namespace Ass_Pain
     internal static class FileManager
     {
         private static readonly string Root = (string)Android.OS.Environment.ExternalStorageDirectory;
-        private static readonly string Path = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
+        public static readonly string PrivatePath = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
         public static readonly string MusicFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
         //private static readonly string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string( System.IO.Path.GetInvalidFileNameChars() ) + new string( System.IO.Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>");
         //private static readonly string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", invalidChars );
@@ -540,11 +540,11 @@ namespace Ass_Pain
         public static int GetAvailableFile(string name = "video")
         {
             int i = 0;
-            while (File.Exists($"{Path}/tmp/{name}{i}.mp3"))
+            while (File.Exists($"{PrivatePath}/tmp/{name}{i}.mp3"))
             {
                 i++;
             }
-            string dest = $"{Path}/tmp/{name}{i}.mp3";
+            string dest = $"{PrivatePath}/tmp/{name}{i}.mp3";
             File.Create(dest).Close();
             return i;
         }
@@ -598,32 +598,32 @@ namespace Ass_Pain
         public static void AddSyncTarget(string host)
         {
             
-            string json = File.ReadAllText($"{Path}/sync_targets.json");
+            string json = File.ReadAllText($"{PrivatePath}/sync_targets.json");
             Dictionary<string, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             targets.Add(host, GetSongs());
-            File.WriteAllTextAsync($"{Path}/sync_targets.json", JsonConvert.SerializeObject(targets));
+            File.WriteAllTextAsync($"{PrivatePath}/sync_targets.json", JsonConvert.SerializeObject(targets));
         }
 
         public static void AddTrustedHost(string host)
         {
 
-            string json = File.ReadAllText($"{Path}/trusted_hosts.json");
+            string json = File.ReadAllText($"{PrivatePath}/trusted_hosts.json");
             List<string> hosts = JsonConvert.DeserializeObject<List<string>>(json);
             hosts.Add(host);
-            File.WriteAllTextAsync($"{Path}/trusted_hosts.json", JsonConvert.SerializeObject(hosts));
+            File.WriteAllTextAsync($"{PrivatePath}/trusted_hosts.json", JsonConvert.SerializeObject(hosts));
         }
 
         public static bool GetTrustedHost(string host)
         {
 
-            string json = File.ReadAllText($"{Path}/trusted_hosts.json");
+            string json = File.ReadAllText($"{PrivatePath}/trusted_hosts.json");
             List<string> hosts = JsonConvert.DeserializeObject<List<string>>(json);
             return hosts.Contains(host);
         }
 
         public static (bool, List<string>) GetSyncSongs(string host)
         {
-            string json = File.ReadAllText($"{Path}/sync_targets.json");
+            string json = File.ReadAllText($"{PrivatePath}/sync_targets.json");
             Dictionary<string, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             return targets.TryGetValue(host, out List<string> target) ? (true, target) : (false, null);
         }

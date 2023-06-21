@@ -267,7 +267,17 @@ namespace Ass_Pain
             {
                 File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
+            
+            DirectoryInfo di = new DirectoryInfo($"{FileManager.PrivatePath}/tmp/");
 
+            foreach (FileInfo file in di.GetFiles())
+            {
+                file.Delete();
+#if DEBUG
+                MyConsole.WriteLine($"Deleting {file}");
+#endif
+            }
+            
             //new Thread(() => { nm.Listener(); }).Start();
             new Thread(() => {
                 stateHandler.Artists.Add(new Artist("No Artist", "Default"));
@@ -323,7 +333,6 @@ namespace Ass_Pain
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
             
             Intent serviceIntent = new Intent(this, typeof(MediaService));
-            
             /*if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
                 StartForegroundService(serviceIntent);
