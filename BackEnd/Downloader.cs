@@ -4,6 +4,7 @@ using Com.Arthenica.Ffmpegkit;
 using Google.Android.Material.Snackbar;
 using Hqub.MusicBrainz.API.Entities;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -388,10 +389,29 @@ namespace Ass_Pain
 
         public static async Task<string> GetMusicBrainzIDFromFingerprint(string filePath)
         {
-            ChromaprintResult result = JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new []{"-json", $"{filePath}"}));
+            ChromaprintResult chromaprintResult = JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new []{"-json", $"{filePath}"}));
             using HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync($"https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={result.duration}&fingerprint={result.fingerprint}&meta=recordingids");
-            MyConsole.WriteLine(response.Content.ToString());
+            HttpResponseMessage response = await client.GetAsync($"https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={(int)chromaprintResult.duration}&fingerprint={chromaprintResult.fingerprint}&meta=recordings+releasegroups+compress");
+            Stream stream = await response.Content.ReadAsStreamAsync();
+            //https://musicbrainz.org/ws/2/artist/8a9d0b90-951e-4ab8-b2dc-9d3618af3d28?inc=releases
+            
+            XDocument xdoc = XDocument.Load(stream);
+
+            xdoc.Root.Descendants("results").Descendants("result").Descendants("recordings").Descendants("recording").Descendants("id").First().Value 
+            xdoc.Root.Descendants("results").Descendants("result").Descendants("score").First().Value
+            //https://coverartarchive.org/release-group/f9dc140a-8653-4930-8538-a7b916960391
+            IEnumerable<XElement> results = xdoc.Descendants("results");
+            IEnumerable<(string title, string id, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id, string type)> releaseGroups)>
+                x; /*= 
+                from result in results.Descendants("result").OrderByDescending(result => float.Parse(result.Descendants("score").First().Value))
+                from recording in result.Descendants("recordings").Descendants("recordings")
+                from id in recording.Descendants(ns + "id")
+                select id;*/
+            foreach(XElement m in x)
+            {
+                MyConsole.WriteLine(m.Value);
+            }
+
             return "asd";
 
         }
@@ -451,7 +471,7 @@ namespace Ass_Pain
                      select credits;
              foreach(XElement m in x)
              {
-                 Console.WriteLine(m.Attribute("id").Value);
+                 MyConsole.WriteLine(m.Attribute("id").Value);
              }
             /*xmlDocument.Validate(new System.Xml.Schema.ValidationEventHandler((object sender, System.Xml.Schema.ValidationEventArgs args) =>
             {
@@ -536,7 +556,7 @@ namespace Ass_Pain
         }
     }
 
-#pragma warning disable CS1591
+/*#pragma warning disable CS1591
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     [SuppressMessage("ReSharper", "UnusedType.Global")]
@@ -570,5 +590,7 @@ namespace Ass_Pain
         public string large { get; set; }
         public string small { get; set; }
     }
-#pragma warning restore CS1591
+#pragma warning restore CS1591*/
 }
+
+

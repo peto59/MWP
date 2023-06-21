@@ -285,6 +285,8 @@ namespace Ass_Pain
                 }*/
                 
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
+                RunOnUiThread(() => side_player.populate_side_bar(this));
+                
                 /*Artist a = new Artist("otestuj ma", "default");
                 stateHandler.Artists.Add(a);
                 a = new Artist("specialny", "default");

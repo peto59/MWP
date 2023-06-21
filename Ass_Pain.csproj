@@ -28,6 +28,7 @@
     <AndroidEnableSGenConcurrent>true</AndroidEnableSGenConcurrent>
     <AndroidUseAapt2>true</AndroidUseAapt2>
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
+    <LangVersion>9</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(OS)' == 'Unix' ">
     <MonoAndroidBinDirectory>/usr/lib/mono/xamarin-android/bin</MonoAndroidBinDirectory>
@@ -88,6 +89,7 @@
     <Compile Include="BackEnd\SettingsManager.cs" />
     <Compile Include="DatatypesAndExtensions\Album.cs" />
     <Compile Include="DatatypesAndExtensions\ChromaprintResult.cs" />
+    <Compile Include="DatatypesAndExtensions\CoverArtArchive.cs" />
     <Compile Include="DatatypesAndExtensions\Setting.cs" />
     <Compile Include="Helpers\APIThrottler.cs" />
     <Compile Include="DatatypesAndExtensions\Artist.cs" />
