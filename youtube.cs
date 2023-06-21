@@ -151,15 +151,21 @@ namespace Ass_Pain
 
             };
 
-            SongSelectionDialog();
-            
             download_casual.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadOnly); };
             mp4.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.Downloadmp4); };
             music_brainz.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadWithMbid); };
             
         }
 
-        private void SongSelectionDialog()
+        /// <summary>
+        /// pop up for customizing downloaded song, choosing which image or name of song you want to use to save
+        /// the song
+        /// </summary>
+        /// <param name="songNameIn"></param>
+        /// <param name="songArtistIn"></param>
+        /// <param name="songAlbumIn"></param>
+        /// <param name="imgUrl"></param>
+        public void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, string imgUrl)
         {
             bottomDialog = new BottomSheetDialog(this);
             LayoutInflater ifl = LayoutInflater.From(this);
@@ -167,9 +173,9 @@ namespace Ass_Pain
             if (view != null) bottomDialog.SetContentView(view);
 
             previous = bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.previous_download);
-            previous.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            previous?.SetBackgroundColor(Android.Graphics.Color.ParseColor("#ff4d29"));
             next = bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.next_download);
-            next.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            next?.SetBackgroundColor(Android.Graphics.Color.ParseColor("#ff4d29"));
 
             accept = bottomDialog?.FindViewById<TextView>(Resource.Id.accept_download);
             reject = FindViewById<TextView>(Resource.Id.reject_download);
@@ -178,7 +184,10 @@ namespace Ass_Pain
             songName = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_name);
             songArtist = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_artist);
             songAlbum = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_album);
-
+            
+            if (songArtist != null) songArtist.Text = songArtistIn;
+            if (songAlbum != null) songAlbum.Text = songAlbumIn;
+            if (songName != null) songName.Text = songNameIn;
 
             if (bottomDialog != null) bottomDialog.Show();
         }
