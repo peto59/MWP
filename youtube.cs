@@ -18,6 +18,8 @@ using Xamarin.Essentials;
 using Android.Widget;
 using Android.Graphics;
 using AndroidX.Core.App;
+using Ass_Pain.Helpers;
+using Google.Android.Material.BottomSheet;
 using Google.Android.Material.Chip;
 
 namespace Ass_Pain
@@ -30,6 +32,16 @@ namespace Ass_Pain
         DrawerLayout drawer;
         WebView web_view;
 
+        private FloatingActionButton previous;
+        private FloatingActionButton next;
+        private TextView accept;
+        private TextView reject;
+
+        private BottomSheetDialog bottomDialog;
+        private ImageView songImage;
+        private TextView songName;
+        private TextView songArtist;
+        private TextView songAlbum;
 
         SensorSpeed speed = SensorSpeed.Game;
         
@@ -139,14 +151,37 @@ namespace Ass_Pain
 
             };
 
+            SongSelectionDialog();
+            
             download_casual.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadOnly); };
             mp4.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.Downloadmp4); };
             music_brainz.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadWithMbid); };
-
+            
         }
 
+        private void SongSelectionDialog()
+        {
+            bottomDialog = new BottomSheetDialog(this);
+            LayoutInflater ifl = LayoutInflater.From(this);
+            View view = ifl?.Inflate(Resource.Layout.song_download_selection_dialog, null);
+            if (view != null) bottomDialog.SetContentView(view);
 
-       
+            previous = bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.previous_download);
+            previous.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            next = bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.next_download);
+            next.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+
+            accept = bottomDialog?.FindViewById<TextView>(Resource.Id.accept_download);
+            reject = FindViewById<TextView>(Resource.Id.reject_download);
+
+            songImage = bottomDialog?.FindViewById<ImageView>(Resource.Id.to_download_song_image);
+            songName = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_name);
+            songArtist = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_artist);
+            songAlbum = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_album);
+
+
+            if (bottomDialog != null) bottomDialog.Show();
+        }
 
         void acc_shaked(object sender, EventArgs e)
         {

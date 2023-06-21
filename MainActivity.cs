@@ -326,7 +326,7 @@ namespace Ass_Pain
                 {
                     Console.WriteLine(e);
                 }*/
-                Downloader.GetMusicBrainzIDFromFingerprint(stateHandler.Songs.Search("dark hour").First().Path);
+                // Downloader.GetMusicBrainzIDFromFingerprint(stateHandler.Songs.Search("dark hour").First().Path);
             }).Start();
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver(this);
