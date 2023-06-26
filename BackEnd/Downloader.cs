@@ -401,6 +401,7 @@ namespace Ass_Pain
 
         public static async Task<string> GetMusicBrainzIDFromFingerprint(string filePath)
         {
+            Console.WriteLine("start");
             ChromaprintResult chromaprintResult = JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new []{"-json", $"{filePath}"}));
             using HttpClient client = new HttpClient();
             HttpResponseMessage response = await client.GetAsync($"https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={(int)chromaprintResult.duration}&fingerprint={chromaprintResult.fingerprint}&meta=recordings+releasegroups+compress");
@@ -409,7 +410,8 @@ namespace Ass_Pain
             //https://musicbrainz.org/ws/2/artist/8a9d0b90-951e-4ab8-b2dc-9d3618af3d28?inc=releases
             
             XDocument xdoc = XDocument.Load(stream);
-
+            stream.Dispose();
+            Console.WriteLine("1");
             //xdoc.Root.Descendants("results").Descendants("result").Descendants("recordings").Descendants("recording").Descendants("id").First().Value 
             //xdoc.Root.Descendants("results").Descendants("result").Descendants("score").First().Value
             //https://coverartarchive.org/release-group/f9dc140a-8653-4930-8538-a7b916960391
@@ -422,22 +424,36 @@ namespace Ass_Pain
                     recording.Elements("title").First().Value, 
                     recording.Elements("id").First().Value,
                     result.Elements("id").First().Value,
-                    from artist in recording.Elements("artist") select ( 
+                    from artist in recording.Descendants("artists").Descendants("artist") select ( 
                         artist.Elements("title").First().Value,
                         artist.Elements("id").First().Value
-                        ),
-                    from releaseGroup in recording.Elements("releasegroup") select ( 
+                    ),
+                    from releaseGroup in recording.Descendants("releasegroup") select ( 
                         releaseGroup.Elements("title").First().Value,
                         releaseGroup.Elements("id").First().Value
                     )
                 );
-            
+            foreach (var result in results)
+            {
+                foreach (var releaseGroup in result.releaseGroups)
+                {
+                    Console.WriteLine($"https://coverartarchive.org/relasdasdease-group/{releaseGroup.id}");
+                    
+                }
+                Console.WriteLine($"cnt {result.artists}");
+                foreach (var artist in result.artists)
+                {
+                    Console.WriteLine($"My favorite: {artist.title}");
+                }
+            }
+            Console.WriteLine($"https://coverartarchive.org/release-group/{results.First().releaseGroups.First().id}");
+            response.Dispose();
             response = await client.GetAsync($"https://coverartarchive.org/release-group/{results.First().releaseGroups.First().id}");
             Console.WriteLine($"Status: {response.StatusCode}");
             if (!response.IsSuccessStatusCode) return string.Empty;
             
             CoverArt coverArtResult = JsonConvert.DeserializeObject<CoverArt>(await response.Content.ReadAsStringAsync());
-            Console.WriteLine($"Image: {coverArtResult.images.Where(image => image.approved).First().thumbnails.large}");
+            Console.WriteLine($"Image: {coverArtResult.images.First(image => image.approved).thumbnails.large}");
 
             return "asd";
 
