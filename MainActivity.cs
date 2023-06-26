@@ -35,6 +35,7 @@ namespace Ass_Pain
 {
     
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true, Description = "@string/app_description")]
+    //[IntentFilter(new[] { Intent.ActionSend }, Categories = new[] { Intent.CategoryDefault }, DataMimeType = "text/plain")]
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         // public static Slovenska_prostituka player = new Slovenska_prostituka();
@@ -51,6 +52,7 @@ namespace Ass_Pain
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+            // Finish();   
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
             AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
@@ -72,6 +74,10 @@ namespace Ass_Pain
             navigationView.SetNavigationItemSelectedListener(this);
             
             side_player.populate_side_bar(this);
+            //stateHandler.SetView(this);
+            receiver = new MyBroadcastReceiver();
+            RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
+            RegisterReceiver(receiver, new IntentFilter(Android.Content.Intent.ActionSend, "*/*"));
 
             //rest of the stuff that was here is in AfterReceivingPermissions()
 
@@ -100,6 +106,12 @@ namespace Ass_Pain
         {
             MenuInflater.Inflate(Resource.Menu.menu_main, menu);
             return true;
+        }
+
+        protected override void OnDestroy()
+        {
+            UnregisterReceiver(receiver);
+            base.OnDestroy();
         }
 
         public override bool OnOptionsItemSelected(IMenuItem item)
@@ -295,7 +307,7 @@ namespace Ass_Pain
                 }*/
                 
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
-                RunOnUiThread(() => side_player.populate_side_bar(this));
+                //RunOnUiThread(() => side_player.populate_side_bar(this));
                 
                 /*Artist a = new Artist("otestuj ma", "default");
                 stateHandler.Artists.Add(a);
@@ -326,11 +338,9 @@ namespace Ass_Pain
                 {
                     Console.WriteLine(e);
                 }*/
-                // Downloader.GetMusicBrainzIDFromFingerprint(stateHandler.Songs.Search("dark hour").First().Path);
+                //_ = Downloader.GetMusicBrainzIDFromFingerprint(stateHandler.Songs.Search("dark hour").First().Path);
             }).Start();
-            stateHandler.SetView(this);
-            receiver = new MyBroadcastReceiver(this);
-            RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
+            
             
             Intent serviceIntent = new Intent(this, typeof(MediaService));
             /*if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
@@ -342,16 +352,17 @@ namespace Ass_Pain
                 StartService(serviceIntent);
             }*/
             
-            StartForegroundService(serviceIntent);
+            /*StartForegroundService(serviceIntent);
             if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
             {
 #if DEBUG
                 MyConsole.WriteLine("Cannot connect to MediaService");
 #endif
-            }
+            }*/
             /*Thread.Sleep(5000);
             ServiceConnection.Binder?.Service?.NextSong();*/
         }
     }
+    
 }
 
