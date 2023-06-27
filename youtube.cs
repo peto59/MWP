@@ -188,7 +188,7 @@ namespace Ass_Pain
             songImage = bottomDialog?.FindViewById<ImageView>(Resource.Id.to_download_song_image);
             songName = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_name);
             songArtist = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_artist);
-            songAlbum = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_album);1
+            songAlbum = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_album);
             
             if (songArtist != null) songArtist.Text = songArtistIn;
             if (songAlbum != null) songAlbum.Text = songAlbumIn;
