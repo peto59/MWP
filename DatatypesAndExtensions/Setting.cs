@@ -1,13 +1,6 @@
 using Xamarin.Essentials;
 namespace Ass_Pain
 {
-    internal enum DownloadActions
-    {
-        DownloadOnly,
-        DownloadWithMbid,
-        Downloadmp4
-    }
-    
     internal abstract class Setting<T>
     {
         protected string ShareName { get; }

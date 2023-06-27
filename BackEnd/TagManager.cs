@@ -247,14 +247,4 @@ namespace Ass_Pain
             Dispose();
         }
     }
-
-    [Flags]
-    internal enum SongSave
-    {
-        None = 0,
-        Title = 1,
-        Artist = 2,
-        Album = 4,
-        NoAlbum = 8
-    }
 }

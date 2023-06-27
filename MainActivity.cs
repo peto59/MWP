@@ -338,7 +338,7 @@ namespace Ass_Pain
                 {
                     Console.WriteLine(e);
                 }*/
-                //_ = Downloader.GetMusicBrainzIDFromFingerprint(stateHandler.Songs.Search("dark hour").First().Path);
+                _ = Downloader.GetMusicBrainzIdFromFingerprint(stateHandler.Songs.Search("dark hour").First().Path);
             }).Start();
             
             
