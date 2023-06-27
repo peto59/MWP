@@ -77,7 +77,6 @@ namespace Ass_Pain
             //stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver();
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
-            RegisterReceiver(receiver, new IntentFilter(Android.Content.Intent.ActionSend, "*/*"));
 
             //rest of the stuff that was here is in AfterReceivingPermissions()
 
@@ -292,10 +291,14 @@ namespace Ass_Pain
             
             //new Thread(() => { nm.Listener(); }).Start();
             new Thread(() => {
-                stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                 FileManager.DiscoverFiles();
                 if (stateHandler.Songs.Count < FileManager.GetSongs().Count)
                 {
+                    stateHandler.Songs = new List<Song>();
+                    stateHandler.Artists = new List<Artist>();
+                    stateHandler.Albums = new List<Album>();
+                    
+                    stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                     FileManager.GenerateList(FileManager.MusicFolder);
                 }
 
@@ -307,7 +310,7 @@ namespace Ass_Pain
                 }*/
                 
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
-                //RunOnUiThread(() => side_player.populate_side_bar(this));
+                RunOnUiThread(() => side_player.populate_side_bar(this));
                 
                 /*Artist a = new Artist("otestuj ma", "default");
                 stateHandler.Artists.Add(a);
@@ -352,13 +355,13 @@ namespace Ass_Pain
                 StartService(serviceIntent);
             }*/
             
-            /*StartForegroundService(serviceIntent);
+            StartForegroundService(serviceIntent);
             if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
             {
 #if DEBUG
                 MyConsole.WriteLine("Cannot connect to MediaService");
 #endif
-            }*/
+            }
             /*Thread.Sleep(5000);
             ServiceConnection.Binder?.Service?.NextSong();*/
         }
