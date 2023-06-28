@@ -486,10 +486,7 @@ namespace Ass_Pain
                     }
                 }
 
-                bool next = cnt < buffer.Count || hasNext;
-                bool prev = cnt > 0;
-                
-                youtube.SongSelectionDialog(current.title, current.artists.First().title, current.releaseGroups.First().title, coverArtResult.images.First(image => image.approved).thumbnails.large);
+                youtube.SongSelectionDialog(current.title, current.artists.First().title, current.releaseGroups.First().title, coverArtResult.images.First(image => image.approved).thumbnails.large, cnt < buffer.Count || hasNext, cnt > 0);
                 MainActivity.stateHandler.ResultEvent.WaitOne();
                 
                 if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Next)
