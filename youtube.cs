@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Android.App;
 using Android.Content;
 using Android.OS;
@@ -32,16 +33,16 @@ namespace Ass_Pain
         DrawerLayout drawer;
         WebView web_view;
 
-        private FloatingActionButton previous;
-        private FloatingActionButton next;
-        private TextView accept;
-        private TextView reject;
+        private static FloatingActionButton previous;
+        private static FloatingActionButton next;
+        private static TextView accept;
+        private static TextView reject;
 
-        private BottomSheetDialog bottomDialog;
-        private ImageView songImage;
-        private TextView songName;
-        private TextView songArtist;
-        private TextView songAlbum;
+        private static BottomSheetDialog bottomDialog;
+        private static ImageView songImage;
+        private static TextView songName;
+        private static TextView songArtist;
+        private static TextView songAlbum;
 
         SensorSpeed speed = SensorSpeed.Game;
         
@@ -151,36 +152,53 @@ namespace Ass_Pain
 
             };
 
-            SongSelectionDialog();
-            
             download_casual.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadOnly); };
             mp4.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.Downloadmp4); };
             music_brainz.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadWithMbid); };
-            
+
+            SongSelectionDialog("dd", "dd", "dd", "dd");
+
         }
 
-        private void SongSelectionDialog()
+        /// <summary>
+        /// pop up for customizing downloaded song, choosing which image or name of song you want to use to save
+        /// the song
+        /// </summary>
+        /// <param name="songNameIn"></param>
+        /// <param name="songArtistIn"></param>
+        /// <param name="songAlbumIn"></param>
+        /// <param name="imgUrl"></param>
+        public static void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, string imgUrl)
         {
-            bottomDialog = new BottomSheetDialog(this);
-            LayoutInflater ifl = LayoutInflater.From(this);
+            int retVal = 16;
+            
+            bottomDialog = new BottomSheetDialog(MainActivity.stateHandler.view);
+            LayoutInflater ifl = LayoutInflater.From(MainActivity.stateHandler.view);
             View view = ifl?.Inflate(Resource.Layout.song_download_selection_dialog, null);
             if (view != null) bottomDialog.SetContentView(view);
 
             previous = bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.previous_download);
-            previous.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            previous?.SetBackgroundColor(Android.Graphics.Color.ParseColor("#ff4d29"));
             next = bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.next_download);
-            next.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            next?.SetBackgroundColor(Android.Graphics.Color.ParseColor("#ff4d29"));
 
             accept = bottomDialog?.FindViewById<TextView>(Resource.Id.accept_download);
-            reject = FindViewById<TextView>(Resource.Id.reject_download);
+            reject = bottomDialog?.FindViewById<TextView>(Resource.Id.reject_download);
 
             songImage = bottomDialog?.FindViewById<ImageView>(Resource.Id.to_download_song_image);
             songName = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_name);
             songArtist = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_artist);
             songAlbum = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_album);
+            
+            if (songArtist != null) songArtist.Text = songArtistIn;
+            if (songAlbum != null) songAlbum.Text = songAlbumIn;
+            if (songName != null) songName.Text = songNameIn;
 
+            previous.Click += delegate(object sender, EventArgs args) {  };
 
             if (bottomDialog != null) bottomDialog.Show();
+
+
         }
 
         void acc_shaked(object sender, EventArgs e)
