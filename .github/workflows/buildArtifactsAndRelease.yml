@@ -39,7 +39,7 @@ jobs:
     - name: BuildAndSign
       uses: bradyjoslin/xamarinandroid-signedbuild-action@v1
       with:
-          csproj_path: FFmpeg/FFmpeg.csproj
+          csproj_path: Ass_Pain.csproj
           signing_keystore: ${{ secrets.KEYSTORE }}
           keystore_password: ${{ secrets.KEYSTORE_PASS }}
           signing_key_alias: ${{ secrets.KEY_ALIAS }}
