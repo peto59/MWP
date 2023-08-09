@@ -30,11 +30,12 @@ jobs:
           
     - name: Install dependencies
       run: nuget restore Ass_Pain.sln
-      
+    - name: LS
+      run : ls
     - name: BuildAndSign
       uses: bradyjoslin/xamarinandroid-signedbuild-action@v1
       with:
-          csproj_path: ../Ass_Pain.csproj
+          csproj_path: Ass_Pain.csproj
           signing_keystore: ${{ secrets.KEYSTORE }}
           keystore_password: ${{ secrets.KEYSTORE_PASS }}
           signing_key_alias: ${{ secrets.KEY_ALIAS }}
