@@ -41,12 +41,6 @@ jobs:
           signing_key_alias: ${{ secrets.KEY_ALIAS }}
           signing_key_password: ${{ secrets.KEY_PASS }}
 
-    - name: Upload
-      uses: actions/upload-artifact@v3
-      with:
-          name: apk
-          path: bin/Release/**Signed.apk
-
     - name: Release
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
