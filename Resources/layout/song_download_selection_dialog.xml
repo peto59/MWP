@@ -95,7 +95,8 @@
                   android:textSize="20dp"
         />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                  android:text="Reject" android:background="@drawable/rounded_button"
+                  android:text="Reject" 
+                  android:background="@drawable/rounded_button"
                   android:gravity="center"
                   android:id="@+id/reject_download"
                   android:paddingHorizontal="43dp"

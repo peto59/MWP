@@ -399,48 +399,130 @@ namespace Ass_Pain
             return ".png";
         }
 
-        public static async Task<string> GetMusicBrainzIDFromFingerprint(string filePath)
+        public static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup)> GetMusicBrainzIdFromFingerprint(string filePath)
         {
-            ChromaprintResult chromaprintResult = JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new []{"-json", $"{filePath}"}));
+            ChromaprintResult chromaprintResult = JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new[] { "-json", $"{filePath}" }));
             using HttpClient client = new HttpClient();
             HttpResponseMessage response = await client.GetAsync($"https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={(int)chromaprintResult.duration}&fingerprint={chromaprintResult.fingerprint}&meta=recordings+releasegroups+compress");
-            if (!response.IsSuccessStatusCode) return string.Empty;
-            Stream stream = await response.Content.ReadAsStreamAsync();
-            //https://musicbrainz.org/ws/2/artist/8a9d0b90-951e-4ab8-b2dc-9d3618af3d28?inc=releases
-            
-            XDocument xdoc = XDocument.Load(stream);
+            if (!response.IsSuccessStatusCode) return (string.Empty, string.Empty, string.Empty, new List<(string, string)>{(string.Empty, string.Empty)}, new List<(string, string)>{(string.Empty, string.Empty)});
+            await using Stream stream = await response.Content.ReadAsStreamAsync();
 
-            //xdoc.Root.Descendants("results").Descendants("result").Descendants("recordings").Descendants("recording").Descendants("id").First().Value 
-            //xdoc.Root.Descendants("results").Descendants("result").Descendants("score").First().Value
-            //https://coverartarchive.org/release-group/f9dc140a-8653-4930-8538-a7b916960391
-            //IEnumerable<(string title, string id, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id)> releaseGroups)>
-            
+            XDocument xdoc = XDocument.Load(stream);
             IEnumerable<(string title, string recordingId, string trackId, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id )> releaseGroups)> results = 
                 from result in xdoc.Descendants("result")
                 from recording in result.Descendants("recording")
                 select (
-                    recording.Elements("title").First().Value, 
-                    recording.Elements("id").First().Value,
-                    result.Elements("id").First().Value,
-                    from artist in recording.Elements("artist") select ( 
-                        artist.Elements("title").First().Value,
+                    recording.Elements("title").First().Value,  //    title 
+                    recording.Elements("id").First().Value,     //    recordingId
+                    result.Elements("id").First().Value,        //    trackId
+                    from artist in recording.Descendants("artist") select ( 
+                        artist.Elements("name").First().Value,
                         artist.Elements("id").First().Value
-                        ),
-                    from releaseGroup in recording.Elements("releasegroup") select ( 
+                    ),
+                    from releaseGroup in recording.Descendants("releasegroup") select ( 
                         releaseGroup.Elements("title").First().Value,
                         releaseGroup.Elements("id").First().Value
                     )
                 );
             
-            response = await client.GetAsync($"https://coverartarchive.org/release-group/{results.First().releaseGroups.First().id}");
-            Console.WriteLine($"Status: {response.StatusCode}");
-            if (!response.IsSuccessStatusCode) return string.Empty;
             
-            CoverArt coverArtResult = JsonConvert.DeserializeObject<CoverArt>(await response.Content.ReadAsStringAsync());
-            Console.WriteLine($"Image: {coverArtResult.images.Where(image => image.approved).First().thumbnails.large}");
+            MainActivity.stateHandler.FileEvent.WaitOne();
+            var output = (string.Empty, string.Empty, string.Empty, new List<(string, string)>{(string.Empty, string.Empty)}, new List<(string, string)>{(string.Empty, string.Empty)});
+            using var rEnumerator = results.GetEnumerator();
+            LastSongSelectionNavigation lastNavigation = LastSongSelectionNavigation.None;
+            int cnt = 0;
+            var buffer = new List<(string, string, string, IEnumerable<(string, string)>, IEnumerable<(string, string)>)>();
+            List<CoverArt> coverBuffer = new List<CoverArt>();
+            bool hasNext = true;
+            
+            while (true)
+            {
+                if (!hasNext)
+                {
+                    break;
+                }
+                
+                (string title, string recordingId, string trackId, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id)> releaseGroups) current;
+                CoverArt coverArtResult;
+                if (cnt >= buffer.Count || buffer.Count == 0)
+                {
+                    current = rEnumerator.Current;
+                    buffer.Add(current);
+                    response.Dispose();
+                    response = await client.GetAsync($"https://coverartarchive.org/release-group/{current.releaseGroups.First().id}");
+                    
+                    hasNext = rEnumerator.MoveNext();
 
-            return "asd";
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        coverBuffer.Add(null);
+                        if (lastNavigation == LastSongSelectionNavigation.Previous)
+                        {
+                            cnt--;
+                            continue;
+                        }
+                        cnt++;
+                        continue;
+                    }
+                    
+                    coverArtResult = JsonConvert.DeserializeObject<CoverArt>(await response.Content.ReadAsStringAsync());
+                    coverBuffer.Add(coverArtResult);
+                }
+                else
+                {
+                    current = buffer[cnt];
+                    coverArtResult = coverBuffer[cnt];
+                    
+                    if (coverArtResult == null)
+                    {
+                        coverBuffer.Add(null);
+                        if (lastNavigation == LastSongSelectionNavigation.Previous)
+                        {
+                            cnt--;
+                            continue;
+                        }
+                        cnt++;
+                        continue;
+                    }
+                }
 
+                youtube.SongSelectionDialog(current.title, current.artists.First().title, current.releaseGroups.First().title, coverArtResult.images.First(image => image.approved).thumbnails.large, cnt < buffer.Count || hasNext, cnt > 0);
+                MainActivity.stateHandler.ResultEvent.WaitOne();
+                
+                if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Next)
+                {
+                    lastNavigation = LastSongSelectionNavigation.Next;
+                    cnt++;
+                    MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                    continue;
+                }
+                
+                if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Previous)
+                {
+                    lastNavigation = LastSongSelectionNavigation.Previous;
+                    cnt--;
+                    MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                    continue;
+                }
+                
+                if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Cancel)
+                {
+                    MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                    break;
+                }
+                
+                if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Accept)
+                {
+                    output = ((string title, string recordingId, string trackId, List<(string title, string id)> artists, List<(string title, string id)> releaseGroups))current;
+                    MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                    break;
+                }
+
+            }
+
+            response.Dispose();
+            MainActivity.stateHandler.FileEvent.Set();
+            return output;
         }
 
         public static async Task<(string, string, string, byte[])> SearchAPI(string name=null , string song = null, string album = null)
@@ -496,10 +578,12 @@ namespace Ass_Pain
                      from artists in recording.Descendants(ns + "artist-credit").Descendants(ns + "name-credit")
                      from credits in artists.Descendants(ns + "artist").Where(des => des.Attribute("id").Value == "8a9d0b90-951e-4ab8-b2dc-9d3618af3d28")
                      select credits;
+             #if DEBUG
              foreach(XElement m in x)
              {
                  MyConsole.WriteLine(m.Attribute("id").Value);
              }
+             #endif
             /*xmlDocument.Validate(new System.Xml.Schema.ValidationEventHandler((object sender, System.Xml.Schema.ValidationEventArgs args) =>
             {
                 Console.WriteLine("VALIDATOR");
@@ -591,42 +675,6 @@ namespace Ass_Pain
             }
         }
     }
-
-/*#pragma warning disable CS1591
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedType.Global")]
-    public class Image
-    {
-        public List<string> types { get; set; }
-        public bool front { get; set; }
-        public bool back { get; set; }
-        public int edit { get; set; }
-        public string image { get; set; }
-        public string comment { get; set; }
-        public bool approved { get; set; }
-        public string id { get; set; }
-        public Thumbnails thumbnails { get; set; }
-    }
-
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedType.Global")]
-    public class MusicBrainzThumbnail
-    {
-        public List<Image> images { get; set; }
-        public string release { get; set; }
-    }
-
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedType.Global")]
-    public class Thumbnails
-    {
-        public string large { get; set; }
-        public string small { get; set; }
-    }
-#pragma warning restore CS1591*/
 }
 
 

@@ -31,6 +31,13 @@ namespace Ass_Pain
         // private List<string> queue = new List<string>();
         private int index = 0;
         public int loopState = 0;
+        
+        
+        //----------Downloader Callback resolution helpers---------
+        internal SongSelectionDialogActions songSelectionDialogAction = SongSelectionDialogActions.None;
+        internal readonly AutoResetEvent FileEvent = new AutoResetEvent(true);
+        internal readonly AutoResetEvent ResultEvent = new AutoResetEvent(false);
+        //---------------------------------------------------------
         public bool ProgTimeState
         {
             get; set;
