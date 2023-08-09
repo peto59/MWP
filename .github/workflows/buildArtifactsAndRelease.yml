@@ -36,14 +36,14 @@ jobs:
       run: find .
     - name: PWD
       run: pwd
-    - name: BuildAndSign
-      uses: bradyjoslin/xamarinandroid-signedbuild-action@v1
-      with:
-          csproj_path: Ass_Pain.csproj
-          signing_keystore: ${{ secrets.KEYSTORE }}
-          keystore_password: ${{ secrets.KEYSTORE_PASS }}
-          signing_key_alias: ${{ secrets.KEY_ALIAS }}
-          signing_key_password: ${{ secrets.KEY_PASS }}
+    - name: Build
+      run: msbuild Ass_Pain.csproj /t:PackageForAndroid /p:Configuration=Release
+    - name: LS2
+      run : ls
+    - name: Tree2
+      run: find .
+    - name: PWD2
+      run: pwd
 
 #https://github.com/marvinpinto/action-automatic-releases
     - name: Release
