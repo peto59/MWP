@@ -290,6 +290,7 @@ namespace Ass_Pain
             }
             
             //new Thread(() => { nm.Listener(); }).Start();
+            //test
             new Thread(() => {
                 FileManager.DiscoverFiles();
                 if (stateHandler.Songs.Count < FileManager.GetSongs().Count)
