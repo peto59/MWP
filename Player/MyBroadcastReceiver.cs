@@ -17,24 +17,14 @@ using Ass_Pain.Helpers;
 
 namespace Ass_Pain
 {
-    [BroadcastReceiver(Enabled = false, Exported = false)]
+    [BroadcastReceiver(Enabled = true, Exported = true)]
     [IntentFilter(new[] { AudioManager.ActionAudioBecomingNoisy })]
     public class MyBroadcastReceiver :  BroadcastReceiver
     {
-        AppCompatActivity view;
-        public MyBroadcastReceiver()
-        {
-            throw new NotImplementedException();
-        }
-        public MyBroadcastReceiver(AppCompatActivity new_view) { 
-            view = new_view;
-        }
         public override void OnReceive(Context context, Intent intent)
         {
-#if DEBUG
-            MyConsole.WriteLine("noisy");
-#endif
-            view.StartService(new Intent(MediaService.ActionPause, null, view, typeof(MediaService)));
+            Console.WriteLine("noisy");
+            context.StartService(new Intent(MediaService.ActionPause, null, context, typeof(MediaService)));
             //player.Pause();
         }
     }

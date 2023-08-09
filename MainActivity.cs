@@ -35,6 +35,7 @@ namespace Ass_Pain
 {
     
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true, Description = "@string/app_description")]
+    //[IntentFilter(new[] { Intent.ActionSend }, Categories = new[] { Intent.CategoryDefault }, DataMimeType = "text/plain")]
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         // public static Slovenska_prostituka player = new Slovenska_prostituka();
@@ -51,6 +52,7 @@ namespace Ass_Pain
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+            // Finish();   
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
             AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
@@ -72,6 +74,9 @@ namespace Ass_Pain
             navigationView.SetNavigationItemSelectedListener(this);
             
             side_player.populate_side_bar(this);
+            stateHandler.SetView(this);
+            receiver = new MyBroadcastReceiver();
+            RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
 
             //rest of the stuff that was here is in AfterReceivingPermissions()
 
@@ -100,6 +105,12 @@ namespace Ass_Pain
         {
             MenuInflater.Inflate(Resource.Menu.menu_main, menu);
             return true;
+        }
+
+        protected override void OnDestroy()
+        {
+            UnregisterReceiver(receiver);
+            base.OnDestroy();
         }
 
         public override bool OnOptionsItemSelected(IMenuItem item)
@@ -280,67 +291,26 @@ namespace Ass_Pain
             
             //new Thread(() => { nm.Listener(); }).Start();
             new Thread(() => {
-                stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                 FileManager.DiscoverFiles();
                 if (stateHandler.Songs.Count < FileManager.GetSongs().Count)
                 {
+                    stateHandler.Songs = new List<Song>();
+                    stateHandler.Artists = new List<Artist>();
+                    stateHandler.Albums = new List<Album>();
+                    
+                    stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                     FileManager.GenerateList(FileManager.MusicFolder);
                 }
-
-                /*stateHandler.Songs = stateHandler.Songs.OrderBy(song => song.Name).ToList();
-                Console.WriteLine("----------------Alphabetically-------------------");
-                foreach (var song in stateHandler.Songs)
-                {
-                    Console.WriteLine(song.ToString());
-                }*/
-                
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
                 RunOnUiThread(() => side_player.populate_side_bar(this));
                 
-                /*Artist a = new Artist("otestuj ma", "default");
-                stateHandler.Artists.Add(a);
-                a = new Artist("specialny", "default");
-                stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
+                /*stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
                 stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
                 stateHandler.Songs = stateHandler.Songs.Distinct().ToList();*/
-                //Console.WriteLine("----------------By Date-------------------");
-                /*foreach (var song in stateHandler.Artists)
-                {
-                    Console.WriteLine(song.ToString());
-                }*/
-                //Console.WriteLine("----------------Search-------------------");
-                /*foreach (var song in stateHandler.Songs.Search("ミ"))
-                {
-                    Console.WriteLine(song.ToString());
-                }*/
-                /*foreach (var song in stateHandler.Songs.Search("dark hour"))
-                {
-                    Console.WriteLine(song.Path);
-                }
-                try
-                {
-                    
-                    Console.WriteLine($"FINGERPRINT: {FpCalc.InvokeFpCalc(new []{"-length", "16", $"{stateHandler.Songs.Search("dark hour").First().Path}"})}");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }*/
-                // Downloader.GetMusicBrainzIDFromFingerprint(stateHandler.Songs.Search("dark hour").First().Path);
             }).Start();
-            stateHandler.SetView(this);
-            receiver = new MyBroadcastReceiver(this);
-            RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
+            
             
             Intent serviceIntent = new Intent(this, typeof(MediaService));
-            /*if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-            {
-                StartForegroundService(serviceIntent);
-            }
-            else
-            {
-                StartService(serviceIntent);
-            }*/
             
             StartForegroundService(serviceIntent);
             if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
@@ -349,8 +319,6 @@ namespace Ass_Pain
                 MyConsole.WriteLine("Cannot connect to MediaService");
 #endif
             }
-            /*Thread.Sleep(5000);
-            ServiceConnection.Binder?.Service?.NextSong();*/
         }
     }
 }

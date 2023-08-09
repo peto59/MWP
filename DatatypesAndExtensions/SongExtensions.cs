@@ -64,12 +64,4 @@ namespace Ass_Pain
             return string.IsNullOrEmpty(query) ? albums : albums.Where(album  => album.Title == query).ToList();
         }
     }
-
-    public enum SongOrderType: byte
-    {
-        Alphabetically = 1,
-        AlphabeticallyReverse = 2,
-        ByDate = 3,
-        ByDateReverse = 4
-    }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Android.App;
 using Android.Content;
 using Android.OS;
@@ -17,8 +18,13 @@ using System.Runtime.InteropServices;
 using Xamarin.Essentials;
 using Android.Widget;
 using Android.Graphics;
+using Android.Graphics.Drawables;
 using AndroidX.Core.App;
+using AndroidX.Core.Content;
+using AndroidX.Core.Graphics;
+#if DEBUG
 using Ass_Pain.Helpers;
+#endif
 using Google.Android.Material.BottomSheet;
 using Google.Android.Material.Chip;
 
@@ -30,23 +36,23 @@ namespace Ass_Pain
        
 
         DrawerLayout drawer;
-        WebView web_view;
+        WebView webView;
 
-        private FloatingActionButton previous;
-        private FloatingActionButton next;
-        private TextView accept;
-        private TextView reject;
+        private static FloatingActionButton _previous;
+        private static FloatingActionButton _next;
+        private static TextView _accept;
+        private static TextView _reject;
 
-        private BottomSheetDialog bottomDialog;
-        private ImageView songImage;
-        private TextView songName;
-        private TextView songArtist;
-        private TextView songAlbum;
+        private static BottomSheetDialog _bottomDialog;
+        private static ImageView _songImage;
+        private static TextView _songName;
+        private static TextView _songArtist;
+        private static TextView _songAlbum;
 
         SensorSpeed speed = SensorSpeed.Game;
         
         Android.Widget.Button download;
-
+        
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -73,10 +79,10 @@ namespace Ass_Pain
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
 
-            web_view = FindViewById<WebView>(Resource.Id.webview);
-            web_view.Settings.JavaScriptEnabled = true;
-            web_view.SetWebViewClient(new HelloWebViewClient());
-            web_view.LoadUrl("https://www.youtube.com/");
+            webView = FindViewById<WebView>(Resource.Id.webview);
+            webView.Settings.JavaScriptEnabled = true;
+            webView.SetWebViewClient(new HelloWebViewClient());
+            webView.LoadUrl("https://www.youtube.com/");
             
             try
             {
@@ -107,56 +113,69 @@ namespace Ass_Pain
 
             FloatingActionButton download_popup_show = FindViewById<FloatingActionButton>(Resource.Id.fab);
             Button mp4 = FindViewById<Button>(Resource.Id.mp4_btn);
-            Button music_brainz = FindViewById<Button>(Resource.Id.music_brainz_btn);
-            Button download_casual = FindViewById<Button>(Resource.Id.download_basic_btn);
+            Button musicBrainz = FindViewById<Button>(Resource.Id.music_brainz_btn);
+            Button downloadCasual = FindViewById<Button>(Resource.Id.download_basic_btn);
 
-            download_casual.Visibility = ViewStates.Invisible;
-            mp4.Visibility = ViewStates.Invisible;
-            music_brainz.Visibility = ViewStates.Invisible;
-            
-            mp4.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
-            music_brainz.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
-            download_casual.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
-            
-            bool visi_state = false;
-            download_popup_show.Background.SetColorFilter(Color.Rgb(255, 76, 41), PorterDuff.Mode.Multiply);
+            if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Invisible;
+            if (mp4 != null) mp4.Visibility = ViewStates.Invisible;
+            if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Invisible;
+
+            if (BlendMode.Multiply != null)
+            {
+                mp4?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+                musicBrainz?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+                downloadCasual?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+                
+            }
+            bool visiState = false;
+            download_popup_show?.Background?.SetColorFilter(
+                new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+            );
             download_popup_show.Click += delegate(object sender, EventArgs args)
             {
-                if (visi_state)
+                if (visiState)
                 {
-                    download_casual.Visibility = ViewStates.Invisible;
-                    mp4.Visibility = ViewStates.Invisible;
-                    music_brainz.Visibility = ViewStates.Invisible;
-                    visi_state = false;
+                    if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Invisible;
+                    if (mp4 != null) mp4.Visibility = ViewStates.Invisible;
+                    if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Invisible;
+                    visiState = false;
                 }
                 else
-                    Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadOnly);
+                    Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadOnly);
             };
 
             download_popup_show.LongClick += delegate(object sender, View.LongClickEventArgs args)
             {
-                if (!visi_state)
+                if (!visiState)
                 {
-                    download_casual.Visibility = ViewStates.Visible;
-                    mp4.Visibility = ViewStates.Visible;
-                    music_brainz.Visibility = ViewStates.Visible;
-                    visi_state = true;
+                    if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Visible;
+                    if (mp4 != null) mp4.Visibility = ViewStates.Visible;
+                    if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Visible;
+                    visiState = true;
                 }
                 else
                 {
-                    download_casual.Visibility = ViewStates.Invisible;
-                    mp4.Visibility = ViewStates.Invisible;
-                    music_brainz.Visibility = ViewStates.Invisible;
+                    if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Invisible;
+                    if (mp4 != null) mp4.Visibility = ViewStates.Invisible;
+                    if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Invisible;
                 }
 
             };
 
-            download_casual.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadOnly); };
-            mp4.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.Downloadmp4); };
-            music_brainz.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, web_view.Url, DownloadActions.DownloadWithMbid); };
-            
-        }
+            if (downloadCasual != null) downloadCasual.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadOnly); };
+            if (mp4 != null) mp4.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.Downloadmp4); };
+            if (musicBrainz != null) musicBrainz.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadWithMbid); };
 
+            SongSelectionDialog("dd", "dd", "dd", "dd", false, false);
+
+        }
+        
         /// <summary>
         /// pop up for customizing downloaded song, choosing which image or name of song you want to use to save
         /// the song
@@ -165,31 +184,72 @@ namespace Ass_Pain
         /// <param name="songArtistIn"></param>
         /// <param name="songAlbumIn"></param>
         /// <param name="imgUrl"></param>
-        public void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, string imgUrl)
+        /// <param name="forw"></param>
+        /// <param name="back"></param>
+        public static void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, string imgUrl, bool forw, bool back)
         {
-            bottomDialog = new BottomSheetDialog(this);
-            LayoutInflater ifl = LayoutInflater.From(this);
+
+            _bottomDialog = new BottomSheetDialog(MainActivity.stateHandler.view);
+            LayoutInflater ifl = LayoutInflater.From(MainActivity.stateHandler.view);
             View view = ifl?.Inflate(Resource.Layout.song_download_selection_dialog, null);
-            if (view != null) bottomDialog.SetContentView(view);
-
-            previous = bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.previous_download);
-            previous?.SetBackgroundColor(Android.Graphics.Color.ParseColor("#ff4d29"));
-            next = bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.next_download);
-            next?.SetBackgroundColor(Android.Graphics.Color.ParseColor("#ff4d29"));
-
-            accept = bottomDialog?.FindViewById<TextView>(Resource.Id.accept_download);
-            reject = FindViewById<TextView>(Resource.Id.reject_download);
-
-            songImage = bottomDialog?.FindViewById<ImageView>(Resource.Id.to_download_song_image);
-            songName = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_name);
-            songArtist = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_artist);
-            songAlbum = bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_album);
+            if (view != null) _bottomDialog.SetContentView(view);
             
-            if (songArtist != null) songArtist.Text = songArtistIn;
-            if (songAlbum != null) songAlbum.Text = songAlbumIn;
-            if (songName != null) songName.Text = songNameIn;
+            if (BlendMode.Multiply != null)
+            {
+                _previous = _bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.previous_download);
+                _previous?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+                _next = _bottomDialog?.FindViewById<FloatingActionButton>(Resource.Id.next_download);
+                _next?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+            }
 
-            if (bottomDialog != null) bottomDialog.Show();
+            if (!forw) { if (_next != null) _next.Visibility = ViewStates.Invisible; }
+            else { if (_next != null) _next.Visibility = ViewStates.Visible; }
+            
+            if (!back) { if (_previous != null) _previous.Visibility = ViewStates.Invisible; }
+            else { if (_previous != null) _previous.Visibility = ViewStates.Visible; }
+
+            
+            _accept = _bottomDialog?.FindViewById<TextView>(Resource.Id.accept_download);
+            _reject = _bottomDialog?.FindViewById<TextView>(Resource.Id.reject_download);
+
+            _songImage = _bottomDialog?.FindViewById<ImageView>(Resource.Id.to_download_song_image);
+            _songName = _bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_name);
+            _songArtist = _bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_artist);
+            _songAlbum = _bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_album);
+            
+            if (_songArtist != null) _songArtist.Text = songArtistIn;
+            if (_songAlbum != null) _songAlbum.Text = songAlbumIn;
+            if (_songName != null) _songName.Text = songNameIn;
+
+            _previous.Click += delegate
+            {
+                MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Previous;
+                MainActivity.stateHandler.ResultEvent.Set();
+            };
+            _next.Click += delegate
+            {
+                MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Next;
+                MainActivity.stateHandler.ResultEvent.Set();
+            };
+            
+            _accept.Click += delegate
+            {
+                MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Accept;
+                MainActivity.stateHandler.ResultEvent.Set();
+            };
+            _reject.Click += delegate
+            {
+                MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Cancel;
+                MainActivity.stateHandler.ResultEvent.Set();
+            };
+
+            _bottomDialog?.Show();
+
+
         }
 
         void acc_shaked(object sender, EventArgs e)
@@ -220,9 +280,9 @@ namespace Ass_Pain
             {
                 drawer.CloseDrawer(GravityCompat.Start);
             }
-            else if (web_view.CanGoBack())
+            else if (webView.CanGoBack())
             {
-                web_view.GoBack();
+                webView.GoBack();
             }
             else
             {
