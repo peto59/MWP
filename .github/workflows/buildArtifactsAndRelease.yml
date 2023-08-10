@@ -23,6 +23,9 @@ jobs:
         distribution: 'adopt'
         java-version: '11'
         
+    - name: Create directories for symbolic link
+      run: sudo mkdir -p /home/JDK//bin/
+        
     - name: Create symbolic link for Java
       run: sudo ln -s $(which java) /home/JDK//bin/java
     
