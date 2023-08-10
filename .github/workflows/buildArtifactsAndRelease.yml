@@ -23,11 +23,10 @@ jobs:
         distribution: 'adopt'
         java-version: '11'
         
-    - name: Create directories for symbolic link
-      run: sudo mkdir -p /home/JDK//bin/
-        
-    - name: Create symbolic link for Java
-      run: sudo ln -s $(which java) /home/JDK//bin/java
+    - name: Fix Xamarin.AndroidX.Migration.targets
+      run: |
+        java_path=$(which java)
+        sed -i '' "s|/home/JDK//bin/java|$java_path|g" /Users/runner/.nuget/packages/xamarin.androidx.migration/1.0.10/buildTransitive/monoandroid120/Xamarin.AndroidX.Migration.targets
     
     - name: Set default Xamarin SDK versions
       run: |
