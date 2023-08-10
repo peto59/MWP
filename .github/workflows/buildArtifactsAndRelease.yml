@@ -22,11 +22,6 @@ jobs:
       with:
         distribution: 'adopt'
         java-version: '11'
-        
-    - name: Fix Xamarin.AndroidX.Migration.targets
-      run: |
-        java_path=$(which java)
-        sed -i '' "s|/home/JDK//bin/java|$java_path|g" /Users/runner/.nuget/packages/xamarin.androidx.migration/1.0.10/buildTransitive/monoandroid120/Xamarin.AndroidX.Migration.targets
     
     - name: Set default Xamarin SDK versions
       run: |
@@ -41,6 +36,12 @@ jobs:
           
     - name: Install dependencies
       run: nuget restore Ass_Pain.sln
+      
+    - name: Fix Xamarin.AndroidX.Migration.targets
+      run: |
+        java_path=$(which java)
+        sed -i '' "s|/home/JDK//bin/java|$java_path|g" /Users/runner/.nuget/packages/xamarin.androidx.migration/1.0.10/buildTransitive/monoandroid120/Xamarin.AndroidX.Migration.targets
+      
     - name: LS
       run : ls
     - name: Tree
