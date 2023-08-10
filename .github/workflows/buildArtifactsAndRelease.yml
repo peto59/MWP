@@ -36,6 +36,8 @@ jobs:
       run: find .
     - name: PWD
       run: pwd
+    - name: cat
+      run: cat /Users/runner/.nuget/packages/xamarin.androidx.migration/1.0.10/buildTransitive/monoandroid120/Xamarin.AndroidX.Migration.targets
     - name: Build
       run: msbuild Ass_Pain.csproj /t:PackageForAndroid /p:Configuration=Release
     - name: LS2
