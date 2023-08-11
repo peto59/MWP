@@ -285,11 +285,14 @@ namespace Ass_Pain
             {
                 
                 LinearLayout lnIn = pupulate_songs(MainActivity.stateHandler.Albums[i], scale, true, 130, 160, buttonMargins, nameMargins, cardMargins, 15, i);
-                song_tiles_image_set(
-                    lnIn, MainActivity.stateHandler.Albums[i], scale, 150, 100, 
-                    buttonMargins, 15, 
-                    nameMargins
-                );
+                Task.Run(async () =>
+                {
+                    song_tiles_image_set(
+                        lnIn, MainActivity.stateHandler.Albums[i], scale, 150, 100,
+                        buttonMargins, 15,
+                        nameMargins
+                    );
+                });
 
                 //全部加える
                 lin.AddView(lnIn);
@@ -318,11 +321,15 @@ namespace Ass_Pain
             for (int i = 0; i < MainActivity.stateHandler.Artists.Count; i++)
             {
                 LinearLayout lnIn = pupulate_songs( MainActivity.stateHandler.Artists[i], scale, true, 130, 160, buttonMargins, nameMargins, cardMargins, 15, i);
-                song_tiles_image_set(
-                    lnIn, MainActivity.stateHandler.Artists[i], scale, 150, 100,
-                    buttonMargins, 17,
-                    nameMargins
-                );
+
+                Task.Run(async () =>
+                {
+                    song_tiles_image_set(
+                        lnIn, MainActivity.stateHandler.Artists[i], scale, 150, 100,
+                        buttonMargins, 17,
+                        nameMargins
+                    );
+                });
                 //全部加える
                 lin.AddView(lnIn);
 
