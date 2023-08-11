@@ -22,7 +22,9 @@ using Android.Graphics.Drawables;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using AndroidX.Core.Graphics;
+#if DEBUG
 using Ass_Pain.Helpers;
+#endif
 using Google.Android.Material.BottomSheet;
 using Google.Android.Material.Chip;
 

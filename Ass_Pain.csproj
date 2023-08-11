@@ -235,6 +235,9 @@
     <PackageReference Include="Xamarin.AndroidX.Media">
       <Version>1.6.0.3</Version>
     </PackageReference>
+    <PackageReference Include="Xamarin.AndroidX.Migration">
+      <Version>1.0.10</Version>
+    </PackageReference>
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.0.0.1" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
     <PackageReference Include="YoutubeExplode">

@@ -578,10 +578,12 @@ namespace Ass_Pain
                      from artists in recording.Descendants(ns + "artist-credit").Descendants(ns + "name-credit")
                      from credits in artists.Descendants(ns + "artist").Where(des => des.Attribute("id").Value == "8a9d0b90-951e-4ab8-b2dc-9d3618af3d28")
                      select credits;
+             #if DEBUG
              foreach(XElement m in x)
              {
                  MyConsole.WriteLine(m.Attribute("id").Value);
              }
+             #endif
             /*xmlDocument.Validate(new System.Xml.Schema.ValidationEventHandler((object sender, System.Xml.Schema.ValidationEventArgs args) =>
             {
                 Console.WriteLine("VALIDATOR");

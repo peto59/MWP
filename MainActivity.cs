@@ -290,6 +290,7 @@ namespace Ass_Pain
             }
             
             //new Thread(() => { nm.Listener(); }).Start();
+            //test
             new Thread(() => {
                 FileManager.DiscoverFiles();
                 if (stateHandler.Songs.Count < FileManager.GetSongs().Count)
@@ -301,59 +302,16 @@ namespace Ass_Pain
                     stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                     FileManager.GenerateList(FileManager.MusicFolder);
                 }
-
-                /*stateHandler.Songs = stateHandler.Songs.OrderBy(song => song.Name).ToList();
-                Console.WriteLine("----------------Alphabetically-------------------");
-                foreach (var song in stateHandler.Songs)
-                {
-                    Console.WriteLine(song.ToString());
-                }*/
-                
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
                 RunOnUiThread(() => side_player.populate_side_bar(this));
                 
-                /*Artist a = new Artist("otestuj ma", "default");
-                stateHandler.Artists.Add(a);
-                a = new Artist("specialny", "default");
-                stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
+                /*stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
                 stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
                 stateHandler.Songs = stateHandler.Songs.Distinct().ToList();*/
-                //Console.WriteLine("----------------By Date-------------------");
-                /*foreach (var song in stateHandler.Artists)
-                {
-                    Console.WriteLine(song.ToString());
-                }*/
-                //Console.WriteLine("----------------Search-------------------");
-                /*foreach (var song in stateHandler.Songs.Search("ミ"))
-                {
-                    Console.WriteLine(song.ToString());
-                }*/
-                /*foreach (var song in stateHandler.Songs.Search("dark hour"))
-                {
-                    Console.WriteLine(song.Path);
-                }
-                try
-                {
-                    
-                    Console.WriteLine($"FINGERPRINT: {FpCalc.InvokeFpCalc(new []{"-length", "16", $"{stateHandler.Songs.Search("dark hour").First().Path}"})}");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }*/
-                _ = Downloader.GetMusicBrainzIdFromFingerprint(stateHandler.Songs.Search("dark hour").First().Path);
             }).Start();
             
             
             Intent serviceIntent = new Intent(this, typeof(MediaService));
-            /*if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-            {
-                StartForegroundService(serviceIntent);
-            }
-            else
-            {
-                StartService(serviceIntent);
-            }*/
             
             StartForegroundService(serviceIntent);
             if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
@@ -362,8 +320,6 @@ namespace Ass_Pain
                 MyConsole.WriteLine("Cannot connect to MediaService");
 #endif
             }
-            /*Thread.Sleep(5000);
-            ServiceConnection.Binder?.Service?.NextSong();*/
         }
     }
 }
