@@ -27,6 +27,7 @@ using Ass_Pain.Helpers;
 #endif
 using Google.Android.Material.BottomSheet;
 using Google.Android.Material.Chip;
+using Square.Picasso;
 
 namespace Ass_Pain
 {
@@ -172,7 +173,7 @@ namespace Ass_Pain
             if (mp4 != null) mp4.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.Downloadmp4); };
             if (musicBrainz != null) musicBrainz.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadWithMbid); };
 
-            SongSelectionDialog("dd", "dd", "dd", "dd", false, false);
+            //SongSelectionDialog("dd", "dd", "dd", "dd", false, false);
 
         }
         
@@ -186,7 +187,7 @@ namespace Ass_Pain
         /// <param name="imgUrl"></param>
         /// <param name="forw"></param>
         /// <param name="back"></param>
-        public static void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, string imgUrl, bool forw, bool back)
+        public static void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, string imgUrl, string originalAuthor, string originalTitle, bool forw, bool back)
         {
 
             _bottomDialog = new BottomSheetDialog(MainActivity.stateHandler.view);
@@ -246,6 +247,8 @@ namespace Ass_Pain
                 MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Cancel;
                 MainActivity.stateHandler.ResultEvent.Set();
             };
+            
+            Picasso.Get().Load(imgUrl).Placeholder(Resource.Drawable.no_repeat).Into(_songImage);
 
             _bottomDialog?.Show();
 

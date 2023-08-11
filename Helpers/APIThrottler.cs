@@ -19,7 +19,7 @@ namespace Ass_Pain
         long milliseconds = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
         bool running = false;
 
-        public async Task<(string, string, string, byte[])> Throttle(List<string> arguments) {
+        public async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, string thumbnailUrl)> Throttle(string path, string originalAuthor, string originalTitle) {
             while(running)
             {
                 await Task.Delay(1000);
@@ -30,9 +30,9 @@ namespace Ass_Pain
                 await Task.Delay(1000);
             }
             milliseconds = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            (string tmp1, string tmp2, string tmp3, byte[] tmp4) =  await Downloader.SearchAPI(arguments[0], arguments[1], arguments[2]);
+            (string title, string recordingId, string trackId, List<(string title, string id)> artists, List<(string title, string id)> releaseGroup, string thumbnailUrl) =  await Downloader.GetMusicBrainzIdFromFingerprint(path, originalAuthor, originalTitle);
             running = false;
-            return (tmp1, tmp2, tmp3, tmp4);
+            return (title, recordingId, trackId, artists, releaseGroup, thumbnailUrl);
         }
     }
 }

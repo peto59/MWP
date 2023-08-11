@@ -196,7 +196,18 @@ namespace Ass_Pain
 		{
 			
 			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
-			metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, MainActivity.stateHandler.Artists[0].Image);
+			try
+			{
+				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, Queue[0].Image);
+			}
+			catch (Exception e)
+			{
+				if (Application.Context.Assets != null)
+				{
+					metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, BitmapFactory.DecodeStream(Application.Context.Assets.Open("music_placeholder.png")));	
+				}
+			}
+			
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplayTitle, "No Song");
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplaySubtitle, "No Artist");
 			session.SetMetadata(metadataBuilder.Build());
@@ -216,7 +227,7 @@ namespace Ass_Pain
 					_ => Resource.Drawable.repeat_one
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
-				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_repeat : Resource.Drawable.repeat);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
 				session.SetPlaybackState(stateBuilder.Build());
 			}
 
@@ -403,7 +414,7 @@ namespace Ass_Pain
 					_ => Resource.Drawable.repeat_one
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
-				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_repeat : Resource.Drawable.repeat);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
 				session.SetPlaybackState(stateBuilder.Build());
 			}
 
