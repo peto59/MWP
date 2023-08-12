@@ -21,26 +21,6 @@ namespace Ass_Pain
 {
     class MediaSessionCallback : Android.Support.V4.Media.Session.MediaSessionCompat.Callback
     {
-        public Action OnPlayImpl { get; set; }
-
-        public Action<long> OnSkipToQueueItemImpl { get; set; }
-
-        public Action<long> OnSeekToImpl { get; set; }
-
-        public Action<string, Bundle> OnPlayFromMediaIdImpl { get; set; }
-
-        public Action OnPauseImpl { get; set; }
-
-        public Action OnStopImpl { get; set; }
-
-        public Action OnSkipToNextImpl { get; set; }
-
-        public Action OnSkipToPreviousImpl { get; set; }
-
-        public Action<string, Bundle> OnCustomActionImpl { get; set; }
-
-        public Action<string, Bundle> OnPlayFromSearchImpl { get; set; }
-
         public override void OnPlay()
         {
 #if DEBUG
@@ -149,7 +129,7 @@ namespace Ass_Pain
                         MainActivity.ServiceConnection.Binder?.Service?.Shuffle(!MainActivity.ServiceConnection.Binder.Service.IsShuffled);
                         break;
                     default:
-                        throw new NotImplementedException();
+                        throw new ArgumentException("Must use loop or shuffle as action argument");
                 }
             }
             catch (Exception e)
@@ -172,5 +152,6 @@ namespace Ass_Pain
             //OnPlayFromSearchImpl(query, extras);
             base.OnPlayFromSearch(query, extras);
         }
+        
     }
 }

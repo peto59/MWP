@@ -21,6 +21,7 @@ using Ass_Pain.Helpers;
 namespace Ass_Pain
 {
 	[Service(ForegroundServiceType = ForegroundService.TypeMediaPlayback, Label = "@string/service_name")]
+	//TODO: https://developer.android.com/training/cars/media
 	public class MediaService : Service, AudioManager.IOnAudioFocusChangeListener
 	{
 		///<summary>
@@ -175,6 +176,10 @@ namespace Ass_Pain
 		///</summary>
 		private void InnitSession()
 		{
+			if (mediaPlayer == null)
+			{
+				InnitPlayer();
+			}
 			session = new MediaSessionCompat(AndroidApp.Context, "MusicService");
 			session.SetCallback(new MediaSessionCallback());
 			session.SetFlags((int)(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls));
@@ -465,7 +470,17 @@ namespace Ass_Pain
 		{
 			if (Queue.Count == 0)
 			{
-				GenerateQueue(MainActivity.stateHandler.Songs);
+				try
+				{
+					GenerateQueue(MainActivity.stateHandler.Songs, 0, false);
+				}
+				catch (Exception e)
+				{
+#if DEBUG
+					MyConsole.WriteLine(e.ToString());
+#endif
+					return;
+				}
 			}
 			if (!RequestFocus())
 			{
@@ -475,7 +490,7 @@ namespace Ass_Pain
 			{
 				InnitSession();
 			}
-			if (!session.Active)
+			if (!session!.Active)
 			{
 				session.Active = true;
 			}
@@ -492,7 +507,7 @@ namespace Ass_Pain
 			}
 			if (!IsPaused)
 			{
-				mediaPlayer.Reset();
+				mediaPlayer!.Reset();
 #if DEBUG
                 MyConsole.WriteLine($"SERVICE INDEX {Index}");
                 MyConsole.WriteLine($"SERVICE QUEUE {Queue.Count}");
@@ -507,7 +522,7 @@ namespace Ass_Pain
                 mediaPlayer.SetDataSource(Current.Path);
 				mediaPlayer.Prepare();
 			}
-			mediaPlayer.Start();
+			mediaPlayer!.Start();
 
 			if (!IsPaused)
 			{
@@ -639,11 +654,14 @@ namespace Ass_Pain
 			Play();
 		}
 		
-		public void GenerateQueue(List<Song> source, int i = 0)
+		public void GenerateQueue(List<Song> source, int ind = 0, bool play = true)
 		{
 			Queue = source;
-			Index = i;
-			Play();
+			Index = ind;
+			if (play)
+			{
+				Play();
+			}
 		}
 		
 		public void GenerateQueue(MusicBaseContainer source, int i = 0)
