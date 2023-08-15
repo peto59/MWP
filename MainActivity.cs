@@ -101,27 +101,25 @@ namespace Ass_Pain
             }
         }
 
+        /// <inheritdoc />
         public override bool OnCreateOptionsMenu(IMenu menu)
         {
             MenuInflater.Inflate(Resource.Menu.menu_main, menu);
             return true;
         }
 
+        /// <inheritdoc />
         protected override void OnDestroy()
         {
             UnregisterReceiver(receiver);
             base.OnDestroy();
         }
 
+        /// <inheritdoc />
         public override bool OnOptionsItemSelected(IMenuItem item)
         {
             int id = item.ItemId;
-            if (id == Resource.Id.action_settings)
-            {
-                return true;
-            }
-
-            return base.OnOptionsItemSelected(item);
+            return id == Resource.Id.action_settings || base.OnOptionsItemSelected(item);
         }
 
         private void FabOnClick(object sender, EventArgs eventArgs)
@@ -165,7 +163,8 @@ namespace Ass_Pain
             drawer.CloseDrawer(GravityCompat.Start);
             return true;
         }
-        
+
+        /// <inheritdoc />
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
         {
 #if DEBUG
@@ -197,7 +196,7 @@ namespace Ass_Pain
             }
         }
 
-        private async void RequestMyPermission()
+        private void RequestMyPermission()
         {
             string[] permissionsLocation =  {
                 //Android.Manifest.Permission.WriteExternalStorage,
@@ -215,7 +214,7 @@ namespace Ass_Pain
 
             const int requestLocationId = 1;
             Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
-                    .SetAction("OK", v =>
+                    .SetAction("OK", _ =>
                     {
                         if (!Android.OS.Environment.IsExternalStorageManager)
                         {
@@ -239,15 +238,15 @@ namespace Ass_Pain
 
         private void AfterReceivingPermissions()
         {
-            string privatePath = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+            string privatePath = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
+            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
 
             if (!Directory.Exists(path))
             {
 #if DEBUG
                 MyConsole.WriteLine("Creating " + $"{path}");
 #endif
-                Directory.CreateDirectory(path);
+                if (path != null) Directory.CreateDirectory(path);
             }
 
             if (!Directory.Exists($"{privatePath}/tmp"))
@@ -308,6 +307,7 @@ namespace Ass_Pain
                 //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
                 //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
                 //stateHandler.Songs = stateHandler.Songs.Distinct().ToList();
+                
             }).Start();
             
             
