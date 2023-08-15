@@ -28,12 +28,22 @@ jobs:
           
     - name: Install dependencies
       run: nuget restore Ass_Pain.sln
+
+    - name: Generate build number
+      id: buildnumber
+      uses: onyxmueller/build-tag-number@v1
+      with:
+        token: ${{secrets.github_token}}
+        
+    - name: Print new build number
+      run: echo "Build number is $BUILD_NUMBER"
+      
     - name: Update AndroidManifest.xml
       uses: damienaicheh/update-android-version-manifest-action@v1.0.0
       with:
         android-manifest-path: './Properties/AndroidManifest.xml'
-        version-code: ${{ env.NUMBER_OF_COMMITS }}
-        version-name: ${{ env.NUMBER_OF_COMMITS }}
+        version-code: ${{ steps.buildnumber.outputs.build_number }}
+        version-name: ${{ steps.buildnumber.outputs.build_number }}
         print-file: true
       
     - name: BuildAndSign
@@ -52,7 +62,7 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           automatic_release_tag: "latest"
-          title: "${{ env.NUMBER_OF_COMMITS }}"
+          title: "${{ steps.buildnumber.outputs.build_number }}"
           files: |
             LICENSE.txt
             bin/Release/**Signed.apk
