@@ -5,14 +5,14 @@
         private const string ShareName = "AssPainSharedPreferences";
 
 
-        /*private static readonly Setting<bool> shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", false);
+        private static readonly Setting<bool> shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
         public static bool ShouldUseChromaprintAtDownload
         {
             get => shouldUseChromaprintAtDownload.Value;
             set => shouldUseChromaprintAtDownload.Value = value;
         }
 
-        private static readonly Setting<bool> shouldUseChromaprintAtDiscover = new BoolSetting(ShareName, "ShouldUseChromaprintAtDiscover", false);
+        /*private static readonly Setting<bool> shouldUseChromaprintAtDiscover = new BoolSetting(ShareName, "ShouldUseChromaprintAtDiscover", false);
         public static bool ShouldUseChromaprintAtDiscover
         {
             get => shouldUseChromaprintAtDiscover.Value;

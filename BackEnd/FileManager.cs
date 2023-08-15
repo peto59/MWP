@@ -5,6 +5,7 @@ using Ass_Pain.Helpers;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -559,9 +560,19 @@ namespace Ass_Pain
         ///</summary>
         public static List<string> GetPlaylist()
         {
-            string json = File.ReadAllText($"{MusicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
-            return playlists.Keys.ToList();
+            try
+            {
+                string json = File.ReadAllText($"{MusicFolder}/playlists.json");
+                Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
+                return playlists.Keys.ToList();
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                MyConsole.WriteLine($"{ex}");
+#endif
+                return new List<string>();
+            }
         }
 
         ///<summary>

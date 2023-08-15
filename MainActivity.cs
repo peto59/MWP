@@ -200,8 +200,8 @@ namespace Ass_Pain
         private async void RequestMyPermission()
         {
             string[] permissionsLocation =  {
-                Android.Manifest.Permission.WriteExternalStorage,
-                Android.Manifest.Permission.ReadExternalStorage,
+                //Android.Manifest.Permission.WriteExternalStorage,
+                //Android.Manifest.Permission.ReadExternalStorage,
                 Android.Manifest.Permission.ForegroundService
             };
 
@@ -290,6 +290,7 @@ namespace Ass_Pain
             }
             
             //new Thread(() => { nm.Listener(); }).Start();
+            //test
             new Thread(() => {
                 FileManager.DiscoverFiles();
                 if (stateHandler.Songs.Count < FileManager.GetSongs().Count)
@@ -304,9 +305,9 @@ namespace Ass_Pain
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
                 RunOnUiThread(() => side_player.populate_side_bar(this));
                 
-                /*stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
-                stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
-                stateHandler.Songs = stateHandler.Songs.Distinct().ToList();*/
+                //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
+                //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
+                //stateHandler.Songs = stateHandler.Songs.Distinct().ToList();
             }).Start();
             
             
