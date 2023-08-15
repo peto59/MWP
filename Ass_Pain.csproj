@@ -30,7 +30,7 @@
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
     <LangVersion>9</LangVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" $(OS) == 'Unix' and $(OSName) != 'macOS' ">
+  <PropertyGroup Condition=" '$(OS)' == 'Unix' and '$(OSName)' != 'macOS' ">
     <MonoAndroidBinDirectory>/usr/lib/mono/xamarin-android/bin</MonoAndroidBinDirectory>
     <AndroidSdkDirectory>/home/Android/</AndroidSdkDirectory>
     <AndroidNdkDirectory>/home/Android/ndk</AndroidNdkDirectory>
