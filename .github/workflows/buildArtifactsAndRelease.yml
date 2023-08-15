@@ -40,7 +40,8 @@ jobs:
     - name: Fix Xamarin.AndroidX.Migration.targets
       run: |
         java_path=$(which java)
-        sed -i '' "s|/home/JDK//bin/java|$java_path|g" /Users/runner/.nuget/packages/xamarin.androidx.migration/1.0.10/buildTransitive/monoandroid120/Xamarin.AndroidX.Migration.targets
+        sed -i '' "s|$(JavaSdkDirectory)\\bin\\java|$java_path|g" /Users/runner/.nuget/packages/xamarin.androidx.migration/1.0.10/buildTransitive/monoandroid120/Xamarin.AndroidX.Migration.targets
+
       
     - name: LS
       run : ls

@@ -170,9 +170,20 @@ namespace Ass_Pain
 
 		private static void pause_play(Object sender, EventArgs e, AppCompatActivity context)
 		{
-			context.StartService(
+			/*context.StartService(
 				new Intent(MediaService.ActionTogglePlay, null, context, typeof(MediaService))
-			);
+			);*/
+			if (MainActivity.ServiceConnection.Connected)
+			{
+				if (MainActivity.ServiceConnection.Binder.Service.mediaPlayer.IsPlaying)
+				{
+					MainActivity.ServiceConnection.Binder.Service.Pause();
+				}
+				else
+				{
+					MainActivity.ServiceConnection.Binder.Service.Play();
+				}
+			}
 		}
 
 		public static void SetPlayButton(AppCompatActivity context)
@@ -219,12 +230,10 @@ namespace Ass_Pain
 			{
 				Intent intent = new Intent(context, typeof(AllSongs));
 				int? x = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.GetHashCode();
-				if (x is { } hash)
-				{
-					intent.PutExtra("link_author", hash);
-					context.StartActivity(intent);
-				}
-				
+				if (x is not { } hash) return;
+				intent.PutExtra("link_author", hash);
+				context.StartActivity(intent);
+
 			};
 				
 			song_album.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Album.Title;
@@ -243,15 +252,10 @@ namespace Ass_Pain
 				player_buttons.Add(shuffle, "shuffle");
 				shuffle.Click += delegate
 				{
-					ImageView shuffle_img = (ImageView)shuffle.GetChildAt(0);
-					if (MainActivity.stateHandler.IsShuffling)
-					{
-						shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle.png")));
-					}
-					else
-					{
-						shuffle_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
-					}
+					ImageView shuffleImg = (ImageView)shuffle.GetChildAt(0);
+					shuffleImg?.SetImageBitmap(MainActivity.stateHandler.IsShuffling
+						? BitmapFactory.DecodeStream(context.Assets?.Open("shuffle.png"))
+						: BitmapFactory.DecodeStream(context.Assets?.Open("shuffle_on.png")));
 					context.StartService(
 						new Intent(MediaService.ActionShuffle, null, context, typeof(MediaService))
 						.PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling)
@@ -263,25 +267,25 @@ namespace Ass_Pain
 				player_buttons.Add(repeat, "repeat");
 				repeat.Click += delegate
 				{
-					ImageView repeat_img = (ImageView)repeat.GetChildAt(0);
+					ImageView repeatImg = (ImageView)repeat.GetChildAt(0);
 					switch (MainActivity.stateHandler.LoopState)
 					{
 						case 0:
-							repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
+							repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
 							context.StartService(
 								new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
 								.PutExtra("loopState", 1)
 							);
 							break;
 						case 1:
-							repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
+							repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
                             context.StartService(
                             new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
 								.PutExtra("loopState", 2)
 							);
                             break;
 						case 2:
-							repeat_img.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
+							repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
 							context.StartService(
 								new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
 								.PutExtra("loopState", 0)
