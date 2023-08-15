@@ -172,7 +172,7 @@ namespace Ass_Pain
             if (mp4 != null) mp4.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.Downloadmp4); };
             if (musicBrainz != null) musicBrainz.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadWithMbid); };
 
-            SongSelectionDialog("dd", "dd", "dd", "dd", false, false);
+            //SongSelectionDialog("dd", "dd", "dd", "dd", false, false);
 
         }
         
@@ -186,7 +186,7 @@ namespace Ass_Pain
         /// <param name="imgUrl"></param>
         /// <param name="forw"></param>
         /// <param name="back"></param>
-        public static void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, string imgUrl, bool forw, bool back)
+        public static void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, byte[] imgArr, string originalAuthor, string originalTitle, bool forw, bool back)
         {
 
             _bottomDialog = new BottomSheetDialog(MainActivity.stateHandler.view);
@@ -229,23 +229,32 @@ namespace Ass_Pain
             {
                 MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Previous;
                 MainActivity.stateHandler.ResultEvent.Set();
+                _bottomDialog?.Hide();
             };
             _next.Click += delegate
             {
                 MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Next;
                 MainActivity.stateHandler.ResultEvent.Set();
+                _bottomDialog?.Hide();
             };
             
             _accept.Click += delegate
             {
                 MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Accept;
                 MainActivity.stateHandler.ResultEvent.Set();
+                _bottomDialog?.Hide();
             };
             _reject.Click += delegate
             {
                 MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Cancel;
                 MainActivity.stateHandler.ResultEvent.Set();
+                _bottomDialog?.Hide();
             };
+            
+            //Picasso.Get().Load(imgUrl).Placeholder(Resource.Drawable.no_repeat).Error(Resource.Drawable.shuffle2).Into(_songImage);
+            using Bitmap img = BitmapFactory.DecodeByteArray(imgArr, 0, imgArr.Length);
+            _songImage.SetImageBitmap(img);
+            //Glide.With(MainActivity.stateHandler.view).Load(imgUrl).Error(Resource.Drawable.shuffle2).Into(_songImage);
 
             _bottomDialog?.Show();
 
