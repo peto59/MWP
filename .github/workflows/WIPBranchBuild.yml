@@ -10,7 +10,7 @@ on:
     branches: [ "WIP" ]
 
 jobs:
-  build:
+  BuildWIP:
 
     runs-on: macos-latest
 
