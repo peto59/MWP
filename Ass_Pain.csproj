@@ -30,13 +30,6 @@
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
     <LangVersion>9</LangVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(OS)' == 'Unix' and '$(OSName)' != 'macOS' ">
-    <MonoAndroidBinDirectory>/usr/lib/mono/xamarin-android/bin</MonoAndroidBinDirectory>
-    <AndroidSdkDirectory>/home/Android/</AndroidSdkDirectory>
-    <AndroidNdkDirectory>/home/Android/ndk</AndroidNdkDirectory>
-    <JavaSdkDirectory>/home/JDK/</JavaSdkDirectory>
-    <TargetFrameworkRootPath>/usr/lib/mono/xbuild-frameworks/</TargetFrameworkRootPath>
-  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
     <DebugType>portable</DebugType>
