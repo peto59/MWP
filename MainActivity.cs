@@ -307,6 +307,7 @@ namespace Ass_Pain
                 //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
                 //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
                 //stateHandler.Songs = stateHandler.Songs.Distinct().ToList();
+                
             }).Start();
             
             
