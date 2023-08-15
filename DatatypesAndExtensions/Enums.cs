@@ -57,4 +57,11 @@ namespace Ass_Pain
         Album,
         NoAlbum
     }
+
+    internal enum AutoUpdate
+    {
+        Requested,
+        Forbidden,
+        NoState
+    }
 }
