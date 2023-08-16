@@ -43,7 +43,6 @@
     <MonoAndroidBinDirectory>/usr/lib/mono/xamarin-android/bin</MonoAndroidBinDirectory>
     <AndroidSdkDirectory>/home/Android/</AndroidSdkDirectory>
     <AndroidNdkDirectory>/home/Android/ndk</AndroidNdkDirectory>
-    <JavaSdkDirectory>/home/JDK/</JavaSdkDirectory>
     <TargetFrameworkRootPath>/usr/lib/mono/xbuild-frameworks/</TargetFrameworkRootPath>
   </PropertyGroup>
   <PropertyGroup>
@@ -428,7 +427,7 @@
       <Target Name="BeforeBuild" Condition=" '$(IsGithubRunner)' == 'false' ">
         <Copy SourceFiles="$(AndroidManifest)" DestinationFiles="$(ProjectDir)\Properties\.AndroidManifest.xml.bck" />
 
-        <Exec Command="git pull"/>
+        <Exec Command="git pull" />
         
         <Exec Command="git tag" ConsoleToMSBuild="True">
           <Output TaskParameter="ConsoleOutput" ItemName="GitTagLines" />
@@ -448,33 +447,23 @@
           <!-- <MyNewBuildNumber>$([MSBuild]::Add($(MyBuildNumber), 1))</MyNewBuildNumber> -->
         </PropertyGroup>
     
-        <XmlPoke
-                XmlInputPath="$(AndroidManifest)"
-                Query="/manifest/@android:versionCode"
-                Value="$(MyBuildNumber)"
-                Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;"
-        />
-        <XmlPoke
-                XmlInputPath="$(AndroidManifest)"
-                Query="/manifest/@android:versionName"
-                Value="$(MyBuildNumber)"
-                Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;"
-        />
+        <XmlPoke XmlInputPath="$(AndroidManifest)" Query="/manifest/@android:versionCode" Value="$(MyBuildNumber)" Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;" />
+        <XmlPoke XmlInputPath="$(AndroidManifest)" Query="/manifest/@android:versionName" Value="$(MyBuildNumber)" Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;" />
       </Target>
       <Target Name="ReadKeystoreCredentials" BeforeTargets="Build" Condition=" '$(IsGithubRunner)' == 'false' and '$(UnifiedSigning)' == 'true' ">
-        <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/StorePass/text()" >
+        <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/StorePass/text()">
           <Output TaskParameter="Result" PropertyName="AndroidSigningStorePass" />
         </XmlPeek>
-        <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/KeyAlias/text()" >
+        <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/KeyAlias/text()">
           <Output TaskParameter="Result" PropertyName="AndroidSigningKeyAlias" />
         </XmlPeek>
-        <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/KeyPass/text()" >
+        <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/KeyPass/text()">
           <Output TaskParameter="Result" PropertyName="AndroidSigningKeyPass" />
         </XmlPeek>
 
         <PropertyGroup>
           <AndroidKeyStore>true</AndroidKeyStore>
-          <AndroidSigningKeyStore >$(UserHomeDir)/apkSigningKey.jks</AndroidSigningKeyStore>
+          <AndroidSigningKeyStore>$(UserHomeDir)/apkSigningKey.jks</AndroidSigningKeyStore>
         </PropertyGroup>
       </Target>
       <Target Name="AfterBuild" Condition=" '$(IsGithubRunner)' == 'false' ">
