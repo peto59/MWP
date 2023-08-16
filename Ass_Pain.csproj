@@ -5,6 +5,7 @@
     <!--    <TargetFramework>net13.0-android</TargetFramework>-->
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <UnifiedSigning>true</UnifiedSigning>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{44E81BE3-AE9F-4215-B33F-D17EA3507138}</ProjectGuid>
@@ -29,15 +30,35 @@
     <AndroidUseAapt2>true</AndroidUseAapt2>
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
     <LangVersion>9</LangVersion>
+    <IsWindows Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true' ">true</IsWindows>
+    <IsLinux Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true' ">true</IsLinux>
+    <IsLinuxOrWindows Condition=" '$(IsLinux)' == 'true' or '$(IsWindows)' == 'true' ">true</IsLinuxOrWindows>
+    <IsGithubRunner>true</IsGithubRunner>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' ">
+  <PropertyGroup Condition=" '$(RUNNER_OS)' == '' ">
+    <!-- Property group specific to GitHub Actions runner -->
+    <IsGithubRunner>false</IsGithubRunner>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(IsLinux)' == 'true' ">
     <MonoAndroidBinDirectory>/usr/lib/mono/xamarin-android/bin</MonoAndroidBinDirectory>
     <AndroidSdkDirectory>/home/Android/</AndroidSdkDirectory>
     <AndroidNdkDirectory>/home/Android/ndk</AndroidNdkDirectory>
     <JavaSdkDirectory>/home/JDK/</JavaSdkDirectory>
     <TargetFrameworkRootPath>/usr/lib/mono/xbuild-frameworks/</TargetFrameworkRootPath>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <PropertyGroup>
+    <UserHomeDir Condition=" '$(IsWindows)' == 'true' ">$(USERPROFILE)</UserHomeDir>
+    <UserHomeDir Condition=" '$(IsLinux)' == 'true' ">$(HOME)</UserHomeDir>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(IsLinuxOrWindows)' == 'true' and '$(UnifiedSigning)' == 'true' ">
+    <AndroidKeyStore>true</AndroidKeyStore>
+    <AndroidSigningKeyStore >$(UserHomeDir)/apkSigningKey.jks</AndroidSigningKeyStore>
+    <!-- <AndroidSigningKeyStore Condition=" '$(IsWindows)' == 'true' ">$(UserHomeDir)\apkSigningKey.jks</AndroidSigningKeyStore> -->
+    <AndroidSigningStorePass>CerveneJablcko123</AndroidSigningStorePass>
+    <AndroidSigningKeyAlias>key0</AndroidSigningKeyAlias>
+    <AndroidSigningKeyPass>CinnamonRoll987</AndroidSigningKeyPass>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' and '$(IsGithubRunner)' == 'false' ">
     <DebugSymbols>True</DebugSymbols>
     <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
@@ -56,7 +77,7 @@
     <AndroidSupportedAbis>armeabi-v7a;x86;arm64-v8a;x86_64</AndroidSupportedAbis>
     <DocumentationFile>bin\Debug\Ass_Pain.xml</DocumentationFile>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' and '$(IsGithubRunner)' == 'false' ">
     <DebugSymbols>false</DebugSymbols>
     <DebugType>portable</DebugType>
     <Optimize>True</Optimize>
@@ -199,6 +220,7 @@
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\xml\provider_paths.xml" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Apis">
@@ -218,6 +240,9 @@
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="Octokit">
+      <Version>7.1.0</Version>
     </PackageReference>
     <PackageReference Include="Square.Picasso">
       <Version>2.71828.0</Version>
@@ -407,10 +432,36 @@
   </Target>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
-    Other similar extension points exist, see Microsoft.Common.targets.
-    <Target Name="BeforeBuild">
-    </Target>
-    <Target Name="AfterBuild">
-    </Target>
-  -->
+    Other similar extension points exist, see Microsoft.Common.targets.-->
+      <Target Name="BeforeBuild">
+        <Copy SourceFiles="$(AndroidManifest)" DestinationFiles="$(ProjectDir)\Properties\.AndroidManifest.xml.bck" />
+        
+        <Exec Command="git tag" ConsoleToMSBuild="True">
+          <Output TaskParameter="ConsoleOutput" ItemName="GitTagLines" />
+        </Exec>
+        
+        <PropertyGroup>
+          <Pattern>(build-number-)(\d+)</Pattern>
+        </PropertyGroup>
+    
+        <ItemGroup>
+          <GitTagMatches Include="@(GitTagLines)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Identity)', '$(Pattern)'))" />
+        </ItemGroup>
+        
+    
+        <PropertyGroup Condition="'@(GitTagMatches)' != ''">
+          <MyBuildNumber>$([System.Text.RegularExpressions.Regex]::Match('%(GitTagMatches.Identity)', '$(Pattern)').Groups[2].Value)</MyBuildNumber>
+          <!-- <MyNewBuildNumber>$([MSBuild]::Add($(MyBuildNumber), 1))</MyNewBuildNumber> -->
+        </PropertyGroup>
+    
+        <XmlPoke
+                XmlInputPath="$(AndroidManifest)"
+                Query="/manifest/@android:versionCode"
+                Value="$(MyBuildNumber)"
+                Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;"
+        />
+      </Target>
+     <Target Name="AfterBuild">
+       <Move SourceFiles="$(ProjectDir)\Properties\.AndroidManifest.xml.bck" DestinationFiles="$(AndroidManifest)" OverwriteReadOnlyFiles="true" />
+     </Target>
 </Project>

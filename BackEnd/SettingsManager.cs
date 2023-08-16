@@ -25,5 +25,12 @@
             get => (DownloadActions)defaultDownloadAction.Value;
             set => defaultDownloadAction.Value = (int)value;
         }
+        
+        private static readonly Setting<int> checkUpdates = new IntSetting(ShareName, "checkUpdates", (int)AutoUpdate.NoState);
+        public static AutoUpdate CheckUpdates
+        {
+            get => (AutoUpdate)checkUpdates.Value;
+            set => checkUpdates.Value = (int)value;
+        }
     }
 }
