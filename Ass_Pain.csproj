@@ -454,6 +454,12 @@
                 Value="$(MyBuildNumber)"
                 Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;"
         />
+        <XmlPoke
+                XmlInputPath="$(AndroidManifest)"
+                Query="/manifest/@android:versionName"
+                Value="$(MyBuildNumber)"
+                Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;"
+        />
       </Target>
       <Target Name="ReadKeystoreCredentials" BeforeTargets="Build" Condition=" '$(IsGithubRunner)' == 'false' and '$(UnifiedSigning)' == 'true' ">
         <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/StorePass/text()" >
