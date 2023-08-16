@@ -425,24 +425,27 @@ namespace Ass_Pain
                 if (PackageManager == null) return;
                 if (!PackageManager.CanRequestPackageInstalls())
                 {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
-                    builder.SetTitle("Permissions needed!");
-                    builder.SetMessage("We need permission to install apps to update. Would you like to grant it now?");
-
-                    builder.SetPositiveButton("Yes", (sender, args) =>
+                    RunOnUiThread(() =>
                     {
-                        // Request the permission
-                        Intent installPermissionIntent = new Intent(Settings.ActionManageUnknownAppSources, Android.Net.Uri.Parse("package:" + PackageName));
-                        StartActivityForResult(installPermissionIntent, ActionInstallPermissionRequestCode);
+                        AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
+                        builder.SetTitle("Permissions needed!");
+                        builder.SetMessage("We need permission to install apps to update. Would you like to grant it now?");
+
+                        builder.SetPositiveButton("Yes", (sender, args) =>
+                        {
+                            // Request the permission
+                            Intent installPermissionIntent = new Intent(Settings.ActionManageUnknownAppSources, Android.Net.Uri.Parse("package:" + PackageName));
+                            StartActivityForResult(installPermissionIntent, ActionInstallPermissionRequestCode);
                 
-                    });
+                        });
 
-                    builder.SetNegativeButton("No", (sender, args) =>
-                    {
-                    });
+                        builder.SetNegativeButton("No", (sender, args) =>
+                        {
+                        });
 
-                    AlertDialog dialog = builder.Create();
-                    dialog.Show();
+                        AlertDialog dialog = builder.Create();
+                        dialog.Show();
+                    });
                 }
                 else
                 {
