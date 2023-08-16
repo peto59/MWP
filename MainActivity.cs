@@ -467,22 +467,6 @@ namespace Ass_Pain
             installIntent.AddFlags(ActivityFlags.GrantReadUriPermission);
             installIntent.AddFlags(ActivityFlags.NewTask);
             StartActivity(installIntent);
-            /*if (Build.VERSION.SdkInt >= BuildVersionCodes.Q)
-            {
-                Intent promptInstall = new Intent(Intent.ActionView)
-                    .SetDataAndType(Android.Net.Uri.Parse("file:///path/to/your.apk"),
-                        "application/vnd.android.package-archive");
-                StartActivity(promptInstall);
-            }
-            else
-            {
-                Java.IO.File file = new Java.IO.File(path);
-                Android.Net.Uri uriapk = Android.Net.Uri.FromFile(file);
-                Intent intent = new Intent(Intent.ActionView);
-                intent.SetDataAndType(uriapk, "application/vnd.android.package-archive");
-                intent.SetFlags(ActivityFlags.NewTask);
-                Android.App.Application.Context.StartActivity(intent);
-            }*/
         }
     }
 }
