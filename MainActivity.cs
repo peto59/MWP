@@ -53,6 +53,8 @@ namespace Ass_Pain
         public static MyBroadcastReceiver receiver;
         public static StateHandler stateHandler = new StateHandler();
         public static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        private const int ActionInstallPermissionRequestCode = 10356;
+        private const int ActionPermissionsRequestCode = 13256;
         
         
 
@@ -122,7 +124,7 @@ namespace Ass_Pain
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             base.OnActivityResult(requestCode, resultCode, data);
-            if (requestCode == 10)
+            if (requestCode == ActionInstallPermissionRequestCode)
             {
 #if DEBUG
                 MyConsole.WriteLine($"resultCode: {resultCode}");       
@@ -254,8 +256,7 @@ namespace Ass_Pain
                 AfterReceivingPermissions();
                 return;
             }
-
-            const int requestLocationId = 1;
+            
             Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
                     .SetAction("OK", _ =>
                     {
@@ -275,7 +276,7 @@ namespace Ass_Pain
 #endif
                             }
                         }
-                        RequestPermissions(permissionsLocation, requestLocationId);
+                        RequestPermissions(permissionsLocation, ActionPermissionsRequestCode);
                     }).Show();
         }
 
@@ -391,7 +392,7 @@ namespace Ass_Pain
             builder.SetTitle("New Update");
             builder.SetMessage("Would you like to download this update?");
 
-            builder.SetPositiveButton("Yes", async (sender, args) =>
+            builder.SetPositiveButton("Yes", (sender, args) =>
             {
                 _ = Task.Run(async () =>
                 {
@@ -418,14 +419,30 @@ namespace Ass_Pain
 #if DEBUG
          MyConsole.WriteLine("Downloaded. Starting install!");   
 #endif
+            
             if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
             {
                 if (PackageManager == null) return;
                 if (!PackageManager.CanRequestPackageInstalls())
                 {
-                    // Request the permission
-                    Intent installPermissionIntent = new Intent(Settings.ActionManageUnknownAppSources, Android.Net.Uri.Parse("package:" + PackageName));
-                    StartActivityForResult(installPermissionIntent, 10);    
+                    AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
+                    builder.SetTitle("Permissions needed!");
+                    builder.SetMessage("We need permission to install apps to update. Would you like to grant it now?");
+
+                    builder.SetPositiveButton("Yes", (sender, args) =>
+                    {
+                        // Request the permission
+                        Intent installPermissionIntent = new Intent(Settings.ActionManageUnknownAppSources, Android.Net.Uri.Parse("package:" + PackageName));
+                        StartActivityForResult(installPermissionIntent, ActionInstallPermissionRequestCode);
+                
+                    });
+
+                    builder.SetNegativeButton("No", (sender, args) =>
+                    {
+                    });
+
+                    AlertDialog dialog = builder.Create();
+                    dialog.Show();
                 }
                 else
                 {

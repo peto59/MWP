@@ -50,14 +50,6 @@
     <UserHomeDir Condition=" '$(IsWindows)' == 'true' ">$(USERPROFILE)</UserHomeDir>
     <UserHomeDir Condition=" '$(IsLinux)' == 'true' ">$(HOME)</UserHomeDir>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(IsGithubRunner)' == 'false' and '$(UnifiedSigning)' == 'true' ">
-    <AndroidKeyStore>true</AndroidKeyStore>
-    <AndroidSigningKeyStore >$(UserHomeDir)/apkSigningKey.jks</AndroidSigningKeyStore>
-    <!-- <AndroidSigningKeyStore Condition=" '$(IsWindows)' == 'true' ">$(UserHomeDir)\apkSigningKey.jks</AndroidSigningKeyStore> -->
-    <AndroidSigningStorePass>CerveneJablcko123</AndroidSigningStorePass>
-    <AndroidSigningKeyAlias>key0</AndroidSigningKeyAlias>
-    <AndroidSigningKeyPass>CinnamonRoll987</AndroidSigningKeyPass>
-  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
     <DebugType>portable</DebugType>
@@ -463,7 +455,23 @@
                 Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;"
         />
       </Target>
-     <Target Name="AfterBuild" Condition=" '$(IsGithubRunner)' == 'false' ">
-       <Move SourceFiles="$(ProjectDir)\Properties\.AndroidManifest.xml.bck" DestinationFiles="$(AndroidManifest)" OverwriteReadOnlyFiles="true" />
-     </Target>
+      <Target Name="ReadKeystoreCredentials" BeforeTargets="Build" Condition=" '$(IsGithubRunner)' == 'false' and '$(UnifiedSigning)' == 'true' ">
+        <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/StorePass/text()" >
+          <Output TaskParameter="Result" PropertyName="AndroidSigningStorePass" />
+        </XmlPeek>
+        <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/KeyAlias/text()" >
+          <Output TaskParameter="Result" PropertyName="AndroidSigningKeyAlias" />
+        </XmlPeek>
+        <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/KeyPass/text()" >
+          <Output TaskParameter="Result" PropertyName="AndroidSigningKeyPass" />
+        </XmlPeek>
+
+        <PropertyGroup>
+          <AndroidKeyStore>true</AndroidKeyStore>
+          <AndroidSigningKeyStore >$(UserHomeDir)/apkSigningKey.jks</AndroidSigningKeyStore>
+        </PropertyGroup>
+      </Target>
+      <Target Name="AfterBuild" Condition=" '$(IsGithubRunner)' == 'false' ">
+        <Move SourceFiles="$(ProjectDir)\Properties\.AndroidManifest.xml.bck" DestinationFiles="$(AndroidManifest)" OverwriteReadOnlyFiles="true" />
+      </Target>
 </Project>
