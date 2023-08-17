@@ -48,6 +48,10 @@ namespace Ass_Pain
         private static TextView _songName;
         private static TextView _songArtist;
         private static TextView _songAlbum;
+        private static TextView _originalArtist;
+        private static TextView _originalTitle;
+
+        private static ProgressBar _SSImageLoading;
 
         SensorSpeed speed = SensorSpeed.Game;
         
@@ -175,7 +179,46 @@ namespace Ass_Pain
             //SongSelectionDialog("dd", "dd", "dd", "dd", false, false);
 
         }
-        
+
+
+        /// <summary>
+        /// Update already existing popup, it won't close the instance
+        /// </summary>
+        /// <param name="songNameIn"></param>
+        /// <param name="songArtistIn"></param>
+        /// <param name="songAlbumIn"></param>
+        /// <param name="imgArr"></param>
+        /// <param name="originalAuthor"></param>
+        /// <param name="originalTitle"></param>
+        public static void UpdateSsDialog(string songNameIn, string songArtistIn, string songAlbumIn, byte[] imgArr, string originalAuthor, string originalTitle)
+        {
+            _SSImageLoading.Visibility = ViewStates.Gone;
+            _songImage.Visibility = ViewStates.Visible;
+            using Bitmap img = BitmapFactory.DecodeByteArray(imgArr, 0, imgArr.Length);
+            _songImage.SetImageBitmap(img);
+            if (_songArtist != null) _songArtist.Text = songArtistIn;
+            if (_songAlbum != null) _songAlbum.Text = songAlbumIn;
+            if (_songName != null) _songName.Text = songNameIn;
+            if (_originalTitle != null) _originalTitle.Text = originalTitle;
+            if (_originalArtist != null) _originalArtist.Text = originalAuthor;
+        }
+
+        /// <summary>
+        /// Opening already active instance of popup after it was hidden
+        /// </summary>
+        public static void OpenSsDialog()
+        {
+            _bottomDialog?.Show();
+        }
+
+        /// <summary>
+        /// Hiding already active instance of popup
+        /// </summary>
+        public static void HideSsDialog()
+        {
+            _bottomDialog.Hide();
+        }
+
         /// <summary>
         /// pop up for customizing downloaded song, choosing which image or name of song you want to use to save
         /// the song
@@ -206,10 +249,10 @@ namespace Ass_Pain
                 );
             }
 
-            if (!forw) { if (_next != null) _next.Visibility = ViewStates.Invisible; }
+            if (!forw) { if (_next != null) _next.Visibility = ViewStates.Gone; }
             else { if (_next != null) _next.Visibility = ViewStates.Visible; }
             
-            if (!back) { if (_previous != null) _previous.Visibility = ViewStates.Invisible; }
+            if (!back) { if (_previous != null) _previous.Visibility = ViewStates.Gone; }
             else { if (_previous != null) _previous.Visibility = ViewStates.Visible; }
 
             
@@ -220,22 +263,35 @@ namespace Ass_Pain
             _songName = _bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_name);
             _songArtist = _bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_artist);
             _songAlbum = _bottomDialog?.FindViewById<TextView>(Resource.Id.song_to_download_album);
+            _originalArtist = _bottomDialog?.FindViewById<TextView>(Resource.Id.SS_original_title);
+            _originalTitle = _bottomDialog?.FindViewById<TextView>(Resource.Id.SS_orignal_artist);
+
+            _SSImageLoading = _bottomDialog?.FindViewById<ProgressBar>(Resource.Id.SS_image_loading);
+            LinearLayout.LayoutParams SSLoadingImageParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WrapContent,
+                ViewGroup.LayoutParams.WrapContent
+            );
+            SSLoadingImageParams.SetMargins(50, 50, 50, 50);
             
             if (_songArtist != null) _songArtist.Text = songArtistIn;
             if (_songAlbum != null) _songAlbum.Text = songAlbumIn;
             if (_songName != null) _songName.Text = songNameIn;
+            if (_originalTitle != null) _originalTitle.Text = originalTitle;
+            if (_originalArtist != null) _originalArtist.Text = originalAuthor;
 
             _previous.Click += delegate
             {
                 MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Previous;
                 MainActivity.stateHandler.ResultEvent.Set();
-                _bottomDialog?.Hide();
             };
             _next.Click += delegate
             {
                 MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.Next;
                 MainActivity.stateHandler.ResultEvent.Set();
-                _bottomDialog?.Hide();
+                _songImage.SetImageResource(Resource.Color.mtrl_btn_transparent_bg_color);
+                _songImage.Visibility = ViewStates.Gone;
+                _SSImageLoading.Visibility = ViewStates.Visible;
+                _SSImageLoading.LayoutParameters = SSLoadingImageParams;
             };
             
             _accept.Click += delegate
