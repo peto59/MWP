@@ -15,6 +15,7 @@ using Android.Webkit;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using Newtonsoft.Json;
 using AndroidX.AppCompat.Graphics.Drawable;
 using Android.Widget;
@@ -22,11 +23,19 @@ using System.Threading;
 using System.Text.Json;
 using AngleSharp.Html;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Android.Content.PM;
 using Android.Media;
 using Android.Provider;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
+using Octokit;
+using Xamarin.Essentials;
+using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
+using Application = Android.App.Application;
+using FileMode = System.IO.FileMode;
+using FileProvider = AndroidX.Core.Content.FileProvider;
+using Stream = System.IO.Stream;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -44,6 +53,8 @@ namespace Ass_Pain
         public static MyBroadcastReceiver receiver;
         public static StateHandler stateHandler = new StateHandler();
         public static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        private const int ActionInstallPermissionRequestCode = 10356;
+        private const int ActionPermissionsRequestCode = 13256;
         
         
 
@@ -53,11 +64,11 @@ namespace Ass_Pain
         {
             base.OnCreate(savedInstanceState);
             // Finish();   
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
+            Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
             AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
-
+            
             RequestMyPermission();
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
@@ -77,6 +88,28 @@ namespace Ass_Pain
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver();
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
+            
+            VersionTracking.Track();
+
+            if (SettingsManager.CheckUpdates == AutoUpdate.NoState)
+            {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.SetTitle("Automatic Updates");
+                builder.SetMessage("Would you like to enable automatic updates?");
+
+                builder.SetPositiveButton("Yes", (sender, args) =>
+                {
+                    SettingsManager.CheckUpdates = AutoUpdate.Requested;
+                });
+
+                builder.SetNegativeButton("No", (sender, args) =>
+                {
+                    SettingsManager.CheckUpdates = AutoUpdate.Forbidden;
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+            }
 
             //rest of the stuff that was here is in AfterReceivingPermissions()
 
@@ -86,6 +119,18 @@ namespace Ass_Pain
             //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
 
             
+        }
+
+        protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
+        {
+            base.OnActivityResult(requestCode, resultCode, data);
+            if (requestCode == ActionInstallPermissionRequestCode)
+            {
+#if DEBUG
+                MyConsole.WriteLine($"resultCode: {resultCode}");       
+#endif
+                InstallUpdate($"{FileManager.PrivatePath}/update.apk");
+            }
         }
 
         public override void OnBackPressed()
@@ -101,27 +146,25 @@ namespace Ass_Pain
             }
         }
 
+        /// <inheritdoc />
         public override bool OnCreateOptionsMenu(IMenu menu)
         {
             MenuInflater.Inflate(Resource.Menu.menu_main, menu);
             return true;
         }
 
+        /// <inheritdoc />
         protected override void OnDestroy()
         {
             UnregisterReceiver(receiver);
             base.OnDestroy();
         }
 
+        /// <inheritdoc />
         public override bool OnOptionsItemSelected(IMenuItem item)
         {
             int id = item.ItemId;
-            if (id == Resource.Id.action_settings)
-            {
-                return true;
-            }
-
-            return base.OnOptionsItemSelected(item);
+            return id == Resource.Id.action_settings || base.OnOptionsItemSelected(item);
         }
 
         private void FabOnClick(object sender, EventArgs eventArgs)
@@ -165,14 +208,15 @@ namespace Ass_Pain
             drawer.CloseDrawer(GravityCompat.Start);
             return true;
         }
-        
+
+        /// <inheritdoc />
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
         {
 #if DEBUG
             MyConsole.WriteLine("OnRequestPermissionsResult Result");
 #endif
             
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+            Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             bool shouldRequestAgain = false;
@@ -197,7 +241,7 @@ namespace Ass_Pain
             }
         }
 
-        private async void RequestMyPermission()
+        private void RequestMyPermission()
         {
             string[] permissionsLocation =  {
                 //Android.Manifest.Permission.WriteExternalStorage,
@@ -212,10 +256,9 @@ namespace Ass_Pain
                 AfterReceivingPermissions();
                 return;
             }
-
-            const int requestLocationId = 1;
+            
             Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
-                    .SetAction("OK", v =>
+                    .SetAction("OK", _ =>
                     {
                         if (!Android.OS.Environment.IsExternalStorageManager)
                         {
@@ -233,21 +276,25 @@ namespace Ass_Pain
 #endif
                             }
                         }
-                        RequestPermissions(permissionsLocation, requestLocationId);
+                        RequestPermissions(permissionsLocation, ActionPermissionsRequestCode);
                     }).Show();
         }
 
         private void AfterReceivingPermissions()
         {
-            string privatePath = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+            if (SettingsManager.CheckUpdates == AutoUpdate.Requested)
+            {
+                CheckUpdates();
+            }
+            string privatePath = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
+            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
 
             if (!Directory.Exists(path))
             {
 #if DEBUG
                 MyConsole.WriteLine("Creating " + $"{path}");
 #endif
-                Directory.CreateDirectory(path);
+                if (path != null) Directory.CreateDirectory(path);
             }
 
             if (!Directory.Exists($"{privatePath}/tmp"))
@@ -308,6 +355,7 @@ namespace Ass_Pain
                 //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
                 //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
                 //stateHandler.Songs = stateHandler.Songs.Distinct().ToList();
+                
             }).Start();
             
             
@@ -320,6 +368,108 @@ namespace Ass_Pain
                 MyConsole.WriteLine("Cannot connect to MediaService");
 #endif
             }
+        }
+
+        private async void CheckUpdates()
+        {
+            string currentVersionString = VersionTracking.CurrentBuild;
+            string owner = "peto59";
+            string repoName = "Ass_Pain";
+#if DEBUG
+            MyConsole.WriteLine("Checking for updates!");
+            MyConsole.WriteLine($"Current version: {currentVersionString}");
+#endif      
+            GitHubClient client = new GitHubClient(new ProductHeaderValue("AssPain"));
+            IReadOnlyList<Release> releases = await client.Repository.Release.GetAll(owner, repoName);
+            Release release = releases.First(r => r.TagName == "latest");
+            
+            int.TryParse(release.Name, out int remoteVersion);
+            int.TryParse(currentVersionString, out int currentVersion);
+            if (remoteVersion <= currentVersion) return;
+            
+            
+            AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
+            builder.SetTitle("New Update");
+            builder.SetMessage("Would you like to download this update?");
+
+            builder.SetPositiveButton("Yes", (sender, args) =>
+            {
+                _ = Task.Run(async () =>
+                {
+                    ReleaseAsset asset = await client.Repository.Release.GetAsset(owner, repoName, release.Assets.First(a => a.Name == "com.companyname.ass_pain-Signed.apk").Id);
+                    GetUpdate(asset.BrowserDownloadUrl);
+                });
+                
+            });
+
+            builder.SetNegativeButton("No", (sender, args) =>
+            {
+            });
+
+            AlertDialog dialog = builder.Create();
+            dialog.Show();
+            
+        }
+
+        private async void GetUpdate(string downloadUrl)
+        {
+            using HttpClient httpClient = new HttpClient();
+            await File.WriteAllBytesAsync($"{FileManager.PrivatePath}/update.apk", await httpClient.GetByteArrayAsync(downloadUrl));
+            
+#if DEBUG
+         MyConsole.WriteLine("Downloaded. Starting install!");   
+#endif
+            
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+            {
+                if (PackageManager == null) return;
+                if (!PackageManager.CanRequestPackageInstalls())
+                {
+                    RunOnUiThread(() =>
+                    {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
+                        builder.SetTitle("Permissions needed!");
+                        builder.SetMessage("We need permission to install apps to update. Would you like to grant it now?");
+
+                        builder.SetPositiveButton("Yes", (sender, args) =>
+                        {
+                            // Request the permission
+                            Intent installPermissionIntent = new Intent(Settings.ActionManageUnknownAppSources, Android.Net.Uri.Parse("package:" + PackageName));
+                            StartActivityForResult(installPermissionIntent, ActionInstallPermissionRequestCode);
+                
+                        });
+
+                        builder.SetNegativeButton("No", (sender, args) =>
+                        {
+                        });
+
+                        AlertDialog dialog = builder.Create();
+                        dialog.Show();
+                    });
+                }
+                else
+                {
+                    InstallUpdate($"{FileManager.PrivatePath}/update.apk");
+                }
+                
+            }
+            else
+            {
+                InstallUpdate($"{FileManager.PrivatePath}/update.apk");
+            }
+        }
+
+        private void InstallUpdate(string path)
+        {
+            string authority = $"{Application.Context.PackageName}.fileprovider";
+            Java.IO.File apkFile = new Java.IO.File(path);
+            Android.Net.Uri apkUri = FileProvider.GetUriForFile(this, authority, apkFile);
+            
+            Intent installIntent = new Intent(Intent.ActionView);
+            installIntent.SetDataAndType(apkUri, "application/vnd.android.package-archive");
+            installIntent.AddFlags(ActivityFlags.GrantReadUriPermission);
+            installIntent.AddFlags(ActivityFlags.NewTask);
+            StartActivity(installIntent);
         }
     }
 }

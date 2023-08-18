@@ -31,9 +31,6 @@ namespace Ass_Pain
     // TODO: add new song to state handler
     internal static class Downloader
     {
-        private static readonly string Path = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
-        private static readonly string MusicPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
-
         public static async void Download(object sender, EventArgs e, string url, DownloadActions action)
         {
             List<string> authors = new List<string>();
@@ -49,7 +46,7 @@ namespace Ass_Pain
                 Playlist playlist = await youtube.Playlists.GetAsync(url);
                 IReadOnlyList<PlaylistVideo> videos = await youtube.Playlists.GetVideosAsync(playlist.Id);
                 int a = FileManager.GetAvailableFile("playlistThumb");
-                string ext = GetImage(playlist.Thumbnails.AsEnumerable(), $"{Path}/tmp", $"playlistThumb{a}");
+                string ext = GetImage(playlist.Thumbnails.AsEnumerable(), $"{FileManager.PrivatePath}/tmp", $"playlistThumb{a}");
                 DownloadNotification notification = new DownloadNotification(videos.Count);
                 StatisticsCallback callback = new StatisticsCallback(notification);
                 FFmpegKitConfig.EnableStatisticsCallback(callback);
@@ -113,11 +110,11 @@ namespace Ass_Pain
                 YoutubeClient youtube = new YoutubeClient();
                 StreamManifest streamManifest = await youtube.Videos.Streams.GetManifestAsync(url);
                 IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-                await youtube.Videos.Streams.DownloadAsync(streamInfo, $"{Path}/tmp/unprocessed{i}.mp3", downloadProgress);
+                await youtube.Videos.Streams.DownloadAsync(streamInfo, $"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3", downloadProgress);
                 
                 if (SettingsManager.ShouldUseChromaprintAtDownload)
                 {
-                    async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artists, List<(string title, string id)> releaseGroup, byte[] thumbnail)> TaskFactory() => await GetMusicBrainzIdFromFingerprint($"{Path}/tmp/unprocessed{i}.mp3", channelName, videoTitle);
+                    async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artists, List<(string title, string id)> releaseGroup, byte[] thumbnail)> TaskFactory() => await GetMusicBrainzIdFromFingerprint($"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3", channelName, videoTitle);
                     mbSearchTask = MainActivity.throttler.Throttle(TaskFactory, "GetMusicBrainzIdFromFingerprint");
                 }
                 
@@ -126,7 +123,7 @@ namespace Ass_Pain
                 await imageTask;
                 
                 int duration;
-                string s = FFprobeKit.Execute($"-i {Path}/tmp/unprocessed{i}.mp3 -show_entries format=duration -v quiet -of csv=\"p=0\"")?.Output;
+                string s = FFprobeKit.Execute($"-i {FileManager.PrivatePath}/tmp/unprocessed{i}.mp3 -show_entries format=duration -v quiet -of csv=\"p=0\"")?.Output;
                 try
                 {
                     duration = s != null ? (int)float.Parse(s) : 170;
@@ -139,7 +136,7 @@ namespace Ass_Pain
                 // ReSharper disable once InconsistentNaming
                 Task<FFmpegSession> FFmpegTask = Task.Run(() =>
                 {
-                    FFmpegSession session = new FFmpegSession(new []{"-i", $"{Path}/tmp/unprocessed{i}.mp3", "-i", $"{Path}/tmp/file{i}.jpg", "-filter_complex", "[1:v]crop=iw:iw/2[img]", "-map", "0:0", "-map", "[img]", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", $"{Path}/tmp/video{i}.mp3"}); //aspect ratio 2:1
+                    FFmpegSession session = new FFmpegSession(new []{"-i", $"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3", "-i", $"{FileManager.PrivatePath}/tmp/file{i}.jpg", "-filter_complex", "[1:v]crop=iw:iw/2[img]", "-map", "0:0", "-map", "[img]", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", $"{FileManager.PrivatePath}/tmp/video{i}.mp3"}); //aspect ratio 2:1
                     //FFmpegSession session = new FFmpegSession(new []{"-i", $"{Path}/tmp/unprocessed{i}.mp3", "-i", $"{Path}/tmp/file{i}.jpg", "-map", "0:0", "-map", "1:0", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", $"{Path}/tmp/video{i}.mp3"}); //original aspect ration 
                     MainActivity.stateHandler.SessionIdToPlaylistOrderMapping.Add(session.SessionId, (poradieVPlayliste, duration));
                     FFmpegKitConfig.FfmpegExecute(session);
@@ -177,33 +174,33 @@ namespace Ass_Pain
                 }
                 string fileName = FileManager.Sanitize(title);
                 string artistPath = FileManager.Sanitize(FileManager.GetAlias(artists.First().title));
-                Directory.CreateDirectory($"{MusicPath}/{artistPath}");
-                string output = $"{MusicPath}/{artistPath}/{fileName}.mp3";
+                Directory.CreateDirectory($"{FileManager.MusicFolder}/{artistPath}");
+                string output = $"{FileManager.MusicFolder}/{artistPath}/{fileName}.mp3";
                 
 
                 if (releaseGroups.First().title != string.Empty)
                 {
                     album = releaseGroups.First().title;
                     string albumPath = FileManager.Sanitize(album);
-                    Directory.CreateDirectory($"{MusicPath}/{artistPath}/{albumPath}");
-                    output = $"{MusicPath}/{artistPath}/{albumPath}/{fileName}.mp3";
-                    if (!File.Exists($"{MusicPath}/{artistPath}/{albumPath}/cover.jpg") && !File.Exists($"{MusicPath}/{artistPath}/{albumPath}/cover.png"))
+                    Directory.CreateDirectory($"{FileManager.MusicFolder}/{artistPath}/{albumPath}");
+                    output = $"{FileManager.MusicFolder}/{artistPath}/{albumPath}/{fileName}.mp3";
+                    if (!File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover.jpg") && !File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover.png"))
                     {
                         if (thumbnail != null)
                         {
                             string imgExtenstion = GetImageFormat(thumbnail);
-                            File.Create($"{MusicPath}/{artistPath}/{albumPath}/cover{imgExtenstion}").Close();
-                            _ = File.WriteAllBytesAsync($"{MusicPath}/{artistPath}/{albumPath}/cover{imgExtenstion}", thumbnail);
+                            File.Create($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{imgExtenstion}").Close();
+                            _ = File.WriteAllBytesAsync($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{imgExtenstion}", thumbnail);
                         }
                         else
                         {
                             Task t = Task.Run(() => {
-                                File.Copy($"{Path}/tmp/playlistThumb{a}{playlistCoverExtension}", $"{MusicPath}/{artistPath}/{albumPath}/cover{playlistCoverExtension}", true);
+                                File.Copy($"{FileManager.PrivatePath}/tmp/playlistThumb{a}{playlistCoverExtension}", $"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{playlistCoverExtension}", true);
                             });
                             if (last)
                             {
                                 _ = t.ContinueWith(_ =>
-                                    File.Delete($"{Path}/tmp/playlistThumb{a}{playlistCoverExtension}"));
+                                    File.Delete($"{FileManager.PrivatePath}/tmp/playlistThumb{a}{playlistCoverExtension}"));
 
                             }
                         }
@@ -212,19 +209,19 @@ namespace Ass_Pain
 
                 if (getAuthorImage)
                 {
-                    if (!File.Exists($"{MusicPath}/{artistPath}/cover.jpg") && !File.Exists($"{MusicPath}/{artistPath}/cover.png"))
+                    if (!File.Exists($"{FileManager.MusicFolder}/{artistPath}/cover.jpg") && !File.Exists($"{FileManager.MusicFolder}/{artistPath}/cover.png"))
                     {
                         _ = Task.Run(async () => {
                             Channel authorThumbnails = await youtube.Channels.GetAsync(channelId);
-                            GetImage(authorThumbnails.Thumbnails.AsEnumerable(), $"{MusicPath}/{artistPath}");
+                            GetImage(authorThumbnails.Thumbnails.AsEnumerable(), $"{FileManager.MusicFolder}/{artistPath}");
                         });
                     }
                 }
 
                 FFmpegSession session = await FFmpegTask;
                 _ = Task.Run(() => {
-                    File.Delete($"{Path}/tmp/file{i}.jpg");
-                    File.Delete($"{Path}/tmp/unprocessed{i}.mp3");
+                    File.Delete($"{FileManager.PrivatePath}/tmp/file{i}.jpg");
+                    File.Delete($"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3");
                 });
 
                 if (session.ReturnCode is { IsSuccess: true })
@@ -232,11 +229,11 @@ namespace Ass_Pain
                     View view = (View)sender;
                     try
                     {
-                        File.Move($"{Path}/tmp/video{i}.mp3", output);
+                        File.Move($"{FileManager.PrivatePath}/tmp/video{i}.mp3", output);
                     }
                     catch
                     {
-                        File.Delete($"{Path}/tmp/video{i}.mp3");
+                        File.Delete($"{FileManager.PrivatePath}/tmp/video{i}.mp3");
 #if DEBUG
                         MyConsole.WriteLine("Video already exists");
 #endif
@@ -337,7 +334,7 @@ namespace Ass_Pain
                 else
                 {
                     notification.Stage4(false, $"{session.ReturnCode?.Value}", poradieVPlayliste);
-                    File.Delete($"{Path}/tmp/video{i}.mp3");
+                    File.Delete($"{FileManager.PrivatePath}/tmp/video{i}.mp3");
                     if (session.ReturnCode == null) return;
 #if DEBUG
                     MyConsole.WriteLine($"FFmpeg failed with status code {session.ReturnCode} {session.Output} {session}");
@@ -389,11 +386,11 @@ namespace Ass_Pain
             using WebClient cli = new WebClient();
             if (await GetHttpStatus($"https://img.youtube.com/vi/{id}/maxresdefault.jpg"))
             {
-                await File.WriteAllBytesAsync($"{Path}/tmp/file{i}.jpg", cli.DownloadData($"https://img.youtube.com/vi/{id}/maxresdefault.jpg"));
+                await File.WriteAllBytesAsync($"{FileManager.PrivatePath}/tmp/file{i}.jpg", cli.DownloadData($"https://img.youtube.com/vi/{id}/maxresdefault.jpg"));
             }
             else
             {
-                await File.WriteAllBytesAsync($"{Path}/tmp/file{i}.jpg", cli.DownloadData($"https://img.youtube.com/vi/{id}/0.jpg"));
+                await File.WriteAllBytesAsync($"{FileManager.PrivatePath}/tmp/file{i}.jpg", cli.DownloadData($"https://img.youtube.com/vi/{id}/0.jpg"));
             }
         }
         

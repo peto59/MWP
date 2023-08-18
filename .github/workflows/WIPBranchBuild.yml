@@ -1,14 +1,16 @@
 # This workflow will build a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: BuildSignAndRelease
+name: BuildWIP
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "WIP" ]
+  pull_request:
+    branches: [ "WIP" ]
 
 jobs:
-  BuildSignAndRelease:
+  BuildWIP:
 
     runs-on: macos-latest
 
@@ -28,23 +30,6 @@ jobs:
           
     - name: Install dependencies
       run: nuget restore Ass_Pain.sln
-
-    - name: Generate build number
-      id: buildnumber
-      uses: onyxmueller/build-tag-number@v1
-      with:
-        token: ${{secrets.github_token}}
-        
-    - name: Print new build number
-      run: echo "Build number is $BUILD_NUMBER"
-      
-    - name: Update AndroidManifest.xml
-      uses: damienaicheh/update-android-version-manifest-action@v1.0.0
-      with:
-        android-manifest-path: './Properties/AndroidManifest.xml'
-        version-code: ${{ steps.buildnumber.outputs.build_number }}
-        version-name: ${{ steps.buildnumber.outputs.build_number }}
-        print-file: true
       
     - name: BuildAndSign
       uses: bradyjoslin/xamarinandroid-signedbuild-action@v1
@@ -60,9 +45,8 @@ jobs:
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          automatic_release_tag: "latest"
-          title: "${{ steps.buildnumber.outputs.build_number }}"
+          automatic_release_tag: "prerelease"
+          title: "${{ github.event.head_commit.message }}"
           files: |
             LICENSE.txt
             bin/Release/**Signed.apk

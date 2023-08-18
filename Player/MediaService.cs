@@ -109,11 +109,8 @@ namespace Ass_Pain
 		        {
 			        return Queue[Index];
 		        }
-		        catch (Exception e)
+		        catch
 		        {
-#if DEBUG
-                    MyConsole.WriteLine(e.ToString());
-#endif
 			        return new Song("No Name", new DateTime(), "Default");
 		        }
 	        }
