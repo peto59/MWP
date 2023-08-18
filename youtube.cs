@@ -190,35 +190,38 @@ namespace Ass_Pain
         /// <param name="imgArr"></param>
         /// <param name="originalAuthor"></param>
         /// <param name="originalTitle"></param>
-        public static void UpdateSsDialog(string songNameIn, string songArtistIn, string songAlbumIn, byte[] imgArr, string originalAuthor, string originalTitle)
+        public static void UpdateSsDialog(string songNameIn, string songArtistIn, string songAlbumIn, byte[] imgArr, string originalAuthor, string originalTitle,  bool forw, bool back)
         {
-            _SSImageLoading.Visibility = ViewStates.Gone;
-            _songImage.Visibility = ViewStates.Visible;
-            using Bitmap img = BitmapFactory.DecodeByteArray(imgArr, 0, imgArr.Length);
-            _songImage.SetImageBitmap(img);
-            if (_songArtist != null) _songArtist.Text = songArtistIn;
-            if (_songAlbum != null) _songAlbum.Text = songAlbumIn;
-            if (_songName != null) _songName.Text = songNameIn;
-            if (_originalTitle != null) _originalTitle.Text = originalTitle;
-            if (_originalArtist != null) _originalArtist.Text = originalAuthor;
+            if (_bottomDialog != null && _bottomDialog.IsShowing)
+            {
+                TextView new_label = _bottomDialog.FindViewById<TextView>(Resource.Id.SS_new_label);
+                new_label.Visibility = ViewStates.Visible;
+                
+                if (!forw) { if (_next != null) _next.Visibility = ViewStates.Gone; }
+                else { if (_next != null) _next.Visibility = ViewStates.Visible; }
+            
+                if (!back) { if (_previous != null) _previous.Visibility = ViewStates.Gone; }
+                else { if (_previous != null) _previous.Visibility = ViewStates.Visible; }
+                
+                _SSImageLoading.Visibility = ViewStates.Gone;
+                _songImage.Visibility = ViewStates.Visible;
+                using Bitmap img = BitmapFactory.DecodeByteArray(imgArr, 0, imgArr.Length);
+                _songImage.SetImageBitmap(img);
+                if (_songArtist != null) _songArtist.Text = songArtistIn;
+                if (_songAlbum != null) _songAlbum.Text = songAlbumIn;
+                if (_songName != null) _songName.Text = songNameIn;
+                if (_originalTitle != null) _originalTitle.Text = originalTitle;
+                if (_originalArtist != null) _originalArtist.Text = originalAuthor;
+                
+                
+            }
+            else
+            {
+                SongSelectionDialog(songNameIn, songArtistIn, songAlbumIn, imgArr, originalAuthor, originalTitle, forw,
+                    back);
+            }
         }
-
-        /// <summary>
-        /// Opening already active instance of popup after it was hidden
-        /// </summary>
-        public static void OpenSsDialog()
-        {
-            _bottomDialog?.Show();
-        }
-
-        /// <summary>
-        /// Hiding already active instance of popup
-        /// </summary>
-        public static void HideSsDialog()
-        {
-            _bottomDialog.Hide();
-        }
-
+        
         /// <summary>
         /// pop up for customizing downloaded song, choosing which image or name of song you want to use to save
         /// the song
@@ -231,8 +234,9 @@ namespace Ass_Pain
         /// <param name="back"></param>
         public static void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, byte[] imgArr, string originalAuthor, string originalTitle, bool forw, bool back)
         {
-
+    
             _bottomDialog = new BottomSheetDialog(MainActivity.stateHandler.view);
+            _bottomDialog.SetCanceledOnTouchOutside(false);
             LayoutInflater ifl = LayoutInflater.From(MainActivity.stateHandler.view);
             View view = ifl?.Inflate(Resource.Layout.song_download_selection_dialog, null);
             if (view != null) _bottomDialog.SetContentView(view);
@@ -249,11 +253,30 @@ namespace Ass_Pain
                 );
             }
 
-            if (!forw) { if (_next != null) _next.Visibility = ViewStates.Gone; }
-            else { if (_next != null) _next.Visibility = ViewStates.Visible; }
+            LinearLayout.LayoutParams SSFLoatingButtons = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                ViewGroup.LayoutParams.WrapContent
+            );
+            if (forw && back)
+            {
+                SSFLoatingButtons.SetMargins(1, 1, 1, 1);
+                if (_next != null) _next.LayoutParameters = SSFLoatingButtons;
+                if (_previous != null) _previous.LayoutParameters = SSFLoatingButtons;
+            }
+            else
+            {
+                SSFLoatingButtons.SetMargins(20, 20, 20, 20);
+                if (_next != null) _next.LayoutParameters = SSFLoatingButtons;
+                if (_previous != null) _previous.LayoutParameters = SSFLoatingButtons;
+                
+                if (!forw) { if (_next != null) _next.Visibility = ViewStates.Gone; }
+                else { if (_next != null) _next.Visibility = ViewStates.Visible; }
+                
+                if (!back) { if (_previous != null) _previous.Visibility = ViewStates.Gone; }
+                else { if (_previous != null) _previous.Visibility = ViewStates.Visible; }
+            }
+
             
-            if (!back) { if (_previous != null) _previous.Visibility = ViewStates.Gone; }
-            else { if (_previous != null) _previous.Visibility = ViewStates.Visible; }
 
             
             _accept = _bottomDialog?.FindViewById<TextView>(Resource.Id.accept_download);
@@ -292,6 +315,18 @@ namespace Ass_Pain
                 _songImage.Visibility = ViewStates.Gone;
                 _SSImageLoading.Visibility = ViewStates.Visible;
                 _SSImageLoading.LayoutParameters = SSLoadingImageParams;
+                
+                _songArtist.Text = "";
+                _songAlbum.Text = "";
+                _songName.Text = "";
+                _originalTitle.Text = "";
+                _originalArtist.Text = "";
+                
+                _next.Visibility = ViewStates.Gone;
+                _previous.Visibility = ViewStates.Gone;
+
+                TextView new_label = _bottomDialog.FindViewById<TextView>(Resource.Id.SS_new_label);
+                new_label.Visibility = ViewStates.Invisible;
             };
             
             _accept.Click += delegate

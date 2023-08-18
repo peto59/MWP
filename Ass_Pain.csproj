@@ -34,7 +34,7 @@
     <MonoAndroidBinDirectory>/usr/lib/mono/xamarin-android/bin</MonoAndroidBinDirectory>
     <AndroidSdkDirectory>/home/Android/</AndroidSdkDirectory>
     <AndroidNdkDirectory>/home/Android/ndk</AndroidNdkDirectory>
-    <JavaSdkDirectory>/home/JDK/</JavaSdkDirectory>
+    <!-- <JavaSdkDirectory>/home/JDK/</JavaSdkDirectory> -->
     <TargetFrameworkRootPath>/usr/lib/mono/xbuild-frameworks/</TargetFrameworkRootPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
