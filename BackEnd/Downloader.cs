@@ -271,6 +271,7 @@ namespace Ass_Pain
 
 
 
+                    //TODO: fully offload to file manager
                     List<Artist> artistList = new List<Artist>();
                     foreach (string artist in artists.Select(t => t.title))
                     {

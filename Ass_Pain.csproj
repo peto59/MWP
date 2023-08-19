@@ -98,6 +98,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
+    <Compile Include="BackEnd\Network\Commands.cs" />
+    <Compile Include="BackEnd\Network\Extensions.cs" />
+    <Compile Include="BackEnd\Network\NetworkManager.cs" />
+    <Compile Include="BackEnd\Network\NetworkManagerClient.cs" />
+    <Compile Include="BackEnd\Network\NetworkManagerCommon.cs" />
+    <Compile Include="BackEnd\Network\NetworkManagerServer.cs" />
     <Compile Include="BackEnd\SettingsManager.cs" />
     <Compile Include="DatatypesAndExtensions\Album.cs" />
     <Compile Include="DatatypesAndExtensions\ChromaprintResult.cs" />
@@ -118,7 +124,6 @@
     <Compile Include="Local_notification_service.cs" />
     <Compile Include="DatatypesAndExtensions\MusicBaseClass.cs" />
     <Compile Include="Player\MyBroadcastReceiver.cs" />
-    <Compile Include="BackEnd\NetworkManager.cs" />
     <Compile Include="BackEnd\Downloader.cs" />
     <Compile Include="BackEnd\FileManager.cs" />
     <Compile Include="Helpers\HelloWebViewClient.cs" />

@@ -41,10 +41,7 @@ namespace Ass_Pain
         public string Path { get; }
         public bool Initialized { get; private set; } = true;
         
-        public override Bitmap Image
-        {
-            get { return GetImage(); }
-        }
+        public override Bitmap Image => GetImage();
 
         public void AddArtist(ref List<Artist> artists)
         {
