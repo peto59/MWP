@@ -19,14 +19,15 @@ namespace Ass_Pain.BackEnd.Network
         /// <summary>
         /// Interval between broadcasts
         /// </summary>
-        private const int BroadcastInterval = 20000;
+        private const int BroadcastInterval = NetworkManagerCommon.BroadcastInterval;
 
         /// <summary>
         /// Starts listening for broadcasts, sending broadcasts and managing connections. Entry point for NetworkManager.
         /// </summary>
         public static void Listener()
         {
-            
+            //TODO: unknown SSID
+            //TODO: broadcast is sent only once
             NetworkManagerCommon.BroadcastTimer.Interval = BroadcastInterval;
             NetworkManagerCommon.BroadcastTimer.Elapsed += delegate { Common.SendBroadcast(); };
             NetworkManagerCommon.BroadcastTimer.AutoReset = true;

@@ -110,10 +110,11 @@ namespace Ass_Pain.BackEnd.Network
 #if DEBUG
                 MyConsole.WriteLine($"Received command: {command}");
 #endif
-                ////////////////////////////////WRITING///////////////////////////
-                if (ending && !networkStream.DataAvailable)
-                {
 
+                #region Writing
+
+                if (ending && command == CommandsEnum.None)
+                {
                     if (encryptionState == EncryptionState.Encrypted)
                     {
                         networkStream.WriteCommand(CommandsArr.End, ref encryptor);
@@ -122,36 +123,9 @@ namespace Ass_Pain.BackEnd.Network
                     {
                         networkStream.WriteCommand(CommandsArr.End);
                     }
-#if DEBUG
-                    MyConsole.WriteLine("send end");
-#endif
                 }
-                else
-                {
-                    if (command != CommandsEnum.Host)
-                    {
-                        try
-                        {
-                            if (encryptionState == EncryptionState.Encrypted)
-                            {
-                                networkStream.WriteCommand(CommandsArr.None, ref encryptor);
-                            }
-                            else
-                            {
-                                networkStream.WriteCommand(CommandsArr.None);
-                            }
-                        }
-                        catch
-                        {
-#if DEBUG
-                            MyConsole.WriteLine("shut");
-#endif
-                            Thread.Sleep(100);
-                        }
-                    }
-                }
-                
-                ////////////////////////////////END WRITING///////////////////////
+
+                #endregion
                 
                 switch (command)
                 {
@@ -200,9 +174,6 @@ namespace Ass_Pain.BackEnd.Network
                         }*/
                         break;
                     case CommandsEnum.RsaExchange:
-#if DEBUG
-                        MyConsole.WriteLine($"command for enc {command}");
-#endif
                         string remotePubKeyString = Encoding.UTF8.GetString(data);
                         encryptor.FromXmlString(remotePubKeyString);
 
@@ -339,6 +310,7 @@ namespace Ass_Pain.BackEnd.Network
 #if DEBUG
                         MyConsole.WriteLine($"default: {command}");
 #endif
+                        Thread.Sleep(25);
                         break;
                 }
             }

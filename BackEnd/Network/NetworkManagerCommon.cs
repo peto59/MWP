@@ -27,6 +27,12 @@ namespace Ass_Pain.BackEnd.Network
         internal static readonly List<IPAddress> Connected = new List<IPAddress>();
         internal IPAddress MyIp;
         private IPAddress myMask = new IPAddress(0); //0.0.0.0
+        
+        /// <summary>
+        /// Interval between broadcasts
+        /// </summary>
+        internal const int BroadcastInterval = 20000;
+        
         internal static readonly System.Timers.Timer BroadcastTimer = new System.Timers.Timer();
         private CanSend canSend = CanSend.Rejected;
         private static Socket _sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -87,6 +93,9 @@ namespace Ass_Pain.BackEnd.Network
 
         internal static bool P2PDecide(EndPoint groupEp, IPAddress targetIp, ref Socket sock)
         {
+#if DEBUG
+            MyConsole.WriteLine($"New P2P from {((IPEndPoint)groupEp).Address}");
+#endif
             EndPoint endPoint = groupEp;
             byte[] buffer = new byte[4];
             while (true)
@@ -202,7 +211,7 @@ namespace Ass_Pain.BackEnd.Network
                     int retries = 0;
                     const int maxRetries = 3;
 
-                    IPEndPoint iep = new IPEndPoint(IPAddress.Any, 8008);
+                    IPEndPoint iep = new IPEndPoint(IPAddress.Any, BroadcastPort);
                     bool processedAtLestOne = false;
                     do
                     {
@@ -221,7 +230,10 @@ namespace Ass_Pain.BackEnd.Network
 #endif                
                                 //TODO: add to available targets. Don't connect directly, check if sync is allowed.
                                 Connected.Add(targetIp);
-                                P2PDecide(groupEp, targetIp, ref _sock);
+                                if (!P2PDecide(groupEp, targetIp, ref _sock))
+                                {
+                                    Connected.Remove(targetIp);
+                                }
                                 processedAtLestOne = true;
                             }
                         }
