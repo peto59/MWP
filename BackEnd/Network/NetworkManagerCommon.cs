@@ -1,14 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using Android.App;
+using System.Threading;
 using Android.Content;
-using Java.Lang;
+using Android.Net;
+using AngleSharp.Common;
+using Java.Net;
 using Xamarin.Essentials;
-using NetworkAccess = Xamarin.Essentials.NetworkAccess;
+using Socket = System.Net.Sockets.Socket;
+using SocketType = System.Net.Sockets.SocketType;
+using TransportType = Android.Net.TransportType;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -17,17 +22,66 @@ namespace Ass_Pain.BackEnd.Network
 {
     internal class NetworkManagerCommon
     {
-        internal static List<IPAddress> Connected = new List<IPAddress>();
-        private IPAddress myIp;
-        internal bool CanSend; //false
-        private IPAddress broadcastIp;
-        private const int BroadcastPort = 8008;
+        internal static readonly List<IPAddress> Connected = new List<IPAddress>();
+        internal IPAddress MyIp;
+        private IPAddress myMask = new IPAddress(0); //0.0.0.0
+        internal static readonly System.Timers.Timer BroadcastTimer = new System.Timers.Timer();
+        private CanSend canSend = CanSend.Rejected;
+        private static Socket _sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        private static readonly byte[] Buffer = new byte[256];
+        internal CanSend CanSend
+        {
+            get => canSend;
+            set
+            {
+#if DEBUG
+                MyConsole.WriteLine($"Changing CanSend to {value}");
+#endif
+                BroadcastTimer.Enabled = value != CanSend.Rejected;
+                canSend = value;
+            }
+        }
+        private IPAddress myBroadcastIp;
+        internal const int BroadcastPort = 8008;
         internal const int RsaDataSize = 256;
-        
-        private static readonly Android.Net.Wifi.WifiManager WifiManager = (Android.Net.Wifi.WifiManager)Application.Context.GetSystemService(Context.WifiService);
-        private static readonly Android.Net.DhcpInfo DhcpInfo = WifiManager.DhcpInfo;
-        
-        internal static void P2PDecide(EndPoint groupEp, IPAddress targetIp, Socket sock)
+        internal string CurrentSsid = string.Empty;
+
+        public NetworkManagerCommon()
+        {
+            
+            _sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
+            _sock.ReceiveTimeout = 2000;
+            
+            try
+            {
+                NetworkRequest request = new NetworkRequest.Builder()
+                    .AddTransportType(TransportType.Wifi)
+                    ?.Build();
+                while (MainActivity.stateHandler.view == null)
+                {
+#if DEBUG
+                    MyConsole.WriteLine("Waiting for stateHandler.view");
+#endif
+                    Thread.Sleep(10);
+                }
+                ConnectivityManager connectivityManager =
+                    (ConnectivityManager)MainActivity.stateHandler.view.GetSystemService(
+                        Context.ConnectivityService);
+                MyNetworkCallback myNetworkCallback = new MyNetworkCallback(NetworkCallbackFlags.IncludeLocationInfo);
+                if (request != null) connectivityManager?.RegisterNetworkCallback(request, myNetworkCallback);
+#if DEBUG
+                else MyConsole.WriteLine("request or connectivityManager is null"); 
+#endif
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e.ToString());
+#endif
+            }
+        }
+
+        internal static void P2PDecide(EndPoint groupEp, IPAddress targetIp, ref Socket sock)
         {
             EndPoint endPoint = groupEp;
             byte[] buffer = new byte[4];
@@ -38,30 +92,38 @@ namespace Ass_Pain.BackEnd.Network
 #if DEBUG
                 MyConsole.WriteLine($"sending {state} to {((IPEndPoint)groupEp).Address}");
 #endif
-                sock.ReceiveFrom(buffer, ref endPoint);
-#if DEBUG
-                MyConsole.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
-                MyConsole.WriteLine($"debug: {((IPEndPoint)endPoint).Address}  {targetIp}  {!((IPEndPoint)endPoint).Address.Equals(targetIp)}");
-#endif
-                while (!((IPEndPoint)endPoint).Address.Equals(targetIp))
+                int maxResponseCounter = 4;
+                int response;
+                do
                 {
                     sock.ReceiveFrom(buffer, ref endPoint);
-                }
-                int resp = BitConverter.ToInt32(buffer);
-                if (resp is not (0 or 1))
-                {
-                    Console.WriteLine("Got invalid state in P2PDecide. Exiting!");
-                    return;
-                }
+#if DEBUG
+                    MyConsole.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
+                    MyConsole.WriteLine($"debug: {((IPEndPoint)endPoint).Address}  {targetIp}  {!((IPEndPoint)endPoint).Address.Equals(targetIp)}");
+#endif
+                    while (!((IPEndPoint)endPoint).Address.Equals(targetIp))
+                    {
+                        //theoretically never...
+                        sock.ReceiveFrom(buffer, ref endPoint);
+                    }
+                    response = BitConverter.ToInt32(buffer);
+                    maxResponseCounter--;
+#if DEBUG
+                    if (response is not (0 or 1))
+                    {
+                        MyConsole.WriteLine($"Got invalid state in P2PDecide: {response}");
+                    }
+#endif
+                } while (response is not (0 or 1) && maxResponseCounter > 0);
 
-                if (state == resp) continue;
+                if (state == response) continue;
                 if (state == 0)
                 {
                     //server
 #if DEBUG
                     MyConsole.WriteLine("Server");
 #endif
-                    (TcpListener server, int listenPort) = NetworkManagerServer.StartServer(NetworkManager.Common.myIp);
+                    (TcpListener server, int listenPort) = NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
                     sock.SendTo(BitConverter.GetBytes(listenPort), groupEp);
                     new Thread(() => { NetworkManagerServer.Server(server, targetIp); }).Start();
                 }
@@ -102,87 +164,194 @@ namespace Ass_Pain.BackEnd.Network
         
         internal void SendBroadcast()
         {
-            if (CanSend)
+            switch (CanSend)
             {
+                case CanSend.Allowed:
+                {
+                    IPEndPoint destinationEndpoint = new IPEndPoint(myBroadcastIp, BroadcastPort);
+
+                    int retries = 0;
+                    const int maxRetries = 3;
+
+                    IPEndPoint iep = new IPEndPoint(IPAddress.Any, 8008);
+                    bool processedAtLestOne = false;
+                    do
+                    {
+                        EndPoint groupEp = iep;
+                        _sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
+                        retries++;
+                        try
+                        {
+                            while (true)
+                            {
+                                _sock.ReceiveFrom(Buffer, ref groupEp);
+                                IPAddress targetIp = ((IPEndPoint)groupEp).Address;
+                                string remoteHostname = Encoding.UTF8.GetString(Buffer, 0, Buffer.Length);
 #if DEBUG
-                MyConsole.WriteLine($"My IP IS: {myIp}");
-                MyConsole.WriteLine($"My MASK IS: {new IPAddress(BitConverter.GetBytes(DhcpInfo.Netmask))}");
-                MyConsole.WriteLine($"My BROADCAST IS: {GetBroadCastIp(myIp, new IPAddress(BitConverter.GetBytes(DhcpInfo.Netmask)))}" );
+                                MyConsole.WriteLine($"found remote: {remoteHostname}, {targetIp}");       
+#endif                
+                                //TODO: add to available targets. Don't connect directly, check if sync is allowed.
+                                Connected.Add(targetIp);
+                                P2PDecide(groupEp, targetIp, ref _sock);
+                                processedAtLestOne = true;
+                            }
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
+                    } while (retries < maxRetries && !processedAtLestOne);
+#if DEBUG
+                    if (retries == maxRetries)
+                    {
+                        MyConsole.WriteLine("No reply");
+                    }
 #endif
-
-
                 
-                IPEndPoint destinationEndpoint = new IPEndPoint(broadcastIp, BroadcastPort);
-                Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-                sock.ReceiveTimeout = 2000;
-                byte[] buffer = new byte[256];
-
-                int retries = 0;
-                const int maxRetries = 3;
-
-                IPEndPoint iep = new IPEndPoint(IPAddress.Any, 8008);
-                EndPoint groupEp = iep;
-                do
-                {
-                    sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
-                    retries++;
-                    try
-                    {
-                        sock.ReceiveFrom(buffer, ref groupEp);
-                        break;
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
-                } while (retries < maxRetries);
-                if (retries == maxRetries)
-                {
-                    sock.Close();
-#if DEBUG
-                    MyConsole.WriteLine("No reply");
-#endif
-                    return;
+                    _sock.Close();
+                    _sock.Dispose();
+                    break;
                 }
+                case CanSend.Test:
+                    TestNetwork();
+                    break;
+                case CanSend.Rejected:
+                default:
+#if DEBUG
+                    MyConsole.WriteLine("Not allowed to send");
+#endif
+                    BroadcastTimer.Enabled = false;
+                    break;
+            }
+        }
 
-
-                IPAddress targetIp = ((IPEndPoint)groupEp).Address;
-                // ReSharper disable once UnusedVariable
-                string remoteHostname = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-
-                Connected.Add(targetIp);
-
-                P2PDecide(groupEp, targetIp, sock);
-                
-                sock.Close();
+        internal bool GetConnectionInfo(IPAddress ip = null)
+        {
+            if (ip != null)
+            {
+                MyIp = ip;
             }
             else
             {
-#if DEBUG
-                MyConsole.WriteLine("No Wifi");
-#endif
+                string name = Dns.GetHostName();
+                MyIp = Dns.GetHostAddresses(name)[0];
             }
+            try
+            {
+                InetAddress inetAddress = InetAddress.GetByAddress(MyIp.GetAddressBytes());
+                NetworkInterface networkInterface = NetworkInterface.GetByInetAddress(inetAddress);
+                if (networkInterface is not { InterfaceAddresses: not null }) return false;
+                InetAddress broadcast = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress)).Broadcast;
+                if (broadcast != null)
+                {
+                    myBroadcastIp = IPAddress.Parse(broadcast.ToString().Trim('/'));
+                }
+                else
+                {
+                    short prefix = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
+                        .NetworkPrefixLength;
+                    myMask = PrefixLengthToNetmask(prefix);
+                    myBroadcastIp = GetBroadCastIp(MyIp, myMask);
+                }
+#if DEBUG
+                MyConsole.WriteLine($"My IP IS: {MyIp}");
+                MyConsole.WriteLine($"My MASK IS: {myMask}");
+                MyConsole.WriteLine($"My BROADCAST IS: {myBroadcastIp}" );
+#endif
+                return true;
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e.ToString());
+#endif
+                return false;
+            }
+        }
+
+        private static IPAddress PrefixLengthToNetmask(short prefixLength)
+        {
+            uint binaryMask = 0xFFFFFFFF;
+            binaryMask <<= 32 - prefixLength;
+
+            byte[] ipBytes = BitConverter.GetBytes(binaryMask);
+            Array.Reverse(ipBytes);  // Convert to big-endian.
+
+            return new IPAddress(ipBytes);
+        }
+
+        internal static void TestNetwork()
+        {
+            //TODO: add evaluation
+            NetworkManager.Common.CanSend = CanSend.Allowed;
+        }
+    }
+
+    internal class MyNetworkCallback : ConnectivityManager.NetworkCallback
+    {
+        internal MyNetworkCallback(NetworkCallbackFlags flags = NetworkCallbackFlags.None) : base((int)flags)
+        {
         }
         
-        internal void OnWiFiChange(object sender, ConnectivityChangedEventArgs e)
+        public override void OnCapabilitiesChanged(Android.Net.Network network, NetworkCapabilities networkCapabilities)
         {
-            if (e.NetworkAccess is NetworkAccess.Internet or NetworkAccess.Local)
+            base.OnCapabilitiesChanged(network, networkCapabilities);
+            if (networkCapabilities.HasCapability(NetCapability.NotMetered) && networkCapabilities.HasCapability(NetCapability.Trusted))
             {
-                GetConnectionInfo();
-                CanSend = true;
+                Dictionary<string, string> transportInfo = networkCapabilities.TransportInfo.ToDictionary();
+                string ipString = transportInfo["IpAddress"];
+                if (int.TryParse(ipString, out int ipInt))
+                {
+                    IPAddress ipAdd = new IPAddress(ipInt);
+                    string ip = ipAdd.ToString();
+                    if (ValidateIPv4(ip) && ip != "0.0.0.0")
+                    {
+                        if (NetworkManager.Common.MyIp == null)
+                        {
+                            NetworkManager.Common.CanSend = NetworkManager.Common.GetConnectionInfo(ipAdd) ? CanSend.Test : CanSend.Rejected;
+                        }
+                        string ssid = transportInfo["SSID"];
+                        if (ssid != NetworkManager.Common.CurrentSsid)
+                        {
+                            NetworkManager.Common.CanSend = CanSend.Test;
+                            NetworkManager.Common.CurrentSsid = ssid;
+                        }
+                        else if (NetworkManager.Common.CanSend == CanSend.Rejected)
+                        {
+                            NetworkManager.Common.CanSend = CanSend.Test;
+                        }
+                        return;
+                    }
+                }
             }
-            else
-            {
-                CanSend = false;
-            }
+            NetworkManager.Common.CanSend = CanSend.Rejected;
         }
 
-        internal void GetConnectionInfo()
+        public override void OnLost(Android.Net.Network network)
         {
-            Connected = new List<IPAddress>{ myIp };
-            myIp = new IPAddress(BitConverter.GetBytes(DhcpInfo.IpAddress));
-            broadcastIp = GetBroadCastIp(myIp, new IPAddress(BitConverter.GetBytes(DhcpInfo.Netmask)));
+            base.OnLost(network);
+#if DEBUG
+            MyConsole.WriteLine("Network lost!");
+#endif
+            NetworkManager.Common.CanSend = CanSend.Rejected;
+            NetworkManager.Common.MyIp = null;
         }
+
+        private static bool ValidateIPv4(string ipString)
+        {
+            if (string.IsNullOrWhiteSpace(ipString))
+            {
+                return false;
+            }
+            string[] splitValues = ipString.Split('.');
+            return splitValues.Length == 4 && splitValues.All(r => byte.TryParse(r, out byte _));
+        }
+    }
+
+    internal enum CanSend : byte
+    {
+        Rejected,
+        Test,
+        Allowed
     }
 }

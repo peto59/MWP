@@ -5,62 +5,50 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using AndroidX.AppCompat.App;
-using AndroidX.AppCompat.Widget;
 using AndroidX.Core.View;
 using AndroidX.DrawerLayout.Widget;
-using Google.Android.Material.FloatingActionButton;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
-using Android.Webkit;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using Newtonsoft.Json;
-using AndroidX.AppCompat.Graphics.Drawable;
-using Android.Widget;
 using System.Threading;
-using System.Text.Json;
-using AngleSharp.Html;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Android.Content.PM;
 using Android.Media;
 using Android.Provider;
-using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using Ass_Pain.BackEnd.Network;
 using Octokit;
 using Xamarin.Essentials;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
 using Application = Android.App.Application;
-using FileMode = System.IO.FileMode;
 using FileProvider = AndroidX.Core.Content.FileProvider;
-using Stream = System.IO.Stream;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
 
 namespace Ass_Pain
 {
-    
+    /// <inheritdoc cref="AndroidX.AppCompat.App.AppCompatActivity" />
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true, Description = "@string/app_description")]
     //[IntentFilter(new[] { Intent.ActionSend }, Categories = new[] { Intent.CategoryDefault }, DataMimeType = "text/plain")]
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         // public static Slovenska_prostituka player = new Slovenska_prostituka();
-        public static NetworkManager nm = new NetworkManager();
         public static APIThrottler throttler = new APIThrottler();
-        public static MyBroadcastReceiver receiver;
+        private static MyBroadcastReceiver _receiver;
         public static StateHandler stateHandler = new StateHandler();
         public static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
         private const int ActionInstallPermissionRequestCode = 10356;
         private const int ActionPermissionsRequestCode = 13256;
-        
-        
 
-        DrawerLayout drawer;
 
+        private DrawerLayout drawer;
+
+        /// <inheritdoc />
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -74,21 +62,18 @@ namespace Ass_Pain
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
-            FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
-            fab.Click += FabOnClick;
-
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
-            drawer.OpenDrawer(GravityCompat.Start);
-            drawer.AddDrawerListener(toggle);
+            drawer?.OpenDrawer(GravityCompat.Start);
+            drawer?.AddDrawerListener(toggle);
             toggle.SyncState();
 
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
-            navigationView.SetNavigationItemSelectedListener(this);
+            navigationView?.SetNavigationItemSelectedListener(this);
             
             side_player.populate_side_bar(this);
             stateHandler.SetView(this);
-            receiver = new MyBroadcastReceiver();
-            RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
+            _receiver = new MyBroadcastReceiver();
+            RegisterReceiver(_receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
             
             VersionTracking.Track();
 
@@ -122,21 +107,21 @@ namespace Ass_Pain
             
         }
 
+        /// <inheritdoc />
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             base.OnActivityResult(requestCode, resultCode, data);
-            if (requestCode == ActionInstallPermissionRequestCode)
-            {
+            if (requestCode != ActionInstallPermissionRequestCode) return;
 #if DEBUG
-                MyConsole.WriteLine($"resultCode: {resultCode}");       
+            MyConsole.WriteLine($"resultCode: {resultCode}");       
 #endif
-                InstallUpdate($"{FileManager.PrivatePath}/update.apk");
-            }
+            InstallUpdate($"{FileManager.PrivatePath}/update.apk");
         }
 
+        /// <inheritdoc />
+        [Obsolete("deprecated")]
         public override void OnBackPressed()
         {
-            DrawerLayout drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
             if (drawer.IsDrawerOpen(GravityCompat.Start))
             {
                 drawer.CloseDrawer(GravityCompat.Start);
@@ -157,7 +142,7 @@ namespace Ass_Pain
         /// <inheritdoc />
         protected override void OnDestroy()
         {
-            UnregisterReceiver(receiver);
+            UnregisterReceiver(_receiver);
             base.OnDestroy();
         }
 
@@ -168,41 +153,44 @@ namespace Ass_Pain
             return id == Resource.Id.action_settings || base.OnOptionsItemSelected(item);
         }
 
-        private void FabOnClick(object sender, EventArgs eventArgs)
-        {
-            View view = (View)sender;
-            Snackbar.Make(view, "Replace with your own action", Snackbar.LengthLong)
-                .SetAction("Action", (Android.Views.View.IOnClickListener)null).Show();
-        }
-
         public bool OnNavigationItemSelected(IMenuItem item)
         {
             int id = item.ItemId;
 
-            if (id == Resource.Id.nav_camera) // home
+            switch (id)
             {
-                Intent intent = new Intent(this, typeof(AllSongs));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-
-            }
-            else if (id == Resource.Id.nav_gallery) // equalizer
-            {
-                Intent intent = new Intent(this, typeof(equalizer));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-            }
-            else if (id == Resource.Id.nav_slideshow) // youtube
-            {
-                Intent intent = new Intent(this, typeof(youtube));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-            }
-            else if (id == Resource.Id.nav_share) // share
-            {
-                Intent intent = new Intent(this, typeof(share));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
+                // home
+                case Resource.Id.nav_camera:
+                {
+                    Intent intent = new Intent(this, typeof(AllSongs));
+                    intent.PutExtra("link_author", "");
+                    StartActivity(intent);
+                    break;
+                }
+                // equalizer
+                case Resource.Id.nav_gallery:
+                {
+                    Intent intent = new Intent(this, typeof(equalizer));
+                    intent.PutExtra("link_author", "");
+                    StartActivity(intent);
+                    break;
+                }
+                // youtube
+                case Resource.Id.nav_slideshow:
+                {
+                    Intent intent = new Intent(this, typeof(youtube));
+                    intent.PutExtra("link_author", "");
+                    StartActivity(intent);
+                    break;
+                }
+                // share
+                case Resource.Id.nav_share:
+                {
+                    Intent intent = new Intent(this, typeof(share));
+                    intent.PutExtra("link_author", "");
+                    StartActivity(intent);
+                    break;
+                }
             }
             
 
@@ -337,7 +325,7 @@ namespace Ass_Pain
 #endif
             }
             
-            //new Thread(() => { nm.Listener(); }).Start();
+            new Thread(NetworkManager.Listener).Start();
             //test
             new Thread(() => {
                 FileManager.DiscoverFiles();
@@ -374,8 +362,8 @@ namespace Ass_Pain
         private async void CheckUpdates()
         {
             string currentVersionString = VersionTracking.CurrentBuild;
-            string owner = "peto59";
-            string repoName = "Ass_Pain";
+            const string owner = "peto59";
+            const string repoName = "Ass_Pain";
 #if DEBUG
             MyConsole.WriteLine("Checking for updates!");
             MyConsole.WriteLine($"Current version: {currentVersionString}");
@@ -403,7 +391,7 @@ namespace Ass_Pain
                 
             });
 
-            builder.SetNegativeButton("No", (sender, args) =>
+            builder.SetNegativeButton("No", (_, _) =>
             {
             });
 
@@ -432,7 +420,7 @@ namespace Ass_Pain
                         builder.SetTitle("Permissions needed!");
                         builder.SetMessage("We need permission to install apps to update. Would you like to grant it now?");
 
-                        builder.SetPositiveButton("Yes", (sender, args) =>
+                        builder.SetPositiveButton("Yes", (_, _) =>
                         {
                             // Request the permission
                             Intent installPermissionIntent = new Intent(Settings.ActionManageUnknownAppSources, Android.Net.Uri.Parse("package:" + PackageName));
@@ -440,7 +428,7 @@ namespace Ass_Pain
                 
                         });
 
-                        builder.SetNegativeButton("No", (sender, args) =>
+                        builder.SetNegativeButton("No", (_, _) =>
                         {
                         });
 
