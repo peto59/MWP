@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Ass_Pain.BackEnd.Network
 {
     internal static class Commands
@@ -14,6 +16,18 @@ namespace Ass_Pain.BackEnd.Network
         internal const byte SyncInfo = (byte)CommandsEnum.SyncInfo;
         internal const byte FileSend = (byte)CommandsEnum.FileSend;
         internal const byte End = (byte)CommandsEnum.End;
+        internal static bool IsLong(byte command)
+        {
+            return CommandsArr.LongCommands.Contains(command);
+        }
+        internal static bool IsLong(CommandsEnum command)
+        {
+            return CommandsArr.LongCommandsEnum.Contains(command);
+        }
+        internal static bool IsEncryptedOnlyCommand(CommandsEnum command)
+        {
+            return CommandsArr.LongCommandsEnum.Contains(command);
+        }
     }
 
     internal static class CommandsArr
@@ -31,6 +45,8 @@ namespace Ass_Pain.BackEnd.Network
         internal static readonly byte[] FileSend = { Commands.FileSend };
         internal static readonly byte[] End = { Commands.End };
         internal static readonly byte[] LongCommands = { Commands.SyncInfo, Commands.FileSend };
+        internal static readonly CommandsEnum[] LongCommandsEnum = { CommandsEnum.SyncInfo, CommandsEnum.FileSend };
+        internal static readonly CommandsEnum[] EncryptedOnlyCommand = { CommandsEnum.SyncRequest, CommandsEnum.SyncAccepted, CommandsEnum.SyncInfoRequest, CommandsEnum.SyncRejected, CommandsEnum.SyncInfo, CommandsEnum.FileSend, };
     }
 
     internal enum CommandsEnum : byte
@@ -47,5 +63,14 @@ namespace Ass_Pain.BackEnd.Network
         SyncInfo = 24,
         FileSend = 30,
         End = 100
+    }
+
+    internal enum EncryptionState : byte
+    {
+        None,
+        RsaExchange,
+        AesSend,
+        AesReceived,
+        Encrypted,
     }
 }

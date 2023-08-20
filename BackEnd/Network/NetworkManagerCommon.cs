@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Android.Content;
 using Android.Net;
 using AngleSharp.Common;
@@ -84,7 +85,7 @@ namespace Ass_Pain.BackEnd.Network
             }
         }
 
-        internal static void P2PDecide(EndPoint groupEp, IPAddress targetIp, ref Socket sock)
+        internal static bool P2PDecide(EndPoint groupEp, IPAddress targetIp, ref Socket sock)
         {
             EndPoint endPoint = groupEp;
             byte[] buffer = new byte[4];
@@ -119,6 +120,11 @@ namespace Ass_Pain.BackEnd.Network
 #endif
                 } while (response is not (0 or 1) && maxResponseCounter > 0);
 
+                if (maxResponseCounter == 0)
+                {
+                    return false;
+                }
+
                 if (state == response) continue;
                 if (state == 0)
                 {
@@ -128,19 +134,39 @@ namespace Ass_Pain.BackEnd.Network
 #endif
                     (TcpListener server, int listenPort) = NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
                     sock.SendTo(BitConverter.GetBytes(listenPort), groupEp);
-                    new Thread(() => { NetworkManagerServer.Server(server, targetIp); }).Start();
-                }
-                else
-                {
-                    //client
+                    new Thread(() => {
+                        try
+                        {
+                            NetworkManagerServer.Server(server, targetIp);
+                        }
+                        catch (Exception e)
+                        {
 #if DEBUG
-                    MyConsole.WriteLine("Client");
+                            MyConsole.WriteLine(e.ToString());
 #endif
-                    sock.ReceiveFrom(buffer, ref groupEp);
-                    int sendPort = BitConverter.ToInt32(buffer);
-                    new Thread(() => { NetworkManagerClient.Client(((IPEndPoint)groupEp).Address, sendPort); }).Start();
+                        }
+                    }).Start();
+                    return true;
                 }
-                return;
+                //client
+#if DEBUG
+                MyConsole.WriteLine("Client");
+#endif
+                sock.ReceiveFrom(buffer, ref groupEp);
+                int sendPort = BitConverter.ToInt32(buffer);
+                new Thread(() => {
+                    try
+                    {
+                        NetworkManagerClient.Client(((IPEndPoint)groupEp).Address, sendPort);
+                    }
+                    catch (Exception e)
+                    {
+#if DEBUG
+                        MyConsole.WriteLine(e.ToString());
+#endif
+                    }
+                }).Start();
+                return true;
             }
         }
 
@@ -290,7 +316,7 @@ namespace Ass_Pain.BackEnd.Network
         }
         
         
-        internal void OnWiFiChange(object sender, ConnectivityChangedEventArgs e)
+        internal void OnWiFiChange(ConnectivityChangedEventArgs e)
         {
             if (e.NetworkAccess is NetworkAccess.Internet or NetworkAccess.Local && e.ConnectionProfiles.Contains(ConnectionProfile.WiFi))
             {
@@ -299,6 +325,21 @@ namespace Ass_Pain.BackEnd.Network
             }
 
             CanSend = CanSend.Rejected;
+        }
+
+        internal static async Task<(string storedPrivKey, string storedPubKey)> LoadKeys(string remoteHostname)
+        {
+            string storedPubKey, storedPrivKey;
+            try
+            {
+                storedPrivKey = await SecureStorage.GetAsync($"{remoteHostname}_privkey");
+                storedPubKey = await SecureStorage.GetAsync($"{remoteHostname}_pubkey");
+            }
+            catch
+            {
+                throw new Exception("You're fucked, boy. Go buy something else than Nokia 3310");
+            }
+            return (storedPrivKey, storedPubKey);
         }
     }
 

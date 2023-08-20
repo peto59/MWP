@@ -18,7 +18,7 @@ namespace Ass_Pain.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="length">number of bytes to read from stream</param>
         /// <returns>byte array of specified length</returns>
-        internal static byte[] SafeRead(this Stream stream, int length)
+        private static byte[] SafeRead(this Stream stream, int length)
         {
             byte[] data = new byte[length];
             int offset = 0;
@@ -36,18 +36,17 @@ namespace Ass_Pain.BackEnd.Network
         /// Ensures correct number of bytes is read and waits for more if not
         /// </summary>
         /// <param name="stream">stream to read from</param>
-        /// <param name="readLength">number of bytes to read from stream</param>
+        /// <param name="length">number of bytes to read from stream</param>
         /// <returns>byte array of specified length</returns>
-
-        internal static byte[] SafeRead(this Stream stream, long readLength)
+        private static byte[] SafeRead(this Stream stream, long length)
         {
-            byte[] retArr = new byte[readLength];
+            byte[] retArr = new byte[length];
             long totalRead = 0;
-            while (readLength > 0)
+            while (length > 0)
             {
-                int readThisCycle = readLength > int.MaxValue ? int.MaxValue : Convert.ToInt32(readLength);
+                int readThisCycle = length > int.MaxValue ? int.MaxValue : Convert.ToInt32(length);
                 Array.Copy(stream.SafeRead(readThisCycle), 0, retArr, totalRead, readThisCycle);
-                readLength -= readThisCycle;
+                length -= readThisCycle;
                 totalRead = +readThisCycle;
             }
 
@@ -101,9 +100,9 @@ namespace Ass_Pain.BackEnd.Network
         /// </summary>
         /// <param name="stream">stream to read from</param>
         /// <returns>Command read from stream</returns>
-        internal static byte ReadCommand(this NetworkStream stream)
+        internal static CommandsEnum ReadCommand(this NetworkStream stream)
         {
-            return stream.SafeRead(1)[0];
+            return (CommandsEnum)stream.SafeRead(1)[0];
         }
 
         /// <summary>
@@ -112,10 +111,25 @@ namespace Ass_Pain.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="decryptor">decryptor to be used</param>
         /// <returns>Command read from stream</returns>
-        internal static byte ReadCommand(this NetworkStream stream, ref RSACryptoServiceProvider decryptor)
+        internal static (CommandsEnum command, byte[]? data, byte[]? iv, long? length) ReadCommand(this NetworkStream stream, ref RSACryptoServiceProvider decryptor)
         {
-            byte[] enc = stream.SafeRead(NetworkManagerCommon.RsaDataSize);
-            return decryptor.Decrypt(enc, true)[0];
+            byte[] buff = decryptor.Decrypt(stream.SafeRead(NetworkManagerCommon.RsaDataSize), true);
+            if (buff.Length == 1) return ((CommandsEnum)buff[0], null, null, null);
+            
+            CommandsEnum command = (CommandsEnum)buff[0];
+            byte[] restOfData = buff.TakeLast(buff.Length - 1).ToArray();
+            if (Commands.IsLong(command))
+            {
+                byte[] iv = new byte[16];
+                Array.Copy(restOfData, iv, 16);
+                long longLength = BitConverter.ToInt64(restOfData, 16);
+                return (command, null, iv, longLength);
+            }
+
+            int length = BitConverter.ToInt32(restOfData);
+            byte[] data = new byte[length];
+            Array.Copy(restOfData, 4, data, 0, length);
+            return (command, data,  null, null);
         }
 
         /// <summary>
@@ -133,21 +147,8 @@ namespace Ass_Pain.BackEnd.Network
             arr = decryptor.Decrypt(arr, true);
             byte command = arr[0];
             long readLength = BitConverter.ToInt64(arr, 17);
-            byte[] retArr = new byte[readLength];
             Array.Copy(arr, 1, aes.IV, 0, 16);
-
-            CryptoStream csDecrypt = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Read, true);
-            long totalRead = 0;
-            while (readLength > 0)
-            {
-                int readThisCycle = readLength > int.MaxValue ? int.MaxValue : Convert.ToInt32(readLength);
-                Array.Copy(stream.SafeRead(readThisCycle), 0, retArr, totalRead, readThisCycle);
-                readLength -= readThisCycle;
-                totalRead = +readThisCycle;
-            }
-            csDecrypt.Dispose();
-
-            return (command, retArr);
+            return (command, stream.ReadEncrypted(ref aes, readLength));
         }
 
         [Obsolete]
@@ -259,30 +260,47 @@ namespace Ass_Pain.BackEnd.Network
             return (command, length, retArr);
         }
         
-        internal static (byte command, byte[] data) ReadCommandCombined(this NetworkStream stream)
+        /// <summary>
+        /// reads command and it's data and returns them
+        /// </summary>
+        /// <param name="stream">stream to read from</param>
+        /// <returns>command and read data</returns>
+        internal static (CommandsEnum command, byte[] data) ReadCommandCombined(this NetworkStream stream)
         {
-            return (stream.ReadCommand(), stream.ReadData());
+            CommandsEnum command = stream.ReadCommand();
+            return Commands.IsLong(command) ? (command, stream.ReadData(true)) : (command, stream.ReadData());
         }
         
-        internal static (byte command, byte[] data, byte[]? iv) ReadCommandCombined(this NetworkStream stream, ref RSACryptoServiceProvider decryptor)
+        /// <summary>
+        /// reads encrypted data from stream and decrypts them if they are short, otherwise returns IV and decryption is needed to be done manually
+        /// </summary>
+        /// <param name="stream">stream to read from</param>
+        /// <param name="decryptor">decryptor to be used</param>
+        /// <returns>read command, read data and IV if data is long based on command type</returns>
+        internal static (byte command, byte[]? data, byte[]? iv, long? length) ReadCommandCombined(this NetworkStream stream, ref RSACryptoServiceProvider decryptor)
         {
             byte[] arr = stream.SafeRead(NetworkManagerCommon.RsaDataSize);
             arr = decryptor.Decrypt(arr, true);
             byte command = arr[0];
-            if (CommandsArr.LongCommands.Contains(command))
+            if (Commands.IsLong(command))
             {
                 byte[] iv = new byte[16];
                 Array.Copy(arr, 1, iv, 0, 16);
                 long longLength = BitConverter.ToInt64(arr, 17);
-                byte[] longData = stream.SafeRead(longLength);
-                return (command, longData, iv);
+                return (command, null, iv, longLength);
             }
             int length = BitConverter.ToInt32(arr, 1);
             byte[] data = new byte[length];
             Array.Copy(arr, 5, data, 0, length);
-            return (command, data, null);
+            return (command, data, null, null);
         }
 
+        /// <summary>
+        /// reads data from stream
+        /// </summary>
+        /// <param name="stream">stream to read from</param>
+        /// <param name="isLong">whether data is long</param>
+        /// <returns></returns>
         internal static byte[] ReadData(this NetworkStream stream, bool isLong = false)
         {
             byte[] len;
@@ -296,6 +314,58 @@ namespace Ass_Pain.BackEnd.Network
             len = stream.SafeRead(4);
             int length = BitConverter.ToInt32(len, 0);
             return stream.SafeRead(length);
+        }
+        
+        /// <summary>
+        /// Reads encrypted data and decrypts them
+        /// </summary>
+        /// <param name="stream">stream to read from</param>
+        /// <param name="decryptor">decryptor to be used</param>
+        /// <returns>decrypted byte array</returns>
+        internal static byte[] ReadData(this NetworkStream stream, ref RSACryptoServiceProvider decryptor)
+        {
+            return decryptor.Decrypt(stream.SafeRead(NetworkManagerCommon.RsaDataSize), true);
+        }
+        
+        
+        /// <summary>
+        /// Reads encrypted long data and decrypts them
+        /// </summary>
+        /// <param name="stream">stream to read from</param>
+        /// <param name="decryptor">decryptor to be used</param>
+        /// <param name="aes">aes to decrypt with</param>
+        /// <returns>decrypted byte array</returns>
+        internal static byte[] ReadData(this NetworkStream stream, ref RSACryptoServiceProvider decryptor, ref Aes aes)
+        {
+            byte[] buffer = decryptor.Decrypt(stream.SafeRead(NetworkManagerCommon.RsaDataSize), true);
+            Array.Copy(buffer, aes.IV, 16);
+            long length = BitConverter.ToInt64(buffer, 16);
+            
+            return stream.ReadEncrypted(ref aes, length);
+            
+        }
+
+        /// <summary>
+        /// Reads encrypted long data and decrypts them using aes assuming length is known
+        /// </summary>
+        /// <param name="stream">stream to read from</param>
+        /// <param name="aes">aes to decrypt with</param>
+        /// <param name="readLength">number of bytes to read</param>
+        /// <returns>decrypted byte array</returns>
+        internal static byte[] ReadEncrypted(this Stream stream, ref Aes aes, long readLength)
+        {
+            byte[] retArr = new byte[readLength];
+            long totalRead = 0;
+            CryptoStream csDecrypt = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Read, true);
+            while (readLength > 0)
+            {
+                int readThisCycle = readLength > int.MaxValue ? int.MaxValue : Convert.ToInt32(readLength);
+                Array.Copy(stream.SafeRead(readThisCycle), 0, retArr, totalRead, readThisCycle);
+                readLength -= readThisCycle;
+                totalRead = +readThisCycle;
+            }
+            csDecrypt.Dispose();
+            return retArr;
         }
 
         /// <summary>
@@ -428,6 +498,49 @@ namespace Ass_Pain.BackEnd.Network
             csEncrypt.WriteLongData(data);
             csEncrypt.Dispose();
         }
+        
+        /// <summary>
+        /// Writes command, data length and data as one encrypted array to stream
+        /// </summary>
+        /// <param name="stream">stream to write to</param>
+        /// <param name="data">data to write</param>
+        /// <param name="encryptor">encryptor to be used</param>
+        /// <exception cref="InvalidDataException">RSA with key length of 2048 has max data length of 190 bytes.</exception>
+        internal static void WriteData(this NetworkStream stream, byte[] data,
+            ref RSACryptoServiceProvider encryptor)
+        {
+            if (data.Length > 190)
+            {
+                throw new InvalidDataException("Data cannot exceed 190 bytes");
+            }
+            byte[] enc = encryptor.Encrypt(data, true);
+            stream.Write(enc, 0, enc.Length);
+        }
+        
+        /// <summary>
+        /// Writes command, IV, encrypted data length as one encrypted array to stream, afterwards writes long encrypted data to stream
+        /// </summary>
+        /// <param name="stream">stream to write to</param>
+        /// <param name="data">long data to write</param>
+        /// <param name="encryptor">rsa encryptor to be used</param>
+        /// <param name="aes">aes encryptor to be used</param>
+        internal static void WriteData(this NetworkStream stream, byte[] data,
+            ref RSACryptoServiceProvider encryptor, ref Aes aes)
+        {
+            const int len =  16 + 8; //aes IV (16), encrypted data length as long(8)
+            long encryptedDataLength = data.LongLength + (16 - data.LongLength % 16);
+            byte[] rv = new byte[len];
+            aes.GenerateIV();
+            
+            Buffer.BlockCopy(aes.IV, 0, rv, 0, 16);
+            Buffer.BlockCopy(BitConverter.GetBytes(encryptedDataLength), 0, rv, 16, 4);
+            rv = encryptor.Encrypt(rv, true);
+            stream.Write(rv, 0, rv.Length);
+
+            CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+            csEncrypt.WriteLongData(data);
+            csEncrypt.Dispose();
+        }
 
         /// <summary>
         /// Writes long data to stream
@@ -449,6 +562,14 @@ namespace Ass_Pain.BackEnd.Network
             }
         }
         
+        /// <summary>
+        /// Encrypts and writes file to stream
+        /// </summary>
+        /// <param name="stream">stream to be written to</param>
+        /// <param name="path">path to file that's to be written to stream</param>
+        /// <param name="encryptor">rsa encryptor to be used</param>
+        /// <param name="aes">aes encryptor to be used</param>
+        /// <param name="writeCommand">whether file command should be written</param>
         internal static void WriteFile(this NetworkStream stream, string path,
             ref RSACryptoServiceProvider encryptor, ref Aes aes, bool writeCommand = false)
         {

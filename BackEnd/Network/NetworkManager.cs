@@ -32,7 +32,7 @@ namespace Ass_Pain.BackEnd.Network
             NetworkManagerCommon.BroadcastTimer.AutoReset = true;
 
             if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
-                Connectivity.ConnectivityChanged += Common.OnWiFiChange;
+                Connectivity.ConnectivityChanged += delegate(object _, ConnectivityChangedEventArgs args) { Common.OnWiFiChange(args); };
                 if (Common.MyIp == null)
                 {
                     Common.CanSend = Common.GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
@@ -42,68 +42,74 @@ namespace Ass_Pain.BackEnd.Network
             //Thread.Sleep(5000);
             //Common.SendBroadcast();
 
-            Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            IPEndPoint iep = new IPEndPoint(IPAddress.Any, NetworkManagerCommon.BroadcastPort);
-            sock.Bind(iep);
-            sock.EnableBroadcast = true;
-            byte[] buffer = new byte[256];
-
-            try
+            while (true)
             {
-                while (true)
+                Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                IPEndPoint iep = new IPEndPoint(IPAddress.Any, NetworkManagerCommon.BroadcastPort);
+                sock.Bind(iep);
+                sock.EnableBroadcast = true;
+                byte[] buffer = new byte[256];
+
+                try
                 {
-                    switch (Common.CanSend)
+                    while (true)
                     {
-                        case CanSend.Test:
-                            NetworkManagerCommon.TestNetwork();
-                            break;
-                        case CanSend.Allowed:
-                            while (Common.CanSend == CanSend.Allowed)
-                            {
-#if DEBUG
-                                MyConsole.WriteLine("Waiting for broadcast");
-                                EndPoint groupEp = iep;
-#endif
-                                sock.ReceiveFrom(buffer, ref groupEp);
-                                if (Common.CanSend != CanSend.Allowed) continue;
-
-
-                                IPAddress targetIp = ((IPEndPoint)groupEp).Address;
-                                if (targetIp.Equals(Common.MyIp) || Enumerable.Contains(NetworkManagerCommon.Connected, targetIp))
+                        switch (Common.CanSend)
+                        {
+                            case CanSend.Test:
+                                NetworkManagerCommon.TestNetwork();
+                                break;
+                            case CanSend.Allowed:
+                                while (Common.CanSend == CanSend.Allowed)
                                 {
 #if DEBUG
-                                    MyConsole.WriteLine("Exit pls2");
+                                    MyConsole.WriteLine("Waiting for broadcast");
+                                    EndPoint groupEp = iep;
 #endif
-                                    continue;
-                                }
-                                string hostname = Encoding.UTF8.GetString(buffer);
+                                    sock.ReceiveFrom(buffer, ref groupEp);
+                                    if (Common.CanSend != CanSend.Allowed) continue;
+
+
+                                    IPAddress targetIp = ((IPEndPoint)groupEp).Address;
+                                    if (targetIp.Equals(Common.MyIp) || Enumerable.Contains(NetworkManagerCommon.Connected, targetIp))
+                                    {
 #if DEBUG
-                                MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {hostname}");
+                                        MyConsole.WriteLine("Exit pls2");
 #endif
-                                sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), groupEp);
-                                
-                                //TODO: add to available targets. Don't connect directly, check if sync is allowed.
-                                NetworkManagerCommon.Connected.Add(targetIp);
-                                NetworkManagerCommon.P2PDecide(groupEp, targetIp, ref sock);
-                            }
-                            break;
-                        case CanSend.Rejected:
-                        default:
-                            Thread.Sleep(20000);
-                            break;
+                                        continue;
+                                    }
+                                    string hostname = Encoding.UTF8.GetString(buffer);
+#if DEBUG
+                                    MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {hostname}");
+#endif
+                                    sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), groupEp);
+                                    
+                                    //TODO: add to available targets. Don't connect directly, check if sync is allowed.
+                                    NetworkManagerCommon.Connected.Add(targetIp);
+                                    if (!NetworkManagerCommon.P2PDecide(groupEp, targetIp, ref sock))
+                                    {
+                                        NetworkManagerCommon.Connected.Remove(targetIp);
+                                    }
+                                }
+                                break;
+                            case CanSend.Rejected:
+                            default:
+                                Thread.Sleep(20000);
+                                break;
+                        }
                     }
                 }
-            }
-            catch (SocketException e)
-            {
+                catch (SocketException e)
+                {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                    MyConsole.WriteLine(e.ToString());
 #endif
-            }
-            finally
-            {
-                sock.Close();
-                sock.Dispose();
+                }
+                finally
+                {
+                    sock.Close();
+                    sock.Dispose();
+                }
             }
         }
     }
