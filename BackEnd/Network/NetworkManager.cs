@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using Xamarin.Essentials;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -29,6 +30,14 @@ namespace Ass_Pain.BackEnd.Network
             NetworkManagerCommon.BroadcastTimer.Interval = BroadcastInterval;
             NetworkManagerCommon.BroadcastTimer.Elapsed += delegate { Common.SendBroadcast(); };
             NetworkManagerCommon.BroadcastTimer.AutoReset = true;
+
+            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
+                Connectivity.ConnectivityChanged += Common.OnWiFiChange;
+                if (Common.MyIp == null)
+                {
+                    Common.CanSend = Common.GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
+                }
+            }
             
             //Thread.Sleep(5000);
             //Common.SendBroadcast();

@@ -11,6 +11,7 @@ using Android.Net;
 using AngleSharp.Common;
 using Java.Net;
 using Xamarin.Essentials;
+using NetworkAccess = Xamarin.Essentials.NetworkAccess;
 using Socket = System.Net.Sockets.Socket;
 using SocketType = System.Net.Sockets.SocketType;
 using TransportType = Android.Net.TransportType;
@@ -51,7 +52,9 @@ namespace Ass_Pain.BackEnd.Network
             
             _sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
             _sock.ReceiveTimeout = 2000;
-            
+            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
+                return;
+            }
             try
             {
                 NetworkRequest request = new NetworkRequest.Builder()
@@ -284,6 +287,18 @@ namespace Ass_Pain.BackEnd.Network
         {
             //TODO: add evaluation
             NetworkManager.Common.CanSend = CanSend.Allowed;
+        }
+        
+        
+        internal void OnWiFiChange(object sender, ConnectivityChangedEventArgs e)
+        {
+            if (e.NetworkAccess is NetworkAccess.Internet or NetworkAccess.Local && e.ConnectionProfiles.Contains(ConnectionProfile.WiFi))
+            {
+                CanSend = GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
+                return;
+            }
+
+            CanSend = CanSend.Rejected;
         }
     }
 
