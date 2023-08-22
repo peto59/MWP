@@ -15,6 +15,7 @@ namespace Ass_Pain.BackEnd.Network
     /// </summary>
     public static class NetworkManager
     {
+        //gpg test
         internal static readonly NetworkManagerCommon Common = new NetworkManagerCommon();
         /// <summary>
         /// Interval between broadcasts
