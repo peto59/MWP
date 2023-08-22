@@ -326,10 +326,9 @@ namespace Ass_Pain
             }
             
             new Thread(NetworkManager.Listener).Start();
-            //test
             new Thread(() => {
-                FileManager.DiscoverFiles();
-                if (stateHandler.Songs.Count < FileManager.GetSongs().Count)
+                FileManager.DiscoverFiles(stateHandler.Songs.Count == 0);
+                if (stateHandler.Songs.Count < FileManager.GetSongsCount())
                 {
                     stateHandler.Songs = new List<Song>();
                     stateHandler.Artists = new List<Artist>();

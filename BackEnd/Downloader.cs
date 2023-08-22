@@ -175,7 +175,7 @@ namespace Ass_Pain
                 string fileName = FileManager.Sanitize(title);
                 string artistPath = FileManager.Sanitize(FileManager.GetAlias(artists.First().title));
                 Directory.CreateDirectory($"{FileManager.MusicFolder}/{artistPath}");
-                string output = $"{FileManager.MusicFolder}/{artistPath}/{fileName}.mp3";
+                //string output = $"{FileManager.MusicFolder}/{artistPath}/{fileName}.mp3";
                 
 
                 if (releaseGroups.First().title != string.Empty)
@@ -183,7 +183,7 @@ namespace Ass_Pain
                     album = releaseGroups.First().title;
                     string albumPath = FileManager.Sanitize(album);
                     Directory.CreateDirectory($"{FileManager.MusicFolder}/{artistPath}/{albumPath}");
-                    output = $"{FileManager.MusicFolder}/{artistPath}/{albumPath}/{fileName}.mp3";
+                    //output = $"{FileManager.MusicFolder}/{artistPath}/{albumPath}/{fileName}.mp3";
                     if (!File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover.jpg") && !File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover.png"))
                     {
                         if (thumbnail != null)
@@ -223,116 +223,22 @@ namespace Ass_Pain
                     File.Delete($"{FileManager.PrivatePath}/tmp/file{i}.jpg");
                     File.Delete($"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3");
                 });
-
+                
                 if (session.ReturnCode is { IsSuccess: true })
                 {
-                    View view = (View)sender;
-                    try
-                    {
-                        File.Move($"{FileManager.PrivatePath}/tmp/video{i}.mp3", output);
-                    }
-                    catch
-                    {
-                        File.Delete($"{FileManager.PrivatePath}/tmp/video{i}.mp3");
-#if DEBUG
-                        MyConsole.WriteLine("Video already exists");
-#endif
-                        Snackbar.Make(view, $"Exists: {videoTitle}", Snackbar.LengthLong)
-                            .SetAction("Action", (View.IOnClickListener)null).Show();
-                        return;
-                    }
-                    Console.WriteLine("Adding tags");
-                    TagLib.File tfile = TagLib.File.Create(output);
-                    tfile.Tag.Title = title;
-                    string[] authors = artists.Select(t => t.title).ToArray();
-                    tfile.Tag.Performers = authors;
-                    tfile.Tag.AlbumArtists = authors;
-                    tfile.Tag.MusicBrainzArtistId = artists.First().id;
-                    tfile.Tag.MusicBrainzReleaseGroupId = releaseGroups.First().id;
-                    tfile.Tag.MusicBrainzTrackId = recordingId;
-                    //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
-                    Tag custom = (Tag) tfile.GetTag(TagLib.TagTypes.Id3v2);
-                    PrivateFrame p = PrivateFrame.Get(custom, "AcoustIDTrackID", true);
-                    p.PrivateData = System.Text.Encoding.UTF8.GetBytes(trackId);
-                    //reading private frame
-                    // File f = File.Create("<YourMP3.mp3>");
-                    // TagLib.Id3v2.Tag t = (TagLib.Id3v2.Tag)f.GetTag(TagTypes.Id3v2);
-                    // PrivateFrame p = PrivateFrame.Get(t, "CustomKey", false); // This is important. Note that the third parameter is false.
-                    // string data = Encoding.UTF8.GetString(p.PrivateData.Data);
 
                     if (album != null)
                     {
-                        tfile.Tag.Album = album;
-                    }
-                    tfile.Save();
-                    tfile.Dispose();
-                    Snackbar.Make(view, $"Success: {title}", Snackbar.LengthLong)
-                        .SetAction("Action", (View.IOnClickListener)null).Show();
-
-
-
-                    //TODO: fully offload to file manager
-                    List<Artist> artistList = new List<Artist>();
-                    foreach (string artist in artists.Select(t => t.title))
-                    {
-                        Artist artistObj;
-                        List<Artist> inArtistList = MainActivity.stateHandler.Artists.Select(FileManager.GetAlias(artist));
-                        if (inArtistList.Any())
-                        {
-                            artistObj = inArtistList[0];
-                        }else
-                        {
-                            if(File.Exists($"{FileManager.MusicFolder}/{artistPath}/cover.jpg"))
-                                artistObj = new Artist(FileManager.GetAlias(artist), $"{FileManager.MusicFolder}/{artistPath}/cover.jpg");
-                            else if(File.Exists($"{FileManager.MusicFolder}/{artistPath}/cover.png"))
-                                artistObj = new Artist(FileManager.GetAlias(artist), $"{FileManager.MusicFolder}/{artistPath}/cover.png");
-                            else
-                                artistObj = new Artist(FileManager.GetAlias(artist), "Default");
-                            MainActivity.stateHandler.Artists.Add(artistObj);
-                        }
-                        artistList.Add(artistObj);
-                    }
-                    
-
-                    Song song = new Song(artistList, videoTitle, File.GetCreationTime(output), output);
-                    artistList.ForEach(art => art.AddSong(ref song));
-                    MainActivity.stateHandler.Songs.Add(song);
-                    
-                    List<Album> albumList = new List<Album>();
-                    if (album != null)
-                    {
-                        Album albumObj;
-                        List<Album> inAlbumList = MainActivity.stateHandler.Albums.Select(album);
-                        if (inAlbumList.Any())
-                        {
-                            albumObj = inAlbumList[0];
-                            albumObj.AddSong(ref song);
-                            albumObj.AddArtist(ref artistList);
-                        }
-                        else
-                        {
-                            string albumName = FileManager.Sanitize(album);
-                            if(File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumName}/cover.jpg"))
-                                albumObj = new Album(tfile.Tag.Album, song, artistList, $"{FileManager.MusicFolder}/{artistPath}/{albumName}/cover.jpg");
-                            else if(File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumName}/cover.png"))
-                                albumObj = new Album(tfile.Tag.Album, song, artistList, $"{FileManager.MusicFolder}/{artistPath}/{albumName}/cover.png");
-                            else
-                                albumObj = new Album(tfile.Tag.Album, song, artistList, "Default");
-                            MainActivity.stateHandler.Albums.Add(albumObj);
-                        }
+                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).ToArray(), artists.First().id, recordingId, trackId, album, releaseGroups.First().id);
                     }
                     else
                     {
-                        albumList = artistList.SelectMany(art => art.Albums.Where(alb => alb.Title == "Uncategorized")).ToList();
+                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).ToArray(), artists.First().id, recordingId, trackId);
                     }
-                    
-                    albumList.ForEach(alb => alb.AddSong(ref song));
-                    artistList.ForEach(art => art.AddAlbum(ref albumList));
-                    song.AddAlbum(ref albumList);
                     notification.Stage4(true, string.Empty, poradieVPlayliste);
                     
                 }
-                else
+                else 
                 {
                     notification.Stage4(false, $"{session.ReturnCode?.Value}", poradieVPlayliste);
                     File.Delete($"{FileManager.PrivatePath}/tmp/video{i}.mp3");
@@ -450,7 +356,7 @@ namespace Ass_Pain
             return !image.Take(16).SequenceEqual(png) ? ".idk" : ".png";
         }
 
-        public static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[] thumbnail)> GetMusicBrainzIdFromFingerprint(string filePath, string originalAuthor, string originalTitle)
+        private static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[] thumbnail)> GetMusicBrainzIdFromFingerprint(string filePath, string originalAuthor, string originalTitle)
         {
             ChromaprintResult chromaprintResult = JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new[] { "-json", $"{filePath}" }));
             using HttpClient client = new HttpClient();
@@ -495,7 +401,7 @@ namespace Ass_Pain
             
             LastSongSelectionNavigation lastNavigation = LastSongSelectionNavigation.None;
             int cnt = 0;
-            var buffer = new List<(string, string, string, IEnumerable<(string, string)>, IEnumerable<(string, string)>)>();
+            List<(string, string, string, IEnumerable<(string, string)>, IEnumerable<(string, string)>)> buffer = new List<(string, string, string, IEnumerable<(string, string)>, IEnumerable<(string, string)>)>();
             List<CoverArt> coverBuffer = new List<CoverArt>();
             List<byte[]> imgBuffer = new List<byte[]>();
             bool hasNext = true;

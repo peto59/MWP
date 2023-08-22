@@ -14,31 +14,16 @@ namespace Ass_Pain
     {
         public override string Title { get; }
         public override List<Song> Songs { get; } = new List<Song>();
-        public Song Song
-        {
-            get
-            {
-                return Songs.Count > 0 ? Songs[0] : new Song("No Name", new DateTime(1970, 1, 1), "Default", false);
-            }
-        }
+        public Song Song => Songs.Count > 0 ? Songs[0] : new Song("No Name", new DateTime(1970, 1, 1), "Default", false);
 
         public List<Artist> Artists { get; } = new List<Artist>();
-        public Artist Artist
-        {
-            get
-            {
-                return Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
-            }
-        }
-        
+        public Artist Artist => Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
+
         public string ImgPath { get; }
         public bool Initialized { get; private set; } = true;
         public bool Showable { get; private set; } = true;
-        public override Bitmap Image
-        {
-            get { return GetImage(); }
-        }
-        
+        public override Bitmap Image => GetImage();
+
         public void AddArtist(ref List<Artist> artists)
         {
             foreach (Artist artist in artists.Where(artist => !Artists.Contains(artist)))

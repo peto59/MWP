@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
+using System.Xml.Serialization;
 using Android.App;
+using File = TagLib.File;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -12,35 +14,26 @@ namespace Ass_Pain
 {
     public class Song : MusicBaseClass
     {
+        [XmlIgnore]
         public List<Artist> Artists { get; } = new List<Artist>();
-        public Artist Artist
-        {
-            get
-            {
-                return Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
-            }
-        }
-
-        public Album Album
-        {
-            get
-            {
-                return Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
-            }
-        }
-
+        [XmlIgnore]
+        public Artist Artist => Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
+        public string[] ArtistNames => Artists.Select(a => a.Title).ToArray();
+        [XmlIgnore]
         public List<Album> Albums { get; } = new List<Album>();
+        [XmlIgnore]
+        public Album Album => Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
+        public string[] AlbumNames => Albums.Where(a => a.Title != "No Album").Select(a => a.Title).ToArray();
+        [XmlIgnore]
         public string Name { get; }
-        public override string Title
-        {
-            get { return Name; }
-        }
-        
+        public override string Title => Name;
+        [XmlIgnore]
         public DateTime DateCreated { get; }
-        
+        [XmlIgnore]
         public string Path { get; }
+        [XmlIgnore]
         public bool Initialized { get; private set; } = true;
-        
+        [XmlIgnore]
         public override Bitmap Image => GetImage();
 
         public void AddArtist(ref List<Artist> artists)
@@ -139,7 +132,8 @@ namespace Ass_Pain
             Bitmap image = null;
             try
             {
-                using TagLib.File tagFile = TagLib.File.Create(Path);
+                using File tagFile = File.Create(Path);
+                tagFile.Mode = File.AccessMode.Read;
                 using MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
                 image = BitmapFactory.DecodeStream(ms);
             }
@@ -252,15 +246,10 @@ namespace Ass_Pain
         
         public override bool Equals(object obj)
         {
-            if (!(obj is Song item))
-            {
-                return false;
-            }
-            
-            return Equals(item);
+            return obj is Song item && Equals(item);
         }
-        
-        protected bool Equals(Song other)
+
+        private bool Equals(Song other)
         {
             return Equals(Artists, other.Artists) && Equals(Albums, other.Albums) && Name == other.Name && DateCreated.Equals(other.DateCreated) && Path == other.Path;
         }
@@ -272,13 +261,6 @@ namespace Ass_Pain
 
         public override string ToString()
         {
-            //$"Song: title> {Name} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}"
-            /*string x = $"Song: title> {Name}";
-            x = $"{x} author> {Artist.Title}";
-            x = $"{x} album> {Album.Title}";
-            x = $"{x} dateCreated> {DateCreated}";
-            x = $"{x} path> {Path}";
-            return x;*/
             return $"Song: title> {Name} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}";
         }
     }

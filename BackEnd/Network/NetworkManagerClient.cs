@@ -238,43 +238,14 @@ namespace Ass_Pain.BackEnd.Network
                             networkStream.WriteCommand(CommandsArr.SyncRejected, ref encryptor);
                         }
                         break;
-                    case CommandsEnum.FileSend: //file
+                    case CommandsEnum.SongSend: //file
                         int i = FileManager.GetAvailableFile("receive");
-                        string musicPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
-                        string path = $"{Application.Context.GetExternalFilesDir(null).AbsolutePath}/tmp/receive{i}.mp3";
+                        string path = $"{FileManager.PrivatePath}/tmp/receive{i}.mp3";
 
                         networkStream.ReadFile(path, ref decryptor, ref aes);
                         
                         //TODO: move to song object
-                        //TODO: offload to file manager
-                        string name = FileManager.Sanitize(FileManager.GetSongTitle(path));
-                        string artist = FileManager.Sanitize(FileManager.GetAlias(FileManager.GetSongArtist(path)[0]));
-                        string unAlbum = FileManager.GetSongAlbum(path);
-                        if(unAlbum == null)
-                        {
-                            Directory.CreateDirectory($"{musicPath}/{artist}");
-                            if (!File.Exists($"{musicPath}/{artist}/{name}.mp3"))
-                            {
-                                File.Move(path, $"{musicPath}/{artist}/{name}.mp3");
-                            }
-                            else
-                            {
-                                File.Delete(path);
-                            }
-                        }
-                        else
-                        {
-                            string album = FileManager.Sanitize(unAlbum);
-                            Directory.CreateDirectory($"{musicPath}/{artist}/{album}");
-                            if (!File.Exists($"{musicPath}/{artist}/{album}/{name}.mp3"))
-                            {
-                                File.Move(path, $"{musicPath}/{artist}/{album}/{name}.mp3");
-                            }
-                            else
-                            {
-                                File.Delete(path);
-                            }
-                        }
+                        FileManager.AddSong(path, true);
                         break;
                     case CommandsEnum.End: //end
 #if DEBUG
