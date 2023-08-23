@@ -18,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Android.Content.PM;
 using Android.Media;
+using System.Text;
 using Android.Provider;
 using AndroidX.Core.Content;
 using Ass_Pain.BackEnd.Network;
@@ -25,6 +26,7 @@ using Octokit;
 using Xamarin.Essentials;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
 using Application = Android.App.Application;
+using Encoding = System.Text.Encoding;
 using FileProvider = AndroidX.Core.Content.FileProvider;
 #if DEBUG
 using Ass_Pain.Helpers;
@@ -343,7 +345,20 @@ namespace Ass_Pain
                 //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
                 //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
                 //stateHandler.Songs = stateHandler.Songs.Distinct().ToList();
-                
+
+                //serialization test
+                /*string x = JsonConvert.SerializeObject(stateHandler.Songs);
+                Console.WriteLine($"length: {Encoding.UTF8.GetBytes(x).Length}");
+                Console.WriteLine($"data: {x}");
+
+                List<Song> y = JsonConvert.DeserializeObject<List<Song>>(x);
+                Console.WriteLine(stateHandler.Songs[0].ToString());
+                Console.WriteLine(y[0].ToString());
+                Console.WriteLine(stateHandler.Songs[1].ToString());
+                Console.WriteLine(y[1].ToString());
+                Console.WriteLine("end");*/
+
+
             }).Start();
             
             

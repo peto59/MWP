@@ -4,21 +4,24 @@ using Android.App;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
+using System.Xml.Serialization;
+using Newtonsoft.Json;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
 
 namespace Ass_Pain
 {
+    [Serializable]
+    [JsonObject(MemberSerialization.OptIn)]
     public class Album : MusicBaseContainer
     {
+        [JsonProperty]
         public override string Title { get; }
         public override List<Song> Songs { get; } = new List<Song>();
         public Song Song => Songs.Count > 0 ? Songs[0] : new Song("No Name", new DateTime(1970, 1, 1), "Default", false);
-
         public List<Artist> Artists { get; } = new List<Artist>();
         public Artist Artist => Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
-
         public string ImgPath { get; }
         public bool Initialized { get; private set; } = true;
         public bool Showable { get; private set; } = true;
@@ -185,6 +188,14 @@ namespace Ass_Pain
             ImgPath = imgPath;
             Initialized = initialized;
             Showable = showable;
+        }
+
+        [JsonConstructor]
+        public Album(string title)
+        {
+            Title = title;
+            Showable = false;
+            Initialized = false;
         }
         
         public override bool Equals(object obj)

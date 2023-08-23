@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using Android.App;
+using Newtonsoft.Json;
 using File = TagLib.File;
 #if DEBUG
 using Ass_Pain.Helpers;
@@ -12,28 +13,30 @@ using Ass_Pain.Helpers;
 
 namespace Ass_Pain
 {
+    [Serializable]
+    [JsonObject(MemberSerialization.OptIn)]
     public class Song : MusicBaseClass
     {
-        [XmlIgnore]
+        [JsonProperty]
         public List<Artist> Artists { get; } = new List<Artist>();
-        [XmlIgnore]
+        
         public Artist Artist => Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
-        public string[] ArtistNames => Artists.Select(a => a.Title).ToArray();
-        [XmlIgnore]
         public List<Album> Albums { get; } = new List<Album>();
-        [XmlIgnore]
+        
+        [JsonProperty("Albums")]
+        public List<Album> XmlAlbums => Albums.Where(a => a.Title != "No Album").ToList();
+        
         public Album Album => Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
-        public string[] AlbumNames => Albums.Where(a => a.Title != "No Album").Select(a => a.Title).ToArray();
-        [XmlIgnore]
-        public string Name { get; }
-        public override string Title => Name;
-        [XmlIgnore]
+        
+        [JsonProperty]
+        public override string Title { get; }
+        
         public DateTime DateCreated { get; }
-        [XmlIgnore]
+        
         public string Path { get; }
-        [XmlIgnore]
+        
         public bool Initialized { get; private set; } = true;
-        [XmlIgnore]
+        
         public override Bitmap Image => GetImage();
 
         public void AddArtist(ref List<Artist> artists)
@@ -177,69 +180,77 @@ namespace Ass_Pain
 
             return image;
         }
-
-        public Song(List<Artist> artists, string name, DateTime dateCreated, string path, Album album = null)
+        [JsonConstructor]
+        public Song(List<Artist> artists, List<Album> albums, string title)
+        {
+            Artists = artists;
+            Albums = albums;
+            Title = title;
+            Initialized = false;
+        }
+        public Song(List<Artist> artists, string title, DateTime dateCreated, string path, Album album = null)
         {
             Artists = artists;
             if (album != null)
             {
                 Albums = new List<Album> {album};
             }
-            Name = name;
+            Title = title;
             DateCreated = dateCreated;
             Path = path;
         }
-        public Song(Artist artist, string name, DateTime dateCreated, string path, Album album = null)
+        public Song(Artist artist, string title, DateTime dateCreated, string path, Album album = null)
         {
             Artists = new List<Artist> {artist};
             if (album != null)
             {
                 Albums = new List<Album> {album};
             }
-            Name = name;
+            Title = title;
             DateCreated = dateCreated;
             Path = path;
         }
         
-        public Song(List<Artist> artists, string name, DateTime dateCreated, string path, List<Album> albums)
+        public Song(List<Artist> artists, string title, DateTime dateCreated, string path, List<Album> albums)
         {
             Artists = artists;
             Albums = albums;
-            Name = name;
-            DateCreated = dateCreated;
-            Path = path;
-        }
-        public Song(Artist artist, string name, DateTime dateCreated, string path, List<Album> albums)
-        {
-            Artists = new List<Artist> {artist};
-            Albums = albums;
-            Name = name;
+            Title = title;
             DateCreated = dateCreated;
             Path = path;
         }
         
-        public Song(string name, DateTime dateCreated, string path, bool initialized = true)
+        public Song(Artist artist, string title, DateTime dateCreated, string path, List<Album> albums)
         {
-            Name = name;
+            Artists = new List<Artist> {artist};
+            Albums = albums;
+            Title = title;
+            DateCreated = dateCreated;
+            Path = path;
+        }
+        
+        public Song(string title, DateTime dateCreated, string path, bool initialized = true)
+        {
+            Title = title;
             DateCreated = dateCreated;
             Path = path;
             Initialized = initialized;
         }
 
-        public Song(Song song, string name)
+        public Song(Song song, string title)
         {
             Artists = song.Artists;
             Albums = song.Albums;
-            Name = name;
+            Title = title;
             DateCreated = song.DateCreated;
             Path = song.Path;
         }
         
-        public Song(Song song, string name, string path)
+        public Song(Song song, string title, string path)
         {
             Artists = song.Artists;
             Albums = song.Albums;
-            Name = name;
+            Title = title;
             DateCreated = song.DateCreated;
             Path = path;
         }
@@ -251,17 +262,17 @@ namespace Ass_Pain
 
         private bool Equals(Song other)
         {
-            return Equals(Artists, other.Artists) && Equals(Albums, other.Albums) && Name == other.Name && DateCreated.Equals(other.DateCreated) && Path == other.Path;
+            return Equals(Artists, other.Artists) && Equals(Albums, other.Albums) && Title == other.Title && DateCreated.Equals(other.DateCreated) && Path == other.Path;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Artists, Albums, Name, DateCreated, Path);
+            return HashCode.Combine(Artists, Albums, Title, DateCreated, Path);
         }
 
         public override string ToString()
         {
-            return $"Song: title> {Name} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}";
+            return $"Song: title> {Title} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}";
         }
     }
 }
