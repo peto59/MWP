@@ -195,25 +195,27 @@ namespace Ass_Pain.BackEnd.Network
                     case CommandsEnum.AesReceived:
                         throw new IllegalStateException("Client doesn't receive aes confirmation");
                     case CommandsEnum.SyncRequest: //sync
-                        if (FileManager.GetTrustedHost(remoteHostname))
+                        if (FileManager.IsTrustedSyncTarget(remoteHostname))
                         {
                             networkStream.WriteCommand(CommandsArr.SyncAccepted, ref encryptor);
                         }
                         else
                         {
-                            networkStream.WriteCommand(CommandsArr.SyncInfoRequest, ref encryptor);
+                            networkStream.WriteCommand(CommandsArr.SyncRejected, ref encryptor);
                         }
                         break;
                     case CommandsEnum.SyncAccepted:
                         canSend = true;
                         break;
-                    case CommandsEnum.SyncInfoRequest:
-                        //TODO: copy from server
-                        break;
                     case CommandsEnum.SyncRejected:
                         ending = true;
                         break;
-                    case CommandsEnum.SyncInfo:
+                    case CommandsEnum.SongRequest:
+                        break;
+                    case CommandsEnum.SongRequestInfoRequest:
+                        //TODO: copy from server
+                        break;
+                    case CommandsEnum.SongRequestInfo:
                         string json = Encoding.UTF8.GetString(data);
 #if DEBUG
                         MyConsole.WriteLine(json);
@@ -226,17 +228,20 @@ namespace Ass_Pain.BackEnd.Network
                             MyConsole.WriteLine(s);
                         }
 #endif
-                        bool x = true;
-                        if (x) //present some form of user check if they really want to receive files
+                        if (true) //present some form of user check if they really want to receive files
                         {
                             //TODO: Stupid! Need to ask before syncing
-                            networkStream.WriteCommand(CommandsArr.SyncAccepted, ref encryptor);
+                            networkStream.WriteCommand(CommandsArr.SongRequestAccepted, ref encryptor);
                             FileManager.AddTrustedHost(remoteHostname);
                         }
                         else
                         {
-                            networkStream.WriteCommand(CommandsArr.SyncRejected, ref encryptor);
+                            networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
                         }
+                        break;
+                    case CommandsEnum.SongRequestAccepted:
+                        break;
+                    case CommandsEnum.SongRequestRejected:
                         break;
                     case CommandsEnum.SongSend: //file
                         int i = FileManager.GetAvailableFile("receive");
@@ -246,6 +251,12 @@ namespace Ass_Pain.BackEnd.Network
                         
                         //TODO: move to song object
                         FileManager.AddSong(path, true);
+                        break;
+                    case CommandsEnum.ImageSend:
+                        break;
+                    case CommandsEnum.ArtistImageRequest:
+                        break;
+                    case CommandsEnum.AlbumImageRequest:
                         break;
                     case CommandsEnum.End: //end
 #if DEBUG
@@ -276,8 +287,11 @@ namespace Ass_Pain.BackEnd.Network
                         client.Close();
                         goto EndClient;
                     //break;
+                    case CommandsEnum.Wait:
+                        Thread.Sleep(25);
+                        break;
                     case CommandsEnum.None:
-                    default: //wait or unimplemented
+                    default: //unimplemented
 #if DEBUG
                         MyConsole.WriteLine($"default: {command}");
 #endif
@@ -293,9 +307,7 @@ namespace Ass_Pain.BackEnd.Network
             encryptor.Dispose();
             decryptor.Dispose();
             aes.Dispose();
-            networkStream.Close();
-            client.Close();
-            await networkStream.DisposeAsync();
+            networkStream.Dispose();
             client.Dispose();
             NetworkManagerCommon.Connected.Remove(server);
         }

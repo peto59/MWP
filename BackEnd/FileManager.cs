@@ -395,19 +395,31 @@ namespace Ass_Pain
             File.WriteAllTextAsync($"{PrivatePath}/trusted_hosts.json", JsonConvert.SerializeObject(hosts));
         }
 
-        public static bool GetTrustedHost(string host)
+        public static bool IsTrustedSyncTarget(string host)
         {
-
-            string json = File.ReadAllText($"{PrivatePath}/trusted_hosts.json");
-            List<string> hosts = JsonConvert.DeserializeObject<List<string>>(json);
-            return hosts.Contains(host);
+            //TODO: json is broken because of decorators
+            try
+            {
+                string json = File.ReadAllText($"{PrivatePath}/trusted_sync_targets.json");
+                Dictionary<string, List<Song>> hosts =
+                    JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json);
+                return hosts.ContainsKey(host);
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e.ToString());
+#endif
+                return false;
+            }
         }
 
-        public static (bool, List<string>) GetSyncSongs(string host)
+        public static List<Song> GetTrustedSyncTargetSongs(string host)
         {
+            //TODO: json is broken because of decorators
             string json = File.ReadAllText($"{PrivatePath}/sync_targets.json");
-            Dictionary<string, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
-            return targets.TryGetValue(host, out List<string> target) ? (true, target) : (false, null);
+            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json);
+            return targets.TryGetValue(host, out List<Song> target) ? target : new List<Song>();
         }
 
         private static void AddSong(string path, string title, IReadOnlyList<string> artists, string album = null)

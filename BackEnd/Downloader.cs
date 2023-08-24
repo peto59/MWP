@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Com.Geecko.Fpcalc;
 using Newtonsoft.Json;
-using TagLib.Id3v2;
 using YoutubeExplode;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;

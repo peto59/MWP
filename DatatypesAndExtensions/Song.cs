@@ -14,29 +14,17 @@ using Ass_Pain.Helpers;
 namespace Ass_Pain
 {
     [Serializable]
-    [JsonObject(MemberSerialization.OptIn)]
     public class Song : MusicBaseClass
     {
-        [JsonProperty]
         public List<Artist> Artists { get; } = new List<Artist>();
-        
         public Artist Artist => Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
         public List<Album> Albums { get; } = new List<Album>();
-        
-        [JsonProperty("Albums")]
         public List<Album> XmlAlbums => Albums.Where(a => a.Title != "No Album").ToList();
-        
         public Album Album => Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
-        
-        [JsonProperty]
         public override string Title { get; }
-        
         public DateTime DateCreated { get; }
-        
         public string Path { get; }
-        
         public bool Initialized { get; private set; } = true;
-        
         public override Bitmap Image => GetImage();
 
         public void AddArtist(ref List<Artist> artists)
@@ -180,17 +168,16 @@ namespace Ass_Pain
 
             return image;
         }
-        [JsonConstructor]
         public Song(List<Artist> artists, List<Album> albums, string title)
         {
-            Artists = artists;
-            Albums = albums;
+            Artists = artists.Distinct().ToList();
+            Albums = albums.Distinct().ToList();
             Title = title;
             Initialized = false;
         }
         public Song(List<Artist> artists, string title, DateTime dateCreated, string path, Album album = null)
         {
-            Artists = artists;
+            Artists = artists.Distinct().ToList();
             if (album != null)
             {
                 Albums = new List<Album> {album};
@@ -211,19 +198,20 @@ namespace Ass_Pain
             Path = path;
         }
         
-        public Song(List<Artist> artists, string title, DateTime dateCreated, string path, List<Album> albums)
+        public Song(List<Artist> artists, string title, DateTime dateCreated, string path, List<Album> albums, bool initialized = true)
         {
-            Artists = artists;
-            Albums = albums;
+            Artists = artists.Distinct().ToList();
+            Albums = albums.Distinct().ToList();
             Title = title;
             DateCreated = dateCreated;
             Path = path;
+            Initialized = initialized;
         }
         
         public Song(Artist artist, string title, DateTime dateCreated, string path, List<Album> albums)
         {
             Artists = new List<Artist> {artist};
-            Albums = albums;
+            Albums = albums.Distinct().ToList();
             Title = title;
             DateCreated = dateCreated;
             Path = path;
@@ -254,7 +242,8 @@ namespace Ass_Pain
             DateCreated = song.DateCreated;
             Path = path;
         }
-        
+
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             return obj is Song item && Equals(item);
@@ -264,12 +253,30 @@ namespace Ass_Pain
         {
             return Equals(Artists, other.Artists) && Equals(Albums, other.Albums) && Title == other.Title && DateCreated.Equals(other.DateCreated) && Path == other.Path;
         }
+        
+        public bool ShallowEquals(Song other)
+        {
+            bool equals = Artists.Aggregate(true, (current1, thisArtist) => other.Artists.Aggregate(current1, (current, otherArtist) => current && thisArtist.Title == otherArtist.Title));
 
+            if (!equals)
+            {
+                return false;
+            }
+            equals = Albums.Aggregate(true, (current1, thisAlbum) => other.Albums.Aggregate(current1, (current, otherAlbum) => current && thisAlbum.Title == otherAlbum.Title));
+            if (!equals)
+            {
+                return false;
+            }
+            return Title == other.Title;
+        }
+
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return HashCode.Combine(Artists, Albums, Title, DateCreated, Path);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Song: title> {Title} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}";

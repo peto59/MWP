@@ -11,6 +11,7 @@ using Java.Security;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using static Android.Renderscripts.Sampler;
@@ -22,10 +23,14 @@ namespace Ass_Pain
         public static Random Rng = new Random();
         public CancellationTokenSource cts = new CancellationTokenSource();
         public AppCompatActivity view;
+        //todo: use binder;
         private MediaPlayer mediaPlayer = null;
         public List<int> NotificationIDs = new List<int>();
         public bool shuffle = false;
         public Dictionary<long, (int?, int)> SessionIdToPlaylistOrderMapping = new Dictionary<long, (int?, int)>();
+
+        public List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> AvailableHosts =
+            new List<(IPAddress ipAddress, DateTime lastSeen, string hostname)>();
         // public bool loopAll = false;
         // public bool loopSingle = false;
         // private List<string> queue = new List<string>();

@@ -12,9 +12,12 @@ namespace Ass_Pain.BackEnd.Network
         internal const byte AesReceived = (byte)CommandsEnum.AesReceived;
         internal const byte SyncRequest = (byte)CommandsEnum.SyncRequest;
         internal const byte SyncAccepted = (byte)CommandsEnum.SyncAccepted;
-        internal const byte SyncInfoRequest = (byte)CommandsEnum.SyncInfoRequest;
         internal const byte SyncRejected = (byte)CommandsEnum.SyncRejected;
-        internal const byte SyncInfo = (byte)CommandsEnum.SyncInfo;
+        internal const byte SongRequest = (byte)CommandsEnum.SongRequest;
+        internal const byte SongRequestInfoRequest = (byte)CommandsEnum.SongRequestInfoRequest;
+        internal const byte SongRequestInfo = (byte)CommandsEnum.SongRequestInfo;
+        internal const byte SongRequestAccepted = (byte)CommandsEnum.SongRequestAccepted;
+        internal const byte SongRequestRejected = (byte)CommandsEnum.SongRequestRejected;
         internal const byte SongSend = (byte)CommandsEnum.SongSend;
         internal const byte ImageSend = (byte)CommandsEnum.ImageSend;
         internal const byte ArtistImageRequest = (byte)CommandsEnum.ArtistImageRequest;
@@ -68,29 +71,34 @@ namespace Ass_Pain.BackEnd.Network
         internal static readonly byte[] AesReceived = { Commands.AesReceived };
         internal static readonly byte[] SyncRequest = { Commands.SyncRequest };
         internal static readonly byte[] SyncAccepted = { Commands.SyncAccepted };
-        internal static readonly byte[] SyncInfoRequest = { Commands.SyncInfoRequest };
         internal static readonly byte[] SyncRejected = { Commands.SyncRejected };
-        internal static readonly byte[] SyncInfo = { Commands.SyncInfo };
+        internal static readonly byte[] SongRequest = { Commands.SongRequest };
+        internal static readonly byte[] SongRequestInfoRequest = { Commands.SongRequestInfoRequest };
+        internal static readonly byte[] SongRequestInfo = { Commands.SongRequestInfo };
+        internal static readonly byte[] SongRequestAccepted = { Commands.SongRequestAccepted };
+        internal static readonly byte[] SongRequestRejected = { Commands.SongRequestRejected };
         internal static readonly byte[] SongSend = { Commands.SongSend };
         internal static readonly byte[] ImageSend = { Commands.ImageSend };
         internal static readonly byte[] ArtistImageRequest = { Commands.ArtistImageRequest };
         internal static readonly byte[] AlbumImageRequest = { Commands.AlbumImageRequest };
         internal static readonly byte[] End = { Commands.End };
-        internal static readonly byte[] LongCommands = { Commands.SyncInfo, Commands.SongSend, Commands.ImageSend };
-        internal static readonly CommandsEnum[] LongCommandsEnum = { CommandsEnum.SyncInfo, CommandsEnum.SongSend, CommandsEnum.ImageSend };
+        internal static readonly byte[] LongCommands = { Commands.SongRequestInfo, Commands.SongSend, Commands.ImageSend };
+        internal static readonly CommandsEnum[] LongCommandsEnum = { CommandsEnum.SongRequestInfo, CommandsEnum.SongSend, CommandsEnum.ImageSend };
         internal static readonly byte[] FileCommands = { Commands.SongSend, Commands.ImageSend };
         internal static readonly CommandsEnum[] FileCommandsEnum = { CommandsEnum.SongSend, CommandsEnum.ImageSend };
         internal static readonly byte[] EncryptedOnlyCommands =
         {
-            Commands.SyncRequest, Commands.SyncAccepted, Commands.SyncInfoRequest,
-            Commands.SyncRejected, Commands.SyncInfo, Commands.SongSend, Commands.ImageSend,
-            Commands.ArtistImageRequest, Commands.AlbumImageRequest
+            Commands.SyncRequest, Commands.SyncAccepted, Commands.SyncRejected, Commands.SongSend, Commands.ImageSend,
+            Commands.ArtistImageRequest, Commands.AlbumImageRequest, Commands.SongRequest,
+            Commands.SongRequestInfoRequest, Commands.SongRequestInfo, Commands.SongRequestAccepted,
+            Commands.SongRequestRejected
         };
         internal static readonly CommandsEnum[] EncryptedOnlyCommandsEnums =
         {
-            CommandsEnum.SyncRequest, CommandsEnum.SyncAccepted, CommandsEnum.SyncInfoRequest,
-            CommandsEnum.SyncRejected, CommandsEnum.SyncInfo, CommandsEnum.SongSend, CommandsEnum.ImageSend,
-            CommandsEnum.ArtistImageRequest, CommandsEnum.AlbumImageRequest
+            CommandsEnum.SyncRequest, CommandsEnum.SyncAccepted, CommandsEnum.SyncRejected, CommandsEnum.SongSend,
+            CommandsEnum.ImageSend, CommandsEnum.ArtistImageRequest, CommandsEnum.AlbumImageRequest,
+            CommandsEnum.SongRequest, CommandsEnum.SongRequestInfoRequest, CommandsEnum.SongRequestInfo,
+            CommandsEnum.SongRequestAccepted, CommandsEnum.SongRequestRejected
         };
     }
 
@@ -104,13 +112,16 @@ namespace Ass_Pain.BackEnd.Network
         AesReceived = 13,
         SyncRequest = 20,
         SyncAccepted = 21,
-        SyncInfoRequest = 22,
-        SyncRejected = 23,
-        SyncInfo = 24,
-        SongSend = 30,
-        ImageSend = 31,
-        ArtistImageRequest = 32,
-        AlbumImageRequest = 33,
+        SyncRejected = 22,
+        SongRequest = 30,
+        SongRequestInfoRequest = 31,
+        SongRequestInfo = 32,
+        SongRequestAccepted = 33,
+        SongRequestRejected = 34,
+        SongSend = 40,
+        ImageSend = 41,
+        ArtistImageRequest = 42,
+        AlbumImageRequest = 43,
         End = 255
     }
 

@@ -296,14 +296,9 @@ namespace Ass_Pain
                 Directory.CreateDirectory($"{privatePath}/tmp");
             }
 
-            if (!File.Exists($"{privatePath}/trusted_hosts.json"))
+            if (!File.Exists($"{privatePath}/trusted_sync_targets.json"))
             {
-                File.WriteAllText($"{privatePath}/trusted_hosts.json", JsonConvert.SerializeObject(new List<string>()));
-            }
-
-            if (!File.Exists($"{privatePath}/sync_targets.json"))
-            {
-                File.WriteAllText($"{privatePath}/sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
+                File.WriteAllText($"{privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
             }
 
             if (!File.Exists($"{path}/aliases.json"))

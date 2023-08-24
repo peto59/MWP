@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -21,6 +22,10 @@ namespace Ass_Pain.BackEnd.Network
         /// Interval between broadcasts
         /// </summary>
         private const int BroadcastInterval = NetworkManagerCommon.BroadcastInterval;
+
+        private const int numberOfMissedBroadcastsToRemoveHost = 3;
+
+        private static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
 
         /// <summary>
         /// Starts listening for broadcasts, sending broadcasts and managing connections. Entry point for NetworkManager.
@@ -85,7 +90,16 @@ namespace Ass_Pain.BackEnd.Network
                                     MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {hostname}");
 #endif
                                     sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), groupEp);
-                                    
+
+                                    DateTime now = DateTime.Now;
+                                    MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, hostname));
+                                    //remove stale hosts
+                                    foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.stateHandler.AvailableHosts.Where(a =>
+                                                 a.lastSeen > now + RemoveInterval))
+                                    {
+                                        MainActivity.stateHandler.AvailableHosts.Remove(removal);
+                                    }
+
                                     //TODO: add to available targets. Don't connect directly, check if sync is allowed.
                                     NetworkManagerCommon.Connected.Add(targetIp);
                                     if (!NetworkManagerCommon.P2PDecide(groupEp, targetIp, ref sock))

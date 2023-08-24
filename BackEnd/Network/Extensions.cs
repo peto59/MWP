@@ -5,8 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Xml.Serialization;
+using Newtonsoft.Json;
 
 namespace Ass_Pain.BackEnd.Network
 {
@@ -556,22 +558,18 @@ namespace Ass_Pain.BackEnd.Network
             const int len =  1 + 16 + 8; //command (1), aes IV (16), encrypted data length as long(8)
             byte[] rv = new byte[len];
             aes.GenerateIV();
+            byte[] data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(songs));
             
-            Buffer.BlockCopy(CommandsArr.SyncInfo, 0, rv, 0, 1);
+            Buffer.BlockCopy(CommandsArr.SongRequestInfo, 0, rv, 0, 1);
             Buffer.BlockCopy(aes.IV, 0, rv, 1, 16);
-            
-            MemoryStream msEncrypted = new MemoryStream();
-            CryptoStream csEncrypt = new CryptoStream(msEncrypted, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
-            XmlSerializer serializer = new XmlSerializer(typeof(List<Song>));
-            serializer.Serialize(csEncrypt, songs);
-            csEncrypt.Dispose();
-            long encryptedDataLength = msEncrypted.Length + (16 - msEncrypted.Length % 16);
-            
-            Buffer.BlockCopy(BitConverter.GetBytes(encryptedDataLength), 0, rv, 17, 8);
+            Buffer.BlockCopy(BitConverter.GetBytes(data.LongLength), 0, rv, 17, 8);
+
             rv = encryptor.Encrypt(rv, true);
             stream.Write(rv, 0, rv.Length);
-
-            msEncrypted.Dispose();
+            
+            CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+            csEncrypt.WriteLongData(data);
+            csEncrypt.Dispose();
         }
 
         /// <summary>

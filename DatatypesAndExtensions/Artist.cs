@@ -221,6 +221,7 @@ namespace Ass_Pain
 
         protected bool Equals(Artist other)
         {
+            //todo: stack smashing?
             return Title == other.Title && Equals(Songs, other.Songs) && Equals(Albums, other.Albums) && Equals(ImgPath, other.ImgPath);
         }
 
