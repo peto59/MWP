@@ -277,39 +277,37 @@ namespace Ass_Pain
             {
                 CheckUpdates();
             }
-            string privatePath = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
-            string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
 
-            if (!Directory.Exists(path))
+            if (!Directory.Exists(FileManager.MusicFolder))
             {
 #if DEBUG
-                MyConsole.WriteLine("Creating " + $"{path}");
+                MyConsole.WriteLine("Creating " + $"{FileManager.MusicFolder}");
 #endif
-                if (path != null) Directory.CreateDirectory(path);
+                if (FileManager.MusicFolder != null) Directory.CreateDirectory(FileManager.MusicFolder);
             }
 
-            if (!Directory.Exists($"{privatePath}/tmp"))
+            if (!Directory.Exists($"{FileManager.PrivatePath}/tmp"))
             {
 #if DEBUG
-                MyConsole.WriteLine("Creating " + $"{privatePath}/tmp");
+                MyConsole.WriteLine("Creating " + $"{FileManager.PrivatePath}/tmp");
 #endif
-                Directory.CreateDirectory($"{privatePath}/tmp");
+                Directory.CreateDirectory($"{FileManager.PrivatePath}/tmp");
+            }
+            
+            if (!File.Exists($"{FileManager.PrivatePath}/trusted_sync_targets.json"))
+            {
+                File.WriteAllText($"{FileManager.PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
             }
 
-            if (!File.Exists($"{privatePath}/trusted_sync_targets.json"))
+            if (!File.Exists($"{FileManager.MusicFolder}/aliases.json"))
             {
-                File.WriteAllText($"{privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
-            }
-
-            if (!File.Exists($"{path}/aliases.json"))
-            {
-                File.WriteAllTextAsync($"{path}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
+                File.WriteAllTextAsync($"{FileManager.MusicFolder}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
 
             }
 
-            if (!File.Exists($"{path}/playlists.json"))
+            if (!File.Exists($"{FileManager.MusicFolder}/playlists.json"))
             {
-                File.WriteAllTextAsync($"{path}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
+                File.WriteAllTextAsync($"{FileManager.MusicFolder}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
             }
             
             DirectoryInfo di = new DirectoryInfo($"{FileManager.PrivatePath}/tmp/");
@@ -342,11 +340,12 @@ namespace Ass_Pain
                 //stateHandler.Songs = stateHandler.Songs.Distinct().ToList();
 
                 //serialization test
-                /*string x = JsonConvert.SerializeObject(stateHandler.Songs);
+                /*SongJsonConverter set = new SongJsonConverter(true);
+                string x = JsonConvert.SerializeObject(stateHandler.Songs, set);
                 Console.WriteLine($"length: {Encoding.UTF8.GetBytes(x).Length}");
                 Console.WriteLine($"data: {x}");
 
-                List<Song> y = JsonConvert.DeserializeObject<List<Song>>(x);
+                List<Song> y = JsonConvert.DeserializeObject<List<Song>>(x, set);
                 Console.WriteLine(stateHandler.Songs[0].ToString());
                 Console.WriteLine(y[0].ToString());
                 Console.WriteLine(stateHandler.Songs[1].ToString());

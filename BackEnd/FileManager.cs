@@ -386,23 +386,28 @@ namespace Ass_Pain
         }
         */
 
-        public static void AddTrustedHost(string host)
+        public static void AddTrustedSyncTarget(string host)
         {
 
-            string json = File.ReadAllText($"{PrivatePath}/trusted_hosts.json");
-            List<string> hosts = JsonConvert.DeserializeObject<List<string>>(json);
-            hosts.Add(host);
-            File.WriteAllTextAsync($"{PrivatePath}/trusted_hosts.json", JsonConvert.SerializeObject(hosts));
+            string json = File.ReadAllText($"{PrivatePath}/trusted_sync_targets.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> hosts =
+                JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json);
+            hosts.Add(host, new List<Song>());
+            File.WriteAllTextAsync($"{PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(hosts, customConverter));
         }
 
         public static bool IsTrustedSyncTarget(string host)
         {
-            //TODO: json is broken because of decorators
             try
             {
                 string json = File.ReadAllText($"{PrivatePath}/trusted_sync_targets.json");
+                SongJsonConverter customConverter = new SongJsonConverter(true);
                 Dictionary<string, List<Song>> hosts =
-                    JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json);
+                    JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter);
+#if DEBUG
+                MyConsole.WriteLine($"JSON: {json}");
+#endif
                 return hosts.ContainsKey(host);
             }
             catch (Exception e)
@@ -416,9 +421,9 @@ namespace Ass_Pain
 
         public static List<Song> GetTrustedSyncTargetSongs(string host)
         {
-            //TODO: json is broken because of decorators
             string json = File.ReadAllText($"{PrivatePath}/sync_targets.json");
-            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json);
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter);
             return targets.TryGetValue(host, out List<Song> target) ? target : new List<Song>();
         }
 

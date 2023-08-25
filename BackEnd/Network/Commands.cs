@@ -133,4 +133,20 @@ namespace Ass_Pain.BackEnd.Network
         AesReceived,
         Encrypted,
     }
+    
+    internal enum SyncRequestState : byte
+    {
+        None,
+        Sent,
+        Rejected,
+        Accepted
+    }
+
+    internal enum SongSendRequestState : byte
+    {
+        None,
+        Sent,
+        Rejected,
+        Accepted
+    }
 }

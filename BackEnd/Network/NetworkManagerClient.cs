@@ -26,6 +26,8 @@ namespace Ass_Pain.BackEnd.Network
             TcpClient client = new TcpClient(server.ToString(), port);
             NetworkStream networkStream = client.GetStream();
             EncryptionState encryptionState = EncryptionState.None;
+            SyncRequestState syncRequestState = SyncRequestState.None;
+            SongSendRequestState songSendRequestState = SongSendRequestState.None;
             bool ending = false;
             string remoteHostname = string.Empty;
             bool canSend = false;
@@ -40,21 +42,24 @@ namespace Ass_Pain.BackEnd.Network
             
             networkStream.WriteCommand(CommandsArr.Host, Encoding.UTF8.GetBytes(DeviceInfo.Name));
 
+            Thread.Sleep(100);
             while (true)
             {
-                Thread.Sleep(50);
 
                 CommandsEnum command;
                 byte[] data = null;
+
+                #region Reading
+
                 if (networkStream.DataAvailable)
                 {
                     switch (encryptionState)
                     {
                         case EncryptionState.None:
-                        command = networkStream.ReadCommand();
-                        if (Commands.IsEncryptedOnlyCommand(command))
-                            throw new IllegalStateException("Received encrypted only command on unencrypted channel");
-                        break;
+                            command = networkStream.ReadCommand();
+                            if (Commands.IsEncryptedOnlyCommand(command))
+                                throw new IllegalStateException("Received encrypted only command on unencrypted channel");
+                            break;
                         case EncryptionState.RsaExchange:
                             (command, data) = networkStream.ReadCommandCombined();
                             if (command == CommandsEnum.RsaExchange)
@@ -107,9 +112,11 @@ namespace Ass_Pain.BackEnd.Network
                 {
                     command = CommandsEnum.None;
                 }
+
 #if DEBUG
                 MyConsole.WriteLine($"Received command: {command}");
 #endif
+                #endregion
 
                 #region Writing
 
@@ -220,19 +227,18 @@ namespace Ass_Pain.BackEnd.Network
 #if DEBUG
                         MyConsole.WriteLine(json);
 #endif
-                        //TODO: move to song object
-                        List<string> recSongs = JsonConvert.DeserializeObject<List<string>>(json);
+                        SongJsonConverter customConverter = new SongJsonConverter(false);
+                        List<Song> recSongs = JsonConvert.DeserializeObject<List<Song>>(json, customConverter);
 #if DEBUG
-                        foreach(string s in recSongs)
+                        foreach(Song s in recSongs)
                         {
-                            MyConsole.WriteLine(s);
+                            MyConsole.WriteLine(s.ToString());
                         }
 #endif
                         if (true) //present some form of user check if they really want to receive files
                         {
                             //TODO: Stupid! Need to ask before syncing
                             networkStream.WriteCommand(CommandsArr.SongRequestAccepted, ref encryptor);
-                            FileManager.AddTrustedHost(remoteHostname);
                         }
                         else
                         {

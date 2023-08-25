@@ -558,7 +558,9 @@ namespace Ass_Pain.BackEnd.Network
             const int len =  1 + 16 + 8; //command (1), aes IV (16), encrypted data length as long(8)
             byte[] rv = new byte[len];
             aes.GenerateIV();
-            byte[] data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(songs));
+            
+            SongJsonConverter customConverter = new SongJsonConverter(false);
+            byte[] data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(songs, customConverter));
             
             Buffer.BlockCopy(CommandsArr.SongRequestInfo, 0, rv, 0, 1);
             Buffer.BlockCopy(aes.IV, 0, rv, 1, 16);

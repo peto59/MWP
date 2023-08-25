@@ -211,12 +211,7 @@ namespace Ass_Pain
 
         public override bool Equals(object obj)
         {
-            if (!(obj is Artist item))
-            {
-                return false;
-            }
-            
-            return Equals(item);
+            return obj is Artist item && Equals(item);
         }
 
         protected bool Equals(Artist other)

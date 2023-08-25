@@ -200,12 +200,7 @@ namespace Ass_Pain
         
         public override bool Equals(object obj)
         {
-            if (!(obj is Album item))
-            {
-                return false;
-            }
-            
-            return Equals(item);
+            return obj is Album item && Equals(item);
         }
 
         protected bool Equals(Album other)

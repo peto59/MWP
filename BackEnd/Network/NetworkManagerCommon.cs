@@ -200,7 +200,7 @@ namespace Ass_Pain.BackEnd.Network
             return (pubKey, privKey);
         }
         
-        internal void SendBroadcast()
+        internal async void SendBroadcast()
         {
             switch (CanSend)
             {
@@ -215,26 +215,39 @@ namespace Ass_Pain.BackEnd.Network
                     bool processedAtLestOne = false;
                     do
                     {
-                        EndPoint groupEp = iep;
                         _sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
                         retries++;
                         try
                         {
                             while (true)
                             {
+                                EndPoint groupEp = iep;
                                 _sock.ReceiveFrom(Buffer, ref groupEp);
                                 IPAddress targetIp = ((IPEndPoint)groupEp).Address;
                                 string remoteHostname = Encoding.UTF8.GetString(Buffer, 0, Buffer.Length);
 #if DEBUG
                                 MyConsole.WriteLine($"found remote: {remoteHostname}, {targetIp}");       
 #endif                
-                                //TODO: add to available targets. Don't connect directly, check if sync is allowed.
-                                Connected.Add(targetIp);
-                                if (!P2PDecide(groupEp, targetIp, ref _sock))
-                                {
-                                    Connected.Remove(targetIp);
-                                }
+                                
+                                DateTime now = DateTime.Now;
+                                MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, remoteHostname));
                                 processedAtLestOne = true;
+                                //TODO: add to available targets. Don't connect directly, check if sync is allowed.
+                                //TODO: here
+                                if (!FileManager.IsTrustedSyncTarget(remoteHostname))
+                                {
+                                    FileManager.AddTrustedSyncTarget(remoteHostname);
+                                }
+                                if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
+                                
+                                Connected.Add(targetIp);
+                                new Task(() =>
+                                {
+                                    if (!P2PDecide(groupEp, targetIp, ref _sock))
+                                    {
+                                        Connected.Remove(targetIp);
+                                    }
+                                }).Start();
                             }
                         }
                         catch
@@ -242,15 +255,14 @@ namespace Ass_Pain.BackEnd.Network
                             // ignored
                         }
                     } while (retries < maxRetries && !processedAtLestOne);
+
 #if DEBUG
                     if (retries == maxRetries)
                     {
                         MyConsole.WriteLine("No reply");
                     }
 #endif
-                
-                    _sock.Close();
-                    _sock.Dispose();
+                    
                     break;
                 }
                 case CanSend.Test:

@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Xamarin.Essentials;
 #if DEBUG
 using Ass_Pain.Helpers;
@@ -85,27 +87,26 @@ namespace Ass_Pain.BackEnd.Network
 #endif
                                         continue;
                                     }
-                                    string hostname = Encoding.UTF8.GetString(buffer);
+                                    string remoteHostname = Encoding.UTF8.GetString(buffer);
 #if DEBUG
-                                    MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {hostname}");
+                                    MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {remoteHostname}");
 #endif
                                     sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), groupEp);
-
-                                    DateTime now = DateTime.Now;
-                                    MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, hostname));
-                                    //remove stale hosts
-                                    foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.stateHandler.AvailableHosts.Where(a =>
-                                                 a.lastSeen > now + RemoveInterval))
-                                    {
-                                        MainActivity.stateHandler.AvailableHosts.Remove(removal);
-                                    }
+                                    
+                                    AddAvailableHost(targetIp, remoteHostname);
+                                    
 
                                     //TODO: add to available targets. Don't connect directly, check if sync is allowed.
+                                    if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
+                                    
                                     NetworkManagerCommon.Connected.Add(targetIp);
-                                    if (!NetworkManagerCommon.P2PDecide(groupEp, targetIp, ref sock))
+                                    new Task(() =>
                                     {
-                                        NetworkManagerCommon.Connected.Remove(targetIp);
-                                    }
+                                        if (!NetworkManagerCommon.P2PDecide(groupEp, targetIp, ref sock))
+                                        {
+                                            NetworkManagerCommon.Connected.Remove(targetIp);
+                                        }
+                                    }).Start();
                                 }
                                 break;
                             case CanSend.Rejected:
@@ -126,6 +127,41 @@ namespace Ass_Pain.BackEnd.Network
                     sock.Close();
                     sock.Dispose();
                 }
+            }
+        }
+
+        private static void AddAvailableHost(IPAddress targetIp, string hostname)
+        {
+            DateTime now = DateTime.Now;
+            
+            List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.stateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
+            switch (currentAvailableHosts.Count)
+            {
+                case > 1:
+                {
+                    foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) currentAvailableHost in currentAvailableHosts)
+                    {
+                        MainActivity.stateHandler.AvailableHosts.Remove(currentAvailableHost);
+                    }
+                    MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, hostname));
+                    break;
+                }
+                case 1:
+                {
+                    int index = MainActivity.stateHandler.AvailableHosts.IndexOf(currentAvailableHosts.First());
+                    MainActivity.stateHandler.AvailableHosts[index] = (targetIp, now, hostname);
+                    break;
+                }
+                default:
+                    MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, hostname));
+                    break;
+            }
+            
+            //remove stale hosts
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.stateHandler.AvailableHosts.Where(a =>
+                         a.lastSeen > now + RemoveInterval))
+            {
+                MainActivity.stateHandler.AvailableHosts.Remove(removal);
             }
         }
     }
