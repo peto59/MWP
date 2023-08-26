@@ -392,8 +392,9 @@ namespace Ass_Pain
             string json = File.ReadAllText($"{PrivatePath}/trusted_sync_targets.json");
             SongJsonConverter customConverter = new SongJsonConverter(true);
             Dictionary<string, List<Song>> hosts =
-                JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json);
+                JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter);
             hosts.Add(host, new List<Song>());
+            
             File.WriteAllTextAsync($"{PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(hosts, customConverter));
         }
 

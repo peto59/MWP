@@ -35,7 +35,6 @@ namespace Ass_Pain.BackEnd.Network
         public static void Listener()
         {
             //TODO: unknown SSID
-            //TODO: broadcast is sent only once
             NetworkManagerCommon.BroadcastTimer.Interval = BroadcastInterval;
             NetworkManagerCommon.BroadcastTimer.Elapsed += delegate { Common.SendBroadcast(); };
             NetworkManagerCommon.BroadcastTimer.AutoReset = true;
@@ -100,9 +99,9 @@ namespace Ass_Pain.BackEnd.Network
                                     if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                     
                                     NetworkManagerCommon.Connected.Add(targetIp);
-                                    new Task(() =>
+                                    new Thread(() =>
                                     {
-                                        if (!NetworkManagerCommon.P2PDecide(groupEp, targetIp, ref sock))
+                                        if (!NetworkManagerCommon.P2PDecide(targetIp))
                                         {
                                             NetworkManagerCommon.Connected.Remove(targetIp);
                                         }

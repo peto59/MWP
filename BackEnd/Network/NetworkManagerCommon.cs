@@ -51,6 +51,7 @@ namespace Ass_Pain.BackEnd.Network
         }
         private IPAddress myBroadcastIp;
         internal const int BroadcastPort = 8008;
+        internal const int P2PPort = 8009;
         internal const int RsaDataSize = 256;
         internal string CurrentSsid = string.Empty;
 
@@ -91,19 +92,21 @@ namespace Ass_Pain.BackEnd.Network
             }
         }
 
-        internal static bool P2PDecide(EndPoint groupEp, IPAddress targetIp, ref Socket sock)
+        internal static bool P2PDecide(IPAddress ipAddress)
         {
 #if DEBUG
-            MyConsole.WriteLine($"New P2P from {((IPEndPoint)groupEp).Address}");
+            MyConsole.WriteLine($"New P2P from {ipAddress}");
 #endif
-            EndPoint endPoint = groupEp;
+            Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            IPEndPoint iep = new IPEndPoint(ipAddress, P2PPort);
+            EndPoint endPoint = iep;
             byte[] buffer = new byte[4];
             while (true)
             {
                 int state = new Random().Next(0, 2);
-                sock.SendTo(BitConverter.GetBytes(state), groupEp);
+                sock.SendTo(BitConverter.GetBytes(state), endPoint);
 #if DEBUG
-                MyConsole.WriteLine($"sending {state} to {((IPEndPoint)groupEp).Address}");
+                MyConsole.WriteLine($"sending {state} to {((IPEndPoint)endPoint).Address}");
 #endif
                 int maxResponseCounter = 4;
                 int response;
@@ -112,13 +115,7 @@ namespace Ass_Pain.BackEnd.Network
                     sock.ReceiveFrom(buffer, ref endPoint);
 #if DEBUG
                     MyConsole.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
-                    MyConsole.WriteLine($"debug: {((IPEndPoint)endPoint).Address}  {targetIp}  {!((IPEndPoint)endPoint).Address.Equals(targetIp)}");
 #endif
-                    while (!((IPEndPoint)endPoint).Address.Equals(targetIp))
-                    {
-                        //theoretically never...
-                        sock.ReceiveFrom(buffer, ref endPoint);
-                    }
                     response = BitConverter.ToInt32(buffer);
                     maxResponseCounter--;
 #if DEBUG
@@ -131,6 +128,7 @@ namespace Ass_Pain.BackEnd.Network
 
                 if (maxResponseCounter == 0)
                 {
+                    sock.Dispose();
                     return false;
                 }
 
@@ -142,31 +140,10 @@ namespace Ass_Pain.BackEnd.Network
                     MyConsole.WriteLine("Server");
 #endif
                     (TcpListener server, int listenPort) = NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
-                    sock.SendTo(BitConverter.GetBytes(listenPort), groupEp);
-                    new Thread(() => {
-                        try
-                        {
-                            NetworkManagerServer.Server(server, targetIp);
-                        }
-                        catch (Exception e)
-                        {
-#if DEBUG
-                            MyConsole.WriteLine(e.ToString());
-#endif
-                        }
-                    }).Start();
-                    return true;
-                }
-                //client
-#if DEBUG
-                MyConsole.WriteLine("Client");
-#endif
-                sock.ReceiveFrom(buffer, ref groupEp);
-                int sendPort = BitConverter.ToInt32(buffer);
-                new Thread(() => {
+                    sock.SendTo(BitConverter.GetBytes(listenPort), endPoint);
                     try
                     {
-                        NetworkManagerClient.Client(((IPEndPoint)groupEp).Address, sendPort);
+                        NetworkManagerServer.Server(server, ipAddress);
                     }
                     catch (Exception e)
                     {
@@ -174,7 +151,26 @@ namespace Ass_Pain.BackEnd.Network
                         MyConsole.WriteLine(e.ToString());
 #endif
                     }
-                }).Start();
+                    sock.Dispose();
+                    return true;
+                }
+                //client
+#if DEBUG
+                MyConsole.WriteLine("Client");
+#endif
+                sock.ReceiveFrom(buffer, ref endPoint);
+                int sendPort = BitConverter.ToInt32(buffer);
+                try
+                {
+                    NetworkManagerClient.Client(((IPEndPoint)endPoint).Address, sendPort);
+                }
+                catch (Exception e)
+                {
+#if DEBUG
+                    MyConsole.WriteLine(e.ToString());
+#endif
+                }
+                sock.Dispose();
                 return true;
             }
         }
@@ -241,9 +237,9 @@ namespace Ass_Pain.BackEnd.Network
                                 if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                 
                                 Connected.Add(targetIp);
-                                new Task(() =>
+                                new Thread(() =>
                                 {
-                                    if (!P2PDecide(groupEp, targetIp, ref _sock))
+                                    if (!P2PDecide(targetIp))
                                     {
                                         Connected.Remove(targetIp);
                                     }
