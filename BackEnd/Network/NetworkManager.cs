@@ -86,7 +86,7 @@ namespace Ass_Pain.BackEnd.Network
 #endif
                                         continue;
                                     }
-                                    string remoteHostname = Encoding.UTF8.GetString(buffer);
+                                    string remoteHostname = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
 #if DEBUG
                                     MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {remoteHostname}");
 #endif

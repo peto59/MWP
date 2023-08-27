@@ -294,6 +294,7 @@ namespace Ass_Pain
                 Directory.CreateDirectory($"{FileManager.PrivatePath}/tmp");
             }
             
+            File.Delete($"{FileManager.PrivatePath}/trusted_sync_targets.json");
             if (!File.Exists($"{FileManager.PrivatePath}/trusted_sync_targets.json"))
             {
                 File.WriteAllText($"{FileManager.PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));

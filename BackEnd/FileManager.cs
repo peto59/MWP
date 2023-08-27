@@ -394,8 +394,11 @@ namespace Ass_Pain
             Dictionary<string, List<Song>> hosts =
                 JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter);
             hosts.Add(host, new List<Song>());
-            
-            File.WriteAllTextAsync($"{PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(hosts, customConverter));
+            string x = JsonConvert.SerializeObject(hosts, customConverter);
+#if DEBUG
+            MyConsole.WriteLine(x);   
+#endif
+            File.WriteAllText($"{PrivatePath}/trusted_sync_targets.json", x);
         }
 
         public static bool IsTrustedSyncTarget(string host)

@@ -98,12 +98,19 @@ namespace Ass_Pain.BackEnd.Network
             MyConsole.WriteLine($"New P2P from {ipAddress}");
 #endif
             Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            IPEndPoint iep = new IPEndPoint(ipAddress, P2PPort);
+            //TODO: add timeout
+            IPEndPoint iep = new IPEndPoint(NetworkManager.Common.MyIp, P2PPort);
             EndPoint endPoint = iep;
+            sock.Bind(endPoint);
+            iep = new IPEndPoint(ipAddress, P2PPort);
+            endPoint = iep;
             byte[] buffer = new byte[4];
+            //TODO: this is stupid
+            Thread.Sleep(1000);
             while (true)
             {
-                int state = new Random().Next(0, 2);
+                //int state = new Random().Next(0, 2);
+                int state = 1;
                 sock.SendTo(BitConverter.GetBytes(state), endPoint);
 #if DEBUG
                 MyConsole.WriteLine($"sending {state} to {((IPEndPoint)endPoint).Address}");
@@ -112,7 +119,7 @@ namespace Ass_Pain.BackEnd.Network
                 int response;
                 do
                 {
-                    sock.ReceiveFrom(buffer, ref endPoint);
+                    sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
 #if DEBUG
                     MyConsole.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
 #endif
@@ -143,6 +150,7 @@ namespace Ass_Pain.BackEnd.Network
                     sock.SendTo(BitConverter.GetBytes(listenPort), endPoint);
                     try
                     {
+                        sock.Dispose();
                         NetworkManagerServer.Server(server, ipAddress);
                     }
                     catch (Exception e)
@@ -162,6 +170,7 @@ namespace Ass_Pain.BackEnd.Network
                 int sendPort = BitConverter.ToInt32(buffer);
                 try
                 {
+                    sock.Dispose();
                     NetworkManagerClient.Client(((IPEndPoint)endPoint).Address, sendPort);
                 }
                 catch (Exception e)
@@ -220,7 +229,7 @@ namespace Ass_Pain.BackEnd.Network
                                 EndPoint groupEp = iep;
                                 _sock.ReceiveFrom(Buffer, ref groupEp);
                                 IPAddress targetIp = ((IPEndPoint)groupEp).Address;
-                                string remoteHostname = Encoding.UTF8.GetString(Buffer, 0, Buffer.Length);
+                                string remoteHostname = Encoding.UTF8.GetString(Buffer).TrimEnd('\0');
 #if DEBUG
                                 MyConsole.WriteLine($"found remote: {remoteHostname}, {targetIp}");       
 #endif                
@@ -233,6 +242,7 @@ namespace Ass_Pain.BackEnd.Network
                                 if (!FileManager.IsTrustedSyncTarget(remoteHostname))
                                 {
                                     FileManager.AddTrustedSyncTarget(remoteHostname);
+                                    //Thread.Sleep(100);
                                 }
                                 if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                 
