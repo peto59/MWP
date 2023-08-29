@@ -25,7 +25,7 @@ namespace Ass_Pain.BackEnd.Network
     internal class NetworkManagerCommon
     {
         internal static readonly List<IPAddress> Connected = new List<IPAddress>();
-        internal IPAddress MyIp;
+        internal IPAddress? MyIp;
         private IPAddress myMask = new IPAddress(0); //0.0.0.0
         
         /// <summary>
@@ -35,7 +35,7 @@ namespace Ass_Pain.BackEnd.Network
         
         internal static readonly System.Timers.Timer BroadcastTimer = new System.Timers.Timer();
         private CanSend canSend = CanSend.Rejected;
-        private static Socket _sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        private static readonly Socket Sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         private static readonly byte[] Buffer = new byte[256];
         internal CanSend CanSend
         {
@@ -51,15 +51,15 @@ namespace Ass_Pain.BackEnd.Network
         }
         private IPAddress myBroadcastIp;
         internal const int BroadcastPort = 8008;
-        internal const int P2PPort = 8009;
+        private const int P2PPort = 8009;
         internal const int RsaDataSize = 256;
         internal string CurrentSsid = string.Empty;
 
         public NetworkManagerCommon()
         {
             
-            _sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-            _sock.ReceiveTimeout = 2000;
+            Sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
+            Sock.ReceiveTimeout = 2000;
             if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
                 return;
             }
@@ -92,8 +92,9 @@ namespace Ass_Pain.BackEnd.Network
             }
         }
 
-        internal static bool P2PDecide(IPAddress ipAddress)
+        internal static bool P2PDecide(IPAddress ipAddress, List<Song>? songsToSend = null)
         {
+            songsToSend ??= new List<Song>();
 #if DEBUG
             MyConsole.WriteLine($"New P2P from {ipAddress}");
 #endif
@@ -109,8 +110,7 @@ namespace Ass_Pain.BackEnd.Network
             Thread.Sleep(1000);
             while (true)
             {
-                //int state = new Random().Next(0, 2);
-                int state = 1;
+                int state = new Random().Next(0, 2);
                 sock.SendTo(BitConverter.GetBytes(state), endPoint);
 #if DEBUG
                 MyConsole.WriteLine($"sending {state} to {((IPEndPoint)endPoint).Address}");
@@ -151,7 +151,7 @@ namespace Ass_Pain.BackEnd.Network
                     try
                     {
                         sock.Dispose();
-                        NetworkManagerServer.Server(server, ipAddress);
+                        NetworkManagerServer.Server(server, ipAddress, songsToSend);
                     }
                     catch (Exception e)
                     {
@@ -171,7 +171,7 @@ namespace Ass_Pain.BackEnd.Network
                 try
                 {
                     sock.Dispose();
-                    NetworkManagerClient.Client(((IPEndPoint)endPoint).Address, sendPort);
+                    NetworkManagerClient.Client(((IPEndPoint)endPoint).Address, sendPort, songsToSend);
                 }
                 catch (Exception e)
                 {
@@ -205,7 +205,7 @@ namespace Ass_Pain.BackEnd.Network
             return (pubKey, privKey);
         }
         
-        internal async void SendBroadcast()
+        internal void SendBroadcast(List<Song>? songsToSend = null)
         {
             switch (CanSend)
             {
@@ -220,14 +220,14 @@ namespace Ass_Pain.BackEnd.Network
                     bool processedAtLestOne = false;
                     do
                     {
-                        _sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
+                        Sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
                         retries++;
                         try
                         {
                             while (true)
                             {
                                 EndPoint groupEp = iep;
-                                _sock.ReceiveFrom(Buffer, ref groupEp);
+                                Sock.ReceiveFrom(Buffer, ref groupEp);
                                 IPAddress targetIp = ((IPEndPoint)groupEp).Address;
                                 string remoteHostname = Encoding.UTF8.GetString(Buffer).TrimEnd('\0');
 #if DEBUG
@@ -238,6 +238,7 @@ namespace Ass_Pain.BackEnd.Network
                                 MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, remoteHostname));
                                 processedAtLestOne = true;
                                 //TODO: add to available targets. Don't connect directly, check if sync is allowed.
+                                //TODO: doesn't work with one time sends....
                                 //TODO: here
                                 if (!FileManager.IsTrustedSyncTarget(remoteHostname))
                                 {
@@ -249,7 +250,7 @@ namespace Ass_Pain.BackEnd.Network
                                 Connected.Add(targetIp);
                                 new Thread(() =>
                                 {
-                                    if (!P2PDecide(targetIp))
+                                    if (!P2PDecide(targetIp, songsToSend))
                                     {
                                         Connected.Remove(targetIp);
                                     }
@@ -284,7 +285,7 @@ namespace Ass_Pain.BackEnd.Network
             }
         }
 
-        internal bool GetConnectionInfo(IPAddress ip = null)
+        internal bool GetConnectionInfo(IPAddress? ip = null)
         {
             if (ip != null)
             {
@@ -357,9 +358,9 @@ namespace Ass_Pain.BackEnd.Network
             CanSend = CanSend.Rejected;
         }
 
-        internal static async Task<(string storedPrivKey, string storedPubKey)> LoadKeys(string remoteHostname)
+        internal static async Task<(string? storedPrivKey, string? storedPubKey)> LoadKeys(string remoteHostname)
         {
-            string storedPubKey, storedPrivKey;
+            string? storedPubKey, storedPrivKey;
             try
             {
                 storedPrivKey = await SecureStorage.GetAsync($"{remoteHostname}_privkey");

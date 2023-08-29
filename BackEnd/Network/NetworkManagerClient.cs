@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using Android.App;
 using Java.Lang;
 using Newtonsoft.Json;
 using Xamarin.Essentials;
@@ -18,7 +17,7 @@ namespace Ass_Pain.BackEnd.Network
 {
     internal static class NetworkManagerClient
     {
-        internal static async void Client(IPAddress server, int port)
+        internal static async void Client(IPAddress server, int port, List<Song> songsToSend)
         {
 #if DEBUG
             MyConsole.WriteLine($"Connecting to: {server}:{port}");
@@ -30,15 +29,13 @@ namespace Ass_Pain.BackEnd.Network
             SongSendRequestState songSendRequestState = SongSendRequestState.None;
             bool ending = false;
             string remoteHostname = string.Empty;
-            bool canSend = false;
+            bool? isTrustedSyncTarget = null;
+            List<Song> syncSongs = new List<Song>();
 
             RSACryptoServiceProvider encryptor = new RSACryptoServiceProvider();
             RSACryptoServiceProvider decryptor = new RSACryptoServiceProvider();
             Aes aes = Aes.Create();
             aes.KeySize = 256;
-
-            List<string> files = new List<string>();
-            //List<string> sent = new List<string>();
             
             networkStream.WriteCommand(CommandsArr.Host, Encoding.UTF8.GetBytes(DeviceInfo.Name));
 
@@ -47,7 +44,8 @@ namespace Ass_Pain.BackEnd.Network
             {
 
                 CommandsEnum command;
-                byte[] data = null;
+                byte[]? data = null;
+                long? length = null;
 
                 #region Reading
 
@@ -91,8 +89,7 @@ namespace Ass_Pain.BackEnd.Network
                         case EncryptionState.AesReceived:
                             throw new IllegalStateException("Client doesn't receive aes confirmation");
                         case EncryptionState.Encrypted:
-                            byte[] iv;
-                            long? length;
+                            byte[]? iv;
                             (command, data, iv, length) = networkStream.ReadCommand(ref decryptor);
                             if (Commands.IsLong(command))
                             {
@@ -101,7 +98,10 @@ namespace Ass_Pain.BackEnd.Network
                                     throw new IllegalStateException("Received empty IV or length on long data");
                                 }
                                 aes.IV = iv;
-                                data = networkStream.ReadEncrypted(ref aes, (long)length);
+                                if (!Commands.IsFileCommand(command))
+                                {
+                                    data = networkStream.ReadEncrypted(ref aes, (long)length);
+                                }
                             }
                             break;
                         default:
@@ -131,6 +131,64 @@ namespace Ass_Pain.BackEnd.Network
                         networkStream.WriteCommand(CommandsArr.End);
                     }
                 }
+                else if (encryptionState == EncryptionState.Encrypted)
+                {
+                    switch (songsToSend.Count)
+                    {
+                        case > 0 when songSendRequestState == SongSendRequestState.None:
+                            networkStream.WriteCommand(CommandsArr.SongRequest, ref encryptor);
+                            songSendRequestState = SongSendRequestState.Sent;
+                            break;
+                        case > 0 when songSendRequestState == SongSendRequestState.Accepted:
+                            networkStream.WriteFile(songsToSend[0].Path, ref encryptor, ref aes);
+                            songsToSend.Pop();
+                            break;
+                        default:
+                        {
+                            if(isTrustedSyncTarget == null)
+                            {
+                                isTrustedSyncTarget = FileManager.IsTrustedSyncTarget(remoteHostname);
+#if DEBUG
+                                MyConsole.WriteLine($"Is trusted sync target? {isTrustedSyncTarget}");                                                                    
+#endif
+                                if ((bool)isTrustedSyncTarget)
+                                {
+                                    syncSongs = FileManager.GetTrustedSyncTargetSongs(remoteHostname).GetRange(0, 1);
+                                }
+                            }
+                            switch (syncSongs.Count)
+                            {
+                                case > 0 when syncRequestState == SyncRequestState.None:
+                                    networkStream.WriteCommand(CommandsArr.SyncRequest, ref encryptor);
+                                    syncRequestState = SyncRequestState.Sent;
+                                    break;
+                                case > 0 when syncRequestState == SyncRequestState.Accepted:
+#if DEBUG
+                                    MyConsole.WriteLine(syncSongs[0].ToString());
+#endif
+                                    networkStream.WriteFile(syncSongs[0].Path, ref encryptor, ref aes);
+                                    syncSongs.Pop();
+                                    //TODO: remove from FileManager.GetTrustedSyncTargetSongs
+                                    break;
+                                default:
+                                    if (!ending)
+                                    {
+                                        ending =
+                                        (songsToSend.Count == 0 || 
+                                         (songsToSend.Count > 0 && songSendRequestState == SongSendRequestState.Rejected))
+                                        &&
+                                        (syncSongs.Count == 0 || 
+                                         (syncSongs.Count > 0 && syncRequestState == SyncRequestState.Rejected));
+#if DEBUG
+                                        MyConsole.WriteLine($"isEnding? {ending}");                               
+#endif
+                                    }
+                                    break;
+                            }
+                            break;
+                        }
+                    }
+                }
 
                 #endregion
                 
@@ -143,7 +201,7 @@ namespace Ass_Pain.BackEnd.Network
 #endif
                         //SecureStorage.RemoveAll();
                         
-                        (string storedPrivKey, string storedPubKey) = await NetworkManagerCommon.LoadKeys(remoteHostname);
+                        (string? storedPrivKey, string? storedPubKey) = await NetworkManagerCommon.LoadKeys(remoteHostname);
                         
                         if (storedPrivKey == null || storedPubKey == null)
                         {
@@ -161,33 +219,18 @@ namespace Ass_Pain.BackEnd.Network
                             decryptor.FromXmlString(storedPrivKey);
                             encryptionState = EncryptionState.AesSend;
                         }
-                        
-                        //TODO: here
-                        /*(bool exists, List<string> songs) = FileManager.GetSyncSongs(remoteHostname);
-                        if (exists)
-                        {
-                            if(songs.Count > 0)
-                            {
-                                files = songs;
-                            }
-                            else
-                            {
-                                ending = true;
-                            }
-                        }
-                        else
-                        {
-                            ending = true;
-                        }*/
                         break;
                     case CommandsEnum.RsaExchange:
-                        string remotePubKeyString = Encoding.UTF8.GetString(data);
-                        encryptor.FromXmlString(remotePubKeyString);
+                        if (data != null)
+                        {
+                            string remotePubKeyString = Encoding.UTF8.GetString(data);
+                            encryptor.FromXmlString(remotePubKeyString);
 
-                        //store private and public key for later use
-                        _ = SecureStorage.SetAsync($"{remoteHostname}_privkey", decryptor.ToXmlString(true));
-                        _ = SecureStorage.SetAsync($"{remoteHostname}_pubkey", remotePubKeyString);
-                        encryptionState = EncryptionState.AesSend;
+                            //store private and public key for later use
+                            _ = SecureStorage.SetAsync($"{remoteHostname}_privkey", decryptor.ToXmlString(true));
+                            _ = SecureStorage.SetAsync($"{remoteHostname}_pubkey", remotePubKeyString);
+                            encryptionState = EncryptionState.AesSend;
+                        }
                         break;
                     case CommandsEnum.AesSend:
                         aes.Key = data;
@@ -196,8 +239,6 @@ namespace Ass_Pain.BackEnd.Network
 #if DEBUG
                         MyConsole.WriteLine("encrypted");
 #endif
-                        //TODO: here
-                        ending = true;
                         break;
                     case CommandsEnum.AesReceived:
                         throw new IllegalStateException("Client doesn't receive aes confirmation");
@@ -212,10 +253,10 @@ namespace Ass_Pain.BackEnd.Network
                         }
                         break;
                     case CommandsEnum.SyncAccepted:
-                        canSend = true;
+                        syncRequestState = SyncRequestState.Accepted;
                         break;
                     case CommandsEnum.SyncRejected:
-                        ending = true;
+                        syncRequestState = SyncRequestState.Rejected;
                         break;
                     case CommandsEnum.SongRequest:
                         break;
@@ -223,52 +264,96 @@ namespace Ass_Pain.BackEnd.Network
                         //TODO: copy from server
                         break;
                     case CommandsEnum.SongRequestInfo:
-                        string json = Encoding.UTF8.GetString(data);
+                        if (data != null)
+                        {
+                            string json = Encoding.UTF8.GetString(data);
 #if DEBUG
-                        MyConsole.WriteLine(json);
+                            MyConsole.WriteLine(json);
 #endif
-                        SongJsonConverter customConverter = new SongJsonConverter(false);
-                        List<Song> recSongs = JsonConvert.DeserializeObject<List<Song>>(json, customConverter);
+                            SongJsonConverter customConverter = new SongJsonConverter(false);
+                            List<Song>? recSongs = JsonConvert.DeserializeObject<List<Song>>(json, customConverter);
 #if DEBUG
-                        foreach(Song s in recSongs)
-                        {
-                            MyConsole.WriteLine(s.ToString());
-                        }
+                            if (recSongs != null)
+                            {
+                                foreach (Song s in recSongs)
+                                {
+                                    MyConsole.WriteLine(s.ToString());
+                                }
+                                bool x = true;
+                                if (x) //present some form of user check if they really want to receive files
+                                {
+                                    //TODO: Stupid! Need to ask before syncing
+                                    networkStream.WriteCommand(CommandsArr.SongRequestAccepted, ref encryptor);
+                                }
+                                else
+                                {
+                                    networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
+                                }
+                            }
+                            else
+                            {
+                                networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
+                            }
 #endif
-                        if (true) //present some form of user check if they really want to receive files
-                        {
-                            //TODO: Stupid! Need to ask before syncing
-                            networkStream.WriteCommand(CommandsArr.SongRequestAccepted, ref encryptor);
-                        }
-                        else
-                        {
-                            networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
                         }
                         break;
                     case CommandsEnum.SongRequestAccepted:
+                        songSendRequestState = SongSendRequestState.Accepted;
                         break;
                     case CommandsEnum.SongRequestRejected:
+                        songSendRequestState = SongSendRequestState.Rejected;
                         break;
                     case CommandsEnum.SongSend: //file
-                        int i = FileManager.GetAvailableFile("receive");
-                        string path = $"{FileManager.PrivatePath}/tmp/receive{i}.mp3";
-
-                        networkStream.ReadFile(path, ref decryptor, ref aes);
-                        
-                        //TODO: move to song object
-                        FileManager.AddSong(path, true);
+                        if (length != null)
+                        {
+                            int i = FileManager.GetAvailableFile("receive");
+                            string path = $"{FileManager.PrivatePath}/tmp/receive{i}.mp3";
+                            networkStream.ReadFile(path, (long)length, ref aes);
+                            (List<string> missingArtists, string missingAlbum) = FileManager.AddSong(path, true);
+                            foreach (string name in missingArtists)
+                            {
+                                networkStream.WriteCommand(CommandsArr.ArtistImageRequest, Encoding.UTF8.GetBytes(name), ref encryptor);
+                            }
+                            if (!string.IsNullOrEmpty(missingAlbum))
+                            {
+                                networkStream.WriteCommand(CommandsArr.AlbumImageRequest, Encoding.UTF8.GetBytes(missingAlbum), ref encryptor);
+                            }
+                        }
                         break;
-                    case CommandsEnum.ImageSend:
+                    case CommandsEnum.ArtistImageSend:
+                        break;
+                    case CommandsEnum.AlbumImageSend:
                         break;
                     case CommandsEnum.ArtistImageRequest:
+                        if (data != null)
+                        {
+                            string artistName = Encoding.UTF8.GetString(data);
+                            List<Artist> artists = MainActivity.stateHandler.Artists.Search(artistName);
+                            foreach (Artist artist in artists.Where(artist => artist.ImgPath != "Default"))
+                            {
+                                networkStream.WriteFile(artist.ImgPath, ref encryptor, ref aes, Encoding.UTF8.GetBytes(artists[0].Title));
+                                break;
+                            }
+                        }
                         break;
                     case CommandsEnum.AlbumImageRequest:
+                        if (data != null)
+                        {
+                            string albumName = Encoding.UTF8.GetString(data);
+                            List<Album> albums = MainActivity.stateHandler.Albums.Search(albumName);
+                            foreach (Album album in albums.Where(album => album.ImgPath != "Default"))
+                            {
+                                networkStream.WriteFile(album.ImgPath, ref encryptor, ref aes, Encoding.UTF8.GetBytes(albums[0].Title));
+                                break;
+                            }
+                        }
                         break;
                     case CommandsEnum.End: //end
 #if DEBUG
                         MyConsole.WriteLine("got end");
 #endif
-                        if (files.Count > 0)//if work to do
+                        //TODO: revert back to !ending
+                        if (true)//if work to do
                         {
 #if DEBUG
                             MyConsole.WriteLine("Still work to do");

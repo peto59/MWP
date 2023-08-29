@@ -18,7 +18,6 @@ namespace Ass_Pain.BackEnd.Network
     /// </summary>
     public static class NetworkManager
     {
-        //gpg test
         internal static readonly NetworkManagerCommon Common = new NetworkManagerCommon();
         /// <summary>
         /// Interval between broadcasts
@@ -72,8 +71,8 @@ namespace Ass_Pain.BackEnd.Network
                                 {
 #if DEBUG
                                     MyConsole.WriteLine("Waiting for broadcast");
-                                    EndPoint groupEp = iep;
 #endif
+                                    EndPoint groupEp = iep;
                                     sock.ReceiveFrom(buffer, ref groupEp);
                                     if (Common.CanSend != CanSend.Allowed) continue;
 
@@ -96,6 +95,7 @@ namespace Ass_Pain.BackEnd.Network
                                     
 
                                     //TODO: add to available targets. Don't connect directly, check if sync is allowed.
+                                    //TODO: doesn't work with one time sends....
                                     if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                     
                                     NetworkManagerCommon.Connected.Add(targetIp);

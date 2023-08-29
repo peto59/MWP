@@ -21,6 +21,7 @@ using Android.Media;
 using System.Text;
 using Android.Provider;
 using AndroidX.Core.Content;
+using Ass_Pain.BackEnd;
 using Ass_Pain.BackEnd.Network;
 using Octokit;
 using Xamarin.Essentials;
@@ -294,7 +295,7 @@ namespace Ass_Pain
                 Directory.CreateDirectory($"{FileManager.PrivatePath}/tmp");
             }
             
-            File.Delete($"{FileManager.PrivatePath}/trusted_sync_targets.json");
+            //File.Delete($"{FileManager.PrivatePath}/trusted_sync_targets.json");
             if (!File.Exists($"{FileManager.PrivatePath}/trusted_sync_targets.json"))
             {
                 File.WriteAllText($"{FileManager.PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
@@ -335,6 +336,9 @@ namespace Ass_Pain
                 }
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
                 RunOnUiThread(() => side_player.populate_side_bar(this));
+#if DEBUG
+                MyConsole.WriteLine($"Songs count {stateHandler.Songs.Count}");       
+#endif
                 
                 //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
                 //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();

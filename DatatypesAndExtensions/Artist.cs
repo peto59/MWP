@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using Android.App;
+using Ass_Pain.BackEnd;
 using Newtonsoft.Json;
 #if DEBUG
 using Ass_Pain.Helpers;
@@ -209,6 +210,15 @@ namespace Ass_Pain
             Initialized = false;
         }
 
+        public Artist(Artist artist, string imgPath)
+        {
+            Title = artist.Title;
+            Songs = artist.Songs;
+            Albums = artist.Albums;
+            ImgPath = imgPath;
+        }
+
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             return obj is Artist item && Equals(item);
@@ -220,11 +230,13 @@ namespace Ass_Pain
             return Title == other.Title && Equals(Songs, other.Songs) && Equals(Albums, other.Albums) && Equals(ImgPath, other.ImgPath);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return HashCode.Combine(Title, Songs, Albums, ImgPath);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Artist: title> {Title} song> {Song.Title} album> {Album.Title}";

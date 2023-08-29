@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Ass_Pain.BackEnd;
 using Com.Geecko.Fpcalc;
 using Newtonsoft.Json;
 using YoutubeExplode;
@@ -187,7 +188,7 @@ namespace Ass_Pain
                     {
                         if (thumbnail != null)
                         {
-                            string imgExtenstion = GetImageFormat(thumbnail);
+                            string imgExtenstion = FileManager.GetImageFormat(thumbnail);
                             File.Create($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{imgExtenstion}").Close();
                             _ = File.WriteAllBytesAsync($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{imgExtenstion}", thumbnail);
                         }
@@ -330,7 +331,7 @@ namespace Ass_Pain
             WebClient cli = new WebClient();
             byte[] bytes = cli.DownloadData(thumbnailUrl);
             cli.Dispose();
-            string extension = GetImageFormat(bytes);
+            string extension = FileManager.GetImageFormat(bytes);
             if (extension == ".jpg")
             {
                 File.WriteAllBytes($"{thumbnailPath}/{fileName}.jpg", bytes);
@@ -341,18 +342,6 @@ namespace Ass_Pain
             File.WriteAllBytes($"{thumbnailPath}/{fileName}.png", bytes);
             File.Delete($"{thumbnailPath}/{fileName}.jpg");
             return ".png";
-        }
-
-        public static string GetImageFormat(byte[] image)
-        {
-            byte[] png = { 137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82 };
-            byte[] jpg = { 255, 216, 255 };
-            if (image.Take(3).SequenceEqual(jpg))
-            {
-                return ".jpg";
-            }
-
-            return !image.Take(16).SequenceEqual(png) ? ".idk" : ".png";
         }
 
         private static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[] thumbnail)> GetMusicBrainzIdFromFingerprint(string filePath, string originalAuthor, string originalTitle)

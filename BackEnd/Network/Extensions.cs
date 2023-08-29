@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,8 +6,10 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
-using System.Xml.Serialization;
 using Newtonsoft.Json;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain.BackEnd.Network
 {
@@ -20,15 +21,43 @@ namespace Ass_Pain.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="length">number of <see cref="byte"/>s to read from <paramref name="stream"/></param>
         /// <returns> <see cref="T:byte[]" /> of specified <paramref name="length"/></returns>
-        private static byte[] SafeRead(this Stream stream, int length)
+        private static byte[] SafeRead(this NetworkStream stream, int length)
         {
             byte[] data = new byte[length];
             int offset = 0;
             while (length > 0)
             {
-                offset += stream.Read(data, offset, length);
-                length -= offset;
-                Thread.Sleep(10);
+                while (!stream.DataAvailable)
+                {
+                    Thread.Sleep(10);
+                }
+                int read = stream.Read(data, offset, length);
+                length -= read;
+                offset += read;
+            }
+            return data;
+        }
+        
+        /// <summary>
+        /// Ensures correct number of <see cref="byte"/>s is read and waits for more if not
+        /// </summary>
+        /// <param name="stream">stream to read from</param>
+        /// <param name="length">number of <see cref="byte"/>s to read from <paramref name="stream"/></param>
+        /// <param name="networkStream">stream from which crypto stream reads</param>
+        /// <returns> <see cref="T:byte[]" /> of specified <paramref name="length"/></returns>
+        private static byte[] SafeRead(this CryptoStream stream, int length, ref NetworkStream networkStream)
+        {
+            byte[] data = new byte[length];
+            int offset = 0;
+            while (length > 0)
+            {
+                while (!networkStream.DataAvailable)
+                {
+                    Thread.Sleep(10);
+                }
+                int read = stream.Read(data, offset, length);
+                length -= read;
+                offset += read;
             }
 
             return data;
@@ -40,7 +69,7 @@ namespace Ass_Pain.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="length">number of <see cref="byte"/>s to read from <paramref name="stream"/></param>
         /// <returns> <see cref="T:byte[]" /> of specified <paramref name="length"/></returns>
-        private static byte[] SafeRead(this Stream stream, long length)
+        private static byte[] SafeRead(this NetworkStream stream, long length)
         {
             byte[] retArr = new byte[length];
             long totalRead = 0;
@@ -52,48 +81,6 @@ namespace Ass_Pain.BackEnd.Network
                 totalRead = +readThisCycle;
             }
 
-            return retArr;
-        }
-
-        [Obsolete]
-        internal static byte[] SafeReadObsolete(this Stream stream, long length)
-        {
-            byte[] retArr = new byte[length];
-            uint arrLength = (uint)Math.Ceiling((double)length / int.MaxValue);
-            byte[][] tmp = new byte[arrLength][];
-            long readLength = length;
-            bool shouldIncrement = false;
-            uint index = 0;
-            int lastArrLength = 0;
-            while (readLength > 0)
-            {
-                int readThisCycle;
-                if (readLength > int.MaxValue)
-                {
-                    if (shouldIncrement)
-                    {
-                        index++;
-                    }
-
-                    readThisCycle = int.MaxValue;
-                    shouldIncrement = true;
-                }
-                else
-                {
-                    readThisCycle = Convert.ToInt32(readLength);
-                    lastArrLength = readThisCycle;
-                }
-
-                tmp[index] = stream.SafeRead(readThisCycle);
-                readLength -= readThisCycle;
-            }
-
-            for (int i = 0; i < arrLength - 1; i++)
-            {
-                Array.Copy(tmp[index], 0, retArr, i * (long)int.MaxValue, int.MaxValue);
-            }
-
-            Array.Copy(tmp[arrLength - 1], 0, retArr, arrLength - 1 * (long)int.MaxValue, lastArrLength);
             return retArr;
         }
 
@@ -126,7 +113,11 @@ namespace Ass_Pain.BackEnd.Network
                 byte[] iv = new byte[16];
                 Array.Copy(restOfData, iv, 16);
                 long longLength = BitConverter.ToInt64(restOfData, 16);
-                return (command, null, iv, longLength);
+                if (restOfData.Length <= 24) // 16 for iv, 8 for int64
+                    return (command, null, iv, longLength);
+                byte[] buffer = new byte[restOfData.Length - 24]; // 16 for iv, 8 for int64
+                Array.Copy(restOfData, 24, buffer, 0, buffer.Length);
+                return (command, buffer, iv, longLength);
             }
 
             int length = BitConverter.ToInt32(restOfData);
@@ -152,115 +143,6 @@ namespace Ass_Pain.BackEnd.Network
             long readLength = BitConverter.ToInt64(arr, 17);
             Array.Copy(arr, 1, aes.IV, 0, 16);
             return (command, stream.ReadEncrypted(ref aes, readLength));
-        }
-
-        [Obsolete]
-        internal static (byte command, long length, byte[] retArr) ReadCommandSemiObsolete(this NetworkStream stream,
-            ref RSACryptoServiceProvider decryptor, ref Aes aes)
-        {
-            const int len = 1 + 16 + 8; //command(1), aes IV (16), encrypted data length as long(8)
-            byte[] arr = stream.SafeRead(len);
-            arr = decryptor.Decrypt(arr, true);
-            byte command = arr[0];
-            long length = BitConverter.ToInt64(arr, 17);
-            byte[] retArr = new byte[length];
-            Array.Copy(arr, 1, aes.IV, 0, 16);
-
-            uint arrLength = (uint)Math.Ceiling((double)length / int.MaxValue);
-            byte[][] tmp = new byte[arrLength][];
-            using CryptoStream csDecrypt = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Read, true);
-            long readLength = length;
-            bool shouldIncrement = false;
-            uint index = 0;
-            int lastArrLength = 0;
-            while (readLength > 0)
-            {
-                int readThisCycle;
-                if (readLength > int.MaxValue)
-                {
-                    if (shouldIncrement)
-                    {
-                        index++;
-                    }
-
-                    readThisCycle = int.MaxValue;
-                    shouldIncrement = true;
-                }
-                else
-                {
-                    readThisCycle = Convert.ToInt32(readLength);
-                    lastArrLength = readThisCycle;
-                }
-
-                tmp[index] = csDecrypt.SafeRead(readThisCycle);
-                readLength -= readThisCycle;
-            }
-
-            for (int i = 0; i < arrLength - 1; i++)
-            {
-                Array.Copy(tmp[index], 0, retArr, i * (long)int.MaxValue, int.MaxValue);
-            }
-
-            Array.Copy(tmp[arrLength - 1], 0, retArr, arrLength - 1 * (long)int.MaxValue, lastArrLength);
-            return (command, length, retArr);
-        }
-
-        [Obsolete]
-        internal static (byte command, long length, byte[] retArr) ReadCommandObsolete(this NetworkStream stream,
-            ref RSACryptoServiceProvider decryptor, ref Aes aes)
-        {
-            const int len = 1 + 16 + 8; //command(1), aes IV (16), encrypted data length as long(8)
-            byte[] arr = stream.SafeRead(len);
-            arr = decryptor.Decrypt(arr, true);
-            byte command = arr[0];
-            long length = BitConverter.ToInt64(arr, 17);
-            byte[] retArr = new byte[length];
-            Array.Copy(arr, 1, aes.IV, 0, 16);
-
-            while (!stream.DataAvailable)
-            {
-                Thread.Sleep(10);
-            }
-
-            arr = stream.SafeRead(length);
-            uint arrLength = (uint)Math.Ceiling((double)length / int.MaxValue);
-            byte[][] tmp = new byte[arrLength][];
-            using MemoryStream msDecrypt = new MemoryStream(arr);
-            using CryptoStream csDecrypt = new CryptoStream(msDecrypt, aes.CreateDecryptor(), CryptoStreamMode.Read, true);
-            long readLength = length;
-            bool shouldIncrement = false;
-            uint index = 0;
-            int lastArrLength = 0;
-            while (readLength > 0)
-            {
-                int readThisCycle;
-                if (readLength > int.MaxValue)
-                {
-                    if (shouldIncrement)
-                    {
-                        index++;
-                    }
-
-                    readThisCycle = int.MaxValue;
-                    shouldIncrement = true;
-                }
-                else
-                {
-                    readThisCycle = Convert.ToInt32(readLength);
-                    lastArrLength = readThisCycle;
-                }
-
-                tmp[index] = csDecrypt.SafeRead(readThisCycle);
-                readLength -= readThisCycle;
-            }
-
-            for (int i = 0; i < arrLength - 1; i++)
-            {
-                Array.Copy(tmp[index], 0, retArr, i * (long)int.MaxValue, int.MaxValue);
-            }
-
-            Array.Copy(tmp[arrLength - 1], 0, retArr, arrLength - 1 * (long)int.MaxValue, lastArrLength);
-            return (command, length, retArr);
         }
         
         /// <summary>
@@ -355,7 +237,7 @@ namespace Ass_Pain.BackEnd.Network
         /// <param name="aes">aes to decrypt with</param>
         /// <param name="readLength">number of bytes to read</param>
         /// <returns>decrypted <see cref="T:byte[]" /></returns>
-        internal static byte[] ReadEncrypted(this Stream stream, ref Aes aes, long readLength)
+        internal static byte[] ReadEncrypted(this NetworkStream stream, ref Aes aes, long readLength)
         {
             byte[] retArr = new byte[readLength];
             long totalRead = 0;
@@ -406,6 +288,37 @@ namespace Ass_Pain.BackEnd.Network
                 readLength -= readThisCycle;
             }
             csDecrypt.Dispose();
+        }
+        
+        /// <summary>
+        /// Reads encrypted <see cref="File" /> from stream to <see cref="File" /> specified at <see cref="Path" /> (this file <see cref="File" /> be created/overwritten)
+        /// </summary>
+        /// <param name="stream">stream to read from</param>
+        /// <param name="path">path to write to</param>
+        /// <param name="length">length of encrypted data</param>
+        /// <param name="aes">aes decryptor to be used</param>
+        internal static void ReadFile(this NetworkStream stream, string path, long length,
+            ref Aes aes)
+        {
+            if(length > 4000000000){
+                throw new Exception("You can't receive files larger than 4GB on Android");
+            }
+            using FileStream fileStream = new FileStream(path, FileMode.Create);
+
+            CryptoStream csDecrypt = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Read, true);
+            while (length > 0)
+            {
+                int readThisCycle = length > 8096 ? 8096 : Convert.ToInt32(length);
+#if DEBUG
+                Console.WriteLine($"remaining length: {length}");
+                Console.WriteLine($"read this cycle: {readThisCycle}");
+#endif
+                byte[] buffer = csDecrypt.SafeRead(readThisCycle, ref stream);
+                fileStream.Write(buffer);
+                length -= readThisCycle;
+            }
+            csDecrypt.Dispose();
+            fileStream.Dispose();
         }
     }
 
@@ -617,7 +530,7 @@ namespace Ass_Pain.BackEnd.Network
                 stream.Write(toBeWritten, 0, writeThisCycle);
             }
         }
-        
+
         /// <summary>
         /// Encrypts and writes <see cref="File" /> to <paramref name="stream"/>
         /// </summary>
@@ -625,26 +538,57 @@ namespace Ass_Pain.BackEnd.Network
         /// <param name="path">path to <see cref="File" /> that's to be written to <paramref name="stream"/></param>
         /// <param name="encryptor">rsa encryptor to be used</param>
         /// <param name="aes">aes encryptor to be used</param>
-        /// <param name="writeCommand">whether <see cref="File" /> <see cref="CommandsEnum" /> should be written</param>
+        /// <param name="command">command to write, default is <see cref="CommandsEnum.SongSend" /></param>
+        /// <param name="data">optional extra data to be written</param>
         internal static void WriteFile(this NetworkStream stream, string path,
-            ref RSACryptoServiceProvider encryptor, ref Aes aes, bool writeCommand = false)
+            ref RSACryptoServiceProvider encryptor, ref Aes aes, byte[]? command = null, byte[]? data = null)
         {
-            const int lenWithCommand = 1 + 16 + 8; //command(1), aes IV (16), encrypted data length as long(8)
-            const int lenWithOutCommand =  16 + 8; //aes IV (16), encrypted data length as long(8)
-            FileInfo fi = new FileInfo(path);
-            long encryptedDataLength = fi.Length + (16 - fi.Length % 16);
-            byte[] rv = new byte[writeCommand ? lenWithCommand : lenWithOutCommand];
-            aes.GenerateIV();
-
-            if (writeCommand)
+            int len = 1 + 16 + 8 + (data?.Length ?? 0); //command(1), aes IV (16), encrypted data length as long(8)
+            if (len > 190 )
             {
-                Buffer.BlockCopy(path.EndsWith(".mp3") ? CommandsArr.SongSend : CommandsArr.ImageSend, 0, rv, 0, 1);
+                //TODO: send extra data as long?
+                throw new InvalidDataException("Data cannot exceed 190 bytes");
             }
-            Buffer.BlockCopy(aes.IV, 0, rv, writeCommand ? 1 : 0, 16);
-            Buffer.BlockCopy(BitConverter.GetBytes(encryptedDataLength), 0, rv, writeCommand ? 17 : 16, 8);
+            FileInfo fi = new FileInfo(path);
+            //long encryptedDataLength = fi.Length + (16 - fi.Length % 16);
+            long encryptedDataLength = fi.Length + 16 - (fi.Length % 16);
+            //long encryptedDataLength = fi.Length;
+            byte[] rv = new byte[len];
+            aes.GenerateIV();
+            
+            Buffer.BlockCopy(command ?? CommandsArr.SongSend, 0, rv, 0, 1);
+            Buffer.BlockCopy(aes.IV, 0, rv, 1, 16);
+            Buffer.BlockCopy(BitConverter.GetBytes(encryptedDataLength), 0, rv, 17, 8);
+#if DEBUG
+            MyConsole.WriteLine($"write length: {encryptedDataLength}");
+            MyConsole.WriteLine($"file length: {fi.Length}");
+#endif
+            if (data != null)
+            {
+                Buffer.BlockCopy(data, 0, rv, 25, data.Length);
+            }
+#if DEBUG
+            MyConsole.WriteLine($"rv {rv.Length}");
+#endif
             rv = encryptor.Encrypt(rv, true);
             stream.Write(rv, 0, rv.Length);
-            
+#if DEBUG
+            MyConsole.WriteLine($"encrypted rv {rv.Length}");
+#endif
+            /*MemoryStream ms = new MemoryStream();
+            CryptoStream csEncrypt = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+            using FileStream fs = fi.Open(FileMode.Open);
+            csEncrypt.WriteData(fs);
+            csEncrypt.Dispose();
+            fs.Dispose();
+            ms.CopyTo(stream);
+            byte[] enc = ms.ToArray();
+            ms.Dispose();
+            stream.Flush();*/
+            /*if (enc.Length != encryptedDataLength)
+            {
+                throw new Java.Lang.Exception("Invalid data size");
+            }*/
             CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
             using FileStream fs = fi.Open(FileMode.Open);
             csEncrypt.WriteData(fs);

@@ -34,6 +34,7 @@
     <IsLinux Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true' ">true</IsLinux>
     <!-- <IsLinuxOrWindows Condition=" '$(IsLinux)' == 'true' or '$(IsWindows)' == 'true' ">true</IsLinuxOrWindows> -->
     <IsGithubRunner>true</IsGithubRunner>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(RUNNER_OS)' == '' ">
     <!-- Property group specific to GitHub Actions runner -->

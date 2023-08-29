@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -34,7 +35,7 @@ namespace Ass_Pain.BackEnd.Network
             return (server, listenPort);
         }
         
-        internal static void Server(TcpListener server, IPAddress targetIp)
+        internal static void Server(TcpListener server, IPAddress targetIp, List<Song> songsToSend)
         {
             try
             {
