@@ -29,7 +29,11 @@ using Org.Apache.Http.Authentication;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using Android.Util;
+using Java.Lang;
 using Debug = System.Diagnostics.Debug;
+using Exception = System.Exception;
+using Math = System.Math;
+using Object = System.Object;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -49,9 +53,26 @@ namespace Ass_Pain
         (bool is_auth, string auth) inAuthor = (false, "");
 
         List<string> selectedPlaylists = new List<string>();
-
-        // Slovenska_prostituka player = MainActivity.player;
-
+    
+        
+        /*
+         * Fragments init
+         */
+        private SongsFragment songsFragment;
+        private SongsFragment PlaylistsFragment;
+        private AlbumAuthorFragment AlbumsFragment;
+        private AlbumFragment albumFragment;
+        private AuthorFragment authorFragment;
+        
+        
+        /*
+         * Enum which for album and/or author
+         */
+        public enum FragmentType
+        {
+            AlbumFrag,
+            Authorfrag
+        }
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -95,56 +116,108 @@ namespace Ass_Pain
             
 
             // -=-=-=-=-=
-            set_buttons_color(Resource.Id.author);
-            set_buttons_color(Resource.Id.all_songs);
-            set_buttons_color(Resource.Id.playlists);
-
             Button author = FindViewById<Button>(Resource.Id.author);
             Button allSongs = FindViewById<Button>(Resource.Id.all_songs);
             Button playlists = FindViewById<Button>(Resource.Id.playlists);
-
-            author.Click += (sender, e) =>
+            if (BlendMode.Multiply != null)
             {
-                populate_grid(0.0f);
-                inAuthor.is_auth = false;
-                inAuthor.auth = "";
-            };
-            allSongs.Click += (sender, e) =>
-            {
-                populate_grid(1.0f);
-                inAuthor.is_auth = false;
-                inAuthor.auth = "";
-
-            };
-            playlists.Click += (sender, e) =>
-            {
+                author?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+                allSongs?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+                playlists?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+                
+            }
+            
+            /*
+             * Fragment defining
+             */
+            songsFragment = new SongsFragment(this);
+            AlbumsFragment = new AlbumAuthorFragment(this);
+            albumFragment = new AlbumFragment(this);
+            authorFragment = new AuthorFragment(this);
+            
+            /*
+             * Button bar
+             */
+            int activeFragment = 0;
+            if (author != null)
+                author.Click += (sender, e) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (activeFragment == 0)
+                    {
+                        fragmentTransaction.Add(Resource.Id.FragmentLayoutDynamic, AlbumsFragment);
+                        activeFragment = 1;
+                    }
+                    else
+                        fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, AlbumsFragment);
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                };
+            if (allSongs != null)
+                allSongs.Click += (sender, e) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (activeFragment == 0)
+                    {
+                        fragmentTransaction.Add(Resource.Id.FragmentLayoutDynamic, songsFragment);
+                        activeFragment = 1;
+                    }
+                    else
+                        fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, songsFragment);
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                };
+            if (playlists != null)
+                playlists.Click += (sender, e) =>
+                {
+                    /*
                 populate_grid(2.0f);
                 inAuthor.is_auth = false;
                 inAuthor.auth = "";
-
-            };
-
+                */
+                };
 
             FloatingActionButton createPlaylist = FindViewById<FloatingActionButton>(Resource.Id.fab);
-            createPlaylist.Background.SetColorFilter(
-                Color.Rgb(255, 76, 41),
-                PorterDuff.Mode.Multiply
-            );
+            if (BlendMode.Multiply != null)
+                createPlaylist?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
 
-            createPlaylist.Click += new EventHandler(show_popup);
-
+            if (createPlaylist != null) createPlaylist.Click += new EventHandler(show_popup);
         }
 
-        public void set_buttons_color(int id)
+        /// <summary>
+        /// Function for replacing fragment from inside another fragment by calling ((AllSongs)this.Activity).ReplaceFragments()
+        /// </summary>
+        /// <param name="type">Type of fragment, by which current should be replaced</param>
+        /// <param name="title">title of either an album or artist</param>
+        public void ReplaceFragments(FragmentType type, string title)
         {
-            Button authors = FindViewById<Button>(id);
-            authors.Background.SetColorFilter(
-                Color.Rgb(255, 76, 41),
-                PorterDuff.Mode.Multiply
-            );
-            authors.SetTextColor(Color.Black);
+            var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+            Bundle bundle = new Bundle();
+            bundle.PutString("title", title);
+    
+            if (type is FragmentType.AlbumFrag)
+            {
+                albumFragment.Arguments = bundle;
+                fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, albumFragment);
+            }
+            else if (type is FragmentType.Authorfrag)
+            {
+                authorFragment.Arguments = bundle;
+                fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, authorFragment);
+            }
+            fragmentTransaction.AddToBackStack(null);
+            fragmentTransaction.Commit();
+            
         }
-
+        
         
         void song_tiles_image_set(LinearLayout parent, MusicBaseClass obj, float scale, int ww, int hh, int[] btnMargins, int nameSize, int[] nameMargins)
         {
@@ -285,14 +358,15 @@ namespace Ass_Pain
             {
                 
                 LinearLayout lnIn = pupulate_songs(MainActivity.stateHandler.Albums[i], scale, true, 130, 160, buttonMargins, nameMargins, cardMargins, 15, i);
-                Task.Run(async () =>
+                /*Task.Run(async () =>
                 {
-                    song_tiles_image_set(
-                        lnIn, MainActivity.stateHandler.Albums[i], scale, 150, 100,
-                        buttonMargins, 15,
-                        nameMargins
-                    );
-                });
+                    
+                });*/
+                song_tiles_image_set(
+                    lnIn, MainActivity.stateHandler.Albums[i], scale, 150, 100,
+                    buttonMargins, 15,
+                    nameMargins
+                );
 
                 //全部加える
                 lin.AddView(lnIn);
@@ -321,15 +395,12 @@ namespace Ass_Pain
             for (int i = 0; i < MainActivity.stateHandler.Artists.Count; i++)
             {
                 LinearLayout lnIn = pupulate_songs( MainActivity.stateHandler.Artists[i], scale, true, 130, 160, buttonMargins, nameMargins, cardMargins, 15, i);
-
-                Task.Run(async () =>
-                {
-                    song_tiles_image_set(
-                        lnIn, MainActivity.stateHandler.Artists[i], scale, 150, 100,
-                        buttonMargins, 17,
-                        nameMargins
-                    );
-                });
+                
+                song_tiles_image_set(
+                    lnIn, MainActivity.stateHandler.Artists[i], scale, 150, 100,
+                    buttonMargins, 17,
+                    nameMargins
+                );
                 //全部加える
                 lin.AddView(lnIn);
 
@@ -964,7 +1035,7 @@ namespace Ass_Pain
                         else
                             populate_grid(0.1f, artist.Albums.Select("Uncategorized")[0], false, (int)(50 * scale + 0.5f));
                         
-                    }
+                    } // dwdwdwdwd
                     
 
                     break;

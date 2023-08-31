@@ -98,6 +98,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
+    <Compile Include="AlbumAuthorFragment.cs" />
+    <Compile Include="AlbumFragment.cs" />
+    <Compile Include="AuthorFragment.cs" />
     <Compile Include="BackEnd\SettingsManager.cs" />
     <Compile Include="DatatypesAndExtensions\Album.cs" />
     <Compile Include="DatatypesAndExtensions\ChromaprintResult.cs" />
@@ -133,6 +136,8 @@
     <Compile Include="DatatypesAndExtensions\SongExtensions.cs" />
     <Compile Include="BackEnd\StateHandler.cs" />
     <Compile Include="BackEnd\TagManager.cs" />
+    <Compile Include="SongsFragment.cs" />
+    <Compile Include="UIRenderFunctions.cs" />
     <Compile Include="youtube.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -166,10 +171,13 @@
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\activity_share.xml" />
+    <AndroidResource Include="Resources\layout\album_author_fragment.xml" />
+    <AndroidResource Include="Resources\layout\album_fragment.xml" />
     <AndroidResource Include="Resources\layout\app_bar_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\app_bar_share.xml" />
+    <AndroidResource Include="Resources\layout\author_fragment.xml" />
     <AndroidResource Include="Resources\layout\content_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
@@ -178,6 +186,7 @@
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\share.xml" />
+    <AndroidResource Include="Resources\layout\songs_fragment.xml" />
     <AndroidResource Include="Resources\layout\song_download_selection_dialog.xml" />
     <AndroidResource Include="Resources\values\colors.xml" />
     <AndroidResource Include="Resources\values\dimens.xml" />
