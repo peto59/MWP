@@ -451,176 +451,204 @@ namespace Ass_Pain
 
         public static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[] thumbnail)> GetMusicBrainzIdFromFingerprint(string filePath, string originalAuthor, string originalTitle)
         {
-            ChromaprintResult chromaprintResult = JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new[] { "-json", $"{filePath}" }));
-            using HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync($"https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={(int)chromaprintResult.duration}&fingerprint={chromaprintResult.fingerprint}&meta=recordings+releasegroups+compress");
-            if (!response.IsSuccessStatusCode) return (string.Empty, string.Empty, string.Empty, new List<(string, string)>{(string.Empty, string.Empty)}, new List<(string, string)>{(string.Empty, string.Empty)}, null);
-            await using Stream stream = await response.Content.ReadAsStreamAsync();
-
-            XDocument xdoc = XDocument.Load(stream);
-            IEnumerable<(string title, string recordingId, string trackId, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id )> releaseGroups)> results = 
-                from result in xdoc.Descendants("result")
-                from recording in result.Descendants("recording")
-                select (
-                    recording.Elements("title").First().Value,  //    title 
-                    recording.Elements("id").First().Value,     //    recordingId
-                    result.Elements("id").First().Value,        //    trackId
-                    from artist in recording.Descendants("artist") select ( 
-                        artist.Elements("name").First().Value,
-                        artist.Elements("id").First().Value
-                    ),
-                    from releaseGroup in recording.Descendants("releasegroup") select ( 
-                        releaseGroup.Elements("title").First().Value,
-                        releaseGroup.Elements("id").First().Value
-                    )
-                );
-            
-            
-            MainActivity.stateHandler.FileEvent.WaitOne();
             (string originalTitle, string, string, List<(string, string)>, List<(string, string)>, byte[]) output = (originalTitle, string.Empty, string.Empty, new List<(string, string)>{(originalAuthor, string.Empty)}, new List<(string, string)>{(string.Empty, string.Empty)}, null);
-            IEnumerator<(string title, string recordingId, string trackId, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id)> releaseGroups)> rEnumerator;
             try
             {
-                rEnumerator = results.GetEnumerator();
-                rEnumerator.MoveNext();
+                ChromaprintResult chromaprintResult =
+                    JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new[]
+                        { "-json", $"{filePath}" }));
+                using HttpClient client = new HttpClient();
+                HttpResponseMessage response = await client.GetAsync(
+                    $"https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={(int)chromaprintResult.duration}&fingerprint={chromaprintResult.fingerprint}&meta=recordings+releasegroups+compress");
+                if (!response.IsSuccessStatusCode) return output;
+                await using Stream stream = await response.Content.ReadAsStreamAsync();
+
+                XDocument xdoc = XDocument.Load(stream);
+                IEnumerable<(string title, string recordingId, string trackId, IEnumerable<(string title, string id)>
+                    artists, IEnumerable<(string title, string id )> releaseGroups)> results =
+                    from result in xdoc.Descendants("result")
+                    from recording in result.Descendants("recording")
+                    select (
+                        recording.Elements("title").First().Value, //    title 
+                        recording.Elements("id").First().Value, //    recordingId
+                        result.Elements("id").First().Value, //    trackId
+                        from artist in recording.Descendants("artist")
+                        select (
+                            artist.Elements("name").First().Value,
+                            artist.Elements("id").First().Value
+                        ),
+                        from releaseGroup in recording.Descendants("releasegroup")
+                        select (
+                            releaseGroup.Elements("title").First().Value,
+                            releaseGroup.Elements("id").First().Value
+                        )
+                    );
+
+
+                MainActivity.stateHandler.FileEvent.WaitOne();
+                IEnumerator<(string title, string recordingId, string trackId, IEnumerable<(string title, string id)>
+                    artists, IEnumerable<(string title, string id)> releaseGroups)> rEnumerator;
+                try
+                {
+                    rEnumerator = results.GetEnumerator();
+                    rEnumerator.MoveNext();
+                }
+                catch (Exception e)
+                {
+#if DEBUG
+                    MyConsole.WriteLine(e.ToString());
+#endif
+                    MainActivity.stateHandler.FileEvent.Set();
+                    return output;
+                }
+
+                LastSongSelectionNavigation lastNavigation = LastSongSelectionNavigation.None;
+                int cnt = 0;
+                var buffer =
+                    new List<(string, string, string, IEnumerable<(string, string)>, IEnumerable<(string, string)>)>();
+                List<CoverArt> coverBuffer = new List<CoverArt>();
+                List<byte[]> imgBuffer = new List<byte[]>();
+                bool hasNext = true;
+
+                while (true)
+                {
+                    (string title, string recordingId, string trackId, IEnumerable<(string title, string id)> artists,
+                        IEnumerable<(string title, string id)> releaseGroups) current;
+                    CoverArt coverArtResult;
+                    if (cnt >= buffer.Count && hasNext)
+                    {
+                        current = rEnumerator.Current;
+                        buffer.Add(current);
+                        response.Dispose();
+                        response = await client.GetAsync(
+                            $"https://coverartarchive.org/release-group/{current.releaseGroups.First().id}");
+
+                        hasNext = rEnumerator.MoveNext();
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            coverBuffer.Add(null);
+                            if (lastNavigation == LastSongSelectionNavigation.Previous)
+                            {
+                                cnt--;
+                                continue;
+                            }
+
+                            cnt++;
+                            continue;
+                        }
+
+                        coverArtResult =
+                            JsonConvert.DeserializeObject<CoverArt>(await response.Content.ReadAsStringAsync());
+                        coverBuffer.Add(coverArtResult);
+                        string imgUrl = coverArtResult.images.First(image => image.approved).thumbnails.large;
+                        //TODO: possible optimization?
+                        while (true)
+                        {
+                            (int, string) TaskFactory()
+                            {
+#if DEBUG
+                                Debug.Assert(imgUrl != null, nameof(imgUrl) + " != null");
+#endif
+                                HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(imgUrl);
+                                webRequest.AllowAutoRedirect = false; // IMPORTANT 
+                                webRequest.Timeout = 3000; // timeout 3s    
+                                using HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
+                                return ((int)webResponse.StatusCode, webResponse.Headers["Location"]);
+                            }
+
+                            (int statusCode, string uriString) = await MainActivity.throttler.Throttle(TaskFactory,
+                                $"urlResolution_{originalTitle}", 1000, 1000);
+
+                            // Now look to see if it's a redirect
+                            if (statusCode is >= 300 and <= 399)
+                            {
+#if DEBUG
+                                MyConsole.WriteLine($"{imgUrl} redirect to {uriString ?? "NULL"}");
+#endif
+                                imgUrl = uriString;
+                                continue;
+                            }
+
+                            break;
+                        }
+
+                        byte[] imgArr = await GetImage(imgUrl?.Replace("http://", "https://"));
+                        imgBuffer.Add(imgArr);
+                    }
+                    else
+                    {
+                        current = buffer[cnt];
+                        coverArtResult = coverBuffer[cnt];
+
+                        if (coverArtResult == null)
+                        {
+                            if (lastNavigation == LastSongSelectionNavigation.Previous)
+                            {
+                                cnt--;
+                                continue;
+                            }
+
+                            cnt++;
+                            continue;
+                        }
+                    }
+
+                    bool next = hasNext;
+                    int cnt1 = cnt;
+                    MainActivity.stateHandler.view.RunOnUiThread(() =>
+                    {
+                        youtube.UpdateSsDialog(current.title, current.artists.First().title,
+                            current.releaseGroups.First().title,
+                            imgBuffer[cnt1], originalAuthor,
+                            originalTitle, cnt1 < buffer.Count - 1 || next, cnt1 > 0);
+                    });
+                    MainActivity.stateHandler.ResultEvent.WaitOne();
+
+                    if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Next)
+                    {
+                        lastNavigation = LastSongSelectionNavigation.Next;
+                        cnt++;
+                        MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        continue;
+                    }
+
+                    if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Previous)
+                    {
+                        lastNavigation = LastSongSelectionNavigation.Previous;
+                        cnt--;
+                        MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        continue;
+                    }
+
+                    if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Cancel)
+                    {
+                        MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        break;
+                    }
+
+                    if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Accept)
+                    {
+                        output = (current.title, current.recordingId, current.trackId, current.artists.ToList(),
+                            current.releaseGroups.ToList(), imgBuffer[cnt]);
+                        //output = ( current.title, current.recordingId, current.trackId, current.artists.ToList(), current.releaseGroups.ToList(), imgBuffer[cnt]);
+                        MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        break;
+                    }
+
+                }
+
+                response.Dispose();
+                rEnumerator.Dispose();
+                MainActivity.stateHandler.FileEvent.Set();
+                return output;
             }
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e.ToString());       
 #endif
-                MainActivity.stateHandler.FileEvent.Set();
-                return output;
             }
-            
-            LastSongSelectionNavigation lastNavigation = LastSongSelectionNavigation.None;
-            int cnt = 0;
-            var buffer = new List<(string, string, string, IEnumerable<(string, string)>, IEnumerable<(string, string)>)>();
-            List<CoverArt> coverBuffer = new List<CoverArt>();
-            List<byte[]> imgBuffer = new List<byte[]>();
-            bool hasNext = true;
-            
-            while (true)
-            {
-                (string title, string recordingId, string trackId, IEnumerable<(string title, string id)> artists, IEnumerable<(string title, string id)> releaseGroups) current;
-                CoverArt coverArtResult;
-                if (cnt >= buffer.Count && hasNext)
-                {
-                    current = rEnumerator.Current;
-                    buffer.Add(current);
-                    response.Dispose();
-                    response = await client.GetAsync($"https://coverartarchive.org/release-group/{current.releaseGroups.First().id}");
-                    
-                    hasNext = rEnumerator.MoveNext();
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        coverBuffer.Add(null);
-                        if (lastNavigation == LastSongSelectionNavigation.Previous)
-                        {
-                            cnt--;
-                            continue;
-                        }
-                        cnt++;
-                        continue;
-                    }
-                    
-                    coverArtResult = JsonConvert.DeserializeObject<CoverArt>(await response.Content.ReadAsStringAsync());
-                    coverBuffer.Add(coverArtResult);
-                    string imgUrl = coverArtResult.images.First(image => image.approved).thumbnails.large;
-                    //TODO: possible optimization?
-                    while(true)
-                    {
-                        (int, string) TaskFactory()
-                        {
-#if DEBUG
-                            Debug.Assert(imgUrl != null, nameof(imgUrl) + " != null");
-#endif
-                            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(imgUrl);
-                            webRequest.AllowAutoRedirect = false; // IMPORTANT 
-                            webRequest.Timeout = 3000; // timeout 3s    
-                            using HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
-                            return ((int)webResponse.StatusCode, webResponse.Headers["Location"]);
-                        }
-
-                        (int statusCode, string uriString)  = await MainActivity.throttler.Throttle(TaskFactory, $"urlResolution_{originalTitle}", 1000, 1000);
-                        
-                        // Now look to see if it's a redirect
-                        if (statusCode is >= 300 and <= 399)
-                        {
-#if DEBUG
-                            MyConsole.WriteLine($"{imgUrl} redirect to { uriString ?? "NULL"}");
-#endif
-                            imgUrl = uriString;
-                            continue;
-                        }
-                        break;
-                    }
-                    byte[] imgArr = await GetImage(imgUrl?.Replace("http://", "https://"));
-                    imgBuffer.Add(imgArr);
-                }
-                else
-                {
-                    current = buffer[cnt];
-                    coverArtResult = coverBuffer[cnt];
-                    
-                    if (coverArtResult == null)
-                    {
-                        if (lastNavigation == LastSongSelectionNavigation.Previous)
-                        {
-                            cnt--;
-                            continue;
-                        }
-                        cnt++;
-                        continue;
-                    }
-                }
-
-                bool next = hasNext;
-                int cnt1 = cnt;
-                MainActivity.stateHandler.view.RunOnUiThread(() =>
-                {
-                    youtube.UpdateSsDialog(current.title, current.artists.First().title,
-                        current.releaseGroups.First().title,
-                        imgBuffer[cnt1], originalAuthor,
-                        originalTitle, cnt1 < buffer.Count -1 || next, cnt1 > 0);
-                });
-                MainActivity.stateHandler.ResultEvent.WaitOne();
-                
-                if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Next)
-                {
-                    lastNavigation = LastSongSelectionNavigation.Next;
-                    cnt++;
-                    MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
-                    continue;
-                }
-                
-                if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Previous)
-                {
-                    lastNavigation = LastSongSelectionNavigation.Previous;
-                    cnt--;
-                    MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
-                    continue;
-                }
-                
-                if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Cancel)
-                {
-                    MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
-                    break;
-                }
-                
-                if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Accept)
-                {
-                    output = ( current.title, current.recordingId, current.trackId, current.artists.ToList(), current.releaseGroups.ToList(), imgBuffer[cnt]);
-                    //output = ( current.title, current.recordingId, current.trackId, current.artists.ToList(), current.releaseGroups.ToList(), imgBuffer[cnt]);
-                    MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
-                    break;
-                }
-
-            }
-
-            response.Dispose();
-            rEnumerator.Dispose();
             MainActivity.stateHandler.FileEvent.Set();
             return output;
         }
