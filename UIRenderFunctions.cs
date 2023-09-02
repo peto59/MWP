@@ -1,18 +1,241 @@
+using System;
 using Android.App;
 using Android.Content;
-using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using System.Linq;
 using Android.Graphics;
-using Android.Util;
 using AndroidX.Fragment.App;
+using Orientation = Android.Widget.Orientation;
 
 namespace Ass_Pain
 {
     public class UIRenderFunctions
     {
+        private static List<string> _selectedPlaylists = new List<string>();
+
+        public enum SongType
+        {
+            albumSong,
+            allSong,
+            playlistSong
+        }
+
+        /// <summary>
+        /// General object, that will take on different forms, based on where its currently being defined.
+        /// E.g. if album fragment is currently active, than the object of that active album you are browsing will be
+        /// used to define this global position parameter
+        /// </summary>
+        public static object FragmentPositionObject;
         
+        
+        private static void AreYouSure(object sender, EventArgs e, Song song, AlertDialog di, LinearLayout linFromDelete, LinearLayout linForDelete, Context context)
+        {
+            LayoutInflater ifl = LayoutInflater.From(context);
+            View view = ifl?.Inflate(Resource.Layout.are_you_sure_popup, null);
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(view);
+
+            AlertDialog dialog = alert.Create();
+
+            TextView txt = view?.FindViewById<TextView>(Resource.Id.are_you_sure_text);
+            txt?.SetTextColor(Color.White);
+            if (txt != null) txt.Text = "Deleting: " + song.Title;
+
+            Button yes = view?.FindViewById<Button>(Resource.Id.yes_daddy);
+            if (BlendMode.Multiply != null)
+                yes?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+            yes?.SetTextColor(Color.Black);
+
+            if (yes != null)
+                yes.Click += delegate
+                {
+                    song.Delete();
+                    dialog?.Hide();
+                    di.Hide();
+
+                    linFromDelete.RemoveView(linForDelete);
+                    Toast.MakeText(context, $"{song.Title} has been deleted", ToastLength.Short)?.Show();
+                };
+
+            Button no = view?.FindViewById<Button>(Resource.Id.you_are_not_sure);
+            if (BlendMode.Multiply != null)
+                no?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+            no?.SetTextColor(Color.Black);
+
+            if (no != null)
+                no.Click += (_, _) => { di.Hide(); };
+
+            if (dialog != null) dialog.Show();
+        }
+
+        private static void ListPlaylistsPopup(Song song, Context context, float scale)
+        {
+            LayoutInflater ifl = LayoutInflater.From(context);
+            View view = ifl?.Inflate(Resource.Layout.list_plas_popup, null);
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(view);
+
+            AlertDialog dialog = alert.Create();
+
+            LinearLayout ln = view?.FindViewById<LinearLayout>(Resource.Id.playlists_list_la);
+
+            List<string> playlists = FileManager.GetPlaylist();
+            foreach (string p in playlists)
+            {
+                LinearLayout lnIn = new LinearLayout(context);
+                lnIn.Orientation = Orientation.Vertical;
+                lnIn.SetBackgroundResource(Resource.Drawable.rounded_light);
+
+                LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MatchParent,
+                    (int)(50 * scale + 0.5f)
+                );
+                lnInParams.SetMargins(20, 20, 20, 20);
+                lnIn.LayoutParameters = lnInParams;
+                lnIn.SetGravity(GravityFlags.Center);
+
+                lnIn.Click += (_, _) =>
+                {
+                    if (_selectedPlaylists.Contains(p))
+                    {
+                        _selectedPlaylists.Remove(p);
+                        lnIn.SetBackgroundResource(Resource.Drawable.rounded_light);
+                    }
+                    else
+                    {
+                        _selectedPlaylists.Add(p);
+                        lnIn.SetBackgroundResource(Resource.Drawable.rounded_dark);
+                    }
+                };
+                
+                TextView name = new TextView(context);
+                name.TextAlignment = TextAlignment.Center;
+                name.SetTextColor(Color.White);
+                name.Text = p;
+                lnIn.AddView(name);
+                
+                ln?.AddView(lnIn);
+            }
+            
+            
+            Button submit = view?.FindViewById<Button>(Resource.Id.submit_plas);
+            if (BlendMode.Multiply != null)
+                submit?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+            submit?.SetTextColor(Color.Black);
+
+            if (submit != null)
+                submit.Click += (_, _) =>
+                {
+                    foreach (string s in _selectedPlaylists)
+                    {
+                        List<Song> plaSongs = FileManager.GetPlaylist(s);
+                        if (plaSongs.Any(a => a.Equals(song)))
+                            Toast.MakeText(context, "already exists in : " + s, ToastLength.Short)?.Show();
+                        else
+                        {
+                            FileManager.AddToPlaylist(s, song.Path);
+
+                            Toast.MakeText(
+                                    context, "added successfully",
+                                    ToastLength.Short
+                                )
+                                ?.Show();
+                        }
+                    }
+
+
+                    dialog?.Hide();
+                    _selectedPlaylists.Clear();
+                };
+
+            Button cancel = view?.FindViewById<Button>(Resource.Id.cancel_plas);
+            if (BlendMode.Multiply != null)
+                cancel?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+            cancel?.SetTextColor(Color.Black);
+
+            if (cancel != null)
+                cancel.Click += (_, _) => { dialog?.Hide(); };
+
+
+            dialog?.Show();
+            
+            
+            
+        }
+
+        private static void ShowPopupSongEdit(MusicBaseClass path, LinearLayout linFromDelete, LinearLayout linForDelete, Context context, float scale)
+        {
+            LayoutInflater ifl = LayoutInflater.From(context);
+            var view = ifl?.Inflate(path is Song ? Resource.Layout.edit_song_popup : Resource.Layout.edit_album_popup, null);
+
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(view);
+
+            AlertDialog dialog = alert.Create();
+
+            /*
+             * popup buttons start
+             */
+            if (path is Song song)
+            {
+                Button addToPla = view?.FindViewById<Button>(Resource.Id.add_to_pla);
+                if (BlendMode.Multiply != null)
+                    addToPla?.Background?.SetColorFilter(
+                        new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                    );
+                addToPla?.SetTextColor(Color.Black);
+                if (addToPla != null)
+                    addToPla.Click += (_, _) =>
+                    {
+                        dialog?.Hide();
+                        ListPlaylistsPopup(song, context, scale);
+                    };
+
+                Button addToQu = view?.FindViewById<Button>(Resource.Id.add_to_qu);
+                Button delete = view?.FindViewById<Button>(Resource.Id.delete);
+                if (BlendMode.Multiply != null)
+                {
+                    addToQu?.Background?.SetColorFilter(
+                        new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                    );
+                    addToQu?.SetTextColor(Color.Black);
+                    delete?.Background?.SetColorFilter(
+                        new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                    );
+                }
+
+                delete?.SetTextColor(Color.Black);
+
+                // handle clicked
+                if (addToQu != null)
+                    addToQu.Click += (_, _) => { MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song); };
+                if (delete != null)
+                    delete.Click += (o, args) =>
+                    {
+                        AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context);
+                    };
+            }
+
+            
+            /*
+             * popup buttons end
+             */
+
+            
+            dialog?.Show();
+        }
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -26,12 +249,13 @@ namespace Ass_Pain
         /// <param name="nameSize"></param>
         /// <param name="index"></param>
         /// <param name="context"></param>
-        /// <param name="SongButtons"></param>
+        /// <param name="songButtons"></param>
+        /// <param name="songType"></param>
         /// <param name="linForDelete"></param>
         /// <returns></returns>
         public static LinearLayout PopulateHorizontal(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize, int index,
-            Context context, Dictionary<LinearLayout, int> SongButtons,
+            Context context, Dictionary<LinearLayout, int> songButtons, SongType songType,
             LinearLayout linForDelete = null
         )
         {
@@ -46,32 +270,37 @@ namespace Ass_Pain
             );
             lnInParams.SetMargins(cardMargins[0], cardMargins[1], cardMargins[2], cardMargins[3]);
             lnIn.LayoutParameters = lnInParams;
-
-
-            // ボッタン作って
-            int w = (int)(ww * scale + 0.5f);
-            int h = (int)(hh * scale + 0.5f);
-
-
-
+            
           
-            lnIn.Click += (sender, e) =>
+            lnIn.Click += (sender, _) =>
             {
-                LinearLayout pressedButtoon = (LinearLayout)sender;
-                foreach (KeyValuePair<LinearLayout, int> pr in SongButtons)
+                LinearLayout pressedButton = (LinearLayout)sender;
+                foreach (KeyValuePair<LinearLayout, int> pr in songButtons)
                 {
-                    if (pr.Key == pressedButtoon)
+                    if (pr.Key == pressedButton)
                     {
-                        MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.stateHandler.Songs, pr.Value);
+                        Console.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
+                        switch (songType)
+                        {
+                            case SongType.allSong:
+                                MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.stateHandler.Songs, pr.Value);
+                                break;
+                            case SongType.albumSong:
+                                MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((Album)FragmentPositionObject, pr.Value);
+                                break;
+                            case SongType.playlistSong:
+                                MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((List<Song>)FragmentPositionObject, pr.Value);
+                                break;
+                        }
                     }
                 }
             };
-            lnIn.LongClick += (sender, e) =>
+            lnIn.LongClick += (_, _) =>
             {
-                // show_popup_song_edit(sender, e, song, linForDelete, lnIn);
+                ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale);
             };
 
-            SongButtons.Add(lnIn, index);
+            songButtons.Add(lnIn, index);
             
 
             lnIn.SetHorizontalGravity(GravityFlags.Center);
@@ -100,7 +329,7 @@ namespace Ass_Pain
         /// <param name="linForDelete"></param>
         /// <returns></returns>
         public static LinearLayout PopulateVertical(
-            MusicBaseClass musics, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize, int index,
+            MusicBaseClass musics, float scale, int[] cardMargins, int nameSize, int index,
             Context context, Dictionary<LinearLayout, object> albumButtons, FragmentActivity activity, 
             LinearLayout linForDelete = null
         )
@@ -135,12 +364,12 @@ namespace Ass_Pain
                     
                 };
 
-                /*
-                lnIn.LongClick += (sender, e) =>
+                
+                lnIn.LongClick += (_, _) =>
                 {
-                    show_popup_song_edit(sender, e, album, linForDelete, lnIn);
+                    ShowPopupSongEdit(album, linForDelete, lnIn, context, scale);
                 };
-                */
+                
 
                 albumButtons.Add(lnIn, album);
             }
@@ -154,18 +383,18 @@ namespace Ass_Pain
                     {
                         if (pr.Key == pressedButton && pr.Value is Artist artist1)
                         {
-                            ((AllSongs)activity).ReplaceFragments(AllSongs.FragmentType.Authorfrag, artist1.Title);
+                            ((AllSongs)activity).ReplaceFragments(AllSongs.FragmentType.AuthorFrag, artist1.Title);
                             break;
                         }
                     }
                 };
 
-                /*
-                lnIn.LongClick += (sender, e) =>
+                
+                lnIn.LongClick += (_, _) =>
                 {
-                    show_popup_song_edit(sender, e, artist, linForDelete, lnIn);
+                    ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale);
                 };
-                */
+                
 
                 albumButtons.Add(lnIn, artist);
             }

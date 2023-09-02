@@ -93,7 +93,7 @@ namespace Ass_Pain
                     MainActivity.stateHandler.Songs[i], SCALE,
                     150, 100,
                     allSongsButtonMargins, allSongsNameMargins, allSongsCardMargins,
-                    17, i, _context, SongButtons, allSongsLnMain
+                    17, i, _context, SongButtons, UIRenderFunctions.SongType.allSong, allSongsLnMain
                 );
                 
                 lazyBuffer.Add(new Tuple<LinearLayout, int>(lnIn, i));

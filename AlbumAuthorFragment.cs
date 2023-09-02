@@ -86,7 +86,7 @@ namespace Ass_Pain
             {
                 
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    MainActivity.stateHandler.Albums[i], 130, 160, buttonMargins, nameMargins, cardMargins, 15, i, context, albumButtons, Activity);
+                    MainActivity.stateHandler.Albums[i], scale, cardMargins, 15, i, context, albumButtons, Activity);
                 UIRenderFunctions.SetTilesImage(
                     lnIn, MainActivity.stateHandler.Albums[i], 150, 100,
                     buttonMargins, 17,
@@ -120,7 +120,7 @@ namespace Ass_Pain
             for (int i = 0; i < MainActivity.stateHandler.Artists.Count; i++)
             {
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    MainActivity.stateHandler.Artists[i], 130, 160, buttonMargins, nameMargins, cardMargins, 15, i, context, albumButtons, Activity);
+                    MainActivity.stateHandler.Artists[i], scale, cardMargins, 15, i, context, albumButtons, Activity);
                 UIRenderFunctions.SetTilesImage(
                     lnIn, MainActivity.stateHandler.Artists[i], 150, 100,
                     buttonMargins, 17,

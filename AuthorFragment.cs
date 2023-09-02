@@ -64,12 +64,21 @@ namespace Ass_Pain
             
             RenderAlbumsSongs();
 
+            TextView texxx = new TextView(context);
+            texxx.TextSize = 30;
+            texxx.Text = "idkk just click";
+            texxx.Click += (sender, args) =>
+                ((AllSongs)Activity).ReplaceFragments(AllSongs.FragmentType.AlbumFrag, "Smile");
+            // mainLayout?.AddView(texxx);
+
             return view;
         }
 
 
         private void UncategorizedSongsRender()
         {
+            UIRenderFunctions.FragmentPositionObject = artist.Albums.Select("Uncategorized")[0];
+            
             ScrollView songsScroll = new ScrollView(context);
             RelativeLayout.LayoutParams songsScrollParams = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
@@ -103,7 +112,7 @@ namespace Ass_Pain
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                    i, context, songButtons, lnMain
+                    i, context, songButtons, UIRenderFunctions.SongType.albumSong, lnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, artist.Albums.Select("Uncategorized")[0].Songs[i],  150, 100,
@@ -121,12 +130,14 @@ namespace Ass_Pain
         private void RenderAlbumsSongs()
         {
             HorizontalScrollView hr = new HorizontalScrollView(context);
-            int hrHeight;
+            int hrHeight = (int)(240 * scale + 0.5f);;
 
+            /*
             if (artist.Albums.Count < 2)
                 hrHeight = 0;
             else
                 hrHeight = (int)(240 * scale + 0.5f);
+            */
             RelativeLayout.LayoutParams hrParams = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
                 hrHeight
@@ -136,6 +147,12 @@ namespace Ass_Pain
             hr.LayoutParameters = hrParams;
 
             LinearLayout lin = new LinearLayout(context);
+            lin.Orientation = Orientation.Horizontal;
+            LinearLayout.LayoutParams linParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WrapContent,
+                ViewGroup.LayoutParams.WrapContent
+            );
+            lin.LayoutParameters = linParams;
             
             int[] buttonMargins = { 50, 50, 50, 0 };
             int[] nameMargins = { 50, 50, 50, 50 };
@@ -145,7 +162,7 @@ namespace Ass_Pain
                 if (artist.Albums[i].Showable && artist.Albums.Count > 1)
                 {
                     LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                        artist.Albums[i], 130, 160, buttonMargins, nameMargins, cardMargins, 15, i, context, albumButtons, Activity);
+                        artist.Albums[i], scale, cardMargins, 15, i, context, albumButtons, Activity);
                     UIRenderFunctions.SetTilesImage(
                         lnIn, artist.Albums[i], 150, 100,
                         buttonMargins, 17,

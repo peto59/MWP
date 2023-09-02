@@ -128,6 +128,8 @@
     <Compile Include="all_songs.cs" />
     <Compile Include="equalizer.cs" />
     <Compile Include="MainActivity.cs" />
+    <Compile Include="PlaylistFragment.cs" />
+    <Compile Include="PlaylistsFragment.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="share.cs" />
@@ -185,6 +187,8 @@
     <AndroidResource Include="Resources\layout\nav_header_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\playlists_fragment.xml" />
+    <AndroidResource Include="Resources\layout\playlist_fragment.xml" />
     <AndroidResource Include="Resources\layout\share.xml" />
     <AndroidResource Include="Resources\layout\songs_fragment.xml" />
     <AndroidResource Include="Resources\layout\song_download_selection_dialog.xml" />

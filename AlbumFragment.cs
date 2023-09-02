@@ -57,6 +57,7 @@ namespace Ass_Pain
             if (retreivedSongs.Count > 0)
             {
                 album = retreivedSongs[0];
+                UIRenderFunctions.FragmentPositionObject = album;
             }
             Console.WriteLine("FOUNDED SEARCHED ALBUM NAME IN FRAGMENT: " + album.Title);
             
@@ -101,7 +102,7 @@ namespace Ass_Pain
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                    i, context, SongButtons, lnMain
+                    i, context, SongButtons, UIRenderFunctions.SongType.albumSong, lnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, album.Songs[i],  150, 100,

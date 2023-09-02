@@ -28,6 +28,7 @@ using System.Threading;
 using Org.Apache.Http.Authentication;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
+using Android.Graphics.Text;
 using Android.Util;
 using Java.Lang;
 using Debug = System.Diagnostics.Debug;
@@ -63,15 +64,18 @@ namespace Ass_Pain
         private AlbumAuthorFragment AlbumsFragment;
         private AlbumFragment albumFragment;
         private AuthorFragment authorFragment;
+        private PlaylistsFragment playlistsFragment;
+        private PlaylistFragment playlistFragment;
         
         
-        /*
-         * Enum which for album and/or author
-         */
+        /// <summary>
+        /// 
+        /// </summary>
         public enum FragmentType
         {
             AlbumFrag,
-            Authorfrag
+            AuthorFrag,
+            PlaylistFrag
         }
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -140,6 +144,8 @@ namespace Ass_Pain
             AlbumsFragment = new AlbumAuthorFragment(this);
             albumFragment = new AlbumFragment(this);
             authorFragment = new AuthorFragment(this);
+            playlistsFragment = new PlaylistsFragment(this);
+            playlistFragment = new PlaylistFragment(this);
             
             /*
              * Button bar
@@ -176,11 +182,16 @@ namespace Ass_Pain
             if (playlists != null)
                 playlists.Click += (sender, e) =>
                 {
-                    /*
-                populate_grid(2.0f);
-                inAuthor.is_auth = false;
-                inAuthor.auth = "";
-                */
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (activeFragment == 0)
+                    {
+                        fragmentTransaction.Add(Resource.Id.FragmentLayoutDynamic, playlistsFragment);
+                        activeFragment = 1;
+                    }
+                    else
+                        fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, playlistsFragment);
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
                 };
 
             FloatingActionButton createPlaylist = FindViewById<FloatingActionButton>(Resource.Id.fab);
@@ -189,7 +200,7 @@ namespace Ass_Pain
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
                 );
 
-            if (createPlaylist != null) createPlaylist.Click += new EventHandler(show_popup);
+            if (createPlaylist != null) createPlaylist.Click += show_popup;
         }
 
         /// <summary>
@@ -202,17 +213,24 @@ namespace Ass_Pain
             var fragmentTransaction = SupportFragmentManager.BeginTransaction();
             Bundle bundle = new Bundle();
             bundle.PutString("title", title);
-    
-            if (type is FragmentType.AlbumFrag)
+            
+            switch (type)
             {
-                albumFragment.Arguments = bundle;
-                fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, albumFragment);
+                case FragmentType.AlbumFrag:
+                    albumFragment.Arguments = bundle;
+                    fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, albumFragment);
+                    break;
+                case FragmentType.AuthorFrag:
+                    authorFragment.Arguments = bundle;
+                    fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, authorFragment);
+                    break;
+                case FragmentType.PlaylistFrag:
+                    Console.WriteLine("FRAGMENT RPLACEFRAGMENTS FUNCTOIONNNNNNN " + title);
+                    playlistFragment.Arguments = bundle;
+                    fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, playlistFragment);
+                    break;
             }
-            else if (type is FragmentType.Authorfrag)
-            {
-                authorFragment.Arguments = bundle;
-                fragmentTransaction.Replace(Resource.Id.FragmentLayoutDynamic, authorFragment);
-            }
+            
             fragmentTransaction.AddToBackStack(null);
             fragmentTransaction.Commit();
             
