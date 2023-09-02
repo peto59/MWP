@@ -379,7 +379,7 @@ namespace Ass_Pain.BackEnd.Network
 
     internal class MyNetworkCallback : ConnectivityManager.NetworkCallback
     {
-        internal MyNetworkCallback(NetworkCallbackFlags flags = NetworkCallbackFlags.None) : base((int)flags)
+        internal MyNetworkCallback(NetworkCallbackFlags flags) : base((int)flags)
         {
         }
         
@@ -401,6 +401,9 @@ namespace Ass_Pain.BackEnd.Network
                             NetworkManager.Common.CanSend = NetworkManager.Common.GetConnectionInfo(ipAdd) ? CanSend.Test : CanSend.Rejected;
                         }
                         string ssid = transportInfo["SSID"];
+#if DEBUG
+                        MyConsole.WriteLine($"SSID: {ssid}");               
+#endif
                         if (ssid != NetworkManager.Common.CurrentSsid)
                         {
                             NetworkManager.Common.CanSend = CanSend.Test;

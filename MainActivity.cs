@@ -238,7 +238,9 @@ namespace Ass_Pain
             string[] permissionsLocation =  {
                 //Android.Manifest.Permission.WriteExternalStorage,
                 //Android.Manifest.Permission.ReadExternalStorage,
-                Android.Manifest.Permission.ForegroundService
+                Android.Manifest.Permission.ForegroundService,
+                Android.Manifest.Permission.AccessWifiState,
+                Android.Manifest.Permission.AccessFineLocation,
             };
 
             bool exitFlag = permissionsLocation.Aggregate(true, (current, perm) => current & ContextCompat.CheckSelfPermission(this, perm) == (int)Permission.Granted);
@@ -248,7 +250,7 @@ namespace Ass_Pain
                 AfterReceivingPermissions();
                 return;
             }
-            
+            //TODO: edit explanation
             Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
                     .SetAction("OK", _ =>
                     {
