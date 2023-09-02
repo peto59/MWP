@@ -229,11 +229,11 @@ namespace Ass_Pain
 
                     if (album != null)
                     {
-                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).ToArray(), artists.First().id, recordingId, trackId, album, releaseGroups.First().id);
+                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId, album, releaseGroups.First().id);
                     }
                     else
                     {
-                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).ToArray(), artists.First().id, recordingId, trackId);
+                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId);
                     }
                     notification.Stage4(true, string.Empty, poradieVPlayliste);
                     

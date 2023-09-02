@@ -497,7 +497,7 @@ namespace Ass_Pain.BackEnd
             }
         }
 
-        public static (List<string> missingArtists, string missingAlbum) AddSong(string path, bool isNew = false, bool generateStateHandlerEntry = true)
+        public static (List<string> missingArtists, (string album, string artistPath) missingAlbum) AddSong(string path, bool isNew = false, bool generateStateHandlerEntry = true)
         {
             using TagLib.File tfile = TagLib.File.Create(path, ReadStyle.PictureLazy);
             tfile.Mode = TagLib.File.AccessMode.Write;
@@ -519,15 +519,8 @@ namespace Ass_Pain.BackEnd
                 tfile.Save();
             }
 
-            string[] artists = tfile.Tag.Performers.Any() ? tfile.Tag.Performers : tfile.Tag.AlbumArtists.Any() ? tfile.Tag.AlbumArtists : new []{ "No Artist" };
-#if DEBUG
-            MyConsole.WriteLine("Artists:");
-            foreach (string artist in artists)
-            {
-                MyConsole.WriteLine(artist);
-            }
-#endif
-            
+            string[] artists = (tfile.Tag.Performers.Any() ? tfile.Tag.Performers : tfile.Tag.AlbumArtists.Any() ? tfile.Tag.AlbumArtists : new []{ "No Artist" }).Distinct().ToArray();
+
             string album = tfile.Tag.Album;
             tfile.Dispose();
             if (isNew)
@@ -567,10 +560,10 @@ namespace Ass_Pain.BackEnd
                 string albumPath = $"{MusicFolder}/{Sanitize(GetAlias(artists[0]))}/{Sanitize(album)}";
                 if (!File.Exists($"{albumPath}/cover.jpg") && !File.Exists($"{albumPath}/cover.png"))
                 {
-                    return (missingArtists, album);
+                    return (missingArtists, (album, Sanitize(GetAlias(artists[0]))));
                 }
             }
-            return (missingArtists, string.Empty);
+            return (missingArtists, (string.Empty, string.Empty));
         }
         
         public static void AddSong(View view, string path, string title, string[] artists, string artistId,

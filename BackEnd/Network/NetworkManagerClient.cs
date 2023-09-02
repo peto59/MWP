@@ -31,6 +31,7 @@ namespace Ass_Pain.BackEnd.Network
             string remoteHostname = string.Empty;
             bool? isTrustedSyncTarget = null;
             List<Song> syncSongs = new List<Song>();
+            int ackCount = 0;
 
             RSACryptoServiceProvider encryptor = new RSACryptoServiceProvider();
             RSACryptoServiceProvider decryptor = new RSACryptoServiceProvider();
@@ -140,8 +141,12 @@ namespace Ass_Pain.BackEnd.Network
                             songSendRequestState = SongSendRequestState.Sent;
                             break;
                         case > 0 when songSendRequestState == SongSendRequestState.Accepted:
-                            networkStream.WriteFile(songsToSend[0].Path, ref encryptor, ref aes);
-                            songsToSend.Pop();
+                            if (ackCount >= 0)
+                            {
+                                networkStream.WriteFile(songsToSend[0].Path, ref encryptor, ref aes);
+                                songsToSend.RemoveAt(0);
+                                ackCount--;
+                            }
                             break;
                         default:
                         {
@@ -153,7 +158,7 @@ namespace Ass_Pain.BackEnd.Network
 #endif
                                 if ((bool)isTrustedSyncTarget)
                                 {
-                                    syncSongs = FileManager.GetTrustedSyncTargetSongs(remoteHostname).GetRange(0, 1);
+                                    syncSongs = FileManager.GetTrustedSyncTargetSongs(remoteHostname);
                                 }
                             }
                             switch (syncSongs.Count)
@@ -164,11 +169,18 @@ namespace Ass_Pain.BackEnd.Network
                                     break;
                                 case > 0 when syncRequestState == SyncRequestState.Accepted:
 #if DEBUG
-                                    MyConsole.WriteLine(syncSongs[0].ToString());
+                                    MyConsole.WriteLine($"Ack count: {ackCount}");
 #endif
-                                    networkStream.WriteFile(syncSongs[0].Path, ref encryptor, ref aes);
-                                    syncSongs.Pop();
-                                    //TODO: remove from FileManager.GetTrustedSyncTargetSongs
+                                    if (ackCount >= 0)
+                                    {
+#if DEBUG
+                                        MyConsole.WriteLine(syncSongs[0].ToString());
+#endif
+                                        networkStream.WriteFile(syncSongs[0].Path, ref encryptor, ref aes);
+                                        syncSongs.RemoveAt(0);
+                                        ackCount--;
+                                        //TODO: remove from FileManager.GetTrustedSyncTargetSongs
+                                    }
                                     break;
                                 default:
                                     if (!ending)
@@ -178,7 +190,8 @@ namespace Ass_Pain.BackEnd.Network
                                          (songsToSend.Count > 0 && songSendRequestState == SongSendRequestState.Rejected))
                                         &&
                                         (syncSongs.Count == 0 || 
-                                         (syncSongs.Count > 0 && syncRequestState == SyncRequestState.Rejected));
+                                         (syncSongs.Count > 0 && syncRequestState == SyncRequestState.Rejected))
+                                        && ackCount >= 0;
 #if DEBUG
                                         MyConsole.WriteLine($"isEnding? {ending}");                               
 #endif
@@ -306,10 +319,11 @@ namespace Ass_Pain.BackEnd.Network
                     case CommandsEnum.SongSend: //file
                         if (length != null)
                         {
+                            //TODO: update
                             int i = FileManager.GetAvailableFile("receive");
                             string path = $"{FileManager.PrivatePath}/tmp/receive{i}.mp3";
                             networkStream.ReadFile(path, (long)length, ref aes);
-                            (List<string> missingArtists, string missingAlbum) = FileManager.AddSong(path, true);
+                            (List<string> missingArtists, (string missingAlbum, string albumArtistPath)) = FileManager.AddSong(path, true);
                             foreach (string name in missingArtists)
                             {
                                 networkStream.WriteCommand(CommandsArr.ArtistImageRequest, Encoding.UTF8.GetBytes(name), ref encryptor);
@@ -331,7 +345,8 @@ namespace Ass_Pain.BackEnd.Network
                             List<Artist> artists = MainActivity.stateHandler.Artists.Search(artistName);
                             foreach (Artist artist in artists.Where(artist => artist.ImgPath != "Default"))
                             {
-                                networkStream.WriteFile(artist.ImgPath, ref encryptor, ref aes, Encoding.UTF8.GetBytes(artists[0].Title));
+                                networkStream.WriteFile(artist.ImgPath, ref encryptor, ref aes, CommandsArr.ArtistImageSend, Encoding.UTF8.GetBytes(artists[0].Title));
+                                ackCount--;
                                 break;
                             }
                         }
@@ -343,17 +358,20 @@ namespace Ass_Pain.BackEnd.Network
                             List<Album> albums = MainActivity.stateHandler.Albums.Search(albumName);
                             foreach (Album album in albums.Where(album => album.ImgPath != "Default"))
                             {
-                                networkStream.WriteFile(album.ImgPath, ref encryptor, ref aes, Encoding.UTF8.GetBytes(albums[0].Title));
+                                networkStream.WriteFile(album.ImgPath, ref encryptor, ref aes, CommandsArr.AlbumImageSend, Encoding.UTF8.GetBytes(albums[0].Title));
+                                ackCount--;
                                 break;
                             }
                         }
+                        break;
+                    case CommandsEnum.Ack:
+                        ackCount++;
                         break;
                     case CommandsEnum.End: //end
 #if DEBUG
                         MyConsole.WriteLine("got end");
 #endif
-                        //TODO: revert back to !ending
-                        if (true)//if work to do
+                        if (!ending || ackCount < 0)//if work to do
                         {
 #if DEBUG
                             MyConsole.WriteLine("Still work to do");
@@ -386,7 +404,7 @@ namespace Ass_Pain.BackEnd.Network
 #if DEBUG
                         MyConsole.WriteLine($"default: {command}");
 #endif
-                        Thread.Sleep(25);
+                        Thread.Sleep(100);
                         break;
                 }
             }

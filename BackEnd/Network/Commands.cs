@@ -23,6 +23,7 @@ namespace Ass_Pain.BackEnd.Network
         internal const byte AlbumImageSend = (byte)CommandsEnum.AlbumImageSend;
         internal const byte ArtistImageRequest = (byte)CommandsEnum.ArtistImageRequest;
         internal const byte AlbumImageRequest = (byte)CommandsEnum.AlbumImageRequest;
+        internal const byte Ack = (byte)CommandsEnum.Ack;
         internal const byte End = (byte)CommandsEnum.End;
         internal static bool IsLong(byte command)
         {
@@ -83,6 +84,7 @@ namespace Ass_Pain.BackEnd.Network
         internal static readonly byte[] AlbumImageSend = { Commands.AlbumImageSend };
         internal static readonly byte[] ArtistImageRequest = { Commands.ArtistImageRequest };
         internal static readonly byte[] AlbumImageRequest = { Commands.AlbumImageRequest };
+        internal static readonly byte[] Ack = { Commands.Ack };
         internal static readonly byte[] End = { Commands.End };
         internal static readonly byte[] LongCommands = { Commands.SongRequestInfo, Commands.SongSend, Commands.ArtistImageSend, Commands.AlbumImageSend };
         internal static readonly CommandsEnum[] LongCommandsEnum =
@@ -129,6 +131,7 @@ namespace Ass_Pain.BackEnd.Network
         AlbumImageSend = 42,
         ArtistImageRequest = 43,
         AlbumImageRequest = 44,
+        Ack = 254,
         End = 255
     }
 

@@ -207,6 +207,9 @@ namespace Ass_Pain.BackEnd.Network
         
         internal void SendBroadcast(List<Song>? songsToSend = null)
         {
+#if DEBUG
+            MyConsole.WriteLine($"SSID: {CurrentSsid}");            
+#endif
             switch (CanSend)
             {
                 case CanSend.Allowed:

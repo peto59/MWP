@@ -575,24 +575,24 @@ namespace Ass_Pain.BackEnd.Network
 #if DEBUG
             MyConsole.WriteLine($"encrypted rv {rv.Length}");
 #endif
-            /*MemoryStream ms = new MemoryStream();
+            MemoryStream ms = new MemoryStream();
             CryptoStream csEncrypt = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
             using FileStream fs = fi.Open(FileMode.Open);
             csEncrypt.WriteData(fs);
             csEncrypt.Dispose();
             fs.Dispose();
-            ms.CopyTo(stream);
+            //ms.CopyTo(stream);
             byte[] enc = ms.ToArray();
             ms.Dispose();
-            stream.Flush();*/
-            /*if (enc.Length != encryptedDataLength)
+            stream.Write(enc);
+            if (enc.Length != encryptedDataLength)
             {
                 throw new Java.Lang.Exception("Invalid data size");
-            }*/
-            CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+            }
+            /*CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
             using FileStream fs = fi.Open(FileMode.Open);
             csEncrypt.WriteData(fs);
-            csEncrypt.Dispose();
+            csEncrypt.Dispose();*/
         }
     }
 }
