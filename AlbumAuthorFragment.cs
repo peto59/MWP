@@ -154,12 +154,12 @@ namespace Ass_Pain
                 labelsForScrolls.LayoutParameters = labelForScrollsParams;
                 labelsForScrolls.SetHorizontalGravity(GravityFlags.Center);
                 TextView authorLabel = new TextView(context);
-                authorLabel.SetPadding(0, 0, 200, 0);
+                authorLabel.SetPadding(0, 0, 175, 0);
                 authorLabel.Text = "Authors";
                 authorLabel.TextSize = 20;
                 authorLabel.SetTextColor(Color.White);
                 TextView albumsLabel = new TextView(context);
-                albumsLabel.SetPadding(200, 0, 0, 0);
+                albumsLabel.SetPadding(175, 0, 0, 0);
                 albumsLabel.Text = "Albums";
                 albumsLabel.TextSize = 20;
                 albumsLabel.SetTextColor(Color.White);

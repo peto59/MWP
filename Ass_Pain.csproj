@@ -316,6 +316,7 @@
     </AndroidResource>
   </ItemGroup>
   <ItemGroup>
+    <AndroidAsset Include="Assets\WixMadeforText.ttf" />
     <AndroidAsset Include="Resources\drawable\mori.jpg" />
   </ItemGroup>
   <ItemGroup>

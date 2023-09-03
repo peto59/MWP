@@ -5,15 +5,5 @@
             android:layout_height="match_parent" 
             android:id="@+id/songs_fragment_main"
 >
-
-    <TextView android:layout_width="wrap_content" 
-              android:layout_height="wrap_content"
-              android:text="Hello fragment songs"
-              android:textSize="20dp"
-              android:textAlignment="center"
-              android:textColor="#ffffff"
-              android:layout_marginTop="50dp"
-    >   
-        
-    </TextView>
+    
 </RelativeLayout>

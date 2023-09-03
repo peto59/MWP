@@ -218,7 +218,11 @@ namespace Ass_Pain
 
                 // handle clicked
                 if (addToQu != null)
-                    addToQu.Click += (_, _) => { MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song); };
+                    addToQu.Click += (_, _) =>
+                    {
+                        MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song);
+                        dialog?.Hide();
+                    };
                 if (delete != null)
                     delete.Click += (o, args) =>
                     {

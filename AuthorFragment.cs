@@ -75,7 +75,7 @@ namespace Ass_Pain
         }
 
 
-        private void UncategorizedSongsRender()
+        private void UncategorizedSongsRender(bool visible)
         {
             UIRenderFunctions.FragmentPositionObject = artist.Albums.Select("Uncategorized")[0];
             
@@ -84,7 +84,7 @@ namespace Ass_Pain
                 ViewGroup.LayoutParams.MatchParent,
                 ViewGroup.LayoutParams.MatchParent
             );
-            songsScrollParams.SetMargins(0, 150, 0, 0);
+            songsScrollParams.SetMargins(0, visible ? (int)(300 * scale + 0.5f) : (int)(50 * scale + 0.5f), 0, 0);
             songsScrollParams.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
             songsScroll.LayoutParameters = songsScrollParams;
             
@@ -106,7 +106,7 @@ namespace Ass_Pain
             
             for (int i = 0; i < artist.Albums.Select("Uncategorized")[0].Songs.Count; i++)
             {
-
+                
                 LinearLayout lnIn = UIRenderFunctions.PopulateHorizontal(
                     artist.Albums.Select("Uncategorized")[0].Songs[i], scale,
                     150, 100,
@@ -119,6 +119,11 @@ namespace Ass_Pain
                     buttonMargins, 17,
                     nameMargins, scale, context
                 );
+                
+                
+                
+                
+                
                 lnMain.AddView(lnIn);
             }
 
@@ -157,31 +162,40 @@ namespace Ass_Pain
             int[] buttonMargins = { 50, 50, 50, 0 };
             int[] nameMargins = { 50, 50, 50, 50 };
             int[] cardMargins = { 40, 50, 0, 0 };
-            for (int i = 0; i < artist.Albums.Count; i++)
+
+            int index = 0;
+            foreach (var t in artist.Albums)
             {
-                if (artist.Albums[i].Showable && artist.Albums.Count > 1)
+                if (t.Showable && artist.Albums.Count > 1)
                 {
+                    
                     LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                        artist.Albums[i], scale, cardMargins, 15, i, context, albumButtons, Activity);
+                        t, scale, cardMargins, 15, index, context, albumButtons, Activity);
                     UIRenderFunctions.SetTilesImage(
-                        lnIn, artist.Albums[i], 150, 100,
+                        lnIn, t, 150, 100,
                         buttonMargins, 17,
                         nameMargins, scale, context
                     );
+                   
                     lin.AddView(lnIn);
+                    index++;
                 }
-
             }
 
+            /*
+            hr.AddView(lin);
+            mainLayout?.AddView(hr);
+           */
             
             if (artist.Albums.Count > 1)
             {
                 hr.AddView(lin);
                 mainLayout?.AddView(hr);
-                UncategorizedSongsRender();
+                UncategorizedSongsRender(true);
             }
             else
-                UncategorizedSongsRender();
+                UncategorizedSongsRender(false);
+            
         }
 
     }

@@ -2,16 +2,59 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"  
     android:orientation="vertical"  
     android:layout_width="match_parent"  
-    android:layout_height="match_parent">  
+    android:layout_height="270dp" 
+    android:background="@drawable/rounded"
+    >  
     <TextView  
-        android:id="@+id/dialogTitle"  
+        android:id="@+id/AddPlaylist_title"  
         android:layout_width="wrap_content"  
         android:layout_height="wrap_content"  
-        android:text="Dialog Title"  
+        android:text="Create new playlist"  
+        android:textColor="#ffffff"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
         android:textAppearance="?android:attr/textAppearanceLarge" />  
     <EditText  
         android:id="@+id/editText"  
-        android:layout_width="match_parent"  
-        android:layout_height="wrap_content"  
-        android:hint="Enter Something" />  
+        android:layout_width="258dp"
+        android:layout_gravity="center"
+        android:textAlignment="center"
+        android:layout_height="50dp" 
+        android:textColor="#ffffff"
+        android:textColorHint="#ffffff"
+        android:textSize="16dp"
+        android:layout_marginTop="20dp"
+        android:hint="Name for the playlist" 
+        android:backgroundTint="#3e5871"
+        android:background="@drawable/rounded"
+    />  
+    <LinearLayout 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:paddingBottom="40dp"
+    >
+        
+        <TextView android:layout_width="120dp" android:layout_height="50dp" 
+                  android:text="Cancel" 
+                  android:layout_marginRight="10dp"
+                  android:background="@drawable/rounded_button" 
+                  android:gravity="center"
+                  android:textSize="18dp"
+                  android:textColor="#ffffff"
+                  android:id="@+id/AddPlaylist_cancel"
+        />
+        <TextView android:layout_width="120dp" android:layout_height="50dp" 
+                  android:text="Submit" 
+                  android:layout_marginLeft="10dp"
+                  android:background="@drawable/rounded_button"
+                  android:gravity="center"
+                  android:textSize="18dp"
+                  android:textColor="#ffffff"
+                  android:id="@+id/AddPlaylist_submit"
+        />
+        
+    </LinearLayout>
 </LinearLayout> 

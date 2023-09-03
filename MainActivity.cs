@@ -117,6 +117,12 @@ namespace Ass_Pain
             //Local_notification_service notif_service = new Local_notification_service();
             //notif_service.song_control_notification();
             //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
+            
+            
+            /*
+             * Managing Frgamentation
+             */
+            
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
