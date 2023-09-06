@@ -25,6 +25,7 @@ using AngleSharp.Html;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Android.Content.PM;
+using Android.Graphics;
 using Android.Media;
 using Android.Provider;
 using AndroidX.Core.App;
@@ -57,7 +58,14 @@ namespace Ass_Pain
         private const int ActionPermissionsRequestCode = 13256;
         
         
-
+        /*
+         * Fragments
+         */
+        private AllSongsFragment allSongsFragment;
+        private YoutubeFragment youtubeFragment;
+        bool activeFragment = false;
+        
+      
         DrawerLayout drawer;
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -72,17 +80,18 @@ namespace Ass_Pain
             RequestMyPermission();
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
-
-            FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
-            fab.Click += FabOnClick;
+            
+            string action = Intent?.GetStringExtra("action");
+            if (action == "openDrawer")
+                drawer?.OpenDrawer(GravityCompat.Start);
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
-            drawer.OpenDrawer(GravityCompat.Start);
-            drawer.AddDrawerListener(toggle);
+            drawer?.OpenDrawer(GravityCompat.Start);
+            drawer?.AddDrawerListener(toggle);
             toggle.SyncState();
 
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
-            navigationView.SetNavigationItemSelectedListener(this);
+            navigationView?.SetNavigationItemSelectedListener(this);
             
             side_player.populate_side_bar(this);
             stateHandler.SetView(this);
@@ -122,7 +131,11 @@ namespace Ass_Pain
             /*
              * Managing Frgamentation
              */
-            
+            allSongsFragment = new AllSongsFragment(this);
+            youtubeFragment = new YoutubeFragment(this);
+
+
+
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
@@ -154,6 +167,19 @@ namespace Ass_Pain
         public override bool OnCreateOptionsMenu(IMenu menu)
         {
             MenuInflater.Inflate(Resource.Menu.menu_main, menu);
+            
+            Typeface font = Typeface.CreateFromAsset(Assets, "sulphur.ttf");
+            
+            Button songsItem = (Button)menu?.FindItem(Resource.Id.navBarItemSongs)?.ActionView;
+            Button youtubeItem = (Button)menu?.FindItem(Resource.Id.navBarItemYoutube)?.ActionView;
+            Button shareItem = (Button)menu?.FindItem(Resource.Id.navBarItemShare)?.ActionView;
+            Button settingsItem = (Button)menu?.FindItem(Resource.Id.navBarItemSettings)?.ActionView;
+
+            if (songsItem != null) songsItem.Typeface = font;
+            if (youtubeItem != null) youtubeItem.Typeface = font;
+            if (shareItem != null) shareItem.Typeface = font;
+            if (settingsItem != null) settingsItem.Typeface = font;
+
             return true;
         }
 
@@ -170,48 +196,63 @@ namespace Ass_Pain
             int id = item.ItemId;
             return id == Resource.Id.action_settings || base.OnOptionsItemSelected(item);
         }
+        
 
-        private void FabOnClick(object sender, EventArgs eventArgs)
-        {
-            View view = (View)sender;
-            Snackbar.Make(view, "Replace with your own action", Snackbar.LengthLong)
-                .SetAction("Action", (Android.Views.View.IOnClickListener)null).Show();
-        }
-
+    
         public bool OnNavigationItemSelected(IMenuItem item)
         {
+            var fragmentTransaction = SupportFragmentManager.BeginTransaction();
             int id = item.ItemId;
+            if (id == Resource.Id.navBarItemSongs) // ALl songs
+            {
+                if (!activeFragment)
+                {
+                    fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, allSongsFragment);
+                    activeFragment = true;
+                }
+                else if (activeFragment) fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, allSongsFragment);
+                fragmentTransaction.AddToBackStack(null);
+                fragmentTransaction.Commit();
 
-            if (id == Resource.Id.nav_camera) // home
-            {
-                Intent intent = new Intent(this, typeof(AllSongs));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-
             }
-            else if (id == Resource.Id.nav_gallery) // equalizer
+            else if (id == Resource.Id.navBarItemYoutube) // youtube
             {
-                Intent intent = new Intent(this, typeof(equalizer));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
+                if (!activeFragment)
+                {
+                    fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, youtubeFragment);
+                    activeFragment = true;
+                }
+                else fragmentTransaction.Replace( Resource.Id.MainFragmentLayoutDynamic, youtubeFragment);
+                fragmentTransaction.AddToBackStack(null);
+                fragmentTransaction.Commit();
             }
-            else if (id == Resource.Id.nav_slideshow) // youtube
+            else if (id == Resource.Id.navBarItemShare) // share
             {
-                Intent intent = new Intent(this, typeof(youtube));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-            }
-            else if (id == Resource.Id.nav_share) // share
-            {
+                /*
                 Intent intent = new Intent(this, typeof(share));
                 intent.PutExtra("link_author", "");
                 StartActivity(intent);
+                */
+            }
+            else if (id == Resource.Id.navBarItemSettings) // equalizer
+            {
+                /*
+                Intent intent = new Intent(this, typeof(equalizer));
+                intent.PutExtra("link_author", "");
+                StartActivity(intent);
+                */
             }
             
 
             drawer.CloseDrawer(GravityCompat.Start);
             return true;
         }
+        
+        
+       
+        
+        
+        
 
         /// <inheritdoc />
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)

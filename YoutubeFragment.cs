@@ -1,43 +1,23 @@
-﻿/*
 using System;
-using System.Runtime.CompilerServices;
-using Android.App;
 using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using AndroidX.AppCompat.App;
-using AndroidX.AppCompat.Widget;
-using AndroidX.Core.View;
-using AndroidX.DrawerLayout.Widget;
-using Google.Android.Material.FloatingActionButton;
-using Google.Android.Material.Navigation;
-using Google.Android.Material.Snackbar;
-using Android.Webkit;
-using Newtonsoft.Json;
-using System.Runtime.InteropServices;
-using Xamarin.Essentials;
-using Android.Widget;
 using Android.Graphics;
-using Android.Graphics.Drawables;
-using AndroidX.Core.App;
-using AndroidX.Core.Content;
-using AndroidX.Core.Graphics;
-#if DEBUG
-using Ass_Pain.Helpers;
-#endif
+using Android.OS;
+using Android.Views;
+using Android.Webkit;
+using Android.Widget;
+using AndroidX.Fragment.App;
 using Google.Android.Material.BottomSheet;
-using Google.Android.Material.Chip;
+using Google.Android.Material.FloatingActionButton;
+
 
 namespace Ass_Pain
 {
-    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
-    public class youtube : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
+    public class YoutubeFragment : Fragment
     {
-       
-
-        DrawerLayout drawer;
-        WebView webView;
+        private readonly Context context;
+        private RelativeLayout mainLayout;
+        private readonly float scale;
+        private WebView webView;
 
         private static FloatingActionButton _previous;
         private static FloatingActionButton _next;
@@ -49,73 +29,30 @@ namespace Ass_Pain
         private static TextView _songName;
         private static TextView _songArtist;
         private static TextView _songAlbum;
-
-        SensorSpeed speed = SensorSpeed.Game;
         
-        Android.Widget.Button download;
-        
-        protected override void OnCreate(Bundle savedInstanceState)
+            
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="inflater"></param>
+        /// <param name="container"></param>
+        /// <param name="savedInstanceState"></param>
+        /// <returns></returns>
+        public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            base.OnCreate(savedInstanceState);
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
-            SetContentView(Resource.Layout.activity_youtube);
-            AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
-            SetSupportActionBar(toolbar);
-
-            drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
-
-        
-
-
-
-            // side bar where are song controlls
-            side_player.populate_side_bar(this);
-            MainActivity.stateHandler.SetView(this);
-           
-
-            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
-            drawer.AddDrawerListener(toggle);
-            toggle.SyncState();
-
-            NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
-            navigationView.SetNavigationItemSelectedListener(this);
-
-            webView = FindViewById<WebView>(Resource.Id.webview);
+            View view = inflater.Inflate(Resource.Layout.youtube_fragment, container, false);
+            mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.YoutubeFragmentMainRelative);
+            
+            webView = view?.FindViewById<WebView>(Resource.Id.webview);
             webView.Settings.JavaScriptEnabled = true;
             webView.SetWebViewClient(new HelloWebViewClient());
             webView.LoadUrl("https://www.youtube.com/");
-            
-            try
-            {
-                if (Accelerometer.IsMonitoring)
-                    Accelerometer.Stop();
-                else
-                    Accelerometer.Start(speed);
-            }
-            catch (FeatureNotSupportedException fnsEx)
-            {
-                // Feature not supported on device
-                Toast error = new Toast(this);
-                error.SetText("Feature not supported on device");
-                error.Show();
-            }
-            catch (Exception ex)
-            {
-                // Other error has occurred.
-                Toast error = new Toast(this);
-                error.SetText("Other error has occurred");
-                error.Show();
-            }
+       
 
-           
-
-            Accelerometer.ShakeDetected += acc_shaked;
-
-
-            FloatingActionButton downloadPopupShow = FindViewById<FloatingActionButton>(Resource.Id.fab);
-            Button mp4 = FindViewById<Button>(Resource.Id.mp4_btn);
-            Button musicBrainz = FindViewById<Button>(Resource.Id.music_brainz_btn);
-            Button downloadCasual = FindViewById<Button>(Resource.Id.download_basic_btn);
+            FloatingActionButton downloadPopupShow = view?.FindViewById<FloatingActionButton>(Resource.Id.fab);
+            Button mp4 = view?.FindViewById<Button>(Resource.Id.mp4_btn);
+            Button musicBrainz = view?.FindViewById<Button>(Resource.Id.music_brainz_btn);
+            Button downloadCasual = view?.FindViewById<Button>(Resource.Id.download_basic_btn);
 
             if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Invisible;
             if (mp4 != null) mp4.Visibility = ViewStates.Invisible;
@@ -184,10 +121,12 @@ namespace Ass_Pain
             {
                 Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadWithMbid);
             };
-
+            
+            
+            return view;
         }
         
-        /// <summary>
+         /// <summary>
         /// pop up for customizing downloaded song, choosing which image or name of song you want to use to save
         /// the song
         /// </summary>
@@ -271,107 +210,18 @@ namespace Ass_Pain
 
 
         }
+        
 
-        void acc_shaked(object sender, EventArgs e)
+        /// <summary>
+        /// Constructor for SongsFragment.cs
+        /// </summary>
+        /// <param name="ctx">Main Activity context (e.g. "this")</param>
+        public YoutubeFragment(Context ctx)
         {
-            
-            Toast error = new Toast(this);
-            error.SetText("shaked");
-            error.Show();
-
-            int down_vis = 0;
-            if (down_vis == 0)
-            {
-                down_vis = 1;
-                download.Visibility = ViewStates.Visible;
-            }
-            else
-            {
-                down_vis = 0;
-                download.Visibility = ViewStates.Invisible;
-            }
-
+            context = ctx;
+            if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
         }
 
-        public override void OnBackPressed()
-        {
-            DrawerLayout drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
-            if (drawer.IsDrawerOpen(GravityCompat.Start))
-            {
-                drawer.CloseDrawer(GravityCompat.Start);
-            }
-            else if (webView.CanGoBack())
-            {
-                webView.GoBack();
-            }
-            else
-            {
-                base.OnBackPressed();
-            }
-        }
-
-        public override bool OnCreateOptionsMenu(IMenu menu)
-        {
-            MenuInflater.Inflate(Resource.Menu.menu_main, menu);
-            return true;
-        }
-
-        public override bool OnOptionsItemSelected(IMenuItem item)
-        {
-            int id = item.ItemId;
-            if (id == Resource.Id.action_settings)
-            {
-                return true;
-            }
-
-            return base.OnOptionsItemSelected(item);
-        }
-
-        private void FabOnClick(object sender, EventArgs eventArgs)
-        {
-            View view = (View)sender;
-            Snackbar.Make(view, "Replace with your own action", Snackbar.LengthLong)
-                .SetAction("Action", (Android.Views.View.IOnClickListener)null).Show();
-        }
-
-        public bool OnNavigationItemSelected(IMenuItem item)
-        {
-            int id = item.ItemId;
-
-            if (id == Resource.Id.nav_camera) // home
-            {
-                
-                Intent intent = new Intent(this, typeof(AllSongs));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-                
-            }
-            else if (id == Resource.Id.nav_gallery) // equalizer
-            {
-                Intent intent = new Intent(this, typeof(equalizer));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-            }
-            else if (id == Resource.Id.nav_slideshow) // youtube
-            {
-                drawer.CloseDrawer(GravityCompat.Start);
-            }
-            else if (id == Resource.Id.nav_share) // share
-            {
-                Intent intent = new Intent(this, typeof(share));
-                StartActivity(intent);
-            }
-
-
-            drawer.CloseDrawer(GravityCompat.Start);
-            return true;
-        }
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
-        {
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-
-            base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
+        
     }
 }
-*/

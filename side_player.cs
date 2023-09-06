@@ -228,12 +228,13 @@ namespace Ass_Pain
 			song_author.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.Title;
 			song_author.Click += (sender, e) =>
 			{
+				/*
 				Intent intent = new Intent(context, typeof(AllSongs));
 				int? x = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.GetHashCode();
 				if (x is not { } hash) return;
 				intent.PutExtra("link_author", hash);
 				context.StartActivity(intent);
-
+				*/
 			};
 				
 			song_album.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Album.Title;

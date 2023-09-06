@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Android.Graphics;
 using AndroidX.Fragment.App;
+using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 
 namespace Ass_Pain
@@ -361,7 +362,8 @@ namespace Ass_Pain
                     {
                         if (pr.Key == pressedButton && pr.Value is Album album1)
                         {
-                            ((AllSongs)activity).ReplaceFragments(AllSongs.FragmentType.AlbumFrag, album1.Title);
+                            // ((AllSongsFragment)activity).ReplaceFragments(AllSongsFragment.FragmentType.AlbumFrag, album1.Title);
+                            AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AlbumFrag, album1.Title);
                             break;
                         }
                     }
@@ -387,7 +389,8 @@ namespace Ass_Pain
                     {
                         if (pr.Key == pressedButton && pr.Value is Artist artist1)
                         {
-                            ((AllSongs)activity).ReplaceFragments(AllSongs.FragmentType.AuthorFrag, artist1.Title);
+                            // ((AllSongsFragment)activity).ReplaceFragments(AllSongsFragment.FragmentType.AuthorFrag, artist1.Title);
+                            AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AuthorFrag, artist1.Title);
                             break;
                         }
                     }

@@ -64,12 +64,6 @@ namespace Ass_Pain
             
             RenderAlbumsSongs();
 
-            TextView texxx = new TextView(context);
-            texxx.TextSize = 30;
-            texxx.Text = "idkk just click";
-            texxx.Click += (sender, args) =>
-                ((AllSongs)Activity).ReplaceFragments(AllSongs.FragmentType.AlbumFrag, "Smile");
-            // mainLayout?.AddView(texxx);
 
             return view;
         }

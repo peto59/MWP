@@ -115,7 +115,7 @@ namespace Ass_Pain
                 songsCount.TextAlignment = TextAlignment.Center;
 
 
-                lnIn.Click += (_, _) => ((AllSongs)Activity).ReplaceFragments(AllSongs.FragmentType.PlaylistFrag, playlist);
+                lnIn.Click += (_, _) => AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.PlaylistFrag, playlist);
                 
 
                 lnIn.AddView(plaName);
