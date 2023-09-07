@@ -28,6 +28,7 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.Media;
 using Android.Provider;
+using Android.Text;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using Octokit;
@@ -37,6 +38,7 @@ using Application = Android.App.Application;
 using FileMode = System.IO.FileMode;
 using FileProvider = AndroidX.Core.Content.FileProvider;
 using Stream = System.IO.Stream;
+using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -56,7 +58,7 @@ namespace Ass_Pain
         public static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
         private const int ActionInstallPermissionRequestCode = 10356;
         private const int ActionPermissionsRequestCode = 13256;
-        
+        private Typeface? font;
         
         /*
          * Fragments
@@ -66,7 +68,7 @@ namespace Ass_Pain
         bool activeFragment = false;
         
       
-        DrawerLayout drawer;
+        DrawerLayout? drawer;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -74,8 +76,8 @@ namespace Ass_Pain
             // Finish();   
             Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
-            AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
-            SetSupportActionBar(toolbar);
+            Toolbar? toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
+            if (toolbar != null) SetSupportActionBar(toolbar);
             
             RequestMyPermission();
 
@@ -133,9 +135,21 @@ namespace Ass_Pain
              */
             allSongsFragment = new AllSongsFragment(this);
             youtubeFragment = new YoutubeFragment(this);
-
-
-
+            
+            
+            /*
+             * Font changing in Nav Menu
+             */
+            font = Typeface.CreateFromAsset(Assets, "sulphur.ttf");
+            TextView? songsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemSongs);
+            TextView? downloadNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemDownload);
+            TextView? shareNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemUpload);
+            TextView? settingsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemSettings);
+            
+            if (songsNavigationButton != null) songsNavigationButton.Typeface = font;
+            if (downloadNavigationButton != null) downloadNavigationButton.Typeface = font;
+            if (shareNavigationButton != null) shareNavigationButton.Typeface = font;
+            if (settingsNavigationButton != null) settingsNavigationButton.Typeface = font;
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
@@ -164,23 +178,12 @@ namespace Ass_Pain
         }
 
         /// <inheritdoc />
-        public override bool OnCreateOptionsMenu(IMenu menu)
+        public override bool OnCreateOptionsMenu(IMenu? menu)
         {
             MenuInflater.Inflate(Resource.Menu.menu_main, menu);
-            
-            Typeface font = Typeface.CreateFromAsset(Assets, "sulphur.ttf");
-            
-            Button songsItem = (Button)menu?.FindItem(Resource.Id.navBarItemSongs)?.ActionView;
-            Button youtubeItem = (Button)menu?.FindItem(Resource.Id.navBarItemYoutube)?.ActionView;
-            Button shareItem = (Button)menu?.FindItem(Resource.Id.navBarItemShare)?.ActionView;
-            Button settingsItem = (Button)menu?.FindItem(Resource.Id.navBarItemSettings)?.ActionView;
+           
 
-            if (songsItem != null) songsItem.Typeface = font;
-            if (youtubeItem != null) youtubeItem.Typeface = font;
-            if (shareItem != null) shareItem.Typeface = font;
-            if (settingsItem != null) settingsItem.Typeface = font;
-
-            return true;
+            return base.OnCreateOptionsMenu(menu);
         }
 
         /// <inheritdoc />
@@ -197,7 +200,6 @@ namespace Ass_Pain
             return id == Resource.Id.action_settings || base.OnOptionsItemSelected(item);
         }
         
-
     
         public bool OnNavigationItemSelected(IMenuItem item)
         {
@@ -244,7 +246,7 @@ namespace Ass_Pain
             }
             
 
-            drawer.CloseDrawer(GravityCompat.Start);
+            drawer?.CloseDrawer(GravityCompat.Start);
             return true;
         }
         

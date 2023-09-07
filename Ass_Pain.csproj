@@ -34,6 +34,7 @@
     <IsLinux Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true' ">true</IsLinux>
     <!-- <IsLinuxOrWindows Condition=" '$(IsLinux)' == 'true' or '$(IsWindows)' == 'true' ">true</IsLinuxOrWindows> -->
     <IsGithubRunner>true</IsGithubRunner>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(RUNNER_OS)' == '' ">
     <!-- Property group specific to GitHub Actions runner -->
@@ -166,6 +167,10 @@
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
     <AndroidResource Include="Resources\drawable\rounded_button.xml" />
+    <AndroidResource Include="Resources\drawable\rounded_view_white.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\drawable\settings.xml" />
     <AndroidResource Include="Resources\drawable\share.xml" />
     <AndroidResource Include="Resources\drawable\shuffle2.xml">
@@ -269,7 +274,7 @@
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.0.0.1" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
     <PackageReference Include="YoutubeExplode">
-      <Version>6.2.15</Version>
+      <Version>6.3.2</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
