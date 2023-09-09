@@ -148,6 +148,7 @@
     <None Include="Assets\AboutAssets.txt" />
   </ItemGroup>
   <ItemGroup>
+    <AndroidResource Include="Resources\drawable\albums.xml" />
     <AndroidResource Include="Resources\drawable\back.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -162,10 +163,12 @@
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
     <AndroidResource Include="Resources\drawable\music.xml" />
+    <AndroidResource Include="Resources\drawable\new_playlist.xml" />
     <AndroidResource Include="Resources\drawable\no_shuffle2.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\drawable\playlists.xml" />
     <AndroidResource Include="Resources\drawable\rounded_button.xml" />
     <AndroidResource Include="Resources\drawable\rounded_view_white.xml">
       <SubType>Designer</SubType>
@@ -182,7 +185,6 @@
     </AndroidResource>
     <AndroidResource Include="Resources\layout\album_author_fragment.xml" />
     <AndroidResource Include="Resources\layout\album_fragment.xml" />
-    <AndroidResource Include="Resources\layout\all_songs_fragment.xml" />
     <AndroidResource Include="Resources\layout\app_bar_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>

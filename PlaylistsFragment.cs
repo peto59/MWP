@@ -17,7 +17,9 @@ namespace Ass_Pain
     {
         private readonly Context context;
         private RelativeLayout mainLayout;
-        
+
+
+        private PlaylistFragment playlistFragment; 
             
         /// <summary>
         /// 
@@ -44,6 +46,7 @@ namespace Ass_Pain
         public PlaylistsFragment(Context ctx)
         {
             context = ctx;
+            playlistFragment = new PlaylistFragment(ctx);
         }
 
 
@@ -115,7 +118,17 @@ namespace Ass_Pain
                 songsCount.TextAlignment = TextAlignment.Center;
 
 
-                lnIn.Click += (_, _) => AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.PlaylistFrag, playlist);
+                lnIn.Click += (_, _) =>
+                {
+                    var fragmentTransaction = ParentFragmentManager.BeginTransaction();
+                    Bundle bundle = new Bundle();
+                    bundle.PutString("title", playlist);
+                    
+                    playlistFragment.Arguments = bundle;
+                    fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, playlistFragment);
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                };
                 
 
                 lnIn.AddView(plaName);

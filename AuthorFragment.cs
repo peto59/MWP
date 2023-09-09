@@ -29,7 +29,7 @@ namespace Ass_Pain
         private Dictionary<LinearLayout, object> albumButtons = new Dictionary<LinearLayout, object>();
         private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
 
-
+        private AlbumFragment albumFragment;
 
         /// <summary>
         /// Constructor for AuthorFragment.cs
@@ -39,6 +39,7 @@ namespace Ass_Pain
         {
             context = ctx;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
+            albumFragment = new AlbumFragment(ctx);
         }
 
         /// <summary>
@@ -164,7 +165,7 @@ namespace Ass_Pain
                 {
                     
                     LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                        t, scale, cardMargins, 15, index, context, albumButtons, Activity);
+                        t, scale, cardMargins, 15, index, context, albumButtons, ParentFragmentManager, albumFragment);
                     UIRenderFunctions.SetTilesImage(
                         lnIn, t, 150, 100,
                         buttonMargins, 17,

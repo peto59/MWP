@@ -63,8 +63,15 @@ namespace Ass_Pain
         /*
          * Fragments
          */
-        private AllSongsFragment allSongsFragment;
         private YoutubeFragment youtubeFragment;
+        
+        private SongsFragment songsFragment;
+        private SongsFragment PlaylistsFragment;
+        private AlbumAuthorFragment AlbumsFragment;
+        private AlbumFragment albumFragment;
+        private AuthorFragment authorFragment;
+        private PlaylistsFragment playlistsFragment;
+        private PlaylistFragment playlistFragment;
         bool activeFragment = false;
         
       
@@ -133,24 +140,108 @@ namespace Ass_Pain
             /*
              * Managing Frgamentation
              */
-            allSongsFragment = new AllSongsFragment(this);
             youtubeFragment = new YoutubeFragment(this);
+            songsFragment = new SongsFragment(this, Assets);
+            AlbumsFragment = new AlbumAuthorFragment(this);
+            playlistsFragment = new PlaylistsFragment(this);
             
             
             /*
-             * Font changing in Nav Menu
+             * Font changing and button clicks in Nav Menu
              */
             font = Typeface.CreateFromAsset(Assets, "sulphur.ttf");
+            
             TextView? songsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemSongs);
+            TextView? playlistsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemPlaylists);
+            TextView? albumsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemAlbums);
+
             TextView? downloadNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemDownload);
             TextView? shareNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemUpload);
             TextView? settingsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemSettings);
-            
+
+            if (playlistsNavigationButton != null) playlistsNavigationButton.Typeface = font;
+            if (albumsNavigationButton != null) albumsNavigationButton.Typeface = font;
             if (songsNavigationButton != null) songsNavigationButton.Typeface = font;
             if (downloadNavigationButton != null) downloadNavigationButton.Typeface = font;
             if (shareNavigationButton != null) shareNavigationButton.Typeface = font;
             if (settingsNavigationButton != null) settingsNavigationButton.Typeface = font;
+
+            if (albumsNavigationButton != null)
+                albumsNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, AlbumsFragment);
+                        activeFragment = true;
+                    }
+                    else if (activeFragment)
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, AlbumsFragment);
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                };
+
+            if (playlistsNavigationButton != null)
+                playlistsNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, playlistsFragment);
+                        activeFragment = true;
+                    }
+                    else if (activeFragment)
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, playlistsFragment);
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                };
+
+            if (songsNavigationButton != null)
+                songsNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, songsFragment);
+                        activeFragment = true;
+                    }
+                    else if (activeFragment)
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, songsFragment);
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                };
+            
+
+            if (downloadNavigationButton != null)
+                downloadNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, youtubeFragment);
+                        activeFragment = true;
+                    }
+                    else fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, youtubeFragment);
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                };
+            
         }
+        
+
+        
+        
+        
+        
+        
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
@@ -203,47 +294,6 @@ namespace Ass_Pain
     
         public bool OnNavigationItemSelected(IMenuItem item)
         {
-            var fragmentTransaction = SupportFragmentManager.BeginTransaction();
-            int id = item.ItemId;
-            if (id == Resource.Id.navBarItemSongs) // ALl songs
-            {
-                if (!activeFragment)
-                {
-                    fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, allSongsFragment);
-                    activeFragment = true;
-                }
-                else if (activeFragment) fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, allSongsFragment);
-                fragmentTransaction.AddToBackStack(null);
-                fragmentTransaction.Commit();
-
-            }
-            else if (id == Resource.Id.navBarItemYoutube) // youtube
-            {
-                if (!activeFragment)
-                {
-                    fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, youtubeFragment);
-                    activeFragment = true;
-                }
-                else fragmentTransaction.Replace( Resource.Id.MainFragmentLayoutDynamic, youtubeFragment);
-                fragmentTransaction.AddToBackStack(null);
-                fragmentTransaction.Commit();
-            }
-            else if (id == Resource.Id.navBarItemShare) // share
-            {
-                /*
-                Intent intent = new Intent(this, typeof(share));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-                */
-            }
-            else if (id == Resource.Id.navBarItemSettings) // equalizer
-            {
-                /*
-                Intent intent = new Intent(this, typeof(equalizer));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-                */
-            }
             
 
             drawer?.CloseDrawer(GravityCompat.Start);

@@ -6,8 +6,10 @@ using Android.Widget;
 using System.Collections.Generic;
 using System.Linq;
 using Android.Graphics;
+using Android.OS;
 using AndroidX.Fragment.App;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using Orientation = Android.Widget.Orientation;
 
 namespace Ass_Pain
@@ -311,31 +313,26 @@ namespace Ass_Pain
             lnIn.SetHorizontalGravity(GravityFlags.Center);
             return lnIn;
         }
-        
-        
-        
-        
-        
-        
+
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="musics"></param>
-        /// <param name="ww"></param>
-        /// <param name="hh"></param>
-        /// <param name="btnMargins"></param>
-        /// <param name="nameMargins"></param>
+        /// <param name="scale"></param>
         /// <param name="cardMargins"></param>
         /// <param name="nameSize"></param>
         /// <param name="index"></param>
         /// <param name="context"></param>
         /// <param name="albumButtons"></param>
-        /// <param name="activity"></param>
+        /// <param name="manager"></param>
         /// <param name="linForDelete"></param>
+        /// <param name="albumFragment"></param>
+        /// <param name="authorFragment"></param>
         /// <returns></returns>
         public static LinearLayout PopulateVertical(
             MusicBaseClass musics, float scale, int[] cardMargins, int nameSize, int index,
-            Context context, Dictionary<LinearLayout, object> albumButtons, FragmentActivity activity, 
+            Context context, Dictionary<LinearLayout, object> albumButtons, FragmentManager manager, AlbumFragment albumFragment = null, AuthorFragment authorFragment = null,
             LinearLayout linForDelete = null
         )
         {
@@ -363,7 +360,18 @@ namespace Ass_Pain
                         if (pr.Key == pressedButton && pr.Value is Album album1)
                         {
                             // ((AllSongsFragment)activity).ReplaceFragments(AllSongsFragment.FragmentType.AlbumFrag, album1.Title);
-                            AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AlbumFrag, album1.Title);
+                            // AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AlbumFrag, album1.Title);
+                            var fragmentTransaction = manager.BeginTransaction();
+                            Bundle bundle = new Bundle();
+                            bundle.PutString("title", album1.Title);
+
+                            if (albumFragment != null)
+                            {
+                                albumFragment.Arguments = bundle;
+                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumFragment);
+                                fragmentTransaction.AddToBackStack(null);
+                                fragmentTransaction.Commit();
+                            }
                             break;
                         }
                     }
@@ -390,7 +398,18 @@ namespace Ass_Pain
                         if (pr.Key == pressedButton && pr.Value is Artist artist1)
                         {
                             // ((AllSongsFragment)activity).ReplaceFragments(AllSongsFragment.FragmentType.AuthorFrag, artist1.Title);
-                            AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AuthorFrag, artist1.Title);
+                            // AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AuthorFrag, artist1.Title);
+                            var fragmentTransaction = manager.BeginTransaction();
+                            Bundle bundle = new Bundle();
+                            bundle.PutString("title", artist1.Title);
+
+                            if (authorFragment != null)
+                            {
+                                authorFragment.Arguments = bundle;
+                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, authorFragment);
+                                fragmentTransaction.AddToBackStack(null);
+                                fragmentTransaction.Commit();
+                            }
                             break;
                         }
                     }
