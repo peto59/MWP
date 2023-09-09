@@ -75,7 +75,6 @@ namespace Ass_Pain
                 ViewGroup.LayoutParams.MatchParent
             );
             songsScrollParams.SetMargins(0, 150, 0, 0);
-            songsScrollParams.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
             songsScroll.LayoutParameters = songsScrollParams;
             
 

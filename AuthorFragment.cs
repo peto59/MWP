@@ -80,7 +80,6 @@ namespace Ass_Pain
                 ViewGroup.LayoutParams.MatchParent
             );
             songsScrollParams.SetMargins(0, visible ? (int)(300 * scale + 0.5f) : (int)(50 * scale + 0.5f), 0, 0);
-            songsScrollParams.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
             songsScroll.LayoutParameters = songsScrollParams;
             
 
@@ -143,7 +142,6 @@ namespace Ass_Pain
                 hrHeight
             );
             hrParams.SetMargins(0, 150, 0, 0);
-            hrParams.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
             hr.LayoutParameters = hrParams;
 
             LinearLayout lin = new LinearLayout(context);

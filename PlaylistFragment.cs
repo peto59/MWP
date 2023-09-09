@@ -62,7 +62,6 @@ namespace Ass_Pain
                 ViewGroup.LayoutParams.MatchParent
             );
             inPlaylistScrollParams.SetMargins(0, ActionScrollViewHeight, 0, 0);
-            inPlaylistScrollParams.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
             inPlaylistScroll.LayoutParameters = inPlaylistScrollParams;
             
             LinearLayout inPlaylistLnMain = new LinearLayout(context);

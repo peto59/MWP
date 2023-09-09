@@ -178,7 +178,6 @@ namespace Ass_Pain
                     ViewGroup.LayoutParams.MatchParent
                 );
                 authorScrollParams.SetMargins(0, 250, 0, 0);
-                authorScrollParams.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
                 authorScroll.LayoutParameters = authorScrollParams;
 
                 LinearLayout authorLin = AuthorTiles();
@@ -194,7 +193,6 @@ namespace Ass_Pain
                     ViewGroup.LayoutParams.MatchParent
                 );
                 albumScrollParams.SetMargins(displayWidth / 2, 250, 0, 0);
-                albumScrollParams.AddRule(LayoutRules.Below, Resource.Id.toolbar1);
                 albumScroll.LayoutParameters = albumScrollParams;
             }
 
