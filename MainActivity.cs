@@ -439,7 +439,7 @@ namespace Ass_Pain
 
             if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
             {
-                new Thread(NetworkManager.Listener).Start();
+                //new Thread(NetworkManager.Listener).Start();
             }
             
             new Thread(() => {
