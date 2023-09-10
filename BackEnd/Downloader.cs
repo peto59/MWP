@@ -490,7 +490,7 @@ namespace Ass_Pain
                     int cnt1 = cnt;
                     MainActivity.stateHandler.view.RunOnUiThread(() =>
                     {
-                        YoutubeFragment.SongSelectionDialog(current.title, current.artists.First().title,
+                        YoutubeFragment.UpdateSsDialog(current.title, current.artists.First().title,
                             current.releaseGroups.First().title,
                             imgBuffer[cnt1], originalAuthor,
                             originalTitle, cnt1 < buffer.Count - 1 || next, cnt1 > 0);
