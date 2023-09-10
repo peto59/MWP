@@ -3,42 +3,33 @@ using System.Collections.Generic;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
+using System.Xml.Serialization;
 using Android.App;
+using Ass_Pain.BackEnd;
+using Newtonsoft.Json;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
 
 namespace Ass_Pain
 {
+    [Serializable]
+    [JsonObject(MemberSerialization.OptIn)]
     public class Artist : MusicBaseContainer
     {
+        [JsonProperty]
         public override string Title { get; }
-
+        
         public override List<Song> Songs { get; } = new List<Song>();
-        public Song Song
-        {
-            get
-            {
-                return Songs.Count > 0 ? Songs[0] : new Song("No Name", new DateTime(1970, 1, 1), "Default", false);
-            }
-        }
+        public Song Song => Songs.Count > 0 ? Songs[0] : new Song("No Name", new DateTime(1970, 1, 1), "Default", false);
 
         public List<Album> Albums { get; } = new List<Album> {new Album("Uncategorized", "Default", true, false)};
-        public Album Album
-        {
-            get
-            {
-                return Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
-            }
-        }
+        public Album Album => Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
+        
         public string ImgPath { get; }
         public bool Initialized { get; private set; } = true;
-        
-        public override Bitmap Image
-        {
-            get { return GetImage(); }
-        }
-        
+        public override Bitmap Image => GetImage();
+
         public void AddAlbum(ref List<Album> albums)
         {
             foreach (Album album in albums.Where(album => !Albums.Contains(album)))
@@ -158,7 +149,7 @@ namespace Ass_Pain
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
                 if (Application.Context.Assets != null)
                     image = BitmapFactory.DecodeStream(
@@ -212,26 +203,40 @@ namespace Ass_Pain
             Initialized = initialized;
         }
 
+        [JsonConstructor]
+        public Artist(string title)
+        {
+            Title = title;
+            Initialized = false;
+        }
+
+        public Artist(Artist artist, string imgPath)
+        {
+            Title = artist.Title;
+            Songs = artist.Songs;
+            Albums = artist.Albums;
+            ImgPath = imgPath;
+        }
+
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            if (!(obj is Artist item))
-            {
-                return false;
-            }
-            
-            return Equals(item);
+            return obj is Artist item && Equals(item);
         }
 
         protected bool Equals(Artist other)
         {
+            //todo: stack smashing?
             return Title == other.Title && Equals(Songs, other.Songs) && Equals(Albums, other.Albums) && Equals(ImgPath, other.ImgPath);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return HashCode.Combine(Title, Songs, Albums, ImgPath);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Artist: title> {Title} song> {Song.Title} album> {Album.Title}";

@@ -3,48 +3,30 @@ using System.Collections.Generic;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
+using System.Xml.Serialization;
 using Android.App;
+using Ass_Pain.BackEnd;
+using Newtonsoft.Json;
+using File = TagLib.File;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
 
 namespace Ass_Pain
 {
+    [Serializable]
     public class Song : MusicBaseClass
     {
         public List<Artist> Artists { get; } = new List<Artist>();
-        public Artist Artist
-        {
-            get
-            {
-                return Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
-            }
-        }
-
-        public Album Album
-        {
-            get
-            {
-                return Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
-            }
-        }
-
+        public Artist Artist => Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
         public List<Album> Albums { get; } = new List<Album>();
-        public string Name { get; }
-        public override string Title
-        {
-            get { return Name; }
-        }
-        
+        public List<Album> XmlAlbums => Albums.Where(a => a.Title != "No Album").ToList();
+        public Album Album => Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
+        public override string Title { get; }
         public DateTime DateCreated { get; }
-        
         public string Path { get; }
         public bool Initialized { get; private set; } = true;
-        
-        public override Bitmap Image
-        {
-            get { return GetImage(); }
-        }
+        public override Bitmap Image => GetImage();
 
         public void AddArtist(ref List<Artist> artists)
         {
@@ -142,14 +124,15 @@ namespace Ass_Pain
             Bitmap image = null;
             try
             {
-                using TagLib.File tagFile = TagLib.File.Create(Path);
+                using File tagFile = File.Create(Path);
+                tagFile.Mode = File.AccessMode.Read;
                 using MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
                 image = BitmapFactory.DecodeStream(ms);
             }
             catch (Exception ex)
             {
 #if DEBUG
-                MyConsole.WriteLine(ex.Message);
+                MyConsole.WriteLine(ex);
                 MyConsole.WriteLine($"Doesnt contain image: {Path}");
 #endif
             }
@@ -186,103 +169,118 @@ namespace Ass_Pain
 
             return image;
         }
-
-        public Song(List<Artist> artists, string name, DateTime dateCreated, string path, Album album = null)
+        public Song(List<Artist> artists, List<Album> albums, string title)
         {
-            Artists = artists;
+            Artists = artists.Distinct().ToList();
+            Albums = albums.Distinct().ToList();
+            Title = title;
+            Initialized = false;
+        }
+        public Song(List<Artist> artists, string title, DateTime dateCreated, string path, Album album = null)
+        {
+            Artists = artists.Distinct().ToList();
             if (album != null)
             {
                 Albums = new List<Album> {album};
             }
-            Name = name;
+            Title = title;
             DateCreated = dateCreated;
             Path = path;
         }
-        public Song(Artist artist, string name, DateTime dateCreated, string path, Album album = null)
+        public Song(Artist artist, string title, DateTime dateCreated, string path, Album album = null)
         {
             Artists = new List<Artist> {artist};
             if (album != null)
             {
                 Albums = new List<Album> {album};
             }
-            Name = name;
+            Title = title;
             DateCreated = dateCreated;
             Path = path;
         }
         
-        public Song(List<Artist> artists, string name, DateTime dateCreated, string path, List<Album> albums)
+        public Song(List<Artist> artists, string title, DateTime dateCreated, string path, List<Album> albums, bool initialized = true)
         {
-            Artists = artists;
-            Albums = albums;
-            Name = name;
+            Artists = artists.Distinct().ToList();
+            Albums = albums.Distinct().ToList();
+            Title = title;
             DateCreated = dateCreated;
             Path = path;
+            Initialized = initialized;
         }
-        public Song(Artist artist, string name, DateTime dateCreated, string path, List<Album> albums)
+        
+        public Song(Artist artist, string title, DateTime dateCreated, string path, List<Album> albums)
         {
             Artists = new List<Artist> {artist};
-            Albums = albums;
-            Name = name;
+            Albums = albums.Distinct().ToList();
+            Title = title;
             DateCreated = dateCreated;
             Path = path;
         }
         
-        public Song(string name, DateTime dateCreated, string path, bool initialized = true)
+        public Song(string title, DateTime dateCreated, string path, bool initialized = true)
         {
-            Name = name;
+            Title = title;
             DateCreated = dateCreated;
             Path = path;
             Initialized = initialized;
         }
 
-        public Song(Song song, string name)
+        public Song(Song song, string title)
         {
             Artists = song.Artists;
             Albums = song.Albums;
-            Name = name;
+            Title = title;
             DateCreated = song.DateCreated;
             Path = song.Path;
         }
         
-        public Song(Song song, string name, string path)
+        public Song(Song song, string title, string path)
         {
             Artists = song.Artists;
             Albums = song.Albums;
-            Name = name;
+            Title = title;
             DateCreated = song.DateCreated;
             Path = path;
         }
-        
+
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            if (!(obj is Song item))
+            return obj is Song item && Equals(item);
+        }
+
+        private bool Equals(Song other)
+        {
+            return Equals(Artists, other.Artists) && Equals(Albums, other.Albums) && Title == other.Title && DateCreated.Equals(other.DateCreated) && Path == other.Path;
+        }
+        
+        public bool ShallowEquals(Song other)
+        {
+            bool equals = Artists.Aggregate(true, (current1, thisArtist) => other.Artists.Aggregate(current1, (current, otherArtist) => current && thisArtist.Title == otherArtist.Title));
+
+            if (!equals)
             {
                 return false;
             }
-            
-            return Equals(item);
-        }
-        
-        protected bool Equals(Song other)
-        {
-            return Equals(Artists, other.Artists) && Equals(Albums, other.Albums) && Name == other.Name && DateCreated.Equals(other.DateCreated) && Path == other.Path;
+            equals = Albums.Aggregate(true, (current1, thisAlbum) => other.Albums.Aggregate(current1, (current, otherAlbum) => current && thisAlbum.Title == otherAlbum.Title));
+            if (!equals)
+            {
+                return false;
+            }
+            return Title == other.Title;
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
-            return HashCode.Combine(Artists, Albums, Name, DateCreated, Path);
+            return HashCode.Combine(Artists, Albums, Title, DateCreated, Path);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
-            //$"Song: title> {Name} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}"
-            /*string x = $"Song: title> {Name}";
-            x = $"{x} author> {Artist.Title}";
-            x = $"{x} album> {Album.Title}";
-            x = $"{x} dateCreated> {DateCreated}";
-            x = $"{x} path> {Path}";
-            return x;*/
-            return $"Song: title> {Name} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}";
+            return $"Song: title> {Title} author> {Artist.Title} album> {Album.Title} dateCreated> {DateCreated} path> {Path}";
         }
     }
 }

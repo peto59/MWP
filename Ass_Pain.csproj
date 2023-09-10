@@ -100,6 +100,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
+    <Compile Include="BackEnd\Network\Commands.cs" />
+    <Compile Include="BackEnd\Network\Extensions.cs" />
+    <Compile Include="BackEnd\Network\NetworkManager.cs" />
+    <Compile Include="BackEnd\Network\NetworkManagerClient.cs" />
+    <Compile Include="BackEnd\Network\NetworkManagerCommon.cs" />
+    <Compile Include="BackEnd\Network\NetworkManagerServer.cs" />
     <Compile Include="AlbumAuthorFragment.cs" />
     <Compile Include="AlbumFragment.cs" />
     <Compile Include="AllSongsFragment.cs" />
@@ -113,6 +119,7 @@
     <Compile Include="Helpers\APIThrottler.cs" />
     <Compile Include="DatatypesAndExtensions\Artist.cs" />
     <Compile Include="DownloadNotification.cs" />
+    <Compile Include="Helpers\SongJsonConverter.cs" />
     <Compile Include="Helpers\MyConsole.cs" />
     <Compile Include="Player\MediaService.cs" />
     <Compile Include="Helpers\Interval.cs" />
@@ -124,7 +131,6 @@
     <Compile Include="Local_notification_service.cs" />
     <Compile Include="DatatypesAndExtensions\MusicBaseClass.cs" />
     <Compile Include="Player\MyBroadcastReceiver.cs" />
-    <Compile Include="BackEnd\NetworkManager.cs" />
     <Compile Include="BackEnd\Downloader.cs" />
     <Compile Include="BackEnd\FileManager.cs" />
     <Compile Include="Helpers\HelloWebViewClient.cs" />
@@ -251,6 +257,9 @@
     </PackageReference>
     <PackageReference Include="Mono.android-x64">
       <Version>7.0.2.106</Version>
+    </PackageReference>
+    <PackageReference Include="Mono.Nat">
+      <Version>3.0.4</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
@@ -430,6 +439,7 @@
         <XmlPoke XmlInputPath="$(AndroidManifest)" Query="/manifest/@android:versionCode" Value="$(MyBuildNumber)" Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;" />
         <XmlPoke XmlInputPath="$(AndroidManifest)" Query="/manifest/@android:versionName" Value="$(MyBuildNumber)" Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;" />
       </Target>
+  
       <Target Name="ReadKeystoreCredentials" BeforeTargets="Build" Condition=" '$(IsGithubRunner)' == 'false' and '$(UnifiedSigning)' == 'true' ">
         <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/StorePass/text()">
           <Output TaskParameter="Result" PropertyName="AndroidSigningStorePass" />
@@ -446,6 +456,7 @@
           <AndroidSigningKeyStore>$(UserHomeDir)/apkSigningKey.jks</AndroidSigningKeyStore>
         </PropertyGroup>
       </Target>
+  
       <Target Name="AfterBuild" Condition=" '$(IsGithubRunner)' == 'false' ">
         <Move SourceFiles="$(ProjectDir)\Properties\.AndroidManifest.xml.bck" DestinationFiles="$(AndroidManifest)" OverwriteReadOnlyFiles="true" />
       </Target>

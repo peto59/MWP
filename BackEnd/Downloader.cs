@@ -11,9 +11,9 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Ass_Pain.BackEnd;
 using Com.Geecko.Fpcalc;
 using Newtonsoft.Json;
-using TagLib.Id3v2;
 using YoutubeExplode;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
@@ -175,7 +175,7 @@ namespace Ass_Pain
                 string fileName = FileManager.Sanitize(title);
                 string artistPath = FileManager.Sanitize(FileManager.GetAlias(artists.First().title));
                 Directory.CreateDirectory($"{FileManager.MusicFolder}/{artistPath}");
-                string output = $"{FileManager.MusicFolder}/{artistPath}/{fileName}.mp3";
+                //string output = $"{FileManager.MusicFolder}/{artistPath}/{fileName}.mp3";
                 
 
                 if (releaseGroups.First().title != string.Empty)
@@ -183,12 +183,12 @@ namespace Ass_Pain
                     album = releaseGroups.First().title;
                     string albumPath = FileManager.Sanitize(album);
                     Directory.CreateDirectory($"{FileManager.MusicFolder}/{artistPath}/{albumPath}");
-                    output = $"{FileManager.MusicFolder}/{artistPath}/{albumPath}/{fileName}.mp3";
+                    //output = $"{FileManager.MusicFolder}/{artistPath}/{albumPath}/{fileName}.mp3";
                     if (!File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover.jpg") && !File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover.png"))
                     {
                         if (thumbnail != null)
                         {
-                            string imgExtenstion = GetImageFormat(thumbnail);
+                            string imgExtenstion = FileManager.GetImageFormat(thumbnail);
                             File.Create($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{imgExtenstion}").Close();
                             _ = File.WriteAllBytesAsync($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{imgExtenstion}", thumbnail);
                         }
@@ -223,115 +223,22 @@ namespace Ass_Pain
                     File.Delete($"{FileManager.PrivatePath}/tmp/file{i}.jpg");
                     File.Delete($"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3");
                 });
-
+                
                 if (session.ReturnCode is { IsSuccess: true })
                 {
-                    View view = (View)sender;
-                    try
-                    {
-                        File.Move($"{FileManager.PrivatePath}/tmp/video{i}.mp3", output);
-                    }
-                    catch
-                    {
-                        File.Delete($"{FileManager.PrivatePath}/tmp/video{i}.mp3");
-#if DEBUG
-                        MyConsole.WriteLine("Video already exists");
-#endif
-                        Snackbar.Make(view, $"Exists: {videoTitle}", Snackbar.LengthLong)
-                            .SetAction("Action", (View.IOnClickListener)null).Show();
-                        return;
-                    }
-                    Console.WriteLine("Adding tags");
-                    TagLib.File tfile = TagLib.File.Create(output);
-                    tfile.Tag.Title = title;
-                    string[] authors = artists.Select(t => t.title).ToArray();
-                    tfile.Tag.Performers = authors;
-                    tfile.Tag.AlbumArtists = authors;
-                    tfile.Tag.MusicBrainzArtistId = artists.First().id;
-                    tfile.Tag.MusicBrainzReleaseGroupId = releaseGroups.First().id;
-                    tfile.Tag.MusicBrainzTrackId = recordingId;
-                    //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
-                    Tag custom = (Tag) tfile.GetTag(TagLib.TagTypes.Id3v2);
-                    PrivateFrame p = PrivateFrame.Get(custom, "AcoustIDTrackID", true);
-                    p.PrivateData = System.Text.Encoding.UTF8.GetBytes(trackId);
-                    //reading private frame
-                    // File f = File.Create("<YourMP3.mp3>");
-                    // TagLib.Id3v2.Tag t = (TagLib.Id3v2.Tag)f.GetTag(TagTypes.Id3v2);
-                    // PrivateFrame p = PrivateFrame.Get(t, "CustomKey", false); // This is important. Note that the third parameter is false.
-                    // string data = Encoding.UTF8.GetString(p.PrivateData.Data);
 
                     if (album != null)
                     {
-                        tfile.Tag.Album = album;
-                    }
-                    tfile.Save();
-                    tfile.Dispose();
-                    Snackbar.Make(view, $"Success: {title}", Snackbar.LengthLong)
-                        .SetAction("Action", (View.IOnClickListener)null).Show();
-
-
-
-                    List<Artist> artistList = new List<Artist>();
-                    foreach (string artist in artists.Select(t => t.title))
-                    {
-                        Artist artistObj;
-                        List<Artist> inArtistList = MainActivity.stateHandler.Artists.Select(FileManager.GetAlias(artist));
-                        if (inArtistList.Any())
-                        {
-                            artistObj = inArtistList[0];
-                        }else
-                        {
-                            if(File.Exists($"{FileManager.MusicFolder}/{artistPath}/cover.jpg"))
-                                artistObj = new Artist(FileManager.GetAlias(artist), $"{FileManager.MusicFolder}/{artistPath}/cover.jpg");
-                            else if(File.Exists($"{FileManager.MusicFolder}/{artistPath}/cover.png"))
-                                artistObj = new Artist(FileManager.GetAlias(artist), $"{FileManager.MusicFolder}/{artistPath}/cover.png");
-                            else
-                                artistObj = new Artist(FileManager.GetAlias(artist), "Default");
-                            MainActivity.stateHandler.Artists.Add(artistObj);
-                        }
-                        artistList.Add(artistObj);
-                    }
-                    
-
-                    Song song = new Song(artistList, videoTitle, File.GetCreationTime(output), output);
-                    artistList.ForEach(art => art.AddSong(ref song));
-                    MainActivity.stateHandler.Songs.Add(song);
-                    
-                    List<Album> albumList = new List<Album>();
-                    if (album != null)
-                    {
-                        Album albumObj;
-                        List<Album> inAlbumList = MainActivity.stateHandler.Albums.Select(album);
-                        if (inAlbumList.Any())
-                        {
-                            albumObj = inAlbumList[0];
-                            albumObj.AddSong(ref song);
-                            albumObj.AddArtist(ref artistList);
-                        }
-                        else
-                        {
-                            string albumName = FileManager.Sanitize(album);
-                            if(File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumName}/cover.jpg"))
-                                albumObj = new Album(tfile.Tag.Album, song, artistList, $"{FileManager.MusicFolder}/{artistPath}/{albumName}/cover.jpg");
-                            else if(File.Exists($"{FileManager.MusicFolder}/{artistPath}/{albumName}/cover.png"))
-                                albumObj = new Album(tfile.Tag.Album, song, artistList, $"{FileManager.MusicFolder}/{artistPath}/{albumName}/cover.png");
-                            else
-                                albumObj = new Album(tfile.Tag.Album, song, artistList, "Default");
-                            MainActivity.stateHandler.Albums.Add(albumObj);
-                        }
+                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId, album, releaseGroups.First().id);
                     }
                     else
                     {
-                        albumList = artistList.SelectMany(art => art.Albums.Where(alb => alb.Title == "Uncategorized")).ToList();
+                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId);
                     }
-                    
-                    albumList.ForEach(alb => alb.AddSong(ref song));
-                    artistList.ForEach(art => art.AddAlbum(ref albumList));
-                    song.AddAlbum(ref albumList);
                     notification.Stage4(true, string.Empty, poradieVPlayliste);
                     
                 }
-                else
+                else 
                 {
                     notification.Stage4(false, $"{session.ReturnCode?.Value}", poradieVPlayliste);
                     File.Delete($"{FileManager.PrivatePath}/tmp/video{i}.mp3");
@@ -375,7 +282,7 @@ namespace Ass_Pain
             catch(Exception ex)
             {
 #if DEBUG
-                MyConsole.WriteLine(ex.ToString());       
+                MyConsole.WriteLine(ex);       
 #endif
                 return false;
             }
@@ -398,14 +305,11 @@ namespace Ass_Pain
         {
             //string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             using WebClient cli = new WebClient();
-            if (await GetHttpStatus(url))
-            {
+            if (!await GetHttpStatus(url)) return null;
 #if DEBUG
-                MyConsole.WriteLine($"Downloading {url}");       
+            MyConsole.WriteLine($"Downloading {url}");       
 #endif
-                return cli.DownloadData(url);
-            }
-            return null;
+            return cli.DownloadData(url);
         }
 
         public static string GetImage(IEnumerable<Thumbnail> authorThumbnails, string thumbnailPath, string fileName = "cover")
@@ -424,7 +328,7 @@ namespace Ass_Pain
             WebClient cli = new WebClient();
             byte[] bytes = cli.DownloadData(thumbnailUrl);
             cli.Dispose();
-            string extension = GetImageFormat(bytes);
+            string extension = FileManager.GetImageFormat(bytes);
             if (extension == ".jpg")
             {
                 File.WriteAllBytes($"{thumbnailPath}/{fileName}.jpg", bytes);
@@ -437,19 +341,7 @@ namespace Ass_Pain
             return ".png";
         }
 
-        public static string GetImageFormat(byte[] image)
-        {
-            byte[] png = { 137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82 };
-            byte[] jpg = { 255, 216, 255 };
-            if (image.Take(3).SequenceEqual(jpg))
-            {
-                return ".jpg";
-            }
-
-            return !image.Take(16).SequenceEqual(png) ? ".idk" : ".png";
-        }
-
-        public static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[] thumbnail)> GetMusicBrainzIdFromFingerprint(string filePath, string originalAuthor, string originalTitle)
+        private static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[] thumbnail)> GetMusicBrainzIdFromFingerprint(string filePath, string originalAuthor, string originalTitle)
         {
             (string originalTitle, string, string, List<(string, string)>, List<(string, string)>, byte[]) output = (originalTitle, string.Empty, string.Empty, new List<(string, string)>{(originalAuthor, string.Empty)}, new List<(string, string)>{(string.Empty, string.Empty)}, null);
             try
@@ -496,7 +388,7 @@ namespace Ass_Pain
                 catch (Exception e)
                 {
 #if DEBUG
-                    MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
                     MainActivity.stateHandler.FileEvent.Set();
                     return output;
@@ -664,9 +556,9 @@ namespace Ass_Pain
         public StatisticsCallback(DownloadNotification notification)
         {
             Notification = notification;
-            #if DEBUG
+#if DEBUG
             MyConsole.WriteLine("Creating new callback");
-            #endif
+#endif
         }
         private DownloadNotification Notification { get; }
 
@@ -687,7 +579,7 @@ namespace Ass_Pain
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
             }
         }

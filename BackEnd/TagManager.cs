@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using Ass_Pain.BackEnd;
 
 namespace Ass_Pain
 {
@@ -20,10 +21,7 @@ namespace Ass_Pain
 
         public string Title
         {
-            get
-            {
-                return tfile.Tag.Title;
-            }
+            get => tfile.Tag.Title;
             set
             {
                 if (value == Title || string.IsNullOrEmpty(value)) return;
@@ -35,10 +33,7 @@ namespace Ass_Pain
 
         public string Artist
         {
-            get
-            {
-                return tfile.Tag.Performers.FirstOrDefault();
-            }
+            get => tfile.Tag.Performers.FirstOrDefault();
             set
             {
                 if (value == tfile.Tag.Performers.FirstOrDefault() || string.IsNullOrEmpty(value)) return;
@@ -50,10 +45,7 @@ namespace Ass_Pain
 
         public string[] Artists
         {
-            get
-            {
-                return tfile.Tag.Performers;
-            }
+            get => tfile.Tag.Performers;
             set
             {
                 if (value.SequenceEqual(tfile.Tag.Performers) || value.Length <= 0) return;
@@ -65,10 +57,7 @@ namespace Ass_Pain
         
         public string Album
         {
-            get
-            {
-                return tfile.Tag.Album;
-            }
+            get => tfile.Tag.Album;
             set
             {
                 if (value == tfile.Tag.Album || string.IsNullOrEmpty(value)) return;

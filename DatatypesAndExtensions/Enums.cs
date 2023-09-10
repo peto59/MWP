@@ -64,4 +64,11 @@ namespace Ass_Pain
         Forbidden,
         NoState
     }
+
+    internal enum CanUseNetworkState
+    {
+        None,
+        Allowed,
+        Rejected
+    }
 }
