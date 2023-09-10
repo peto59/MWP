@@ -25,7 +25,7 @@ namespace Ass_Pain
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class SongsFragment : Fragment
     {
-        private const int ActionScrollViewHeight = 150;
+        private const int ActionScrollViewHeight = 20;
         private float scale;
         private readonly Context context;
         private RelativeLayout? mainLayout;

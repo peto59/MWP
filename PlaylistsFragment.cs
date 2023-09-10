@@ -58,7 +58,7 @@ namespace Ass_Pain
                 ViewGroup.LayoutParams.MatchParent,
                 ViewGroup.LayoutParams.MatchParent
             );
-            playlistScrollParams.SetMargins(0, 150, 0, 0);
+            playlistScrollParams.SetMargins(0, 20, 0, 0);
             playlistsScroll.LayoutParameters = playlistScrollParams;
 
 

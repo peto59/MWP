@@ -19,7 +19,7 @@ namespace Ass_Pain
     {
         private readonly Context context;
         private RelativeLayout mainLayout;
-        private const int ActionScrollViewHeight = 150;
+        private const int ActionScrollViewHeight = 20;
         private readonly float scale;
         
         private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();

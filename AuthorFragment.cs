@@ -141,7 +141,7 @@ namespace Ass_Pain
                 ViewGroup.LayoutParams.MatchParent,
                 hrHeight
             );
-            hrParams.SetMargins(0, 150, 0, 0);
+            hrParams.SetMargins(0, 20, 0, 0);
             hr.LayoutParameters = hrParams;
 
             LinearLayout lin = new LinearLayout(context);

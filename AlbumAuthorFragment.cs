@@ -80,7 +80,7 @@ namespace Ass_Pain
 
             int[] buttonMargins = { 50, 50, 50, 0 };
             int[] nameMargins = { 50, 50, 50, 50 };
-            int[] cardMargins = { 40, 50, 0, 0 };
+            int[] cardMargins = { 30, 50, 0, 0 };
 
             for (int i = 0; i < MainActivity.stateHandler.Albums.Count; i++)
             {
@@ -116,7 +116,7 @@ namespace Ass_Pain
             
             int[] buttonMargins = { 50, 50, 50, 0 };
             int[] nameMargins = { 50, 50, 50, 50 };
-            int[] cardMargins = { 50, 50, 0, 0 };
+            int[] cardMargins = { 20, 50, 0, 0 };
 
 
             for (int i = 0; i < MainActivity.stateHandler.Artists.Count; i++)
@@ -153,7 +153,7 @@ namespace Ass_Pain
                     displayWidth,
                     (int)(500 * scale + 0.5f)
                 );
-                labelForScrollsParams.SetMargins(50, 150, 0, 150);
+                labelForScrollsParams.SetMargins(50, 40, 0, 150);
                 labelsForScrolls.LayoutParameters = labelForScrollsParams;
                 labelsForScrolls.SetHorizontalGravity(GravityFlags.Center);
                 TextView authorLabel = new TextView(context);
@@ -177,7 +177,7 @@ namespace Ass_Pain
                     displayWidth / 2,
                     ViewGroup.LayoutParams.MatchParent
                 );
-                authorScrollParams.SetMargins(0, 250, 0, 0);
+                authorScrollParams.SetMargins(0, 100, 0, 0);
                 authorScroll.LayoutParameters = authorScrollParams;
 
                 LinearLayout authorLin = AuthorTiles();
@@ -192,7 +192,7 @@ namespace Ass_Pain
                     displayWidth / 2,
                     ViewGroup.LayoutParams.MatchParent
                 );
-                albumScrollParams.SetMargins(displayWidth / 2, 250, 0, 0);
+                albumScrollParams.SetMargins((displayWidth / 2) - 20, 100, 0, 0);
                 albumScroll.LayoutParameters = albumScrollParams;
             }
 
