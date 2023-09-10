@@ -292,7 +292,7 @@ namespace Ass_Pain
 #if DEBUG
             MyConsole.WriteLine($"resultCode: {resultCode}");       
 #endif
-            InstallUpdate($"{FileManager.PrivatePath}/update.apk");
+            InstallUpdate($"{FileManager.PrivatePath}/tmp/update.apk");
         }
 
         /// <inheritdoc />
@@ -536,7 +536,7 @@ namespace Ass_Pain
         private async void GetUpdate(string downloadUrl)
         {
             using HttpClient httpClient = new HttpClient();
-            await File.WriteAllBytesAsync($"{FileManager.PrivatePath}/update.apk", await httpClient.GetByteArrayAsync(downloadUrl));
+            await File.WriteAllBytesAsync($"{FileManager.PrivatePath}/tmp/update.apk", await httpClient.GetByteArrayAsync(downloadUrl));
             
 #if DEBUG
          MyConsole.WriteLine("Downloaded. Starting install!");   
@@ -571,13 +571,13 @@ namespace Ass_Pain
                 }
                 else
                 {
-                    InstallUpdate($"{FileManager.PrivatePath}/update.apk");
+                    InstallUpdate($"{FileManager.PrivatePath}/tmp/update.apk");
                 }
                 
             }
             else
             {
-                InstallUpdate($"{FileManager.PrivatePath}/update.apk");
+                InstallUpdate($"{FileManager.PrivatePath}/tmp/update.apk");
             }
         }
 

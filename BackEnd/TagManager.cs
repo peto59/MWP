@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using Ass_Pain.BackEnd;
+using System.Linq;
 
-namespace Ass_Pain
+namespace Ass_Pain.BackEnd
 {
     internal class TagManager : IDisposable
     {
-        private TagLib.File tfile;
+        private TagLib.File? tfile;
         private bool changed;
-        private Song song;
+        private Song? song;
         private SongSave saveFlags = SongSave.None;
 
         public TagManager(Song song)
