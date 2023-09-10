@@ -8,6 +8,7 @@ using System.Linq;
 using Android.Graphics;
 using Android.OS;
 using AndroidX.Fragment.App;
+using Ass_Pain.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using Orientation = Android.Widget.Orientation;
@@ -91,6 +92,7 @@ namespace Ass_Pain
             List<string> playlists = FileManager.GetPlaylist();
             foreach (string p in playlists)
             {
+                
                 LinearLayout lnIn = new LinearLayout(context);
                 lnIn.Orientation = Orientation.Vertical;
                 lnIn.SetBackgroundResource(Resource.Drawable.rounded_light);
