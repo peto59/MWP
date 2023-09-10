@@ -3508,7 +3508,6 @@ namespace Ass_Pain
 		
 		public partial class Id
 		{
-			
 			// aapt resource value: 0x7F080011
 			public const int accept_download = 2131230737;
 			

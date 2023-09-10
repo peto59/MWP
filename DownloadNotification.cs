@@ -208,6 +208,7 @@ namespace Ass_Pain
         private void stage4_song(bool success, string message)
         {
             notificationBuilder
+                .SetSmallIcon(Resource.Drawable.download)
                 .SetContentText(currentSongTitle)
                 .SetOngoing(false)
                 .SetShowWhen(false)
