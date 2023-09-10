@@ -366,7 +366,7 @@ namespace Ass_Pain.BackEnd
 
         public static (string songTempPath, string unprocessedTempPath, string thumbnailTempPath) GetAvailableDownloaderFiles()
         {
-            return (GetAvailableTempFile("video", "mp3"), GetAvailableTempFile("unprocessed", "mp3"), GetAvailableTempFile("thumbnail", "img"));
+            return (GetAvailableTempFile("video", "mp3"), GetAvailableTempFile("unprocessed", "mp3"), GetAvailableTempFile("thumbnail", "jpg"));
         }
 
         public static string GetAvailableFile(string path, string name, string extension)
@@ -560,7 +560,6 @@ namespace Ass_Pain.BackEnd
         public static (List<string> missingArtists, (string album, string artistPath) missingAlbum) AddSong(string path, bool isNew = false, bool generateStateHandlerEntry = true)
         {
             using TagLib.File tfile = TagLib.File.Create(path, ReadStyle.PictureLazy);
-            tfile.Mode = TagLib.File.AccessMode.Write;
             string title;
             if (!string.IsNullOrEmpty(tfile.Tag.Title))
             {
@@ -630,7 +629,6 @@ namespace Ass_Pain.BackEnd
             string recordingId, string acoustIdTrackId, string? album = null, string? releaseGroupId = null)
         {
             using TagLib.File tfile = TagLib.File.Create(path, ReadStyle.PictureLazy);
-            tfile.Mode = TagLib.File.AccessMode.Write;
             tfile.Tag.Title = title;
             if (artists.Length == 0)
             {
