@@ -420,7 +420,7 @@ namespace Ass_Pain
 				session.SetPlaybackState(stateBuilder.Build());
 			}
 
-			side_player.populate_side_bar(MainActivity.stateHandler.view);
+			side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
 			notificationService.Notify();
 		}
 
@@ -779,7 +779,7 @@ namespace Ass_Pain
 			IsShuffled = newShuffleState;
 			MainActivity.stateHandler.shuffle = newShuffleState;
 			UpdatePlaybackState();
-            side_player.populate_side_bar(MainActivity.stateHandler.view);
+            side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
 			IsShuffling = false;
         }
 
@@ -808,7 +808,7 @@ namespace Ass_Pain
 			//mediaPlayer.Looping = loopSingle;
 			MainActivity.stateHandler.loopState = LoopState;
             UpdatePlaybackState();
-            side_player.populate_side_bar(MainActivity.stateHandler.view);
+            side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
 #if DEBUG
             MyConsole.WriteLine("TOGGLE LOOP");
 #endif

@@ -102,7 +102,7 @@ namespace Ass_Pain
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView?.SetNavigationItemSelectedListener(this);
             
-            side_player.populate_side_bar(this);
+            side_player.populate_side_bar(this, Assets);
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver();
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
@@ -447,7 +447,7 @@ namespace Ass_Pain
                     FileManager.GenerateList(FileManager.MusicFolder);
                 }
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
-                RunOnUiThread(() => side_player.populate_side_bar(this));
+                RunOnUiThread(() => side_player.populate_side_bar(this, Assets));
                 
                 //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
                 //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
