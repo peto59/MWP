@@ -285,13 +285,14 @@ namespace Ass_Pain.BackEnd.Network
 #endif
                             SongJsonConverter customConverter = new SongJsonConverter(false);
                             List<Song>? recSongs = JsonConvert.DeserializeObject<List<Song>>(json, customConverter);
-#if DEBUG
                             if (recSongs != null)
                             {
+#if DEBUG
                                 foreach (Song s in recSongs)
                                 {
                                     MyConsole.WriteLine(s.ToString());
                                 }
+#endif
                                 bool x = true;
                                 if (x) //present some form of user check if they really want to receive files
                                 {
@@ -307,7 +308,6 @@ namespace Ass_Pain.BackEnd.Network
                             {
                                 networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
                             }
-#endif
                         }
                         break;
                     case CommandsEnum.SongRequestAccepted:

@@ -236,6 +236,9 @@
     <PackageReference Include="Mono.android-x64">
       <Version>7.0.2.106</Version>
     </PackageReference>
+    <PackageReference Include="Mono.Nat">
+      <Version>3.0.4</Version>
+    </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
     </PackageReference>

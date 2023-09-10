@@ -135,7 +135,7 @@ namespace Ass_Pain
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
                 //throw;
             }

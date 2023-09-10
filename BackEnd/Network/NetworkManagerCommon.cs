@@ -7,15 +7,19 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Android.App;
 using Android.Content;
 using Android.Net;
+using Android.Net.Wifi;
 using AngleSharp.Common;
 using Java.Net;
 using Xamarin.Essentials;
 using NetworkAccess = Xamarin.Essentials.NetworkAccess;
+using ProtocolType = System.Net.Sockets.ProtocolType;
 using Socket = System.Net.Sockets.Socket;
 using SocketType = System.Net.Sockets.SocketType;
 using TransportType = Android.Net.TransportType;
+using Mono.Nat;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -37,6 +41,7 @@ namespace Ass_Pain.BackEnd.Network
         private CanSend canSend = CanSend.Rejected;
         private static readonly Socket Sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         private static readonly byte[] Buffer = new byte[256];
+        
         internal CanSend CanSend
         {
             get => canSend;
@@ -60,6 +65,47 @@ namespace Ass_Pain.BackEnd.Network
             
             Sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
             Sock.ReceiveTimeout = 2000;
+            if (SettingsManager.CanUseWan)
+            {
+                NatUtility.DeviceFound += delegate(object sender, DeviceEventArgs args)
+                {
+                    INatDevice device = args.Device;
+#if DEBUG
+                    MyConsole.WriteLine("Found Upnp device");
+#endif
+                    try
+                    {
+                        Mapping mapping = device.GetSpecificMapping(Protocol.Tcp, SettingsManager.WanPort);
+                    }
+                    catch (Exception e)
+                    {
+#if DEBUG
+                        MyConsole.WriteLine(e);
+                        MyConsole.WriteLine("Adding Upnp");
+#endif
+                        //Mapping mapping = device.CreatePortMap(new Mapping(Protocol.Tcp, SettingsManager.WanPort, SettingsManager.WanPort, 0, "Ass Pain Music Sharing"));
+                        try
+                        {
+                            Mapping mapping = device.CreatePortMap(new Mapping(Protocol.Tcp, SettingsManager.WanPort,
+                                SettingsManager.WanPort));
+                            if (mapping.PublicPort != SettingsManager.WanPort || mapping.PublicPort != mapping.PrivatePort)
+                            {
+#if DEBUG
+                                MyConsole.WriteLine("Failed to create Upnp, create port forwarding manually");
+#endif
+                            }
+                            //TODO: delete upnp on disable
+                        }
+                        catch (Exception exception)
+                        {
+#if DEBUG
+                            MyConsole.WriteLine(exception);
+#endif
+                        }
+                    }
+                };
+                NatUtility.StartDiscovery();
+            }
             if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
                 return;
             }
@@ -87,7 +133,7 @@ namespace Ass_Pain.BackEnd.Network
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
             }
         }
@@ -98,90 +144,95 @@ namespace Ass_Pain.BackEnd.Network
 #if DEBUG
             MyConsole.WriteLine($"New P2P from {ipAddress}");
 #endif
-            Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            //TODO: add timeout
-            IPEndPoint iep = new IPEndPoint(NetworkManager.Common.MyIp, P2PPort);
-            EndPoint endPoint = iep;
-            sock.Bind(endPoint);
-            iep = new IPEndPoint(ipAddress, P2PPort);
-            endPoint = iep;
-            byte[] buffer = new byte[4];
-            //TODO: this is stupid
-            Thread.Sleep(1000);
-            while (true)
+            if (NetworkManager.Common.MyIp != null)
             {
-                int state = new Random().Next(0, 2);
-                sock.SendTo(BitConverter.GetBytes(state), endPoint);
-#if DEBUG
-                MyConsole.WriteLine($"sending {state} to {((IPEndPoint)endPoint).Address}");
-#endif
-                int maxResponseCounter = 4;
-                int response;
-                do
+                Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                //TODO: add timeout
+                IPEndPoint iep = new IPEndPoint(NetworkManager.Common.MyIp, P2PPort);
+                EndPoint endPoint = iep;
+                sock.Bind(endPoint);
+                iep = new IPEndPoint(ipAddress, P2PPort);
+                endPoint = iep;
+                byte[] buffer = new byte[4];
+                //TODO: this is stupid
+                Thread.Sleep(1000);
+                while (true)
                 {
-                    sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
+                    int state = new Random().Next(0, 2);
+                    sock.SendTo(BitConverter.GetBytes(state), endPoint);
 #if DEBUG
-                    MyConsole.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
+                    MyConsole.WriteLine($"sending {state} to {((IPEndPoint)endPoint).Address}");
 #endif
-                    response = BitConverter.ToInt32(buffer);
-                    maxResponseCounter--;
-#if DEBUG
-                    if (response is not (0 or 1))
+                    int maxResponseCounter = 4;
+                    int response;
+                    do
                     {
-                        MyConsole.WriteLine($"Got invalid state in P2PDecide: {response}");
-                    }
-#endif
-                } while (response is not (0 or 1) && maxResponseCounter > 0);
-
-                if (maxResponseCounter == 0)
-                {
-                    sock.Dispose();
-                    return false;
-                }
-
-                if (state == response) continue;
-                if (state == 0)
-                {
-                    //server
+                        sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
 #if DEBUG
-                    MyConsole.WriteLine("Server");
+                        MyConsole.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
 #endif
-                    (TcpListener server, int listenPort) = NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
-                    sock.SendTo(BitConverter.GetBytes(listenPort), endPoint);
+                        response = BitConverter.ToInt32(buffer);
+                        maxResponseCounter--;
+#if DEBUG
+                        if (response is not (0 or 1))
+                        {
+                            MyConsole.WriteLine($"Got invalid state in P2PDecide: {response}");
+                        }
+#endif
+                    } while (response is not (0 or 1) && maxResponseCounter > 0);
+
+                    if (maxResponseCounter == 0)
+                    {
+                        sock.Dispose();
+                        return false;
+                    }
+
+                    if (state == response) continue;
+                    if (state == 0)
+                    {
+                        //server
+#if DEBUG
+                        MyConsole.WriteLine("Server");
+#endif
+                        if (NetworkManager.Common.MyIp == null) return false;
+                        (TcpListener server, int listenPort) = NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
+                        sock.SendTo(BitConverter.GetBytes(listenPort), endPoint);
+                        try
+                        {
+                            sock.Dispose();
+                            NetworkManagerServer.Server(server, ipAddress, songsToSend);
+                        }
+                        catch (Exception e)
+                        {
+#if DEBUG
+                            MyConsole.WriteLine(e);
+#endif
+                        }
+                        sock.Dispose();
+                        return true;
+                    }
+                    //client
+#if DEBUG
+                    MyConsole.WriteLine("Client");
+#endif
+                    sock.ReceiveFrom(buffer, ref endPoint);
+                    int sendPort = BitConverter.ToInt32(buffer);
                     try
                     {
                         sock.Dispose();
-                        NetworkManagerServer.Server(server, ipAddress, songsToSend);
+                        NetworkManagerClient.Client(((IPEndPoint)endPoint).Address, sendPort, songsToSend);
                     }
                     catch (Exception e)
                     {
 #if DEBUG
-                        MyConsole.WriteLine(e.ToString());
+                        MyConsole.WriteLine(e);
 #endif
                     }
                     sock.Dispose();
                     return true;
                 }
-                //client
-#if DEBUG
-                MyConsole.WriteLine("Client");
-#endif
-                sock.ReceiveFrom(buffer, ref endPoint);
-                int sendPort = BitConverter.ToInt32(buffer);
-                try
-                {
-                    sock.Dispose();
-                    NetworkManagerClient.Client(((IPEndPoint)endPoint).Address, sendPort, songsToSend);
-                }
-                catch (Exception e)
-                {
-#if DEBUG
-                    MyConsole.WriteLine(e.ToString());
-#endif
-                }
-                sock.Dispose();
-                return true;
             }
+            return false;
         }
 
         private static IPAddress GetBroadCastIp(IPAddress host, IPAddress mask)
@@ -326,7 +377,7 @@ namespace Ass_Pain.BackEnd.Network
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
                 return false;
             }
@@ -346,14 +397,29 @@ namespace Ass_Pain.BackEnd.Network
         internal static void TestNetwork()
         {
             //TODO: add evaluation
+            if (SettingsManager.CanUseNetwork != CanUseNetworkState.Allowed)
+            {
+                NetworkManager.Common.CanSend = CanSend.Rejected;
+                return;
+            }
+            if (!FileManager.IsTrustedSyncTarget(NetworkManager.Common.CurrentSsid))
+            {
+                NetworkManager.Common.CanSend = CanSend.Rejected;
+                return;
+            }
             NetworkManager.Common.CanSend = CanSend.Allowed;
         }
         
         
+        [Obsolete("Deprecated")]
         internal void OnWiFiChange(ConnectivityChangedEventArgs e)
         {
             if (e.NetworkAccess is NetworkAccess.Internet or NetworkAccess.Local && e.ConnectionProfiles.Contains(ConnectionProfile.WiFi))
             {
+                WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
+                WifiInfo? info = wifiManager?.ConnectionInfo;
+                if (info?.SSID != null) CurrentSsid = info.SSID;
+
                 CanSend = GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
                 return;
             }

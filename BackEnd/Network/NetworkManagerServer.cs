@@ -114,7 +114,8 @@ namespace Ass_Pain.BackEnd.Network
             catch (SocketException ex)
             {
 #if DEBUG
-                MyConsole.WriteLine($"SocketException: {ex}");
+                MyConsole.WriteLine("SocketException: ");
+                MyConsole.WriteLine(ex);
 #endif
             }
             finally

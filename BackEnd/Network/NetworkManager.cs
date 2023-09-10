@@ -24,6 +24,7 @@ namespace Ass_Pain.BackEnd.Network
         /// </summary>
         private const int BroadcastInterval = NetworkManagerCommon.BroadcastInterval;
 
+        //TODO: move to settings
         private const int numberOfMissedBroadcastsToRemoveHost = 3;
 
         private static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
@@ -118,7 +119,7 @@ namespace Ass_Pain.BackEnd.Network
                 catch (SocketException e)
                 {
 #if DEBUG
-                    MyConsole.WriteLine(e.ToString());
+                    MyConsole.WriteLine(e);
 #endif
                 }
                 finally

@@ -60,8 +60,6 @@ namespace Ass_Pain
             SetContentView(Resource.Layout.activity_main);
             AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
-            
-            RequestMyPermission();
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
 
@@ -79,25 +77,75 @@ namespace Ass_Pain
             RegisterReceiver(_receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
             
             VersionTracking.Track();
+            
+            sbyte remainingDialogsBeforeRequestingPermissions = 0;
 
             if (SettingsManager.CheckUpdates == AutoUpdate.NoState)
             {
+                remainingDialogsBeforeRequestingPermissions--;
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.SetTitle("Automatic Updates");
                 builder.SetMessage("Would you like to enable automatic updates?");
 
-                builder.SetPositiveButton("Yes", (sender, args) =>
+                builder.SetPositiveButton("Yes", delegate
                 {
+                    // ReSharper disable once AccessToModifiedClosure
+                    remainingDialogsBeforeRequestingPermissions++;
                     SettingsManager.CheckUpdates = AutoUpdate.Requested;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
                 });
 
-                builder.SetNegativeButton("No", (sender, args) =>
+                builder.SetNegativeButton("No", delegate
                 {
+                    remainingDialogsBeforeRequestingPermissions++;
                     SettingsManager.CheckUpdates = AutoUpdate.Forbidden;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
                 });
 
                 AlertDialog dialog = builder.Create();
                 dialog.Show();
+            }
+
+            if (SettingsManager.CanUseNetwork == CanUseNetworkState.None)
+            {
+                remainingDialogsBeforeRequestingPermissions--;
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.SetTitle("Music sharing");
+                builder.SetMessage("Would you like to enable network scanning for available devices for music sharing? Warning: this requires precise location access for security reasons.");
+
+                builder.SetPositiveButton("Yes", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.CanUseNetwork = CanUseNetworkState.Allowed;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                builder.SetNegativeButton("No", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.CanUseNetwork = CanUseNetworkState.Rejected;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+            }
+            
+            if (remainingDialogsBeforeRequestingPermissions == 0)
+            {
+                RequestMyPermission();
             }
 
             //rest of the stuff that was here is in AfterReceivingPermissions()
@@ -235,13 +283,18 @@ namespace Ass_Pain
 
         private void RequestMyPermission()
         {
-            string[] permissionsLocation =  {
-                //Android.Manifest.Permission.WriteExternalStorage,
-                //Android.Manifest.Permission.ReadExternalStorage,
-                Android.Manifest.Permission.ForegroundService,
-                Android.Manifest.Permission.AccessWifiState,
-                Android.Manifest.Permission.AccessFineLocation,
-            };
+            List<string> permissionsLocation = new List<string>{Android.Manifest.Permission.ForegroundService};
+            
+            if (Build.VERSION.SdkInt < BuildVersionCodes.Tiramisu) {
+                permissionsLocation.Add(Android.Manifest.Permission.WriteExternalStorage);
+                permissionsLocation.Add(Android.Manifest.Permission.ReadExternalStorage);
+            }
+            
+            if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
+            {
+                permissionsLocation.Add(Android.Manifest.Permission.AccessWifiState);
+                permissionsLocation.Add(Android.Manifest.Permission.AccessFineLocation);
+            }
 
             bool exitFlag = permissionsLocation.Aggregate(true, (current, perm) => current & ContextCompat.CheckSelfPermission(this, perm) == (int)Permission.Granted);
 
@@ -250,8 +303,19 @@ namespace Ass_Pain
                 AfterReceivingPermissions();
                 return;
             }
-            //TODO: edit explanation
-            Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout), "Storage access is required for storing and playing songs", Snackbar.LengthIndefinite)
+
+            string explanation = Android.OS.Environment.IsExternalStorageManager switch
+            {
+                false when SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed =>
+                    "Storage access is required for storing and playing songs, location is required for identifying current network for security",
+                true when SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed =>
+                    "Location is required for identifying current network for security",
+                false when SettingsManager.CanUseNetwork != CanUseNetworkState.Allowed =>
+                    "Storage access is required for storing and playing songs",
+                _ => string.Empty
+            };
+
+            Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout),  explanation, Snackbar.LengthIndefinite)
                     .SetAction("OK", _ =>
                     {
                         if (!Android.OS.Environment.IsExternalStorageManager)
@@ -260,71 +324,34 @@ namespace Ass_Pain
                             {
                                 Intent intent = new Intent();
                                 intent.SetAction(Settings.ActionManageAppAllFilesAccessPermission);
-                                Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
+                                Android.Net.Uri uri = Android.Net.Uri.FromParts("package", PackageName, null);
                                 intent.SetData(uri);
                                 StartActivity(intent);
                             }catch(Exception ex)
                             {
 #if DEBUG
-                                MyConsole.WriteLine(ex.ToString());
+                                MyConsole.WriteLine(ex);
 #endif
                             }
                         }
-                        RequestPermissions(permissionsLocation, ActionPermissionsRequestCode);
+                        RequestPermissions(permissionsLocation.ToArray(), ActionPermissionsRequestCode);
                     }).Show();
         }
 
         private void AfterReceivingPermissions()
         {
+            FileManager.Innit();
+            
             if (SettingsManager.CheckUpdates == AutoUpdate.Requested)
             {
                 CheckUpdates();
             }
 
-            if (!Directory.Exists(FileManager.MusicFolder))
+            if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
             {
-#if DEBUG
-                MyConsole.WriteLine("Creating " + $"{FileManager.MusicFolder}");
-#endif
-                if (FileManager.MusicFolder != null) Directory.CreateDirectory(FileManager.MusicFolder);
-            }
-
-            if (!Directory.Exists($"{FileManager.PrivatePath}/tmp"))
-            {
-#if DEBUG
-                MyConsole.WriteLine("Creating " + $"{FileManager.PrivatePath}/tmp");
-#endif
-                Directory.CreateDirectory($"{FileManager.PrivatePath}/tmp");
+                new Thread(NetworkManager.Listener).Start();
             }
             
-            //File.Delete($"{FileManager.PrivatePath}/trusted_sync_targets.json");
-            if (!File.Exists($"{FileManager.PrivatePath}/trusted_sync_targets.json"))
-            {
-                File.WriteAllText($"{FileManager.PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
-            }
-
-            if (!File.Exists($"{FileManager.MusicFolder}/aliases.json"))
-            {
-                File.WriteAllTextAsync($"{FileManager.MusicFolder}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
-
-            }
-
-            if (!File.Exists($"{FileManager.MusicFolder}/playlists.json"))
-            {
-                File.WriteAllTextAsync($"{FileManager.MusicFolder}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
-            }
-            
-            DirectoryInfo di = new DirectoryInfo($"{FileManager.PrivatePath}/tmp/");
-
-            foreach (FileInfo file in di.GetFiles())
-            {
-                file.Delete();
-#if DEBUG
-                MyConsole.WriteLine($"Deleting {file}");
-#endif
-            }
-            
-            new Thread(NetworkManager.Listener).Start();
             new Thread(() => {
                 FileManager.DiscoverFiles(stateHandler.Songs.Count == 0);
                 if (stateHandler.Songs.Count < FileManager.GetSongsCount())

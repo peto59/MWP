@@ -132,7 +132,7 @@ namespace Ass_Pain
             catch (Exception ex)
             {
 #if DEBUG
-                MyConsole.WriteLine(ex.Message);
+                MyConsole.WriteLine(ex);
                 MyConsole.WriteLine($"Doesnt contain image: {Path}");
 #endif
             }

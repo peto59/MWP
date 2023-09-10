@@ -282,7 +282,7 @@ namespace Ass_Pain
             catch(Exception ex)
             {
 #if DEBUG
-                MyConsole.WriteLine(ex.ToString());       
+                MyConsole.WriteLine(ex);       
 #endif
                 return false;
             }
@@ -305,14 +305,11 @@ namespace Ass_Pain
         {
             //string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
             using WebClient cli = new WebClient();
-            if (await GetHttpStatus(url))
-            {
+            if (!await GetHttpStatus(url)) return null;
 #if DEBUG
-                MyConsole.WriteLine($"Downloading {url}");       
+            MyConsole.WriteLine($"Downloading {url}");       
 #endif
-                return cli.DownloadData(url);
-            }
-            return null;
+            return cli.DownloadData(url);
         }
 
         public static string GetImage(IEnumerable<Thumbnail> authorThumbnails, string thumbnailPath, string fileName = "cover")
@@ -382,7 +379,7 @@ namespace Ass_Pain
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
                 return output;
             }
@@ -531,9 +528,9 @@ namespace Ass_Pain
         public StatisticsCallback(DownloadNotification notification)
         {
             Notification = notification;
-            #if DEBUG
+#if DEBUG
             MyConsole.WriteLine("Creating new callback");
-            #endif
+#endif
         }
         private DownloadNotification Notification { get; }
 
@@ -554,7 +551,7 @@ namespace Ass_Pain
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
             }
         }

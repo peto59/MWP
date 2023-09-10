@@ -310,8 +310,8 @@ namespace Ass_Pain.BackEnd.Network
             {
                 int readThisCycle = length > 8096 ? 8096 : Convert.ToInt32(length);
 #if DEBUG
-                Console.WriteLine($"remaining length: {length}");
-                Console.WriteLine($"read this cycle: {readThisCycle}");
+                MyConsole.WriteLine($"remaining length: {length}");
+                MyConsole.WriteLine($"read this cycle: {readThisCycle}");
 #endif
                 byte[] buffer = csDecrypt.SafeRead(readThisCycle, ref stream);
                 fileStream.Write(buffer);

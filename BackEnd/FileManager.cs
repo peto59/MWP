@@ -8,6 +8,7 @@ using Google.Android.Material.Snackbar;
 using Newtonsoft.Json;
 using TagLib;
 using TagLib.Id3v2;
+using TagLib.Riff;
 using File = System.IO.File;
 using Tag = TagLib.Id3v2.Tag;
 #if DEBUG
@@ -24,6 +25,57 @@ namespace Ass_Pain.BackEnd
         //private static readonly string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string( System.IO.Path.GetInvalidFileNameChars() ) + new string( System.IO.Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>");
         //private static readonly string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", invalidChars );
         private static readonly string InvalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", System.Text.RegularExpressions.Regex.Escape(new string( Path.GetInvalidFileNameChars() ) + new string( Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>") );
+
+        public static void Innit()
+        {
+            if (!Directory.Exists(MusicFolder))
+            {
+#if DEBUG
+                MyConsole.WriteLine("Creating " + $"{MusicFolder}");
+#endif
+                if (MusicFolder != null) Directory.CreateDirectory(MusicFolder);
+            }
+
+            if (!Directory.Exists($"{PrivatePath}/tmp"))
+            {
+#if DEBUG
+                MyConsole.WriteLine("Creating " + $"{PrivatePath}/tmp");
+#endif
+                Directory.CreateDirectory($"{PrivatePath}/tmp");
+            }
+            
+            //File.Delete($"{FileManager.PrivatePath}/trusted_sync_targets.json");
+            if (!File.Exists($"{PrivatePath}/trusted_sync_targets.json"))
+            {
+                File.WriteAllText($"{PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
+            }
+            
+            if (!File.Exists($"{PrivatePath}/trusted_SSIDs.json"))
+            {
+                File.WriteAllText($"{PrivatePath}/trusted_SSIDs.json", JsonConvert.SerializeObject(new List<string>()));
+            }
+
+            if (!File.Exists($"{MusicFolder}/aliases.json"))
+            {
+                File.WriteAllTextAsync($"{MusicFolder}/aliases.json", JsonConvert.SerializeObject(new Dictionary<string, string>()));
+
+            }
+
+            if (!File.Exists($"{MusicFolder}/playlists.json"))
+            {
+                File.WriteAllTextAsync($"{MusicFolder}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
+            }
+            
+            DirectoryInfo di = new DirectoryInfo($"{PrivatePath}/tmp/");
+
+            foreach (FileInfo file in di.GetFiles())
+            {
+                file.Delete();
+#if DEBUG
+                MyConsole.WriteLine($"Deleting {file}");
+#endif
+            }
+        }
         
         /// <summary>
         /// Creates virtual song topology in MainActivity.StateHandler and allocates all new files
@@ -74,7 +126,7 @@ namespace Ass_Pain.BackEnd
                 {
 #if DEBUG
                     MyConsole.WriteLine($"error: {file}");
-                    MyConsole.WriteLine(ex.ToString());
+                    MyConsole.WriteLine(ex);
 #endif
                 }
             }
@@ -129,13 +181,6 @@ namespace Ass_Pain.BackEnd
         ///</summary>
         private static List<string> GetAlbums(string author)
         {
-            /*List<string> albums = new List<string>();
-            foreach (string album in Directory.EnumerateDirectories(author))
-            {
-                Console.WriteLine(album);
-                albums.Add(album);
-            }
-            return albums;*/
             return Directory.EnumerateDirectories(author).ToList();
         }
 
@@ -341,7 +386,7 @@ namespace Ass_Pain.BackEnd
             catch (Exception ex)
             {
 #if DEBUG
-                MyConsole.WriteLine($"{ex}");
+                MyConsole.WriteLine(ex);
 #endif
                 return new List<string>();
             }
@@ -374,17 +419,6 @@ namespace Ass_Pain.BackEnd
             }
             return x;
         }
-        /*
-        [Obsolete]
-        public static void AddSyncTarget(string host)
-        {
-            
-            string json = File.ReadAllText($"{PrivatePath}/sync_targets.json");
-            Dictionary<string, List<string>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
-            targets.Add(host, GetSongs());
-            File.WriteAllTextAsync($"{PrivatePath}/sync_targets.json", JsonConvert.SerializeObject(targets));
-        }
-        */
 
         public static void AddTrustedSyncTarget(string host)
         {
@@ -394,11 +428,17 @@ namespace Ass_Pain.BackEnd
             Dictionary<string, List<Song>> hosts =
                 JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             hosts.Add(host, MainActivity.stateHandler.Songs);
-            string x = JsonConvert.SerializeObject(hosts, customConverter);
-#if DEBUG
-            MyConsole.WriteLine(x);   
-#endif
-            File.WriteAllText($"{PrivatePath}/trusted_sync_targets.json", x);
+            File.WriteAllText($"{PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(hosts, customConverter));
+        }
+        
+        public static void DeleteTrustedSyncTarget(string host)
+        {
+            string json = File.ReadAllText($"{PrivatePath}/trusted_sync_targets.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> hosts =
+                JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            hosts.Remove(host);
+            File.WriteAllText($"{PrivatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(hosts, customConverter));
         }
 
         public static bool IsTrustedSyncTarget(string host)
@@ -409,15 +449,12 @@ namespace Ass_Pain.BackEnd
                 SongJsonConverter customConverter = new SongJsonConverter(true);
                 Dictionary<string, List<Song>> hosts =
                     JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
-#if DEBUG
-                MyConsole.WriteLine($"JSON: {json}");
-#endif
                 return hosts.ContainsKey(host);
             }
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
                 return false;
             }
@@ -430,6 +467,14 @@ namespace Ass_Pain.BackEnd
             SongJsonConverter customConverter = new SongJsonConverter(true);
             Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             return targets.TryGetValue(host, out List<Song> target) ? target : new List<Song>();
+        }
+        
+        public static List<string> GetTrustedSyncTargets()
+        {
+            string json = File.ReadAllText($"{PrivatePath}/trusted_sync_targets.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            return targets.Keys.ToList();
         }
 
         private static void AddSong(string path, string title, IReadOnlyList<string> artists, string? album = null)
@@ -459,6 +504,7 @@ namespace Ass_Pain.BackEnd
             
             Song song = new Song(artistList, title, File.GetCreationTime(path), path);
             artistList.ForEach(art => art.AddSong(ref song));
+            //TODO: prepend
             MainActivity.stateHandler.Songs.Add(song);
 
             Album albumObj = new Album(string.Empty, string.Empty, false, false);
@@ -542,7 +588,7 @@ namespace Ass_Pain.BackEnd
                 catch (Exception e)
                 {
 #if DEBUG
-                    MyConsole.WriteLine(e.ToString());
+                    MyConsole.WriteLine(e);
 #endif
                 }
                 path = output;
@@ -652,6 +698,74 @@ namespace Ass_Pain.BackEnd
             byte[] magicBytes = reader.ReadBytes(16);
 
             return GetImageFormat(magicBytes);
+        }
+
+        public static bool IsTrustedSsid(string ssid)
+        {
+            try
+            {
+                string json = File.ReadAllText($"{PrivatePath}/trusted_SSIDs.json");
+                List<string> ssids = JsonConvert.DeserializeObject<List<string>>(json) ?? new List<string>();
+                return ssids.Contains(ssid);
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+                return false;
+            }
+        }
+        
+        public static List<string> GetTrustedSsids()
+        {
+            try
+            {
+                string json = File.ReadAllText($"{PrivatePath}/trusted_SSIDs.json");
+                return JsonConvert.DeserializeObject<List<string>>(json) ?? new List<string>();
+                
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+                return new List<string>();
+            }
+        }
+
+        public static void AddTrustedSsid(string ssid)
+        {
+            try
+            {
+                string json = File.ReadAllText($"{PrivatePath}/trusted_SSIDs.json");
+                List<string> ssids = JsonConvert.DeserializeObject<List<string>>(json) ?? new List<string>();
+                ssids.Add(ssid);
+                File.WriteAllText($"{PrivatePath}/trusted_SSIDs.json", JsonConvert.SerializeObject(ssids));
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+            }
+        }
+        
+        public static void DeleteTrustedSsid(string ssid)
+        {
+            try
+            {
+                string json = File.ReadAllText($"{PrivatePath}/trusted_SSIDs.json");
+                List<string> ssids = JsonConvert.DeserializeObject<List<string>>(json) ?? new List<string>();
+                ssids.Remove(ssid);
+                File.WriteAllText($"{PrivatePath}/trusted_SSIDs.json", JsonConvert.SerializeObject(ssids));
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+            }
         }
     }
 }
