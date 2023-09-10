@@ -25,8 +25,10 @@ using AngleSharp.Html;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Android.Content.PM;
+using Android.Graphics;
 using Android.Media;
 using Android.Provider;
+using Android.Text;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using Octokit;
@@ -36,6 +38,7 @@ using Application = Android.App.Application;
 using FileMode = System.IO.FileMode;
 using FileProvider = AndroidX.Core.Content.FileProvider;
 using Stream = System.IO.Stream;
+using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -55,10 +58,24 @@ namespace Ass_Pain
         public static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
         private const int ActionInstallPermissionRequestCode = 10356;
         private const int ActionPermissionsRequestCode = 13256;
+        private Typeface? font;
         
+        /*
+         * Fragments
+         */
+        private YoutubeFragment youtubeFragment;
         
-
-        DrawerLayout drawer;
+        private SongsFragment songsFragment;
+        private SongsFragment PlaylistsFragment;
+        private AlbumAuthorFragment AlbumsFragment;
+        private AlbumFragment albumFragment;
+        private AuthorFragment authorFragment;
+        private PlaylistsFragment playlistsFragment;
+        private PlaylistFragment playlistFragment;
+        bool activeFragment = false;
+        
+      
+        DrawerLayout? drawer;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -66,25 +83,26 @@ namespace Ass_Pain
             // Finish();   
             Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
-            AndroidX.AppCompat.Widget.Toolbar toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
-            SetSupportActionBar(toolbar);
+            Toolbar? toolbar = FindViewById<AndroidX.AppCompat.Widget.Toolbar>(Resource.Id.toolbar);
+            if (toolbar != null) SetSupportActionBar(toolbar);
             
             RequestMyPermission();
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
-
-            FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
-            fab.Click += FabOnClick;
+            
+            string action = Intent?.GetStringExtra("action");
+            if (action == "openDrawer")
+                drawer?.OpenDrawer(GravityCompat.Start);
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
-            drawer.OpenDrawer(GravityCompat.Start);
-            drawer.AddDrawerListener(toggle);
+            drawer?.OpenDrawer(GravityCompat.Start);
+            drawer?.AddDrawerListener(toggle);
             toggle.SyncState();
 
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
-            navigationView.SetNavigationItemSelectedListener(this);
+            navigationView?.SetNavigationItemSelectedListener(this);
             
-            side_player.populate_side_bar(this);
+            side_player.populate_side_bar(this, Assets);
             stateHandler.SetView(this);
             receiver = new MyBroadcastReceiver();
             RegisterReceiver(receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
@@ -117,9 +135,113 @@ namespace Ass_Pain
             //Local_notification_service notif_service = new Local_notification_service();
             //notif_service.song_control_notification();
             //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
+            
+            
+            /*
+             * Managing Frgamentation
+             */
+            youtubeFragment = new YoutubeFragment(this);
+            songsFragment = new SongsFragment(this, Assets);
+            AlbumsFragment = new AlbumAuthorFragment(this);
+            playlistsFragment = new PlaylistsFragment(this);
+            
+            
+            /*
+             * Font changing and button clicks in Nav Menu
+             */
+            font = Typeface.CreateFromAsset(Assets, "sulphur.ttf");
+            
+            TextView? songsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemSongs);
+            TextView? playlistsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemPlaylists);
+            TextView? albumsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemAlbums);
 
+            TextView? downloadNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemDownload);
+            TextView? shareNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemUpload);
+            TextView? settingsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemSettings);
+
+            if (playlistsNavigationButton != null) playlistsNavigationButton.Typeface = font;
+            if (albumsNavigationButton != null) albumsNavigationButton.Typeface = font;
+            if (songsNavigationButton != null) songsNavigationButton.Typeface = font;
+            if (downloadNavigationButton != null) downloadNavigationButton.Typeface = font;
+            if (shareNavigationButton != null) shareNavigationButton.Typeface = font;
+            if (settingsNavigationButton != null) settingsNavigationButton.Typeface = font;
+
+            if (albumsNavigationButton != null)
+                albumsNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, AlbumsFragment);
+                        activeFragment = true;
+                    }
+                    else if (activeFragment)
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, AlbumsFragment);
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                };
+
+            if (playlistsNavigationButton != null)
+                playlistsNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, playlistsFragment);
+                        activeFragment = true;
+                    }
+                    else if (activeFragment)
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, playlistsFragment);
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                };
+
+            if (songsNavigationButton != null)
+                songsNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, songsFragment);
+                        activeFragment = true;
+                    }
+                    else if (activeFragment)
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, songsFragment);
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                };
+            
+
+            if (downloadNavigationButton != null)
+                downloadNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, youtubeFragment);
+                        activeFragment = true;
+                    }
+                    else fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, youtubeFragment);
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                };
             
         }
+        
+
+        
+        
+        
+        
+        
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
@@ -147,10 +269,12 @@ namespace Ass_Pain
         }
 
         /// <inheritdoc />
-        public override bool OnCreateOptionsMenu(IMenu menu)
+        public override bool OnCreateOptionsMenu(IMenu? menu)
         {
             MenuInflater.Inflate(Resource.Menu.menu_main, menu);
-            return true;
+           
+
+            return base.OnCreateOptionsMenu(menu);
         }
 
         /// <inheritdoc />
@@ -166,48 +290,21 @@ namespace Ass_Pain
             int id = item.ItemId;
             return id == Resource.Id.action_settings || base.OnOptionsItemSelected(item);
         }
-
-        private void FabOnClick(object sender, EventArgs eventArgs)
-        {
-            View view = (View)sender;
-            Snackbar.Make(view, "Replace with your own action", Snackbar.LengthLong)
-                .SetAction("Action", (Android.Views.View.IOnClickListener)null).Show();
-        }
-
+        
+    
         public bool OnNavigationItemSelected(IMenuItem item)
         {
-            int id = item.ItemId;
-
-            if (id == Resource.Id.nav_camera) // home
-            {
-                Intent intent = new Intent(this, typeof(AllSongs));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-
-            }
-            else if (id == Resource.Id.nav_gallery) // equalizer
-            {
-                Intent intent = new Intent(this, typeof(equalizer));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-            }
-            else if (id == Resource.Id.nav_slideshow) // youtube
-            {
-                Intent intent = new Intent(this, typeof(youtube));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-            }
-            else if (id == Resource.Id.nav_share) // share
-            {
-                Intent intent = new Intent(this, typeof(share));
-                intent.PutExtra("link_author", "");
-                StartActivity(intent);
-            }
             
 
-            drawer.CloseDrawer(GravityCompat.Start);
+            drawer?.CloseDrawer(GravityCompat.Start);
             return true;
         }
+        
+        
+       
+        
+        
+        
 
         /// <inheritdoc />
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
@@ -350,7 +447,7 @@ namespace Ass_Pain
                     FileManager.GenerateList(FileManager.MusicFolder);
                 }
                 stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
-                RunOnUiThread(() => side_player.populate_side_bar(this));
+                RunOnUiThread(() => side_player.populate_side_bar(this, Assets));
                 
                 //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
                 //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();

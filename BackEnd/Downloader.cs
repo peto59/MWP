@@ -598,7 +598,7 @@ namespace Ass_Pain
                     int cnt1 = cnt;
                     MainActivity.stateHandler.view.RunOnUiThread(() =>
                     {
-                        youtube.UpdateSsDialog(current.title, current.artists.First().title,
+                        YoutubeFragment.SongSelectionDialog(current.title, current.artists.First().title,
                             current.releaseGroups.First().title,
                             imgBuffer[cnt1], originalAuthor,
                             originalTitle, cnt1 < buffer.Count - 1 || next, cnt1 > 0);
@@ -635,7 +635,6 @@ namespace Ass_Pain
                         MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
                         break;
                     }
-
                 }
 
                 response.Dispose();

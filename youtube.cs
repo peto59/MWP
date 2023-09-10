@@ -1,4 +1,5 @@
-﻿using System;
+﻿/*
+using System;
 using System.Runtime.CompilerServices;
 using Android.App;
 using Android.Content;
@@ -115,7 +116,7 @@ namespace Ass_Pain
             Accelerometer.ShakeDetected += acc_shaked;
 
 
-            FloatingActionButton download_popup_show = FindViewById<FloatingActionButton>(Resource.Id.fab);
+            FloatingActionButton downloadPopupShow = FindViewById<FloatingActionButton>(Resource.Id.fab);
             Button mp4 = FindViewById<Button>(Resource.Id.mp4_btn);
             Button musicBrainz = FindViewById<Button>(Resource.Id.music_brainz_btn);
             Button downloadCasual = FindViewById<Button>(Resource.Id.download_basic_btn);
@@ -138,45 +139,55 @@ namespace Ass_Pain
                 
             }
             bool visiState = false;
-            download_popup_show?.Background?.SetColorFilter(
-                new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-            );
-            download_popup_show.Click += delegate(object sender, EventArgs args)
+            if (BlendMode.Multiply != null)
+                downloadPopupShow?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+            if (downloadPopupShow != null)
             {
-                if (visiState)
+                downloadPopupShow.Click += delegate(object sender, EventArgs args)
                 {
-                    if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Invisible;
-                    if (mp4 != null) mp4.Visibility = ViewStates.Invisible;
-                    if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Invisible;
-                    visiState = false;
-                }
-                else
-                    Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadOnly);
-            };
+                    if (visiState)
+                    {
+                        if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Invisible;
+                        if (mp4 != null) mp4.Visibility = ViewStates.Invisible;
+                        if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Invisible;
+                        visiState = false;
+                    }
+                    else
+                        Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadOnly);
+                };
 
-            download_popup_show.LongClick += delegate(object sender, View.LongClickEventArgs args)
+                downloadPopupShow.LongClick += delegate(object sender, View.LongClickEventArgs args)
+                {
+                    if (!visiState)
+                    {
+                        if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Visible;
+                        if (mp4 != null) mp4.Visibility = ViewStates.Visible;
+                        if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Visible;
+                        visiState = true;
+                    }
+                    else
+                    {
+                        if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Invisible;
+                        if (mp4 != null) mp4.Visibility = ViewStates.Invisible;
+                        if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Invisible;
+                    }
+                };
+            }
+
+            if (downloadCasual != null) downloadCasual.Click += delegate(object sender, EventArgs args)
             {
-                if (!visiState)
-                {
-                    if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Visible;
-                    if (mp4 != null) mp4.Visibility = ViewStates.Visible;
-                    if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Visible;
-                    visiState = true;
-                }
-                else
-                {
-                    if (downloadCasual != null) downloadCasual.Visibility = ViewStates.Invisible;
-                    if (mp4 != null) mp4.Visibility = ViewStates.Invisible;
-                    if (musicBrainz != null) musicBrainz.Visibility = ViewStates.Invisible;
-                }
-
+                Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadOnly);
             };
-
-            if (downloadCasual != null) downloadCasual.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadOnly); };
-            if (mp4 != null) mp4.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.Downloadmp4); };
-            if (musicBrainz != null) musicBrainz.Click += delegate(object sender, EventArgs args) { Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadWithMbid); };
-
-            //SongSelectionDialog("dd", "dd", "dd", "dd", false, false);
+            if (mp4 != null) mp4.Click += delegate(object sender, EventArgs args)
+            {
+                Downloader.Download(sender, args, webView.Url, DownloadActions.Downloadmp4);
+            };
+            if (musicBrainz != null) musicBrainz.Click += delegate(object sender, EventArgs args)
+            {
+                Downloader.Download(sender, args, webView.Url, DownloadActions.DownloadWithMbid);
+            };
 
         }
 
@@ -420,9 +431,11 @@ namespace Ass_Pain
 
             if (id == Resource.Id.nav_camera) // home
             {
+                
                 Intent intent = new Intent(this, typeof(AllSongs));
                 intent.PutExtra("link_author", "");
                 StartActivity(intent);
+                
             }
             else if (id == Resource.Id.nav_gallery) // equalizer
             {
@@ -452,3 +465,4 @@ namespace Ass_Pain
         }
     }
 }
+*/

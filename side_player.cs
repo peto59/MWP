@@ -198,21 +198,27 @@ namespace Ass_Pain
 		}
 
 	  
-		public static void populate_side_bar(AppCompatActivity context)
+		public static void populate_side_bar(AppCompatActivity context, AssetManager assets)
 		{
 			// basic  vars
-			string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+			string? path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
 			float scale = context.Resources.DisplayMetrics.Density;
-
-			// sing title image
+			Typeface font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
+			
+			// song title image
 			ImageView song_image = context.FindViewById<ImageView>(Resource.Id.song_cover);
 
 			// texts
-			TextView song_title = context.FindViewById<TextView>(Resource.Id.song_cover_name);
-			TextView song_author = context.FindViewById<TextView>(Resource.Id.side_author);
-			TextView song_album = context.FindViewById<TextView>(Resource.Id.side_album);
+			TextView? songTitle = context.FindViewById<TextView>(Resource.Id.song_cover_name);
+			TextView? songAuthor = context.FindViewById<TextView>(Resource.Id.side_author);
+			TextView? songAlbum = context.FindViewById<TextView>(Resource.Id.side_album);
 
 			
+			if (songTitle != null) songTitle.Typeface = font;
+			if (songAuthor != null) songAuthor.Typeface = font;
+			if (songAlbum != null) songAlbum.Typeface = font;
+
+
 			LinearLayout.LayoutParams song_title_params = new LinearLayout.LayoutParams(
 				LinearLayout.LayoutParams.WrapContent,
 				(int)(30 * scale + 0.5f)
@@ -222,21 +228,23 @@ namespace Ass_Pain
 			);
 
 
-			song_title.LayoutParameters = song_title_params;
-			song_title.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Title;
+			songTitle.LayoutParameters = song_title_params;
+			songTitle.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Title;
 			
-			song_author.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.Title;
-			song_author.Click += (sender, e) =>
+
+			songAuthor.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.Title;
+			songAuthor.Click += (sender, e) =>
 			{
+				/*
 				Intent intent = new Intent(context, typeof(AllSongs));
 				int? x = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.GetHashCode();
 				if (x is not { } hash) return;
 				intent.PutExtra("link_author", hash);
 				context.StartActivity(intent);
-
+				*/
 			};
 				
-			song_album.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Album.Title;
+			songAlbum.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Album.Title;
 
 			/* 
 			 * player buttons
