@@ -228,10 +228,10 @@ namespace Ass_Pain
 
 
 			songTitle.LayoutParameters = song_title_params;
-			songTitle.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Title;
+			songTitle.Text = MainActivity.ServiceConnection.Binder?.Service.Current.Title ?? "No Name";
 			
 
-			songAuthor.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.Title;
+			songAuthor.Text = MainActivity.ServiceConnection.Binder?.Service.Current.Artist.Title ?? "No Artist";
 			songAuthor.Click += (sender, e) =>
 			{
 				/*
@@ -243,7 +243,7 @@ namespace Ass_Pain
 				*/
 			};
 				
-			songAlbum.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Album.Title;
+			songAlbum.Text = MainActivity.ServiceConnection.Binder?.Service.Current.Album.Title ?? "No Album";
 
 			/* 
 			 * player buttons
@@ -348,7 +348,7 @@ namespace Ass_Pain
 
 			// set the image
 			song_image.SetImageBitmap(
-				MainActivity.ServiceConnection?.Binder?.Service?.Current.Image
+				MainActivity.ServiceConnection.Binder?.Service.Current.Image ?? new Song("No Name", new DateTime(), "Default").Image
 			);
 
 
