@@ -267,9 +267,10 @@ namespace Ass_Pain
 			}
 		}
 
-		public override StartCommandResult OnStartCommand(Intent intent, StartCommandFlags flags, int startId)
+		/// <inheritdoc />
+		public override StartCommandResult OnStartCommand(Intent? intent, StartCommandFlags flags, int startId)
 		{
-			switch (intent.Action)
+			switch (intent?.Action)
 			{
 				case ActionPlay:
 					Play();
@@ -315,7 +316,7 @@ namespace Ass_Pain
 					ClearQueue();
 					break;
 			}
-            intent.Dispose();
+            intent?.Dispose();
 			return StartCommandResult.Sticky;
 		}
 		private long GetAvailableActions()

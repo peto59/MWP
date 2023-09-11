@@ -454,7 +454,11 @@ namespace Ass_Pain
                     stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                     FileManager.GenerateList(FileManager.MusicFolder);
                 }
-                stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
+
+                if (stateHandler.Songs.Count != 0)
+                {
+                    stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
+                }
                 RunOnUiThread(() => side_player.populate_side_bar(this, Assets));
 #if DEBUG
                 MyConsole.WriteLine($"Songs count {stateHandler.Songs.Count}");       

@@ -201,7 +201,6 @@ namespace Ass_Pain
 		public static void populate_side_bar(AppCompatActivity context, AssetManager assets)
 		{
 			// basic  vars
-			string? path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic)?.AbsolutePath;
 			float scale = context.Resources.DisplayMetrics.Density;
 			Typeface font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
 			
