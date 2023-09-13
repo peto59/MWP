@@ -139,6 +139,7 @@
     <Compile Include="PlaylistsFragment.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ShareFragment.cs" />
     <Compile Include="side_player.cs" />
     <Compile Include="DatatypesAndExtensions\Song.cs" />
     <Compile Include="DatatypesAndExtensions\SongExtensions.cs" />
@@ -160,6 +161,9 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\drawable\cross.xml" />
+    <AndroidResource Include="Resources\drawable\custom_thumb.xml" />
+    <AndroidResource Include="Resources\drawable\custom_track.xml" />
     <AndroidResource Include="Resources\drawable\download.xml" />
     <AndroidResource Include="Resources\drawable\download_white.xml">
       <SubType>Designer</SubType>
@@ -176,6 +180,7 @@
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
     <AndroidResource Include="Resources\drawable\playlists.xml" />
+    <AndroidResource Include="Resources\drawable\plus.xml" />
     <AndroidResource Include="Resources\drawable\rounded_button.xml" />
     <AndroidResource Include="Resources\drawable\rounded_view_white.xml">
       <SubType>Designer</SubType>
@@ -205,6 +210,7 @@
     </AndroidResource>
     <AndroidResource Include="Resources\layout\playlists_fragment.xml" />
     <AndroidResource Include="Resources\layout\playlist_fragment.xml" />
+    <AndroidResource Include="Resources\layout\share_fragment.xml" />
     <AndroidResource Include="Resources\layout\songs_fragment.xml" />
     <AndroidResource Include="Resources\layout\song_download_selection_dialog.xml" />
     <AndroidResource Include="Resources\layout\youtube_fragment.xml" />

@@ -33,16 +33,10 @@ namespace Ass_Pain
 
         private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
             
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="inflater"></param>
-        /// <param name="container"></param>
-        /// <param name="savedInstanceState"></param>
-        /// <returns></returns>
-        public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        /// <inheritdoc />
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            View view = inflater.Inflate(Resource.Layout.songs_fragment, container, false);
+            View? view = inflater.Inflate(Resource.Layout.songs_fragment, container, false);
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.songs_fragment_main);
             
@@ -62,7 +56,7 @@ namespace Ass_Pain
         /// Constructor for SongsFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (e.g. "this")</param>
-        /// <param name="assets"></param>
+        /// <param name="assets">AssetManager</param>
         public SongsFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;

@@ -307,7 +307,6 @@ namespace Ass_Pain.BackEnd
 
         private static string GetImage(IEnumerable<Thumbnail> authorThumbnails, string thumbnailPath)
         {
-            Directory.CreateDirectory(thumbnailPath);
             int maxArea = 0;
             string thumbnailUrl = string.Empty;
             foreach (Thumbnail thumbnail in authorThumbnails)

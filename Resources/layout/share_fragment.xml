@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/share_fragment_main"
+                android:background="@color/colorPrimaryDark">
+    <LinearLayout 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp" 
+            android:layout_marginLeft="20dp" 
+            android:gravity="center_vertical"
+            android:id="@+id/remote_switch_layout">
+        
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Remote listening"
+                android:textColor="#ffffff"
+                android:textSize="22dp"
+                android:layout_marginRight="120dp"
+                android:id="@+id/remote_listening_label"
+        />
+        
+
+        <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/remote_listening_switch"
+                android:layout_width="60dp"
+                android:layout_marginStart="0dp"
+                android:layout_marginEnd="0dp"
+                android:layout_marginTop="0dp"
+                android:layout_gravity="center"
+                android:textSize="10dp"
+                app:track="@drawable/custom_track"
+                android:thumb="@drawable/custom_thumb"
+                android:layout_height="50dp"/>
+    </LinearLayout>
+    <LinearLayout 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content"
+            android:layout_below="@id/remote_switch_layout"
+            android:id="@+id/port_for_remote_connectins_layout"
+            android:orientation="vertical"
+            android:layout_marginTop="40dp">
+        <TextView 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content"
+                android:text="Port for remote connections"
+                android:textColor="#ffffff"
+                android:layout_marginLeft="20dp"
+                android:textSize="24dp"
+                android:id="@+id/remote_connections_port_label"
+        />
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5855"
+                android:textColor="#ffffff"
+                android:layout_marginLeft="20dp"
+                android:textSize="20dp"
+                android:background="@drawable/rounded"
+                android:paddingLeft="15dp"
+                android:paddingRight="150dp"
+                android:paddingVertical="8dp"
+                android:layout_marginTop="10dp"
+                android:id="@+id/remote_connections_port"
+        />
+        
+        
+    </LinearLayout>
+    
+    <LinearLayout 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content"
+            android:layout_below="@id/port_for_remote_connectins_layout"
+            android:id="@+id/tursted_network_header"
+            android:layout_marginTop="50dp"
+            android:orientation="horizontal"
+    >
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Trusted Networks"
+                android:textColor="#ffffff"
+                android:layout_marginLeft="20dp"
+                android:textSize="24dp"
+                android:id="@+id/trusted_network_label"
+        />
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="add"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp"
+                android:textColor="#ffffff"
+                android:textSize="15dp"
+                android:background="@drawable/rounded_button"
+                android:drawableStart="@drawable/plus"
+                android:layout_marginLeft="10dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="6dp"
+                android:id="@+id/add_trusted_network_button"
+        />
+        
+    </LinearLayout>
+    <LinearLayout 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tursted_network_header"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical"
+            android:background="@drawable/rounded_view_white"
+            android:id="@+id/trusted_network_list"
+            android:layout_marginHorizontal="20dp"
+    >
+        <!--
+       <LinearLayout 
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/rounded_dark"
+                
+                android:paddingVertical="15dp"
+                android:layout_marginHorizontal="5dp"
+                android:layout_marginVertical="5dp">
+           <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                     android:text="Synologydwdwwdwd" android:textColor="#ffffff"
+                     android:layout_marginLeft="10dp" android:textSize="15dp"
+           />
+       </LinearLayout>
+        -->
+    </LinearLayout>
+    
+</RelativeLayout>

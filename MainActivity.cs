@@ -60,15 +60,14 @@ namespace Ass_Pain
         /*
          * Fragments
          */
-        private YoutubeFragment youtubeFragment;
+        private YoutubeFragment? youtubeFragment;
+        private ShareFragment? shareFragment;
         
-        private SongsFragment songsFragment;
-        private SongsFragment PlaylistsFragment;
-        private AlbumAuthorFragment AlbumsFragment;
-        private AlbumFragment albumFragment;
-        private AuthorFragment authorFragment;
-        private PlaylistsFragment playlistsFragment;
-        private PlaylistFragment playlistFragment;
+        private SongsFragment? songsFragment;
+        private AlbumAuthorFragment? albumsFragment;
+        private PlaylistsFragment? playlistsFragment;
+        
+        
         bool activeFragment = false;
         
       
@@ -189,8 +188,10 @@ namespace Ass_Pain
              * Managing Frgamentation
              */
             youtubeFragment = new YoutubeFragment(this);
+            shareFragment = new ShareFragment(this, Assets);
+            
             songsFragment = new SongsFragment(this, Assets);
-            AlbumsFragment = new AlbumAuthorFragment(this);
+            albumsFragment = new AlbumAuthorFragment(this);
             playlistsFragment = new PlaylistsFragment(this);
             
             
@@ -220,15 +221,16 @@ namespace Ass_Pain
                     var fragmentTransaction = SupportFragmentManager.BeginTransaction();
                     if (!activeFragment)
                     {
-                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, AlbumsFragment);
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, albumsFragment);
                         activeFragment = true;
                     }
                     else if (activeFragment)
-                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, AlbumsFragment);
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumsFragment);
 
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
                     drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Albums";
                 };
 
             if (playlistsNavigationButton != null)
@@ -246,6 +248,7 @@ namespace Ass_Pain
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
                     drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Playlists";
                 };
 
             if (songsNavigationButton != null)
@@ -263,6 +266,7 @@ namespace Ass_Pain
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
                     drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Songs";
                 };
             
 
@@ -280,8 +284,25 @@ namespace Ass_Pain
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
                     drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Download";
                 };
-            
+
+            if (shareNavigationButton != null)
+                shareNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, shareFragment);
+                        activeFragment = true;
+                    }
+                    else fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, shareFragment);
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Share";
+                };
         }
 
         /// <inheritdoc />
