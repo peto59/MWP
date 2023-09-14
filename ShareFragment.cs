@@ -17,6 +17,7 @@ namespace Ass_Pain
         private readonly Context context;
         private RelativeLayout? mainLayout;
         private Typeface? font;
+        private float scale;
         private View? view;
         
         
@@ -36,6 +37,7 @@ namespace Ass_Pain
         public ShareFragment(Context ctx, AssetManager assets)
         {
             context = ctx;
+            if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
         }
 
@@ -60,6 +62,7 @@ namespace Ass_Pain
             LinearLayout? trustedNetworkList = view?.FindViewById<LinearLayout>(Resource.Id.trusted_network_list);
          
             trustedNetworkList?.AddView(TrustedNetworkTile("Synology"));
+            trustedNetworkList?.AddView(TrustedNetworkTile("Sussy Asus"));
         }
 
         private LinearLayout TrustedNetworkTile(string text)
@@ -67,20 +70,21 @@ namespace Ass_Pain
             LinearLayout tile = new LinearLayout(context);
             LinearLayout.LayoutParams tileParams =  new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
-            tileParams.SetMargins(5, 5, 5, 5);
+            tileParams.SetMargins((int)(5 * scale + 0.5f), (int)(5 * scale + 0.5f), (int)(5 * scale + 0.5f), (int)(5 * scale + 0.5f));
             tile.LayoutParameters = tileParams;
-            tile.SetPadding(0, 15, 0,15);
+            tile.SetPadding(0, (int)(15 * scale + 0.5f), 0,(int)(15 * scale + 0.5f));
             tile.Orientation = Orientation.Horizontal;
             tile.SetBackgroundResource(Resource.Drawable.rounded_dark);
 
             TextView networkName = new TextView(context);
             LinearLayout.LayoutParams networkNameParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent);
-            networkNameParams.SetMargins(10, 0, 0, 0);
+            networkNameParams.SetMargins((int)(10 * scale + 0.5f), 0, 0, 0);
             networkName.LayoutParameters = networkNameParams;
             networkName.Text = text;
             networkName.SetTextColor(Color.White);
             networkName.TextSize = 15;
+            networkName.Typeface = font;
             
             tile.AddView(networkName);
             
