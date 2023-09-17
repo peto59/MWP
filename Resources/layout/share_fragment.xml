@@ -113,38 +113,44 @@
             android:id="@+id/trusted_network_list"
             android:layout_marginHorizontal="20dp"
     >
-        
-       <LinearLayout 
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/rounded_dark"
-                
-                android:paddingVertical="15dp"
-                android:layout_marginHorizontal="5dp"
-                android:layout_marginVertical="5dp">
-           <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                     android:text="Synologydwdwwdwd" android:textColor="#ffffff"
-                     android:layout_marginLeft="10dp" android:textSize="15dp"
-           />
-           <View
-                   android:layout_width="0dp"
-                   android:layout_height="0dp"
-                   android:layout_weight="1" />
-           <TextView
-                   android:layout_width="wrap_content"
-                   android:layout_height="wrap_content"
-                   android:textColor="#ffffff"
-                   android:textSize="15dp"
-                   android:background="@drawable/rounded_button"
-                   android:drawableStart="@drawable/plus"
-                   android:layout_marginLeft="10dp"
-                   android:layout_marginRight="10dp"
-                   android:gravity="right"
-                   android:id="@+id/add_trusted_network_button"
-           />
-           
-       </LinearLayout>
+       
         
     </LinearLayout>
-    
+
+
+
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/trusted_network_list"
+            android:id="@+id/available_hosts_header"
+            android:layout_marginTop="50dp"
+            android:orientation="horizontal"
+    >
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Available hosts"
+                android:textColor="#ffffff"
+                android:layout_marginLeft="20dp"
+                android:textSize="24dp"
+                android:id="@+id/available_hosts_label"
+        />
+      
+
+    </LinearLayout>
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/available_hosts_header"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical"
+            android:background="@drawable/rounded_view_white"
+            android:id="@+id/available_hosts_list"
+            android:layout_marginHorizontal="20dp"
+    >
+
+
+    </LinearLayout>
 </RelativeLayout>

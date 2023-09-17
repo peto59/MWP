@@ -182,6 +182,10 @@
     <AndroidResource Include="Resources\drawable\playlists.xml" />
     <AndroidResource Include="Resources\drawable\plus.xml" />
     <AndroidResource Include="Resources\drawable\rounded_button.xml" />
+    <AndroidResource Include="Resources\drawable\rounded_button_green.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\drawable\rounded_view_white.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -210,6 +214,7 @@
     </AndroidResource>
     <AndroidResource Include="Resources\layout\playlists_fragment.xml" />
     <AndroidResource Include="Resources\layout\playlist_fragment.xml" />
+    <AndroidResource Include="Resources\layout\share_are_you_sure.xml" />
     <AndroidResource Include="Resources\layout\share_fragment.xml" />
     <AndroidResource Include="Resources\layout\songs_fragment.xml" />
     <AndroidResource Include="Resources\layout\song_download_selection_dialog.xml" />
