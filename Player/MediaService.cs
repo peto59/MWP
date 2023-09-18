@@ -206,7 +206,7 @@ namespace Ass_Pain
 			{
 				if (Application.Context.Assets != null)
 				{
-					metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, BitmapFactory.DecodeStream(Application.Context.Assets.Open("music_placeholder.png")));	
+					metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, MusicBaseClassStatic.placeholder);	
 				}
 			}
 			
@@ -430,10 +430,11 @@ namespace Ass_Pain
 			if (mediaPlayer == null || Queue.Count <= 0) return;
 			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
 			Song song = Queue[Index];
+			Bitmap image = song.Image;
 			metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt,
-				song.Image);
+				image);
 			metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyAlbumArt,
-				song.Image);
+				image);
 			// To provide most control over how an item is displayed set the
 			// display fields in the metadata
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplayTitle,

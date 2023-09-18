@@ -28,7 +28,7 @@ namespace Ass_Pain
         
         public string ImgPath { get; }
         public bool Initialized { get; private set; } = true;
-        public override Bitmap Image => GetImage();
+        //public override Bitmap Image => GetImage() ?? throw new InvalidOperationException();
 
         public void AddAlbum(ref List<Album> albums)
         {
@@ -103,9 +103,9 @@ namespace Ass_Pain
             return "Default";
         }
         
-        public override Bitmap GetImage(bool shouldFallBack = true)
+        public override Bitmap? GetImage(bool shouldFallBack = true)
         {
-            Bitmap image = null;
+            Bitmap? image = null;
 
             try
             {
@@ -115,48 +115,38 @@ namespace Ass_Pain
                     image = BitmapFactory.DecodeStream(f);
                     f.Close();
                 }
-                else if (shouldFallBack)
-                {
-                    foreach (Song song in Songs.Where(song => song.Initialized))
-                    {
-                        image = song.GetImage(false);
-                        if (image != null)
-                        {
-                            break;
-                        }
-                    }
-
-                    if (image == null)
-                    {
-                        foreach (Album album in Albums.Where(album => album.Initialized))
-                        {
-                            image = album.GetImage(false);
-                            if (image != null)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (image == null)
-                {
-                    if (Application.Context.Assets != null)
-                        image = BitmapFactory.DecodeStream(
-                            Application.Context.Assets.Open(
-                                "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
-                }
             }
             catch (Exception e)
             {
 #if DEBUG
                 MyConsole.WriteLine(e);
 #endif
-                if (Application.Context.Assets != null)
-                    image = BitmapFactory.DecodeStream(
-                        Application.Context.Assets.Open(
-                            "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assetsthrow;
+                return null;
+            }   
+            
+            if (image != null || !shouldFallBack)
+            {
+                return image;
             }
-            return image;
+            
+            foreach (Song song in Songs.Where(song => song.Initialized))
+            {
+                image = song.GetImage(false);
+                if (image != null)
+                {
+                    return image;
+                }
+            }
+            
+            foreach (Album album in Albums.Where(album => album.Initialized))
+            {
+                image = album.GetImage(false);
+                if (image != null)
+                {
+                    return image;
+                }
+            }
+            return placeholder;
         }
 
         public void AddAlias(string newAlias)
@@ -219,7 +209,7 @@ namespace Ass_Pain
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is Artist item && Equals(item);
         }

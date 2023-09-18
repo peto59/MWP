@@ -26,7 +26,7 @@ namespace Ass_Pain
         public DateTime DateCreated { get; }
         public string Path { get; }
         public bool Initialized { get; private set; } = true;
-        public override Bitmap Image => GetImage();
+        //public override Bitmap Image => GetImage() ?? throw new InvalidOperationException();
 
         public void AddArtist(ref List<Artist> artists)
         {
@@ -109,51 +109,35 @@ namespace Ass_Pain
             FileManager.Delete(Path);
         }
 
-        public override Bitmap GetImage(bool shouldFallBack = true)
+        public override Bitmap? GetImage(bool shouldFallBack = true)
         {
-            if (Path == "Default")
+            Bitmap? image = null;
+            if (Path != "Default")
             {
+                try
+                {
+                    using File tagFile = File.Create(Path);
+                    tagFile.Mode = File.AccessMode.Read;
+                    using MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+                    image = BitmapFactory.DecodeStream(ms);
+                }
+                catch (Exception ex)
+                {
 #if DEBUG
-                MyConsole.WriteLine($"null????: {Application.Context.Assets != null}");
+                    MyConsole.WriteLine(ex);
+                    MyConsole.WriteLine($"Doesnt contain image: {Path}");
 #endif
-                if (Application.Context.Assets != null)
-                    return BitmapFactory.DecodeStream(
-                        Application.Context.Assets.Open(
-                            "music_placeholder.png"));
-            }
-            Bitmap image = null;
-            try
-            {
-                using File tagFile = File.Create(Path);
-                tagFile.Mode = File.AccessMode.Read;
-                using MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
-                image = BitmapFactory.DecodeStream(ms);
-            }
-            catch (Exception ex)
-            {
-#if DEBUG
-                MyConsole.WriteLine(ex);
-                MyConsole.WriteLine($"Doesnt contain image: {Path}");
-#endif
+                }
             }
 
-            if (image != null) return image;
-            if (!shouldFallBack)
-            {
-#if DEBUG
-                MyConsole.WriteLine($"null????: {Application.Context.Assets != null}");
-#endif
-                if (Application.Context.Assets != null)
-                    return BitmapFactory.DecodeStream(
-                        Application.Context.Assets.Open(
-                            "music_placeholder.png"));
-            }
+            if (image != null || !shouldFallBack) return image;
+            
             foreach (Album album in Albums.Where(album => album.Initialized))
             {
                 image = album.GetImage(false);
                 if (image != null)
                 {
-                    break;
+                    return image;
                 }
             }
 
@@ -163,11 +147,11 @@ namespace Ass_Pain
                 image = artist.GetImage(false);
                 if (image != null)
                 {
-                    break;
+                    return image;
                 }
             }
 
-            return image;
+            return placeholder;
         }
         public Song(List<Artist> artists, List<Album> albums, string title)
         {
@@ -245,7 +229,7 @@ namespace Ass_Pain
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is Song item && Equals(item);
         }

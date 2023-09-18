@@ -353,8 +353,16 @@ namespace Ass_Pain.BackEnd
 
         public static string Sanitize(string value)
         {
-            value = System.Text.RegularExpressions.Regex.Replace( value, InvalidRegStr, "" );
-            return System.Text.RegularExpressions.Regex.Replace(value, @"\s+|_{2,}", "_").Trim().Replace("_-_", "_").Replace(",_", ",");
+#if DEBUG
+            MyConsole.WriteLine($"Original string: {value}");   
+#endif
+            value = System.Text.RegularExpressions.Regex.Replace( value.Trim(), InvalidRegStr, string.Empty);
+            value = System.Text.RegularExpressions.Regex.Replace(value, @"\s+", "_").Replace(' ', '_');
+            value = System.Text.RegularExpressions.Regex.Replace(value, @"_{2,}", "_").Replace("_-_", "-").Replace(",_", ",");
+#if DEBUG
+            MyConsole.WriteLine($"new string: {value}");   
+#endif
+            return value;
             //return value.Replace("/", "").Replace("|", "").Replace("\\", "").Replace(":", "").Replace("*", "").Replace("\"", "").Replace("#", "").Replace("?", "").Replace("<", "").Replace(">", "").Trim().Replace(" ", "_");
         }
 
