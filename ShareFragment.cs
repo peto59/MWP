@@ -8,9 +8,12 @@ using Android.Widget;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
+using Android.Net;
 using Android.Text;
+using AndroidX.AppCompat.Widget;
 using Ass_Pain.BackEnd;
 using Ass_Pain.BackEnd.Network;
+using TagLib.Tiff.Arw;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 
@@ -73,23 +76,37 @@ namespace Ass_Pain
             if (trustedNetworkLabel != null) trustedNetworkLabel.Typeface = font;
             if (addTrustedNetworkButton != null) addTrustedNetworkButton.Typeface = font;
 
-            DateTime ttt = new DateTime(2023, 9, 15, 15, 34, 21);
+            if (addTrustedNetworkButton != null)
+                addTrustedNetworkButton.Click += delegate { AreYouSure(ShareActionType.TrustedNetworkAdd); };
 
+            List<string> trustedSsids = FileManager.GetTrustedSsids();
             LinearLayout? trustedNetworkList = view?.FindViewById<LinearLayout>(Resource.Id.trusted_network_list);
-            trustedNetworkList?.AddView(TrustedNetworkTile("Synology"));
-            trustedNetworkList?.AddView(TrustedNetworkTile("Sussy Asus"));
+            for (int i = 0; i < trustedSsids.Count; i++)
+                trustedNetworkList?.AddView(TrustedNetworkTile(trustedSsids[i]));
 
+            
+            List<(string hostname, DateTime? lastSeen, bool state)> allHosts = NetworkManager.GetAllHosts();
             LinearLayout? availableHostsList = view?.FindViewById<LinearLayout>(Resource.Id.available_hosts_list);
-            availableHostsList?.AddView(AvailableHostsTile("Lukas-PC", ttt, true));
-            availableHostsList?.AddView(AvailableHostsTile("Adam-PC", ttt, false));
-
-            AreYouSure("some network", ShareActionType.TrustedNetworkDelete);
+            foreach (var (hostname, lastSeen, state) in allHosts)
+                availableHostsList?.AddView(AvailableHostsTile(hostname, lastSeen, state));
+            
+            
+            /*
+             * Remote listening switch
+             */
+            SwitchCompat? remoteListeningSwitch = view?.FindViewById<SwitchCompat>(Resource.Id.remote_listening_switch);
+            if (remoteListeningSwitch != null)
+                remoteListeningSwitch.CheckedChange +=
+                    delegate(object _, CompoundButton.CheckedChangeEventArgs args)
+                    {
+                        SettingsManager.CanUseWan = args.IsChecked;
+                    };
         }
 
         
         
         
-        private LinearLayout AvailableHostsTile(string host, DateTime lastSeen, bool state)
+        private LinearLayout AvailableHostsTile(string host, DateTime? lastSeen, bool state)
         {
             LinearLayout tile = new LinearLayout(context);
             LinearLayout.LayoutParams tileParams =  new LinearLayout.LayoutParams(
@@ -140,10 +157,10 @@ namespace Ass_Pain
                 var today = DateTime.Now;
                 var diffOfDates = today - lastSeen;
 
-                if (diffOfDates.Days != 0) timeAwayString += diffOfDates.Days + "d ";
-                if (diffOfDates.Hours != 0) timeAwayString += diffOfDates.Hours + "h ";
-                if (diffOfDates.Minutes != 0) timeAwayString += diffOfDates.Minutes + "m ";
-                if (diffOfDates.Seconds != 0) timeAwayString += diffOfDates.Seconds + "s ago";
+                if (diffOfDates?.Days != 0) timeAwayString += diffOfDates?.Days + "d ";
+                if (diffOfDates?.Hours != 0) timeAwayString += diffOfDates?.Hours + "h ";
+                if (diffOfDates?.Minutes != 0) timeAwayString += diffOfDates?.Minutes + "m ";
+                if (diffOfDates?.Seconds != 0) timeAwayString += diffOfDates?.Seconds + "s ago";
             }
             else if (lastSeen == null)
             {
@@ -199,18 +216,21 @@ namespace Ass_Pain
                 Drawable? icon = context.GetDrawable(Resource.Drawable.plus);
                 crossButton.SetBackgroundResource(Resource.Drawable.rounded_button_green);
                 crossButton.SetCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+                crossButton.Click += delegate { AreYouSure(ShareActionType.AvailableHostAdd, host); };
             }
             else
             {
                 crossButton.SetPadding(
                     (int)(padding * scale + 0.5f), 
-                    (int)(padding * scale + 0.5f), 
-                    (int)(padding * scale + 0.5f), 
+                    (int)(padding * scale + 0.5f),
+                    (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f));
                 Drawable? icon = context.GetDrawable(Resource.Drawable.cross);
                 crossButton.SetBackgroundResource(Resource.Drawable.rounded_button);
                 crossButton.SetCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+                crossButton.Click += delegate { AreYouSure(ShareActionType.AvailableHostDelete, host); };
             }
+            
 
             tile.AddView(crossButton);
             
@@ -268,7 +288,7 @@ namespace Ass_Pain
             crossButtonParams.SetMargins(
                 (int)(10 * scale + 0.5f), 
                 0, 
-                (int)(10 * scale + 0.5f), 
+                (int)(10 * scale + 0.5f),
                 0);
             crossButton.LayoutParameters = crossButtonParams;
             crossButton.SetPadding((int)(2 * scale + 0.5f), (int)(2 * scale + 0.5f), (int)(2 * scale + 0.5f), (int)(2 * scale + 0.5f));
@@ -280,10 +300,8 @@ namespace Ass_Pain
             Drawable? icon = context.GetDrawable(Resource.Drawable.cross);
             crossButton.SetCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
 
-            crossButton.Click += (_, _) =>
-            {
-                Console.WriteLine(ssid);
-            };
+            crossButton.Click += (_, _) => AreYouSure(ShareActionType.TrustedNetworkDelete, ssid);
+            
 
             tile.AddView(crossButton);
             
@@ -291,7 +309,7 @@ namespace Ass_Pain
         }
 
         
-        private void AreYouSure(string ssid, ShareActionType actionType)
+        private void AreYouSure(ShareActionType actionType, string ssid = null)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? popupView = ifl?.Inflate(Resource.Layout.share_are_you_sure, null);
@@ -310,27 +328,36 @@ namespace Ass_Pain
             {
                 case ShareActionType.TrustedNetworkAdd:
                     title?.SetText( Html.FromHtml(
-                        $"By performing this action, you will add <font color='#fa6648'>{ssid}" +
+                        $"By performing this action, you will add <font color='#fa6648'>{NetworkManager.Common.CurrentSsid}" +
                         $"</font> to trusted networks list, proceed ?"
                     ), TextView.BufferType.Spannable);
+
+                    if (yes != null)
+                        yes.Click += (_, _) => FileManager.AddTrustedSsid(NetworkManager.Common.CurrentSsid);
                     break;
                 case ShareActionType.TrustedNetworkDelete:
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will blocklist <font color='#fa6648'>{ssid}" +
                         $"</font> from trusted networks list, proceed ?"
                     ), TextView.BufferType.Spannable);
+
+                    if (yes != null) yes.Click += (_, _) => FileManager.DeleteTrustedSsid(ssid);
                     break;
                 case ShareActionType.AvailableHostAdd:
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will add <font color='#fa6648'>{ssid}" +
                         $"</font> to trusted hosts list, proceed ?"
                     ), TextView.BufferType.Spannable);
+
+                    if (yes != null) yes.Click += (_, _) => FileManager.AddTrustedSyncTarget(ssid);
                     break;
                 case ShareActionType.AvailableHostDelete:
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will blocklist <font color='#fa6648'>{ssid}" +
                         $"</font> from trusted hosts list, proceed ?"
                     ), TextView.BufferType.Spannable);
+
+                    if (yes != null) yes.Click += (_, _) => FileManager.DeleteTrustedSyncTarget(ssid);
                     break;
             }
             
