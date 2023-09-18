@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.IO;
 using Android.Content.PM;
 using Android.Graphics;
 using Android.Support.V4.Media.Session;
@@ -73,10 +72,10 @@ namespace Ass_Pain
 		///</summary>
 		public const string ActionSeekTo = "ActionSeekTo";
 
-		private MediaSessionCompat session;
-		public MediaPlayer mediaPlayer { get; private set; }
-		private AudioManager audioManager;
-		private AudioFocusRequestClass audioFocusRequest;
+		private MediaSessionCompat? session;
+		public MediaPlayer? mediaPlayer { get; private set; }
+		private AudioManager? audioManager;
+		private AudioFocusRequestClass? audioFocusRequest;
 		private readonly Local_notification_service notificationService = new Local_notification_service();
 		public long Actions { get; private set; }
 		private bool isFocusGranted;
@@ -89,7 +88,6 @@ namespace Ass_Pain
 		private bool isSkippingToNext;
 		private bool isSkippingToPrevious;
 		private bool isBuffering = true;
-		public bool IsShuffling { get; private set; }
 		public int LoopState { get; private set; }
 		private int i;
 		public int Index
@@ -100,6 +98,7 @@ namespace Ass_Pain
 		// private List<Song> q = new List<Song>();
 		public List<Song> Queue = new List<Song>();
         private List<Song> originalQueue = new List<Song>();
+        internal readonly AutoResetEvent shuffling = new AutoResetEvent(true);
 
         public Song Current
         {
@@ -148,7 +147,7 @@ namespace Ass_Pain
 			{
 				NextSong();
 			};
-			mediaPlayer.BufferingUpdate += (sender, e) =>
+			mediaPlayer.BufferingUpdate += (_, e) =>
 			{
 				isBuffering = e.Percent != 100;
 			};
@@ -196,28 +195,32 @@ namespace Ass_Pain
 
 		private void InnitNotification()
 		{
-			
+
+			if (session == null)
+			{
+				InnitSession();
+			}
 			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
 			try
 			{
 				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, Queue[0].Image);
 			}
-			catch (Exception e)
+			catch (Exception)
 			{
 				if (Application.Context.Assets != null)
 				{
 					metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, MusicBaseClassStatic.placeholder);	
 				}
 			}
-			
+		
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplayTitle, "No Song");
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplaySubtitle, "No Artist");
-			session.SetMetadata(metadataBuilder.Build());
+			session?.SetMetadata(metadataBuilder.Build());
 			
 			const long position = PlaybackState.PlaybackPositionUnknown;
 			const PlaybackStateCode state = PlaybackStateCode.None;
 
-			PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
+			PlaybackStateCompat.Builder? stateBuilder = new PlaybackStateCompat.Builder()
 					.SetActions(GetAvailableActions());
 			if (stateBuilder != null)
 			{
@@ -230,10 +233,10 @@ namespace Ass_Pain
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
 				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
-				session.SetPlaybackState(stateBuilder.Build());
+				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
-			notificationService.song_control_notification(session.SessionToken);
+			if (session?.SessionToken != null) notificationService.song_control_notification(session.SessionToken);
 			StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
 		}
 
@@ -242,10 +245,10 @@ namespace Ass_Pain
 			switch (focusChange)
 			{
 				case AudioFocus.Gain:
-					mediaPlayer.SetVolume(1.0f, 1.0f);
+					mediaPlayer?.SetVolume(1.0f, 1.0f);
 					if (lostFocusDuringPlay)
 					{
-						mediaPlayer.Start();
+						mediaPlayer?.Start();
 						lostFocusDuringPlay = false;
 					}
 					break;
@@ -262,7 +265,7 @@ namespace Ass_Pain
 					Pause();
 					break;
 				case AudioFocus.LossTransientCanDuck:
-					mediaPlayer.SetVolume(0.25f, 0.25f);
+					mediaPlayer?.SetVolume(0.25f, 0.25f);
 					break;
 			}
 		}
@@ -291,7 +294,7 @@ namespace Ass_Pain
 #endif
                     break;
 				case ActionTogglePlay:
-					if (mediaPlayer.IsPlaying)
+					if ((bool)mediaPlayer?.IsPlaying)
 					{
 						Pause();
 					}
@@ -332,7 +335,7 @@ namespace Ass_Pain
 				Actions = PlaybackState.ActionPlay;
 			}
 			
-			if (Queue == null || Queue.Count == 0)
+			if (Queue.Count == 0)
 			{
 				return Actions;
 			}
@@ -352,13 +355,14 @@ namespace Ass_Pain
 
 		private void UpdatePlaybackState()
 		{
+			if (session == null)
+			{
+				InnitSession();
+			}
 			long position = PlaybackState.PlaybackPositionUnknown;
 			PlaybackStateCode state;
 			if (mediaPlayer is { IsPlaying: true })
 			{
-#if DEBUG
-                MyConsole.WriteLine("A");
-#endif
 				position = mediaPlayer.CurrentPosition;
 				state = PlaybackStateCode.Playing;
 				side_player.SetStopButton(MainActivity.stateHandler.view);
@@ -368,45 +372,30 @@ namespace Ass_Pain
 			}
 			else if (IsPaused)
 			{
-#if DEBUG
-                MyConsole.WriteLine("B");
-#endif
-                state = PlaybackStateCode.Paused;
-                position = mediaPlayer.CurrentPosition;
-                side_player.SetPlayButton(MainActivity.stateHandler.view);
+				state = PlaybackStateCode.Paused;
+				position = mediaPlayer?.CurrentPosition ?? 0;
+				side_player.SetPlayButton(MainActivity.stateHandler.view);
 				MainActivity.stateHandler.cts.Cancel();
 			}
 			else if (isSkippingToNext)
 			{
-#if DEBUG
-                MyConsole.WriteLine("C");
-#endif
-                state = PlaybackStateCode.SkippingToNext;
+				state = PlaybackStateCode.SkippingToNext;
 			}
 			else if (isSkippingToPrevious)
 			{
-#if DEBUG
-                MyConsole.WriteLine("D");
-#endif
-                state = PlaybackStateCode.SkippingToPrevious;
+				state = PlaybackStateCode.SkippingToPrevious;
 			}
 			else if (isBuffering)
 			{
-#if DEBUG
-                MyConsole.WriteLine("E");
-#endif
-                state = PlaybackStateCode.Buffering;
+				state = PlaybackStateCode.Buffering;
 			}
 			else
 			{
-#if DEBUG
-                MyConsole.WriteLine("F");
-#endif
-                state = PlaybackStateCode.None;
+				state = PlaybackStateCode.None;
 			}
 
-			PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
-					.SetActions(GetAvailableActions());
+			PlaybackStateCompat.Builder? stateBuilder = new PlaybackStateCompat.Builder()
+				.SetActions(GetAvailableActions());
 			if (stateBuilder != null)
 			{
 				stateBuilder.SetState((int)state, position, 1.0f);
@@ -418,16 +407,20 @@ namespace Ass_Pain
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
 				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
-				session.SetPlaybackState(stateBuilder.Build());
+				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
-			side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
+			if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
 			notificationService.Notify();
 		}
 
 		private void UpdateMetadata()
 		{
 			if (mediaPlayer == null || Queue.Count <= 0) return;
+			if (session == null)
+			{
+				InnitSession();
+			}
 			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
 			Song song = Queue[Index];
 			Bitmap image = song.Image;
@@ -455,7 +448,7 @@ namespace Ass_Pain
 			metadataBuilder.PutLong(MediaMetadataCompat.MetadataKeyDuration,
 				mediaPlayer.Duration);
 			// Add any other fields you have for your data as well
-			session.SetMetadata(metadataBuilder.Build());
+			session?.SetMetadata(metadataBuilder.Build());
 
 			UpdatePlaybackState();
 		}
@@ -495,7 +488,7 @@ namespace Ass_Pain
 			}
 			if (!notificationService.IsCreated)
 			{
-				notificationService.song_control_notification(session.SessionToken);
+				if (session.SessionToken != null) notificationService.song_control_notification(session.SessionToken);
 				//StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
 				//android:foregroundServiceType="mediaPlayback"
 				StartForeground(notificationService.NotificationId, notificationService.Notification);
@@ -542,7 +535,7 @@ namespace Ass_Pain
 		///</summary>
 		public void Pause()
 		{
-			mediaPlayer.Pause();
+			mediaPlayer?.Pause();
 			IsPaused = true;
 			UpdatePlaybackState();
 		}
@@ -552,7 +545,7 @@ namespace Ass_Pain
 		///</summary>
 		private void Stop()
 		{
-			mediaPlayer.Stop();
+			mediaPlayer?.Stop();
 			AbandonFocus();
 			//updateMetadata();
 			notificationService.destroy_song_control();
@@ -587,7 +580,7 @@ namespace Ass_Pain
 		///<summary>
 		///Plays previous song in queue
 		///</summary>
-		private void PreviousSong(object sender = null, EventArgs e = null)
+		private void PreviousSong()
 		{
 			if (mediaPlayer == null) return;
 			if (mediaPlayer.CurrentPosition > 10000)//if current song is playing longer than 10 seconds
@@ -646,27 +639,31 @@ namespace Ass_Pain
 		// 	Play();
 		// }
 
-		public void GenerateQueue(Song source, int i = 0)
+		public void GenerateQueue(Song source, int? ind = null)
 		{
 			Queue = new List<Song> { source };
-			Index = i;
+			Index = ind ?? 0;
 			Play();
 		}
 		
-		public void GenerateQueue(List<Song> source, int ind = 0, bool play = true)
+		public void GenerateQueue(IEnumerable<Song> source, int? ind = null, bool play = true)
 		{
-			Queue = source;
-			Index = ind;
+			Queue = source.ToList();
+			Index = ind ?? 0;
+			if (IsShuffled)
+			{
+				Shuffle(true, ind);
+			}
 			if (play)
 			{
 				Play();
 			}
 		}
 		
-		public void GenerateQueue(MusicBaseContainer source, int i = 0)
+		public void GenerateQueue(MusicBaseContainer source, int? ind = null)
 		{
 			Queue = source.Songs;
-			Index = i;
+			Index = ind ?? 0;
 			Play();
 		}
 
@@ -753,18 +750,17 @@ namespace Ass_Pain
 		///<summary>
 		///Shuffles or unshuffles queue and updates shuffling for all new queues based on <paramref name="newShuffleState"/> state
 		///</summary>
-		public void Shuffle(bool newShuffleState)
+		public void Shuffle(bool newShuffleState, int? indx = null)
 		{
             if(Queue.Count == 0) { return; }
-            while (IsShuffling)
-			{
-				Thread.Sleep(5);
-			}
-			IsShuffling = true;
+
+            int ind = indx ?? Index;
+
+            shuffling.WaitOne();
 			if (newShuffleState)
 			{
-				originalQueue = Queue;
-				Song tmp = Queue.Pop(Index);
+				originalQueue = Queue.ToList();
+				Song tmp = Queue.Pop(ind);
 				Index = 0;
                 Queue.Shuffle();
 				Queue = Queue.Prepend(tmp).ToList();
@@ -781,9 +777,9 @@ namespace Ass_Pain
 			IsShuffled = newShuffleState;
 			MainActivity.stateHandler.shuffle = newShuffleState;
 			UpdatePlaybackState();
-            side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
-			IsShuffling = false;
-        }
+			if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
+			shuffling.Set();
+		}
 
 		///<summary>
 		///Cycles through loop states based on <paramref name="state"/> value
@@ -810,7 +806,7 @@ namespace Ass_Pain
 			//mediaPlayer.Looping = loopSingle;
 			MainActivity.stateHandler.loopState = LoopState;
             UpdatePlaybackState();
-            side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
+            if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
 #if DEBUG
             MyConsole.WriteLine("TOGGLE LOOP");
 #endif
@@ -825,50 +821,51 @@ namespace Ass_Pain
 			{
 				InnitAudioManager();
 			}
-			if (!isFocusGranted)
-			{
-				if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-				{
-					if (audioFocusRequest == null)
-					{
-						InnitFocusRequest();
-					}
 
-					if (audioManager == null) return false;
+			if (isFocusGranted) return true;
+			if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+			{
+				if (audioFocusRequest == null)
+				{
+					InnitFocusRequest();
+				}
+
+				if (audioManager == null) return false;
+				if (audioFocusRequest != null)
+				{
 					AudioFocusRequest request = audioManager.RequestAudioFocus(audioFocusRequest);
 					if (!request.Equals(AudioFocusRequest.Granted))
 					{
-                        // handle any failed requests
+						// handle any failed requests
 #if DEBUG
-                        MyConsole.WriteLine("No focus");
-                        MyConsole.WriteLine(request.ToString());
+						MyConsole.WriteLine("No focus");
+						MyConsole.WriteLine(request.ToString());
 #endif
 
-                        return false;
-					}
-					isFocusGranted = true;
-					return true;
-				}
-				else
-				{
-					if (audioManager == null) return false;
-					AudioFocusRequest request = audioManager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
-					if (request != AudioFocusRequest.Granted)
-					{
-                        // handle any failed requests
-#if DEBUG
-                        MyConsole.WriteLine("No focus");
-                        MyConsole.WriteLine(request.ToString());
-#endif
 						return false;
 					}
-					isFocusGranted = true;
-					return true;
-
 				}
+
+				isFocusGranted = true;
+				return true;
 			}
 
+			if (audioManager == null) return false;
+#pragma warning disable CS0618 // Type or member is obsolete
+			AudioFocusRequest request2 = audioManager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
+#pragma warning restore CS0618 // Type or member is obsolete
+			if (request2 != AudioFocusRequest.Granted)
+			{
+				// handle any failed requests
+#if DEBUG
+				MyConsole.WriteLine("No focus");
+				MyConsole.WriteLine(request2.ToString());
+#endif
+				return false;
+			}
+			isFocusGranted = true;
 			return true;
+
 		}
 
 		///<summary>
@@ -888,11 +885,13 @@ namespace Ass_Pain
 				{
 					InnitFocusRequest();
 				}
+				if (audioManager == null) return;
+				if (audioFocusRequest == null) return;
 				AudioFocusRequest abandon = audioManager.AbandonAudioFocusRequest(audioFocusRequest);
 				if (!abandon.Equals(AudioFocus.Gain))
 				{
 #if DEBUG
-                    MyConsole.WriteLine("No abandon");
+					MyConsole.WriteLine("No abandon");
 #endif
 					// handle any failed requests
 				}
@@ -903,12 +902,15 @@ namespace Ass_Pain
 			}
 			else
 			{
+				if (audioManager == null) return;
+#pragma warning disable CS0618 // Type or member is obsolete
 				AudioFocusRequest abandon = audioManager.AbandonAudioFocus(this);
+#pragma warning restore CS0618 // Type or member is obsolete
 				if (abandon != AudioFocusRequest.Granted)
 				{
-                    // handle any failed requests
+					// handle any failed requests
 #if DEBUG
-                    MyConsole.WriteLine("No abandon");
+					MyConsole.WriteLine("No abandon");
 #endif
 				}
 				else
@@ -956,7 +958,8 @@ namespace Ass_Pain
 			isBuffering = true;
 		}
 
-		public override IBinder OnBind(Intent intent)
+		/// <inheritdoc />
+		public override IBinder OnBind(Intent? intent)
 		{
 			return new MediaServiceBinder(this);
 		}

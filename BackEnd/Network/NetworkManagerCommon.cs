@@ -111,7 +111,7 @@ namespace Ass_Pain.BackEnd.Network
             }
             try
             {
-                NetworkRequest request = new NetworkRequest.Builder()
+                NetworkRequest? request = new NetworkRequest.Builder()
                     .AddTransportType(TransportType.Wifi)
                     ?.Build();
                 while (MainActivity.stateHandler.view == null)
@@ -121,11 +121,11 @@ namespace Ass_Pain.BackEnd.Network
 #endif
                     Thread.Sleep(10);
                 }
-                ConnectivityManager connectivityManager =
-                    (ConnectivityManager)MainActivity.stateHandler.view.GetSystemService(
+                ConnectivityManager? connectivityManager =
+                    (ConnectivityManager?)MainActivity.stateHandler.view.GetSystemService(
                         Context.ConnectivityService);
                 MyNetworkCallback myNetworkCallback = new MyNetworkCallback(NetworkCallbackFlags.IncludeLocationInfo);
-                if (request != null) connectivityManager?.RegisterNetworkCallback(request, myNetworkCallback);
+                if (request != null && connectivityManager != null) connectivityManager.RegisterNetworkCallback(request, myNetworkCallback);
 #if DEBUG
                 else MyConsole.WriteLine("request or connectivityManager is null"); 
 #endif
@@ -469,7 +469,8 @@ namespace Ass_Pain.BackEnd.Network
                         }
                         string ssid = transportInfo["SSID"];
 #if DEBUG
-                        MyConsole.WriteLine($"SSID: {ssid}");               
+                        MyConsole.WriteLine($"SSID: {ssid}");         
+                        MyConsole.WriteLine($"BLUD: {ssid == "<unknown ssid>"}");
 #endif
                         if (ssid != NetworkManager.Common.CurrentSsid)
                         {
