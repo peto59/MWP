@@ -418,12 +418,13 @@ namespace Ass_Pain.BackEnd.Network
             {
                 WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
                 WifiInfo? info = wifiManager?.ConnectionInfo;
-                if (info?.SSID != null) CurrentSsid = info.SSID;
+                CurrentSsid = info?.SSID ?? string.Empty;
 
                 CanSend = GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
                 return;
             }
 
+            CurrentSsid = string.Empty;
             CanSend = CanSend.Rejected;
         }
 
@@ -494,6 +495,7 @@ namespace Ass_Pain.BackEnd.Network
 #endif
             NetworkManager.Common.CanSend = CanSend.Rejected;
             NetworkManager.Common.MyIp = null;
+            NetworkManager.Common.CurrentSsid = string.Empty;
         }
 
         private static bool ValidateIPv4(string ipString)
