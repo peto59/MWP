@@ -28,6 +28,7 @@ namespace Ass_Pain
         private Typeface? font;
         private float scale;
         private View? view;
+        private AssetManager assets;
 
         private enum ShareActionType
         {
@@ -57,6 +58,7 @@ namespace Ass_Pain
             context = ctx;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
+            this.assets = assets;
         }
 
 
@@ -324,6 +326,8 @@ namespace Ass_Pain
             if (yes != null) yes.Typeface = font;
             if (no != null) no.Typeface = font;
 
+            AlertDialog? dialog = alert.Create();
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
             switch (actionType)
             {
                 case ShareActionType.TrustedNetworkAdd:
@@ -333,7 +337,14 @@ namespace Ass_Pain
                     ), TextView.BufferType.Spannable);
 
                     if (yes != null)
-                        yes.Click += (_, _) => FileManager.AddTrustedSsid(NetworkManager.Common.CurrentSsid);
+                    {
+                        yes.Click += (_, _) =>
+                        {
+                            FileManager.AddTrustedSsid(NetworkManager.Common.CurrentSsid);
+                            RefreshFragment();
+                            dialog?.Cancel();
+                        };
+                    }
                     break;
                 case ShareActionType.TrustedNetworkDelete:
                     title?.SetText( Html.FromHtml(
@@ -341,7 +352,12 @@ namespace Ass_Pain
                         $"</font> from trusted networks list, proceed ?"
                     ), TextView.BufferType.Spannable);
 
-                    if (yes != null) yes.Click += (_, _) => FileManager.DeleteTrustedSsid(ssid);
+                    if (yes != null) yes.Click += (_, _) =>
+                    {
+                        FileManager.DeleteTrustedSsid(ssid);
+                        RefreshFragment();
+                        dialog?.Cancel();
+                    };
                     break;
                 case ShareActionType.AvailableHostAdd:
                     title?.SetText( Html.FromHtml(
@@ -349,7 +365,12 @@ namespace Ass_Pain
                         $"</font> to trusted hosts list, proceed ?"
                     ), TextView.BufferType.Spannable);
 
-                    if (yes != null) yes.Click += (_, _) => FileManager.AddTrustedSyncTarget(ssid);
+                    if (yes != null) yes.Click += (_, _) =>
+                    {
+                        FileManager.AddTrustedSyncTarget(ssid);
+                        RefreshFragment();
+                        dialog?.Cancel();
+                    };
                     break;
                 case ShareActionType.AvailableHostDelete:
                     title?.SetText( Html.FromHtml(
@@ -357,20 +378,32 @@ namespace Ass_Pain
                         $"</font> from trusted hosts list, proceed ?"
                     ), TextView.BufferType.Spannable);
 
-                    if (yes != null) yes.Click += (_, _) => FileManager.DeleteTrustedSyncTarget(ssid);
+                    if (yes != null) yes.Click += (_, _) =>
+                    {
+                        FileManager.DeleteTrustedSyncTarget(ssid);
+                        RefreshFragment();
+                        dialog?.Cancel();
+                    };
                     break;
             }
             
 
 
-            AlertDialog? dialog = alert.Create();
-            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
             if (no != null) no.Click += (_, _) => dialog?.Cancel();
             dialog?.Show();
             
 
         }
-        
+
+
+        private void RefreshFragment()
+        {
+            Fragment frg = ParentFragmentManager.FindFragmentByTag("shareFragTag");
+            var ft = ParentFragmentManager.BeginTransaction();
+            ft.Detach(frg);
+            ft.Attach(frg);
+            ft.Commit();
+        }
         
     }
 }

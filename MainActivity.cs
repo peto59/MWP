@@ -293,10 +293,10 @@ namespace Ass_Pain
                     var fragmentTransaction = SupportFragmentManager.BeginTransaction();
                     if (!activeFragment)
                     {
-                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, shareFragment);
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, shareFragment, "shareFragTag");
                         activeFragment = true;
                     }
-                    else fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, shareFragment);
+                    else fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, shareFragment, "shareFragTag");
 
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
