@@ -64,6 +64,9 @@ namespace Ass_Pain
 
         private void RenderUi()
         {
+            /*
+             * ziskavanie elementov z XAML suboru za pomoci ID ktore maju pridelene v XAML subore
+             */
             TextView? remoteListeningLabel = view?.FindViewById<TextView>(Resource.Id.remote_listening_label);
             TextView? remoteConnectionsPortLabel = view?.FindViewById<TextView>(Resource.Id.remote_connections_port_label);
             TextView? remoteConnectionsPort = view?.FindViewById<TextView>(Resource.Id.remote_connections_port);
@@ -71,6 +74,10 @@ namespace Ass_Pain
             TextView? addTrustedNetworkButton = view?.FindViewById<TextView>(Resource.Id.add_trusted_network_button);
             TextView? availableHostsLabel = view?.FindViewById<TextView>(Resource.Id.available_hosts_label);
 
+            /*
+             * nastavovanie fontu individualne pre kazdy element obsahujuci text a zaroven kontrolovanie ci maju
+             * nenulovu hodnotu.
+             */
             if (availableHostsLabel != null) availableHostsLabel.Typeface = font;
             if (remoteListeningLabel != null) remoteListeningLabel.Typeface = font;
             if (remoteConnectionsPortLabel != null) remoteConnectionsPortLabel.Typeface = font;
@@ -78,15 +85,59 @@ namespace Ass_Pain
             if (trustedNetworkLabel != null) trustedNetworkLabel.Typeface = font;
             if (addTrustedNetworkButton != null) addTrustedNetworkButton.Typeface = font;
 
-            if (addTrustedNetworkButton != null)
-                addTrustedNetworkButton.Click += delegate { AreYouSure(ShareActionType.TrustedNetworkAdd); };
 
+            /*
+             * Nastavovanie obsahu textoveho pola zobrazujuceho aktualny WAN port a naviazovanie click eventu
+             * po kliknuti na textove pole, po kliknuti sa zobrazi popup v ktorom sa nachadza vstup pre zmenenie
+             * WAN portu.
+             */
+            if (remoteConnectionsPort != null) remoteConnectionsPort.Click += delegate { ChangeWanPort(); };
+            if (remoteConnectionsPort != null) remoteConnectionsPort.Text = SettingsManager.WanPort.ToString();
+
+            /*
+             * zamknutie moznosti pridania novej doveryhodnej siete v pripade ak aktualne siet nie je doveryhodna
+             * ak je doveryhodna, pridanie noveho click eventu pre tlacidlo a odomknutie moznosti pridania soveryhodnej siete
+             */
+            if (NetworkManager.Common.CurrentSsid == string.Empty     || 
+                NetworkManager.Common.CurrentSsid == "<unknown ssid>" || 
+                !FileManager.IsTrustedSsid(NetworkManager.Common.CurrentSsid)
+                )
+            {
+                /*
+                 * zmenenie tlacidlu farbu pozdaia, textu, ikonky na vyjadrenie zamknutia tlacidla
+                 */
+                addTrustedNetworkButton?.SetTextColor(Color.Gray);
+                addTrustedNetworkButton?.SetBackgroundResource(Resource.Drawable.rounded_button_disabled);
+                Drawable? icon = context.GetDrawable(Resource.Drawable.plus_disabled);
+                addTrustedNetworkButton?.SetCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+            }
+            else
+            {
+                /*
+                 * zmenenie tlacidlu farbu pozdaia, textu, ikonky na vyjadrenie odomknutia tlacidla
+                 * a naviazanie click eventu pre tlacidlo ktore po kliknuti spusti popup ktory si poziada od
+                 * pouzivatela potvrdenie o pridanie novej doveryhodnej siete
+                 */
+                Drawable? icon = context.GetDrawable(Resource.Drawable.plus);
+                addTrustedNetworkButton?.SetCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+                addTrustedNetworkButton?.SetTextColor(Color.White);
+                addTrustedNetworkButton?.SetBackgroundResource(Resource.Drawable.rounded_button);
+                if (addTrustedNetworkButton != null)
+                    addTrustedNetworkButton.Click += delegate { AreYouSure(ShareActionType.TrustedNetworkAdd); };
+            }
+            
+            /*
+             * Vykreslenie policok pre doveryhodne siete vhodne na pripojenie
+             */
             List<string> trustedSsids = FileManager.GetTrustedSsids();
             LinearLayout? trustedNetworkList = view?.FindViewById<LinearLayout>(Resource.Id.trusted_network_list);
             for (int i = 0; i < trustedSsids.Count; i++)
                 trustedNetworkList?.AddView(TrustedNetworkTile(trustedSsids[i]));
 
             
+            /*
+             * Vykreslenie policok pre moznych hostitelov na spojenie
+             */ 
             List<(string hostname, DateTime? lastSeen, bool state)> allHosts = NetworkManager.GetAllHosts();
             LinearLayout? availableHostsList = view?.FindViewById<LinearLayout>(Resource.Id.available_hosts_list);
             foreach (var (hostname, lastSeen, state) in allHosts)
@@ -94,7 +145,7 @@ namespace Ass_Pain
             
             
             /*
-             * Remote listening switch
+             * Vytvorenie click eventu pre prepinac sluziaci na prepinanie medzi stavom "moze pouzicat WAN" a "nemoze pouzivat WAN"
              */
             SwitchCompat? remoteListeningSwitch = view?.FindViewById<SwitchCompat>(Resource.Id.remote_listening_switch);
             if (remoteListeningSwitch != null)
@@ -103,6 +154,7 @@ namespace Ass_Pain
                     {
                         SettingsManager.CanUseWan = args.IsChecked;
                     };
+            
         }
 
         
@@ -394,8 +446,7 @@ namespace Ass_Pain
             
 
         }
-
-
+        
         private void RefreshFragment()
         {
             Fragment frg = ParentFragmentManager.FindFragmentByTag("shareFragTag");
@@ -404,6 +455,51 @@ namespace Ass_Pain
             ft.Attach(frg);
             ft.Commit();
         }
+
+
+
+        
+        private void ChangeWanPort()
+        {
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? popupView = ifl?.Inflate(Resource.Layout.share_new_port, null);
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(popupView);
+          
+            AlertDialog? dialog = alert.Create();
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+
+            TextView? title = popupView?.FindViewById<TextView>(Resource.Id.share_new_port_title);
+            TextView? confirm = popupView?.FindViewById<TextView>(Resource.Id.share_new_port_confirm);
+            TextView? cancel = popupView?.FindViewById<TextView>(Resource.Id.share_new_port_cancel);
+            EditText? input = popupView?.FindViewById<EditText>(Resource.Id.share_new_port_input);
+
+            if (title != null) title.Typeface = font;
+            if (confirm != null) confirm.Typeface = font;
+            if (cancel != null) cancel.Typeface = font;
+            if (input != null) input.Typeface = font;
+
+            if (title != null) title.Text = "Set new WAN port, input must obey 1024 <= 65535";
+
+            if (confirm != null)
+                confirm.Click += delegate
+                {
+                    if (Int32.TryParse(input?.Text, out var res))
+                        if (res >= 1024 && res <= 65535)
+                            SettingsManager.WanPort = res;
+                        else
+                            Toast.MakeText(context,
+                                "The WAN port number must be bigger than 1024 and lower than 65535", ToastLength.Long)
+                                ?.Show();
+                    RefreshFragment();
+                    dialog?.Cancel();
+                    
+                };
+            
+            if (cancel != null) cancel.Click += (_, _) => dialog?.Cancel();
+            dialog?.Show();
+        }
+        
         
     }
 }

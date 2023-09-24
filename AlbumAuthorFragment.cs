@@ -94,8 +94,7 @@ namespace Ass_Pain
                     buttonMargins, 17,
                     nameMargins, scale, context
                 );
-
-                //全部加える
+                
                 lin.AddView(lnIn);
             }
             

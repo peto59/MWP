@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="340dp"
+              android:background="@drawable/rounded">
+    
+    
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:paddingBottom="40dp"
+    >
+        <TextView android:layout_width="300dp" android:layout_height="wrap_content"
+                  android:textColor="#ffffff"
+                  android:layout_gravity="center"
+                  android:layout_marginTop="20dp"
+                  android:layout_marginBottom="10dp"
+                  android:textAppearance="?android:attr/textAppearanceLarge"
+                  android:id="@+id/share_new_port_title"
+                  android:textAlignment="center"
+                  
+        />
+        <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#ffffff"
+                android:inputType="numberSigned"
+                android:textSize="20dp"
+                android:background="@drawable/rounded_dark"
+                android:paddingLeft="15dp"
+                android:paddingRight="150dp"
+                android:paddingVertical="8dp"
+                android:layout_marginTop="10dp"
+                android:id="@+id/share_new_port_input"
+        />
+
+        <LinearLayout 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp"
+        >
+            <TextView android:layout_width="80dp" android:layout_height="45dp"
+                      android:text="co"
+                      android:background="@drawable/rounded_button"
+                      android:gravity="center"
+                      android:textSize="18dp"
+                      android:layout_marginRight="10dp"
+                      android:textColor="#ffffff"
+                      android:id="@+id/share_new_port_confirm"
+            />
+            <TextView android:layout_width="80dp" android:layout_height="45dp"
+                      android:text="ca"
+                      android:layout_marginLeft="10dp"
+                      android:background="@drawable/rounded_button"
+                      android:gravity="center"
+                      android:textSize="18dp"
+                      android:textColor="#ffffff"
+                      android:id="@+id/share_new_port_cancel"
+            />
+        </LinearLayout>
+            
+
+    </LinearLayout>
+
+</LinearLayout>
