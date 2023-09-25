@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.IO;
 using Android.Content.PM;
 using Android.Graphics;
 using Android.Support.V4.Media.Session;
@@ -73,6 +74,23 @@ namespace Ass_Pain
 		public const string ActionSeekTo = "ActionSeekTo";
 
 		private MediaSessionCompat? session;
+		
+		/// <summary>
+		/// handle for current media session
+		/// </summary>
+		public MediaSessionCompat Session
+		{
+			get
+			{
+				if (session == null)
+				{
+					InnitSession();
+				}
+
+				return session!;
+			}
+		}
+		
 		public MediaPlayer? mediaPlayer { get; private set; }
 		private AudioManager? audioManager;
 		private AudioFocusRequestClass? audioFocusRequest;
@@ -212,7 +230,7 @@ namespace Ass_Pain
 					metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, MusicBaseClassStatic.placeholder);	
 				}
 			}
-		
+			
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplayTitle, "No Song");
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplaySubtitle, "No Artist");
 			session?.SetMetadata(metadataBuilder.Build());

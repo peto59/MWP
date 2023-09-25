@@ -135,6 +135,7 @@
     <Compile Include="BackEnd\FileManager.cs" />
     <Compile Include="Helpers\HelloWebViewClient.cs" />
     <Compile Include="MainActivity.cs" />
+    <Compile Include="Player\MyMediaBrowserService.cs" />
     <Compile Include="PlaylistFragment.cs" />
     <Compile Include="PlaylistsFragment.cs" />
     <Compile Include="Resources\Resource.designer.cs" />

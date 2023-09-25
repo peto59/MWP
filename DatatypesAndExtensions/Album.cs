@@ -5,6 +5,8 @@ using Android.Graphics;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
+using Android.Media.Browse;
+using Android.Support.V4.Media;
 using Ass_Pain.BackEnd;
 using Newtonsoft.Json;
 #if DEBUG
@@ -195,6 +197,27 @@ namespace Ass_Pain
             Songs = album.Songs;
             Artists = album.Artists;
             ImgPath = imgPath;
+        }
+        
+        public override MediaBrowserCompat.MediaItem? ToMediaItem()
+        {
+            if (Description == null) return null;
+            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagPlayable | MediaBrowserCompat.MediaItem.FlagBrowsable);
+            return item;
+        }
+
+        protected override MediaDescriptionCompat? GetDescription()
+        {
+            return Builder?.Build();
+        }
+
+        protected override MediaDescriptionCompat.Builder? GetBuilder()
+        {
+            return new MediaDescriptionCompat.Builder()
+                .SetMediaId(Title)? //TODO: id?
+                .SetTitle(Title)?
+                .SetSubtitle(Artist.Title)?
+                .SetIconBitmap(Image);
         }
 
         /// <inheritdoc />

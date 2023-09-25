@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using Android.App;
+using Android.Media.Browse;
+using Android.Support.V4.Media;
 using Ass_Pain.BackEnd;
 using Newtonsoft.Json;
 using File = TagLib.File;
@@ -26,7 +28,6 @@ namespace Ass_Pain
         public DateTime DateCreated { get; }
         public string Path { get; }
         public bool Initialized { get; private set; } = true;
-        //public override Bitmap Image => GetImage() ?? throw new InvalidOperationException();
 
         public void AddArtist(ref List<Artist> artists)
         {
@@ -226,6 +227,27 @@ namespace Ass_Pain
             Title = title;
             DateCreated = song.DateCreated;
             Path = path;
+        }
+
+        public override MediaBrowserCompat.MediaItem? ToMediaItem()
+        {
+            if (Description == null) return null;
+            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagPlayable);
+            return item;
+        }
+
+        protected override MediaDescriptionCompat? GetDescription()
+        {
+            return Builder?.Build();
+        }
+
+        protected override MediaDescriptionCompat.Builder? GetBuilder()
+        {
+            return new MediaDescriptionCompat.Builder()
+                .SetMediaId(Title)? //TODO: id?
+                .SetTitle(Title)?
+                .SetSubtitle(Artist.Title)?
+                .SetIconBitmap(Image);
         }
 
         /// <inheritdoc />
