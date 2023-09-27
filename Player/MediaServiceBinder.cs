@@ -10,5 +10,12 @@ namespace Ass_Pain
         {
             Service = service;
         }   
+        
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
+        {
+            Service.Dispose();
+            base.Dispose(disposing);
+        }
     }
 }

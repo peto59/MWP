@@ -30,5 +30,21 @@ namespace Ass_Pain
             Connected = false;
             Binder = null;
         }
+
+        /*public void Dispose()
+        {
+            Connected = false;
+            Binder?.Dispose();
+            Binder = null;
+        }*/
+
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
+        {
+            Connected = false;
+            Binder?.Dispose();
+            Binder = null;
+            base.Dispose(disposing);
+        }
     }
 }

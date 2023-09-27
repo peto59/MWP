@@ -17,13 +17,13 @@ namespace Ass_Pain
     [IntentFilter(new[] { "android.media.browse.MediaBrowserService" })]
     public class MyMediaBrowserService : MediaBrowserServiceCompat
     {
-        private static readonly string MY_MEDIA_ROOT_ID = "media_root_id";
-        private static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        private const string MY_MEDIA_ROOT_ID = "media_root_id";
+        //private static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
       
         public override void OnCreate() {
             base.OnCreate();
             Intent serviceIntent = new Intent(this, typeof(MediaService));
-            if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
+            /*if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
             {
 #if DEBUG
                 MyConsole.WriteLine("Cannot connect to MediaService");
@@ -33,7 +33,7 @@ namespace Ass_Pain
             if (ServiceConnection.Connected)
             {
                 SessionToken = ServiceConnection.Binder?.Service.Session.SessionToken;
-            }
+            }*/
             
             if (MainActivity.stateHandler.Songs.Count == 0)
             {
@@ -72,7 +72,12 @@ namespace Ass_Pain
             return returnVal;
             //TODO: add logic
         }
-        
+
+        public override void OnCustomAction(string action, Bundle? extras, Result result)
+        {
+            base.OnCustomAction(action, extras, result);
+        }
+
         public override BrowserRoot? OnGetRoot(string clientPackageName, int clientUid, Bundle? rootHints)
         {
             if (!ValidateClient(clientPackageName, clientUid))
@@ -103,6 +108,28 @@ namespace Ass_Pain
             JavaList<MediaBrowserCompat.MediaItem?> javaMediaItems = new JavaList<MediaBrowserCompat.MediaItem?>(mediaItems);
             result.SendResult(javaMediaItems);
 
+        }
+
+        public override void OnLoadItem(string? itemId, Result result)
+        {
+            base.OnLoadItem(itemId, result);
+        }
+
+        public override void OnSearch(string query, Bundle? extras, Result result)
+        {
+            base.OnSearch(query, extras, result);
+        }
+
+        ~MyMediaBrowserService()
+        {
+            //ServiceConnection.Dispose();
+        }
+
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
+        {
+            //ServiceConnection.Dispose();
+            base.Dispose(disposing);
         }
     }
 }

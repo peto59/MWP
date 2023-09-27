@@ -979,7 +979,19 @@ namespace Ass_Pain
 		/// <inheritdoc />
 		public override IBinder OnBind(Intent? intent)
 		{
+			//TODO: publish interface?
 			return new MediaServiceBinder(this);
 		}
+
+		protected override void Dispose(bool disposing)
+		{
+			CleanUp();
+			base.Dispose(disposing);
+		}
+
+		/*public void Dispose()
+		{
+			throw new NotImplementedException();
+		}*/
 	}
 }

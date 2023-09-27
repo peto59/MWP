@@ -14,7 +14,7 @@ namespace Ass_Pain
 {
 	
 	
-	[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Xamarin.Android.Build.Tasks", "13.2.99.168")]
+	[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Xamarin.Android.Build.Tasks", "13.2.1.111")]
 	public partial class Resource
 	{
 		
@@ -9888,13 +9888,16 @@ namespace Ass_Pain
 		{
 			
 			// aapt resource value: 0x7F120000
-			public const int image_share_filepaths = 2131886080;
+			public const int automotive_app_desc = 2131886080;
 			
 			// aapt resource value: 0x7F120001
-			public const int provider_paths = 2131886081;
+			public const int image_share_filepaths = 2131886081;
 			
 			// aapt resource value: 0x7F120002
-			public const int xamarin_essentials_fileprovider_file_paths = 2131886082;
+			public const int provider_paths = 2131886082;
+			
+			// aapt resource value: 0x7F120003
+			public const int xamarin_essentials_fileprovider_file_paths = 2131886083;
 			
 			static Xml()
 			{
