@@ -23,6 +23,7 @@ using Android.Media;
 using System.Text;
 using Android.Provider;
 using Android.Text;
+using Android.Views.InputMethods;
 using Android.Widget;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
@@ -30,6 +31,7 @@ using Ass_Pain.BackEnd;
 using Ass_Pain.BackEnd.Network;
 using Octokit;
 using Xamarin.Essentials;
+using Activity = Android.App.Activity;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
 using Application = Android.App.Application;
 using Encoding = System.Text.Encoding;
@@ -304,6 +306,8 @@ namespace Ass_Pain
                     Title = "Share";
                 };
         }
+
+        
 
         /// <inheritdoc />
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)

@@ -5,9 +5,11 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using System.Linq;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
+using Android.Views.InputMethods;
 using Ass_Pain.BackEnd;
 using Google.Android.Material.FloatingActionButton;
 using Fragment = AndroidX.Fragment.App.Fragment;
@@ -25,14 +27,32 @@ namespace Ass_Pain
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class SongsFragment : Fragment
     {
-        private const int ActionScrollViewHeight = 20;
+        private const int ActionScrollViewHeight = 200;
         private float scale;
         private readonly Context context;
         private RelativeLayout? mainLayout;
         private Typeface? font;
+        private ScrollView allSongsScroll;
+        private LinearLayout allSongsLnMain;
 
         private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
+        
+        long delay = 1000; 
+        long lastTextEdit = 0;
+        Handler handler = new Handler();
+        
             
+       /// <inheritdoc cref="context"/>
+        public SongsFragment(Context ctx, AssetManager? assets)
+        {
+            context = ctx;
+            font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
+            if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
+        }
+        
+        
+        
+        
         /// <inheritdoc />
         public override View? OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
@@ -40,7 +60,106 @@ namespace Ass_Pain
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.songs_fragment_main);
             
-            RenderSongs();
+            allSongsScroll = new ScrollView(context);
+            RelativeLayout.LayoutParams allSongsScrollParams = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                ViewGroup.LayoutParams.MatchParent
+            );
+            allSongsScrollParams.SetMargins(0, ActionScrollViewHeight, 0, 0);
+            allSongsScroll.LayoutParameters = allSongsScrollParams;
+
+
+            allSongsLnMain = new LinearLayout(context);
+            allSongsLnMain.Orientation = Orientation.Vertical;
+            RelativeLayout.LayoutParams allSongsLnMainParams = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                ViewGroup.LayoutParams.MatchParent
+            );
+            allSongsLnMainParams.SetMargins(20, 20, 20, 20);
+            allSongsLnMain.LayoutParameters = allSongsLnMainParams;
+            
+            allSongsScroll.AddView(allSongsLnMain);
+            mainLayout?.AddView(allSongsScroll);
+            
+            
+            Action<List<Song>, View, Context> inputFinishChecker = (songs, view1, ctx) =>
+            {   
+                if ((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) > (lastTextEdit + delay - 500))
+                {
+                    Console.WriteLine("Stopped Writing, USER STOPPED WRITING OM GOUUTYAYAYD, THAT SOI COOOL");
+                    allSongsLnMain.RemoveAllViews();
+                    
+                    foreach (Song song in songs)
+                    {
+                        Console.WriteLine("THE SONGS LIST SEARCHED: " + song.Title);
+                    }
+                    RenderSongs(songs);
+                    HideKeyboardFrom(ctx, view1);
+                }
+            };
+            
+
+            TextView? searchButton = view?.FindViewById<TextView>(Resource.Id.search_confirm_songs);
+            EditText? searchInput = view?.FindViewById<EditText>(Resource.Id.search_songs_input);
+            if (searchInput != null)
+            {
+                /*
+                 * Nacitanie songov z vyhladavanie po tom co pouzivatel prestanie pisat po jednej sekunde
+                 */
+                searchInput.Typeface = font;
+                if (searchInput.Text == "")
+                {
+                    allSongsLnMain.RemoveAllViews();
+                    RenderSongs(MainActivity.stateHandler.Songs);
+                }
+                
+                searchInput.TextChanged += (object sender, Android.Text.TextChangedEventArgs e) =>
+                {
+                    handler.RemoveCallbacks(() =>
+                    {
+                        if (view != null) inputFinishChecker(MainActivity.stateHandler.Songs, view, context);
+                    });
+
+                    if (e.Text != null && e.Text.Any())
+                    {
+                        lastTextEdit = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                        handler.PostDelayed(() =>
+                            {
+                                if (view != null)
+                                    inputFinishChecker(
+                                        MainActivity.stateHandler.Songs.Search(e.Text.ToString()).ToList(),
+                                        view,
+                                        context
+                                    );
+                            }, delay
+                        );
+                    }
+                    else
+                    {
+                        lastTextEdit = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                        handler.PostDelayed(() =>
+                        {
+                            if (view != null) inputFinishChecker(MainActivity.stateHandler.Songs, view, context);
+                        }, delay);
+                    }
+                };
+
+                /*
+                 * Nacitanie songov po tom co pouzivatel stlaci tlacidlo na potvrdenie vyhladavania
+                 */
+                if (searchButton != null)
+                    searchButton.Click += delegate
+                    {
+                        if (searchInput.Text == null) return;
+                        if (view != null)
+                            inputFinishChecker(
+                                MainActivity.stateHandler.Songs.Search(searchInput.Text).ToList(),
+                                view, context
+                            );
+                    };
+            }
+            
+
             
             FloatingActionButton? createPlaylist = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.fab);
             if (BlendMode.Multiply != null)
@@ -52,41 +171,10 @@ namespace Ass_Pain
             return view;
         }
 
-        /// <summary>
-        /// Constructor for SongsFragment.cs
-        /// </summary>
-        /// <param name="ctx">Main Activity context (e.g. "this")</param>
-        /// <param name="assets">AssetManager</param>
-        public SongsFragment(Context ctx, AssetManager? assets)
+        
+        
+        private void RenderSongs(List<Song> songs)
         {
-            context = ctx;
-            font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
-            if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
-        }
-        
-        
-        
-        private void RenderSongs()
-        {
-            ScrollView allSongsScroll = new ScrollView(context);
-            RelativeLayout.LayoutParams allSongsScrollParams = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.MatchParent,
-                ViewGroup.LayoutParams.MatchParent
-            );
-            allSongsScrollParams.SetMargins(0, ActionScrollViewHeight, 0, 0);
-            allSongsScroll.LayoutParameters = allSongsScrollParams;
-
-
-            LinearLayout allSongsLnMain = new LinearLayout(context);
-            allSongsLnMain.Orientation = Orientation.Vertical;
-            RelativeLayout.LayoutParams allSongsLnMainParams = new RelativeLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MatchParent,
-                    ViewGroup.LayoutParams.MatchParent
-            );
-            allSongsLnMainParams.SetMargins(20, 20, 20, 20);
-            allSongsLnMain.LayoutParameters = allSongsLnMainParams;
-
-
             int[] allSongsButtonMargins = { 50, 50, 50, 50 };
             int[] allSongsNameMargins = { 50, 50, 50, 50 };
             int[] allSongsCardMargins = { 0, 50, 0, 0 };
@@ -94,11 +182,11 @@ namespace Ass_Pain
 
             List<Tuple<LinearLayout, int>> lazyBuffer = new List<Tuple<LinearLayout, int>>();
             
-            for (int i = 0; i < MainActivity.stateHandler.Songs.Count; i++)
+            for (int i = 0; i < songs.Count; i++)
             {
 
                 LinearLayout lnIn = UIRenderFunctions.PopulateHorizontal(
-                    MainActivity.stateHandler.Songs[i], scale,
+                    songs[i], scale,
                     150, 100,
                     allSongsButtonMargins, allSongsNameMargins, allSongsCardMargins,
                     17, i, context, songButtons, UIRenderFunctions.SongType.allSong, allSongsLnMain
@@ -111,7 +199,7 @@ namespace Ass_Pain
             for (int i = 0; i < Math.Min(5, lazyBuffer.Count); i++)
             {
                 UIRenderFunctions.SetTilesImage(
-                    lazyBuffer[i].Item1, MainActivity.stateHandler.Songs[lazyBuffer[i].Item2],150, 100, allSongsButtonMargins, 15, allSongsNameMargins,
+                    lazyBuffer[i].Item1, songs[lazyBuffer[i].Item2],150, 100, allSongsButtonMargins, 15, allSongsNameMargins,
                     scale, context);
                 allSongsLnMain.AddView(lazyBuffer[i].Item1);
             }
@@ -129,7 +217,7 @@ namespace Ass_Pain
                     for (int i = 0; i < Math.Min(5, lazyBuffer.Count); i++)
                     {
                         UIRenderFunctions.SetTilesImage(
-                            lazyBuffer[i].Item1, MainActivity.stateHandler.Songs[lazyBuffer[i].Item2],150, 100, allSongsButtonMargins, 15, allSongsNameMargins,
+                            lazyBuffer[i].Item1, songs[lazyBuffer[i].Item2],150, 100, allSongsButtonMargins, 15, allSongsNameMargins,
                             scale, context);
                         allSongsLnMain.AddView(lazyBuffer[i].Item1);
                     }
@@ -137,12 +225,14 @@ namespace Ass_Pain
                     lazyBuffer.RemoveRange(0, Math.Min(5, lazyBuffer.Count));
                 }
             };
-
-
-            allSongsScroll.AddView(allSongsLnMain);
-            mainLayout?.AddView(allSongsScroll);
-        }
+            
+        } 
         
+        /// <inheritdoc cref="HideKeyboard" />
+        public static void HideKeyboardFrom(Context? context, View view) {
+            InputMethodManager? imm = (InputMethodManager) context?.GetSystemService(Context.InputMethodService);
+            imm?.HideSoftInputFromWindow(view.WindowToken, 0);
+        }
         
         
         
