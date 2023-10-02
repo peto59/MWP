@@ -69,6 +69,9 @@ namespace Ass_Pain
         {
             bool returnVal = true; //TODO: back to false
             returnVal &= clientUid == Process.SystemUid;
+#if DEBUG
+            MyConsole.WriteLine($"returnval: {returnVal}");
+#endif
             return returnVal;
             //TODO: add logic
         }
