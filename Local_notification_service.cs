@@ -88,7 +88,7 @@ namespace Ass_Pain
                     );
                 }
                 
-                if((MainActivity.ServiceConnection.Binder?.Service?.Index < MainActivity.ServiceConnection.Binder?.Service?.Queue.Count -1 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
+                if((MainActivity.ServiceConnection.Binder?.Service?.Index < MainActivity.ServiceConnection.Binder?.Service?.QueueObject.Count -1 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
                     notificationBuilder.AddAction(
                         Resource.Drawable.next, "next",
                         PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)

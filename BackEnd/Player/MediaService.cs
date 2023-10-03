@@ -14,6 +14,7 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.Support.V4.Media.Session;
 using Android.Support.V4.Media;
+using Ass_Pain.BackEnd.Player;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -63,11 +64,6 @@ namespace Ass_Pain
 		///Plays previous song in queue
 		///</summary>
 		public const string ActionPreviousSong = "ActionPreviousSong";
-
-		///<summary>
-		///Clears queue and resets index to 0
-		///</summary>
-		public const string ActionClearQueue = "ActionClearQueue";
 		///<summary>
 		///Moves playback of current song intent extra int time in milliseconds
 		///</summary>
@@ -95,43 +91,18 @@ namespace Ass_Pain
 		private AudioManager? audioManager;
 		private AudioFocusRequestClass? audioFocusRequest;
 		private readonly Local_notification_service notificationService = new Local_notification_service();
+		private readonly MyMediaQueue QueueObject = new MyMediaQueue();
 		public long Actions { get; private set; }
 		private bool isFocusGranted;
 		private bool isUsed;
 		private bool lostFocusDuringPlay;
 		public bool IsPaused { get; private set; }
-		public bool IsShuffled { get; private set; }
-		public bool loopAll { get; private set; }
-		public bool loopSingle { get; private set; }
+		
 		private bool isSkippingToNext;
 		private bool isSkippingToPrevious;
 		private bool isBuffering = true;
-		public int LoopState { get; private set; }
-		private int i;
-		public int Index
-		{
-			get => i;
-			private set { i = value.KeepPositive(); MainActivity.stateHandler.setIndex(ref i); }
-		}
-		// private List<Song> q = new List<Song>();
-		public List<Song> Queue = new List<Song>();
-        private List<Song> originalQueue = new List<Song>();
-        internal readonly AutoResetEvent shuffling = new AutoResetEvent(true);
+		
 
-        public Song Current
-        {
-	        get
-	        {
-		        try
-		        {
-			        return Queue[Index];
-		        }
-		        catch
-		        {
-			        return new Song("No Name", new DateTime(), "Default");
-		        }
-	        }
-        }
 
         public override void OnCreate()
 		{
@@ -221,7 +192,7 @@ namespace Ass_Pain
 			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
 			try
 			{
-				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, Queue[0].Image);
+				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, QueueObject.Queue[0].Image);
 			}
 			catch (Exception)
 			{
@@ -243,14 +214,15 @@ namespace Ass_Pain
 			if (stateBuilder != null)
 			{
 				stateBuilder.SetState((int)state, position, 1.0f);
-				int icon = LoopState switch
+				int icon = QueueObject.LoopState switch
 				{
-					0 => Resource.Drawable.no_repeat,
-					1 => Resource.Drawable.repeat,
-					_ => Resource.Drawable.repeat_one
+					Enums.LoopState.All => Resource.Drawable.repeat,
+					Enums.LoopState.Single => Resource.Drawable.repeat_one,
+					Enums.LoopState.None => Resource.Drawable.no_repeat,
+					_ => Resource.Drawable.no_repeat
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
-				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", QueueObject.IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
 				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
@@ -305,12 +277,6 @@ namespace Ass_Pain
 				case ActionShuffle:
 					Shuffle(intent.GetBooleanExtra("shuffle", false));
 					break;
-				case ActionToggleLoop:
-					ToggleLoop(intent.GetIntExtra("loopState", 0));
-#if DEBUG
-                    MyConsole.WriteLine("TOGGLE LOOP SWITCH");
-#endif
-                    break;
 				case ActionTogglePlay:
 					if ((bool)mediaPlayer?.IsPlaying)
 					{
@@ -333,9 +299,6 @@ namespace Ass_Pain
 				case ActionSeekTo:
 					SeekTo(intent.GetIntExtra("millis", 0));
 					break;
-				case ActionClearQueue:
-					ClearQueue();
-					break;
 			}
             intent?.Dispose();
 			return StartCommandResult.Sticky;
@@ -353,18 +316,18 @@ namespace Ass_Pain
 				Actions = PlaybackState.ActionPlay;
 			}
 			
-			if (Queue.Count == 0)
+			if (QueueObject.QueueCount == 0)
 			{
 				return Actions;
 			}
 			
 			Actions |= PlaybackState.ActionSeekTo;
 			
-			if ((Index > 0 || loopAll) && !loopSingle)
+			if (QueueObject.HasPrevious)
 			{
 				Actions |= PlaybackState.ActionSkipToPrevious;
 			}
-			if ((Index < Queue.Count -1 || loopAll) && !loopSingle)
+			if (QueueObject.HasNext)
 			{
 				Actions |= PlaybackState.ActionSkipToNext;
 			}
@@ -417,14 +380,15 @@ namespace Ass_Pain
 			if (stateBuilder != null)
 			{
 				stateBuilder.SetState((int)state, position, 1.0f);
-				int icon = LoopState switch
+				int icon = QueueObject.LoopState switch
 				{
-					0 => Resource.Drawable.no_repeat,
-					1 => Resource.Drawable.repeat,
-					_ => Resource.Drawable.repeat_one
+					Enums.LoopState.All => Resource.Drawable.repeat,
+					Enums.LoopState.Single => Resource.Drawable.repeat_one,
+					Enums.LoopState.None => Resource.Drawable.no_repeat,
+					_ => Resource.Drawable.no_repeat
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
-				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", QueueObject.IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
 				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
@@ -434,13 +398,13 @@ namespace Ass_Pain
 
 		private void UpdateMetadata()
 		{
-			if (mediaPlayer == null || Queue.Count <= 0) return;
+			if (mediaPlayer == null || QueueObject.QueueCount <= 0) return;
 			if (session == null)
 			{
 				InnitSession();
 			}
 			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
-			Song song = Queue[Index];
+			Song song = QueueObject.Current;
 			Bitmap image = song.Image;
 			metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt,
 				image);
@@ -478,7 +442,7 @@ namespace Ass_Pain
 		///</summary>
 		public void Play()
 		{
-			if (Queue.Count == 0)
+			if (QueueObject.QueueCount == 0)
 			{
 				try
 				{
@@ -519,8 +483,8 @@ namespace Ass_Pain
 			{
 				mediaPlayer!.Reset();
 #if DEBUG
-                MyConsole.WriteLine($"SERVICE INDEX {Index}");
-                MyConsole.WriteLine($"SERVICE QUEUE {Queue.Count}");
+                MyConsole.WriteLine($"SERVICE INDEX {QueueObject.Index}");
+                MyConsole.WriteLine($"SERVICE QUEUE {QueueObject.QueueCount}");
 #endif
 
 
@@ -529,7 +493,7 @@ namespace Ass_Pain
                 // 	NextSong();
                 // 	return;
                 // }
-                mediaPlayer.SetDataSource(Current.Path);
+                mediaPlayer.SetDataSource(QueueObject.Current.Path);
 				mediaPlayer.Prepare();
 			}
 			mediaPlayer!.Start();
@@ -575,19 +539,14 @@ namespace Ass_Pain
 		public void NextSong()
 		{
 			if (mediaPlayer == null) return;
-			if (loopSingle)
-			{
-				Play();
-				return;
-			}
 			isSkippingToNext = true;
 			IsPaused = false;
-			if (Queue.Count -1 > Index)
+			if (QueueObject.HasNext)
 			{
 				Index++;
 				Play();
 			}
-			else if (loopAll)
+			else if (QueueObject.LoopState == Enums.LoopState.All)
 			{
 				Index = 0;
 				Play();
@@ -610,7 +569,7 @@ namespace Ass_Pain
 			IsPaused = false;
 			Index--;
 			if(Index < 0 && loopAll){
-				Index = Queue.Count -1;
+				Index = QueueObject.Count -1;
 			}
 #if DEBUG
             MyConsole.WriteLine($"Index in previous song: {Index}");
@@ -629,60 +588,24 @@ namespace Ass_Pain
             mediaPlayer.SeekTo(millis);
 		}
 
-		///<summary>
-		///Generates new queue from single song path or directory path and set index to 0
-		///</summary>
-		// public void GenerateQueue(string source)
-		// {
-		// 	Index = 0;
-  //           if (FileManager.IsDirectory(source))
-		// 	{
-		// 		GenerateQueue(FileManager.GetSongs(source));
-		// 	}
-		// 	else
-		// 	{
-		// 		Queue = new List<string> { source };
-  //               Play();
-		// 	}
-		// }
-
-		///<summary>
-		///Generates new queue from list and resets index to 0
-		///</summary>
-		// public void GenerateQueue(List<string> source, int i = 0)
-		// {
-		// 	Queue = source;
-  //           Index = i;
-  //           Shuffle(IsShuffled);
-		// 	Play();
-		// }
-
-		public void GenerateQueue(Song source, int? ind = null)
+		public void GenerateQueue(Song source, int ind = 0, bool play = true)
 		{
-			Queue = new List<Song> { source };
-			Index = ind ?? 0;
-			Play();
+			GenerateQueue(new List<Song> { source }, ind, play);
 		}
 		
-		public void GenerateQueue(IEnumerable<Song> source, int? ind = null, bool play = true)
+		public void GenerateQueue(IEnumerable<Song> source, int ind = 0, bool play = true)
 		{
-			Queue = source.ToList();
-			Index = ind ?? 0;
-			if (IsShuffled)
-			{
-				Shuffle(true, ind);
-			}
+			QueueObject.GenerateQueue(source, ind);
 			if (play)
 			{
+				//todo: reset
 				Play();
 			}
 		}
 		
-		public void GenerateQueue(MusicBaseContainer source, int? ind = null)
+		public void GenerateQueue(MusicBaseContainer source, int ind = 0, bool play = true)
 		{
-			Queue = source.Songs;
-			Index = ind ?? 0;
-			Play();
+			GenerateQueue(source.Songs, ind, play);
 		}
 
 		///<summary>
@@ -690,7 +613,7 @@ namespace Ass_Pain
 		///</summary>
 		public void ClearQueue()
 		{
-			Queue = new List<Song>();
+			QueueObject = new List<Song>();
             Index = 0;
         }
 
@@ -699,11 +622,7 @@ namespace Ass_Pain
 		///</summary>
 		public void AddToQueue(Song addition)
 		{
-			Queue.Add(addition);
-            if (IsShuffled)
-			{
-				originalQueue.Add(addition);
-			}
+			AddToQueue(new List<Song>{addition});
 		}
 
 		///<summary>
@@ -711,7 +630,7 @@ namespace Ass_Pain
 		///</summary>
 		public void AddToQueue(List<Song> addition)
 		{
-			Queue.AddRange(addition);
+			QueueObject.AddRange(addition);
             if (IsShuffled)
 			{
 				originalQueue.AddRange(addition);
@@ -728,11 +647,7 @@ namespace Ass_Pain
 		///</summary>
 		public void PlayNext(Song addition)
 		{
-			Queue.Insert(Index+1, addition);
-            if (IsShuffled)
-			{
-				originalQueue.Insert(Index+1, addition);
-			}
+			PlayNext(new List<Song>{addition});
 
 		}
 
@@ -747,16 +662,16 @@ namespace Ass_Pain
 				addition.AddRange(originalQueue);
 				originalQueue = addition;
 			}
-			if(Index >= Queue.Count)
+			if(Index >= QueueObject.Count)
 			{
                 AddToQueue(addition);
 			}
 			else
 			{
-				List<Song> tmp = Queue.GetRange(0, Index+1);
+				List<Song> tmp = QueueObject.GetRange(0, Index+1);
 				tmp.AddRange(addition);
-				tmp.AddRange(Queue.Skip(Index + 1));
-                Queue = tmp;
+				tmp.AddRange(QueueObject.Skip(Index + 1));
+                QueueObject = tmp;
             }
         }
 
@@ -770,25 +685,25 @@ namespace Ass_Pain
 		///</summary>
 		public void Shuffle(bool newShuffleState, int? indx = null)
 		{
-            if(Queue.Count == 0) { return; }
+            if(QueueObject.Count == 0) { return; }
 
             int ind = indx ?? Index;
 
             shuffling.WaitOne();
 			if (newShuffleState)
 			{
-				originalQueue = Queue.ToList();
-				Song tmp = Queue.Pop(ind);
+				originalQueue = QueueObject.ToList();
+				Song tmp = QueueObject.Pop(ind);
 				Index = 0;
-                Queue.Shuffle();
-				Queue = Queue.Prepend(tmp).ToList();
+                QueueObject.Shuffle();
+				QueueObject = QueueObject.Prepend(tmp).ToList();
             }
 			else
 			{
 				if (originalQueue.Count > 0)
 				{
-					Index = originalQueue.IndexOf(Queue[Index]);
-                    Queue = originalQueue;
+					Index = originalQueue.IndexOf(QueueObject[Index]);
+                    QueueObject = originalQueue;
                     originalQueue = new List<Song>();
 				}
 			}
@@ -804,6 +719,7 @@ namespace Ass_Pain
 		///</summary>
 		public void ToggleLoop(int state)
 		{
+			//TODO: rewrite to enum
 			state %= 3;
 			LoopState = state;
 			switch (state)

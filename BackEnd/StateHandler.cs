@@ -34,7 +34,7 @@ namespace Ass_Pain
         // public bool loopAll = false;
         // public bool loopSingle = false;
         // private List<string> queue = new List<string>();
-        private int index = 0;
+        /*private int index = 0;*/
         public int loopState = 0;
         
         
@@ -174,9 +174,9 @@ namespace Ass_Pain
         //     queue = x;
         // }
 
-        public void setIndex(ref int x)
+        /*public void setIndex(ref int x)
         {
             index = x;
-        }
+        }*/
     }
 }
