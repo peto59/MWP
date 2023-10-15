@@ -1,12 +1,12 @@
 ﻿using Android.App;
 using Android.Content;
 using Android.Media;
+using MWP.Helpers;
 using AndroidApp = Android.App.Application;
 #if DEBUG
-using Ass_Pain.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <inheritdoc />
     [BroadcastReceiver(Enabled = true, Exported = true)]

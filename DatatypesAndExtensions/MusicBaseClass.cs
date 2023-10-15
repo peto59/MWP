@@ -5,7 +5,7 @@ using Android.App;
 using Android.Graphics;
 using Android.Support.V4.Media;
 
-namespace Ass_Pain
+namespace MWP
 {
     public static class MusicBaseClassStatic
     {

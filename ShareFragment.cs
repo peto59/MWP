@@ -11,13 +11,13 @@ using Android.Graphics.Drawables;
 using Android.Net;
 using Android.Text;
 using AndroidX.AppCompat.Widget;
-using Ass_Pain.BackEnd;
-using Ass_Pain.BackEnd.Network;
+using MWP.BackEnd;
+using MWP.BackEnd.Network;
 using TagLib.Tiff.Arw;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <inheritdoc />
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]

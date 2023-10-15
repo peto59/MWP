@@ -24,12 +24,12 @@ using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using AndroidX.Core.Graphics;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 using Google.Android.Material.BottomSheet;
 using Google.Android.Material.Chip;
 
-namespace Ass_Pain
+namespace MWP
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class youtube : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener

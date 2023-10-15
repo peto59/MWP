@@ -7,14 +7,14 @@ using System.Xml.Serialization;
 using Android.App;
 using Android.Media.Browse;
 using Android.Support.V4.Media;
-using Ass_Pain.BackEnd;
+using MWP.BackEnd;
+using MWP.Helpers;
 using Newtonsoft.Json;
 using File = TagLib.File;
 #if DEBUG
-using Ass_Pain.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     [Serializable]
     public class Song : MusicBaseClass

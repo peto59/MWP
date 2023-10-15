@@ -10,16 +10,17 @@ using AndroidX.Core.App;
 using System;
 using System.IO;
 using System.Runtime.Remoting.Contexts;
+using MWP.BackEnd.Player;
+using MWP.Helpers;
 using Xamarin.Essentials;
 //using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
 using Context = Android.Content.Context;
 using TaskStackBuilder = AndroidX.Core.App.TaskStackBuilder;
 #if DEBUG
-using Ass_Pain.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     public class Local_notification_service
     {
@@ -66,7 +67,7 @@ namespace Ass_Pain
                       )
                   );
 
-                if((MainActivity.ServiceConnection.Binder?.Service?.Index > 0 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
+                if(MainActivity.ServiceConnection.Binder?.Service?.QueueObject.ShowPrevious ?? false){
                     notificationBuilder.AddAction(
                         Resource.Drawable.previous, "Previous",
                         PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
@@ -88,50 +89,50 @@ namespace Ass_Pain
                     );
                 }
                 
-                if((MainActivity.ServiceConnection.Binder?.Service?.Index < MainActivity.ServiceConnection.Binder?.Service?.QueueObject.Count -1 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
+                if(MainActivity.ServiceConnection.Binder?.Service?.QueueObject.ShowNext ?? false){
                     notificationBuilder.AddAction(
                         Resource.Drawable.next, "next",
                         PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
                     );
                 }
 
-                int loopState = MainActivity.stateHandler.LoopState;
+                Enums.LoopState loopState = MainActivity.stateHandler.LoopState;
                 switch (loopState)
                 {
-                    case 0:
+                    case Enums.LoopState.None:
 #if DEBUG
                         MyConsole.WriteLine("no_repeat >>>>>>>>");
 #endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.no_repeat, "no_repeat",
                             PendingIntent.GetService(
-                                AndroidApp.Context, loopState,
+                                AndroidApp.Context, (int)loopState,
                                 new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
                                     .PutExtra("loopState", 1), PendingIntentFlags.Mutable
                             )
                         );
                         break;
-                    case 1:
+                    case Enums.LoopState.All:
 #if DEBUG
                         MyConsole.WriteLine("repeat >>>>>>>>");
 #endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.repeat, "repeat",
                             PendingIntent.GetService(
-                                AndroidApp.Context, loopState,
+                                AndroidApp.Context, (int)loopState,
                                 new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
                                     .PutExtra("loopState", 2), PendingIntentFlags.Mutable
                             )
                         );
                         break;
-                    case 2:
+                    case Enums.LoopState.Single:
 #if DEBUG
                         MyConsole.WriteLine("repeat_one >>>>>>>>");
 #endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.repeat_one, "repeat_one",
                             PendingIntent.GetService(
-                                AndroidApp.Context, loopState,
+                                AndroidApp.Context, (int)loopState,
                                 new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
                                     .PutExtra("loopState", 0), PendingIntentFlags.Mutable
                             )

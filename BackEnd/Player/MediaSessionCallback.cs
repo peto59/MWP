@@ -12,12 +12,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.Contexts;
 using System.Text;
+using MWP.Helpers;
 using AndroidApp = Android.App.Application;
 #if DEBUG
-using Ass_Pain.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     class MediaSessionCallback : Android.Support.V4.Media.Session.MediaSessionCompat.Callback
     {
@@ -123,10 +123,10 @@ namespace Ass_Pain
                 switch (action)
                 {
                     case "loop":
-                        MainActivity.ServiceConnection.Binder?.Service?.ToggleLoop(MainActivity.ServiceConnection.Binder.Service.LoopState + 1);
+                        MainActivity.ServiceConnection.Binder?.Service?.ToggleLoop((int)MainActivity.ServiceConnection.Binder.Service.QueueObject.LoopState + 1);
                         break;
                     case "shuffle":
-                        MainActivity.ServiceConnection.Binder?.Service?.Shuffle(!MainActivity.ServiceConnection.Binder.Service.IsShuffled);
+                        MainActivity.ServiceConnection.Binder?.Service?.Shuffle(!MainActivity.ServiceConnection.Binder.Service.QueueObject.IsShuffled);
                         break;
                     default:
                         throw new ArgumentException("Must use loop or shuffle as action argument");

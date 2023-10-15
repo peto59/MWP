@@ -14,9 +14,10 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using MWP.BackEnd.Player;
 using static Android.Renderscripts.Sampler;
 
-namespace Ass_Pain
+namespace MWP
 {
     public class StateHandler
     {
@@ -35,7 +36,7 @@ namespace Ass_Pain
         // public bool loopSingle = false;
         // private List<string> queue = new List<string>();
         /*private int index = 0;*/
-        public int loopState = 0;
+        public Enums.LoopState loopState = Enums.LoopState.None;
         
         
         //----------Downloader Callback resolution helpers---------
@@ -126,18 +127,12 @@ namespace Ass_Pain
         ///<summary>
         ///Returns current loop state
         ///</summary>
-        public int LoopState
-        {
-            get { return loopState; }
-        }
+        public Enums.LoopState LoopState => loopState;
 
         ///<summary>
         ///Return bool based on if shuffling is enabled
         ///</summary>
-        public bool IsShuffling
-        {
-            get { return shuffle; }
-        }
+        public bool IsShuffling => shuffle;
 
         ///<summary>
         ///Return bool whether playback is currently active

@@ -26,8 +26,9 @@ using Android.Text;
 using Android.Widget;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
-using Ass_Pain.BackEnd;
-using Ass_Pain.BackEnd.Network;
+using MWP.BackEnd.Network;
+using MWP.BackEnd;
+using MWP.Helpers;
 using Octokit;
 using Xamarin.Essentials;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
@@ -38,10 +39,9 @@ using FileProvider = AndroidX.Core.Content.FileProvider;
 using Stream = System.IO.Stream;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
 #if DEBUG
-using Ass_Pain.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <inheritdoc cref="AndroidX.AppCompat.App.AppCompatActivity" />
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true, Description = "@string/app_description")]
@@ -521,7 +521,7 @@ namespace Ass_Pain
         {
             string currentVersionString = VersionTracking.CurrentBuild;
             const string owner = "peto59";
-            const string repoName = "Ass_Pain";
+            const string repoName = "MWP";
 #if DEBUG
             MyConsole.WriteLine("Checking for updates!");
             MyConsole.WriteLine($"Current version: {currentVersionString}");

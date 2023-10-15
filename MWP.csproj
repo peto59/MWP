@@ -13,8 +13,8 @@
     <TemplateGuid>{d0238942-4dcf-4d08-b23a-81159ca3b345}</TemplateGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Ass_Pain</RootNamespace>
-    <AssemblyName>Ass_Pain</AssemblyName>
+    <RootNamespace>MWP</RootNamespace>
+    <AssemblyName>MWP</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <Deterministic>True</Deterministic>
     <AndroidApplication>True</AndroidApplication>

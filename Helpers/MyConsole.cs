@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.IO;
 using System.Reflection;
 
-namespace Ass_Pain.Helpers
+namespace MWP.Helpers
 {
     /// <summary>
     /// Console "extensions"

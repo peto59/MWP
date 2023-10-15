@@ -6,14 +6,14 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using Java.Lang;
+using MWP.Helpers;
 using Newtonsoft.Json;
 using Xamarin.Essentials;
 using Thread = System.Threading.Thread;
 #if DEBUG
-using Ass_Pain.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     internal static class NetworkManagerClient
     {

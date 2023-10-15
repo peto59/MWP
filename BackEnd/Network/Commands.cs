@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     internal static class Commands
     {

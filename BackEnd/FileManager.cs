@@ -5,16 +5,16 @@ using System.Linq;
 using Android.App;
 using Android.Views;
 using Google.Android.Material.Snackbar;
+using MWP.Helpers;
 using Newtonsoft.Json;
 using TagLib;
 using TagLib.Id3v2;
 using File = System.IO.File;
 using Tag = TagLib.Id3v2.Tag;
 #if DEBUG
-using Ass_Pain.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd
+namespace MWP.BackEnd
 {
     internal static class FileManager
     {

@@ -1,34 +1,46 @@
 using System;
 using Android.Content;
 using Android.OS;
+using MWP.Helpers;
 
-namespace Ass_Pain
+namespace MWP
 {
     public class MediaServiceConnection : Java.Lang.Object, IServiceConnection
     {
-        public MediaServiceBinder? Binder { get; private set; }
+        public MediaServiceBinder Binder { get; private set; }
         public bool Connected { get; private set; }
 
         public void OnServiceConnected(ComponentName? name, IBinder? binder)
         {
             // Cast the IBinder to your binder class and obtain a reference to the service instance
-            Binder = (MediaServiceBinder?)binder;
-            MediaService? serviceInstance = Binder?.Service;
-
-            // You can now use the service instance to interact with your foreground service
-            if (serviceInstance != null)
+            MediaServiceBinder? tempBinder = (MediaServiceBinder?)binder;
+            if (tempBinder != null)
             {
-                Connected = true;
-                // Call methods or access properties of the service instance
+                Binder = tempBinder;
+                MediaService? serviceInstance = Binder?.Service;
+#if DEBUG
+                MyConsole.WriteLine("OnServiceConnected");
+#endif
 
-                //serviceInstance.Play();
+                // You can now use the service instance to interact with your foreground service
+                if (serviceInstance != null)
+                {
+                    Connected = true;
+#if DEBUG
+                    MyConsole.WriteLine("Service connected");
+#endif
+                    // Call methods or access properties of the service instance
+
+                    //serviceInstance.Play();
+                }
+                
             }
         }
 
         public void OnServiceDisconnected(ComponentName? name)
         {
             Connected = false;
-            Binder = null;
+            //Binder = null;
         }
 
         /*public void Dispose()
@@ -43,7 +55,7 @@ namespace Ass_Pain
         {
             Connected = false;
             Binder?.Dispose();
-            Binder = null;
+            //Binder = null;
             base.Dispose(disposing);
         }
     }

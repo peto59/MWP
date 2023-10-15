@@ -1,6 +1,6 @@
 using Android.OS;
 
-namespace Ass_Pain
+namespace MWP
 {
     public class MediaServiceBinder : Binder
     {

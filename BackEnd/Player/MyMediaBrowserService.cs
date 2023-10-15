@@ -8,33 +8,45 @@ using Android.Runtime;
 using Android.Support.V4.Media;
 using Android.Support.V4.Media.Session;
 using AndroidX.Media;
-using Ass_Pain.BackEnd;
-using Ass_Pain.Helpers;
+using MWP.BackEnd;
+using MWP.Helpers;
 
-namespace Ass_Pain
+namespace MWP
 {
     [Service(Exported = true)]
     [IntentFilter(new[] { "android.media.browse.MediaBrowserService" })]
     public class MyMediaBrowserService : MediaBrowserServiceCompat
     {
         private const string MY_MEDIA_ROOT_ID = "media_root_id";
-        //private static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        private static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
       
         public override void OnCreate() {
             base.OnCreate();
-            Intent serviceIntent = new Intent(this, typeof(MediaService));
-            /*if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
+            /*Intent serviceIntent = new Intent(this, typeof(MediaService));
+            
+            StartForegroundService(serviceIntent);
+            if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
             {
 #if DEBUG
                 MyConsole.WriteLine("Cannot connect to MediaService");
 #endif
+            }*/
+
+            while (!MainActivity.ServiceConnection.Connected)
+            {
+#if DEBUG
+                MyConsole.WriteLine("Waiting for service");
+#endif
+                Thread.Sleep(25);
             }
 
-            if (ServiceConnection.Connected)
-            {
-                SessionToken = ServiceConnection.Binder?.Service.Session.SessionToken;
-            }*/
-            
+            if (ServiceConnection.Binder != null) 
+                SessionToken = ServiceConnection.Binder.Service.Session.SessionToken;
+#if DEBUG
+            else
+                MyConsole.WriteLine("Empty binder");
+#endif
+
             if (MainActivity.stateHandler.Songs.Count == 0)
             {
                 LoadFiles();
@@ -68,7 +80,7 @@ namespace Ass_Pain
         private static bool ValidateClient(string clientPackageName, int clientUid)
         {
             bool returnVal = true; //TODO: back to false
-            returnVal &= clientUid == Process.SystemUid;
+            returnVal |= clientUid == Process.SystemUid;
 #if DEBUG
             MyConsole.WriteLine($"returnval: {returnVal}");
 #endif
@@ -93,10 +105,15 @@ namespace Ass_Pain
         
         public override void OnLoadChildren(string parentId, Result result)
         {
-            if (MainActivity.stateHandler.Songs.Count == 0)
+            /*if (MainActivity.stateHandler.Songs.Count == 0)
             {
                 LoadFiles();
-            }
+            }*/
+#if DEBUG
+            MyConsole.WriteLine($"OnLoadChildren");
+            MyConsole.WriteLine($"cnt {MainActivity.stateHandler.Songs.Count}");
+            MyConsole.WriteLine($"art cnt {MainActivity.stateHandler.Artists.Count}");
+#endif
             
             List<MediaBrowserCompat.MediaItem?> mediaItems = new List<MediaBrowserCompat.MediaItem?>();
             if (parentId == MY_MEDIA_ROOT_ID)
@@ -125,13 +142,13 @@ namespace Ass_Pain
 
         ~MyMediaBrowserService()
         {
-            //ServiceConnection.Dispose();
+            ServiceConnection.Dispose();
         }
 
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            //ServiceConnection.Dispose();
+            ServiceConnection.Dispose();
             base.Dispose(disposing);
         }
     }

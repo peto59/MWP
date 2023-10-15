@@ -1,5 +1,5 @@
 using Xamarin.Essentials;
-namespace Ass_Pain
+namespace MWP
 {
     internal abstract class Setting<T>
     {

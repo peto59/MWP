@@ -1,4 +1,4 @@
-﻿namespace Ass_Pain.BackEnd.Player
+﻿namespace MWP.BackEnd.Player
 {
     public class Enums
     {

@@ -14,12 +14,12 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.Support.V4.Media.Session;
 using Android.Support.V4.Media;
-using Ass_Pain.BackEnd.Player;
+using MWP.BackEnd.Player;
+using MWP.Helpers;
 #if DEBUG
-using Ass_Pain.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
 	[Service(ForegroundServiceType = ForegroundService.TypeMediaPlayback, Label = "@string/service_name")]
 	//TODO: https://developer.android.com/training/cars/media
@@ -91,7 +91,7 @@ namespace Ass_Pain
 		private AudioManager? audioManager;
 		private AudioFocusRequestClass? audioFocusRequest;
 		private readonly Local_notification_service notificationService = new Local_notification_service();
-		private readonly MyMediaQueue QueueObject = new MyMediaQueue();
+		public readonly MyMediaQueue QueueObject = new MyMediaQueue();
 		public long Actions { get; private set; }
 		private bool isFocusGranted;
 		private bool isUsed;
@@ -471,9 +471,9 @@ namespace Ass_Pain
 			if (!notificationService.IsCreated)
 			{
 				if (session.SessionToken != null) notificationService.song_control_notification(session.SessionToken);
-				//StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
+				StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
 				//android:foregroundServiceType="mediaPlayback"
-				StartForeground(notificationService.NotificationId, notificationService.Notification);
+				//StartForeground(notificationService.NotificationId, notificationService.Notification);
 			}
 			if (mediaPlayer == null)
 			{
@@ -541,14 +541,8 @@ namespace Ass_Pain
 			if (mediaPlayer == null) return;
 			isSkippingToNext = true;
 			IsPaused = false;
-			if (QueueObject.HasNext)
+			if (QueueObject.IncrementIndex())
 			{
-				Index++;
-				Play();
-			}
-			else if (QueueObject.LoopState == Enums.LoopState.All)
-			{
-				Index = 0;
 				Play();
 			}
 			isSkippingToNext = false;
@@ -567,14 +561,7 @@ namespace Ass_Pain
 			}
 			isSkippingToPrevious = true;
 			IsPaused = false;
-			Index--;
-			if(Index < 0 && loopAll){
-				Index = QueueObject.Count -1;
-			}
-#if DEBUG
-            MyConsole.WriteLine($"Index in previous song: {Index}");
-#endif
-
+			QueueObject.DecrementIndex();
             Play();
 			isSkippingToPrevious = false;
 		}
@@ -609,15 +596,6 @@ namespace Ass_Pain
 		}
 
 		///<summary>
-		///Clears queue and resets index to 0
-		///</summary>
-		public void ClearQueue()
-		{
-			QueueObject = new List<Song>();
-            Index = 0;
-        }
-
-		///<summary>
 		///Adds single track or entire album/author to the end of queue from <paramref name="addition"/> path
 		///</summary>
 		public void AddToQueue(Song addition)
@@ -630,11 +608,7 @@ namespace Ass_Pain
 		///</summary>
 		public void AddToQueue(List<Song> addition)
 		{
-			QueueObject.AddRange(addition);
-            if (IsShuffled)
-			{
-				originalQueue.AddRange(addition);
-			}
+			QueueObject.AppendToQueue(addition);
 		}
 
 		public void AddToQueue(MusicBaseContainer obj)
@@ -656,23 +630,7 @@ namespace Ass_Pain
 		///</summary>
 		public void PlayNext(List<Song> addition)
 		{
-			if (IsShuffled)
-			{
-				//TODO: opravit podla inej logiky nizsie
-				addition.AddRange(originalQueue);
-				originalQueue = addition;
-			}
-			if(Index >= QueueObject.Count)
-			{
-                AddToQueue(addition);
-			}
-			else
-			{
-				List<Song> tmp = QueueObject.GetRange(0, Index+1);
-				tmp.AddRange(addition);
-				tmp.AddRange(QueueObject.Skip(Index + 1));
-                QueueObject = tmp;
-            }
+			QueueObject.PrependToQueue(addition);
         }
 
 		public void PlayNext(MusicBaseContainer addition)
@@ -683,35 +641,11 @@ namespace Ass_Pain
 		///<summary>
 		///Shuffles or unshuffles queue and updates shuffling for all new queues based on <paramref name="newShuffleState"/> state
 		///</summary>
-		public void Shuffle(bool newShuffleState, int? indx = null)
+		public void Shuffle(bool newShuffleState)
 		{
-            if(QueueObject.Count == 0) { return; }
-
-            int ind = indx ?? Index;
-
-            shuffling.WaitOne();
-			if (newShuffleState)
-			{
-				originalQueue = QueueObject.ToList();
-				Song tmp = QueueObject.Pop(ind);
-				Index = 0;
-                QueueObject.Shuffle();
-				QueueObject = QueueObject.Prepend(tmp).ToList();
-            }
-			else
-			{
-				if (originalQueue.Count > 0)
-				{
-					Index = originalQueue.IndexOf(QueueObject[Index]);
-                    QueueObject = originalQueue;
-                    originalQueue = new List<Song>();
-				}
-			}
-			IsShuffled = newShuffleState;
-			MainActivity.stateHandler.shuffle = newShuffleState;
+			QueueObject.IsShuffled = newShuffleState;
 			UpdatePlaybackState();
 			if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
-			shuffling.Set();
 		}
 
 		///<summary>
@@ -719,26 +653,7 @@ namespace Ass_Pain
 		///</summary>
 		public void ToggleLoop(int state)
 		{
-			//TODO: rewrite to enum
-			state %= 3;
-			LoopState = state;
-			switch (state)
-			{
-				case 0:
-					loopAll = false;
-					loopSingle = false;
-					break;
-				case 1:
-					loopAll = true;
-					loopSingle = false;
-					break;
-				case 2:
-					loopAll = false;
-					loopSingle = true;
-					break;
-			}
-			//mediaPlayer.Looping = loopSingle;
-			MainActivity.stateHandler.loopState = LoopState;
+			QueueObject.ToggleLoop(state);
             UpdatePlaybackState();
             if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
 #if DEBUG

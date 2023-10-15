@@ -9,7 +9,7 @@ using Android.Util;
 using Fragment = AndroidX.Fragment.App.Fragment;
 
 
-namespace Ass_Pain
+namespace MWP
 {
     
     /// <summary>

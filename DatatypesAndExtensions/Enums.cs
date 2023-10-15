@@ -1,6 +1,6 @@
 using System;
 
-namespace Ass_Pain
+namespace MWP
 {
     internal enum SongSelectionDialogActions
     {
