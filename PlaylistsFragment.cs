@@ -4,9 +4,11 @@ using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Android.Content.Res;
 using Android.Graphics;
 using Ass_Pain.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using Orientation = Android.Widget.Orientation;
 
 
 namespace Ass_Pain
@@ -44,10 +46,11 @@ namespace Ass_Pain
         /// Constructor for SongsFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (e.g. "this")</param>
-        public PlaylistsFragment(Context ctx)
+        /// <param name="assets"></param>
+        public PlaylistsFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
-            playlistFragment = new PlaylistFragment(ctx);
+            playlistFragment = new PlaylistFragment(ctx, assets);
         }
 
 

@@ -4,9 +4,12 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using Android.Content.Res;
 using Android.Graphics;
+using Android.Text.Style;
 using Android.Util;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using Orientation = Android.Widget.Orientation;
 
 
 namespace Ass_Pain
@@ -21,6 +24,7 @@ namespace Ass_Pain
         private readonly float scale;
         private readonly Context context;
         private RelativeLayout mainLayout;
+        private AssetManager? assets;
 
         private Dictionary<LinearLayout, object> albumButtons = new Dictionary<LinearLayout, object>();
 
@@ -32,14 +36,15 @@ namespace Ass_Pain
         /// Constructor for AlbumAuthorFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (e.g. "this")</param>
-        public AlbumAuthorFragment(Context ctx)
+        public AlbumAuthorFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
+            this.assets = assets;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
-
+            
             // fragmentManager = ParentFragment.Activity.SupportFragmentManager;
-            albumFragment = new AlbumFragment(context);
-            authorFragment = new AuthorFragment(context);
+            albumFragment = new AlbumFragment(context, this.assets);
+            authorFragment = new AuthorFragment(context, this.assets);
         }
         
         /// <summary>
@@ -88,7 +93,7 @@ namespace Ass_Pain
                 
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
                     MainActivity.stateHandler.Albums[i], scale, cardMargins, 15, i, context, albumButtons, 
-                    ParentFragmentManager, albumFragment, authorFragment);
+                    ParentFragmentManager, assets, albumFragment, authorFragment);
                 UIRenderFunctions.SetTilesImage(
                     lnIn, MainActivity.stateHandler.Albums[i], 150, 100,
                     buttonMargins, 17,
@@ -122,7 +127,7 @@ namespace Ass_Pain
             {
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
                     MainActivity.stateHandler.Artists[i], scale, cardMargins, 15, i, context, albumButtons, 
-                    ParentFragmentManager, albumFragment, authorFragment);
+                    ParentFragmentManager, assets, albumFragment, authorFragment);
                 UIRenderFunctions.SetTilesImage(
                     lnIn, MainActivity.stateHandler.Artists[i], 150, 100,
                     buttonMargins, 17,

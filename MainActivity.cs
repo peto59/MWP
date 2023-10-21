@@ -193,8 +193,8 @@ namespace Ass_Pain
             shareFragment = new ShareFragment(this, Assets);
             
             songsFragment = new SongsFragment(this, Assets);
-            albumsFragment = new AlbumAuthorFragment(this);
-            playlistsFragment = new PlaylistsFragment(this);
+            albumsFragment = new AlbumAuthorFragment(this, Assets);
+            playlistsFragment = new PlaylistsFragment(this, Assets);
             
             
             /*
@@ -307,6 +307,27 @@ namespace Ass_Pain
                 };
         }
 
+
+        /// <inheritdoc />
+        public override bool DispatchTouchEvent(MotionEvent ev)
+        {
+            if (ev.Action == MotionEventActions.Down)
+            {
+                View? v = CurrentFocus;
+                if (v is EditText)
+                {
+                    Rect outRect = new Rect();
+                    v.GetGlobalVisibleRect(outRect);
+                    if (!outRect.Contains((int)ev.RawX, (int)ev.RawY))
+                    {
+                        v.ClearFocus();
+                        InputMethodManager imm = (InputMethodManager)GetSystemService(Context.InputMethodService);
+                        imm.HideSoftInputFromWindow(v.WindowToken, 0);
+                    }
+                }
+            }
+            return base.DispatchTouchEvent(ev);
+        }
         
 
         /// <inheritdoc />

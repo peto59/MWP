@@ -5,9 +5,11 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using Android.Content.Res;
 using Android.Graphics;
 using Android.Util;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using Orientation = Android.Widget.Orientation;
 #if DEBUG
 using Ass_Pain.Helpers;
 #endif
@@ -25,6 +27,7 @@ namespace Ass_Pain
         private readonly Context context;
         private RelativeLayout mainLayout;
         private Album album;
+        private AssetManager? assets;
         
         private Dictionary<LinearLayout, int> SongButtons = new Dictionary<LinearLayout, int>();
 
@@ -33,9 +36,10 @@ namespace Ass_Pain
         /// Constructor for AlbumFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (insert "this")</param>
-        public AlbumFragment(Context ctx)
+        public AlbumFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
+            this.assets = assets;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
         }
 
@@ -101,7 +105,7 @@ namespace Ass_Pain
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                    i, context, SongButtons, UIRenderFunctions.SongType.albumSong, lnMain
+                    i, context, SongButtons, UIRenderFunctions.SongType.albumSong, assets, ParentFragmentManager, lnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, album.Songs[i],  150, 100,

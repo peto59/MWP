@@ -34,6 +34,7 @@ namespace Ass_Pain
         private Typeface? font;
         private ScrollView allSongsScroll;
         private LinearLayout allSongsLnMain;
+        private AssetManager? assets;
 
         private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
         
@@ -46,6 +47,7 @@ namespace Ass_Pain
         public SongsFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
+            this.assets = assets;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
         }
@@ -82,19 +84,17 @@ namespace Ass_Pain
             mainLayout?.AddView(allSongsScroll);
             
             
+            
+            /*
+             * VYHLADAVNIE
+             */
             Action<List<Song>, View, Context> inputFinishChecker = (songs, view1, ctx) =>
             {   
                 if ((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) > (lastTextEdit + delay - 500))
                 {
                     Console.WriteLine("Stopped Writing, USER STOPPED WRITING OM GOUUTYAYAYD, THAT SOI COOOL");
                     allSongsLnMain.RemoveAllViews();
-                    
-                    foreach (Song song in songs)
-                    {
-                        Console.WriteLine("THE SONGS LIST SEARCHED: " + song.Title);
-                    }
                     RenderSongs(songs);
-                    HideKeyboardFrom(ctx, view1);
                 }
             };
             
@@ -104,7 +104,7 @@ namespace Ass_Pain
             if (searchInput != null)
             {
                 /*
-                 * Nacitanie songov z vyhladavanie po tom co pouzivatel prestanie pisat po jednej sekunde
+                 * Nacitanie songov z vyhladavania po tom co pouzivatel prestane pisat po jednej sekunde
                  */
                 searchInput.Typeface = font;
                 if (searchInput.Text == "")
@@ -189,7 +189,7 @@ namespace Ass_Pain
                     songs[i], scale,
                     150, 100,
                     allSongsButtonMargins, allSongsNameMargins, allSongsCardMargins,
-                    17, i, context, songButtons, UIRenderFunctions.SongType.allSong, allSongsLnMain
+                    17, i, context, songButtons, UIRenderFunctions.SongType.allSong, assets, ParentFragmentManager, allSongsLnMain
                 );
                 
                 lazyBuffer.Add(new Tuple<LinearLayout, int>(lnIn, i));
@@ -227,12 +227,6 @@ namespace Ass_Pain
             };
             
         } 
-        
-        /// <inheritdoc cref="HideKeyboard" />
-        public static void HideKeyboardFrom(Context? context, View view) {
-            InputMethodManager? imm = (InputMethodManager) context?.GetSystemService(Context.InputMethodService);
-            imm?.HideSoftInputFromWindow(view.WindowToken, 0);
-        }
         
         
         
