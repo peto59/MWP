@@ -16,7 +16,9 @@ using Ass_Pain.BackEnd.Network;
 using TagLib.Tiff.Arw;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
-
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 namespace Ass_Pain
 {
     /// <inheritdoc />
@@ -45,8 +47,10 @@ namespace Ass_Pain
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.share_fragment_main);
             
             RenderUi();
-            
-            Console.WriteLine(NetworkManager.GetAllHosts());
+
+#if DEBUG
+            MyConsole.WriteLine(NetworkManager.GetAllHosts().ToString());
+#endif
             
             return view;
         }

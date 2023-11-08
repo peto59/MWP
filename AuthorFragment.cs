@@ -66,7 +66,10 @@ namespace Ass_Pain
             {
                 artist = retreivedSongs[0];
             }
-            Console.WriteLine("FOUNDED SEARCHED ARTIST NAME IN FRAGMENT: " + artist.Title);
+#if DEBUG
+            
+            MyConsole.WriteLine("FOUNDED SEARCHED ARTIST NAME IN FRAGMENT: " + artist.Title);
+#endif
             
             RenderAlbumsSongs();
 

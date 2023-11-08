@@ -14,6 +14,9 @@ using Ass_Pain.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using Orientation = Android.Widget.Orientation;
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -316,7 +319,10 @@ namespace Ass_Pain
                 {
                     if (pr.Key == pressedButton)
                     {
-                        Console.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
+#if DEBUG
+                        
+                        MyConsole.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
+#endif
                         switch (songType)
                         {
                             case SongType.allSong:

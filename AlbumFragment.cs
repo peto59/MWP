@@ -63,7 +63,9 @@ namespace Ass_Pain
                 album = retreivedSongs[0];
                 UIRenderFunctions.FragmentPositionObject = album;
             }
-            Console.WriteLine("FOUNDED SEARCHED ALBUM NAME IN FRAGMENT: " + album.Title);
+#if DEBUG
+            MyConsole.WriteLine("FOUNDED SEARCHED ALBUM NAME IN FRAGMENT: " + album.Title);
+#endif
             
             RenderSongs();
 

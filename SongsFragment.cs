@@ -92,7 +92,9 @@ namespace Ass_Pain
             {   
                 if ((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) > (lastTextEdit + delay - 500))
                 {
-                    Console.WriteLine("Stopped Writing, USER STOPPED WRITING OM GOUUTYAYAYD, THAT SOI COOOL");
+#if DEBUG
+                    MyConsole.WriteLine("Stopped Writing, USER STOPPED WRITING OM GOUUTYAYAYD, THAT SOI COOOL");
+#endif
                     allSongsLnMain.RemoveAllViews();
                     RenderSongs(songs);
                 }

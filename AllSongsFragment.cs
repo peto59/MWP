@@ -14,7 +14,9 @@ using Ass_Pain.BackEnd;
 using Google.Android.Material.FloatingActionButton;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
-
+#if DEBUG
+using Ass_Pain.Helpers;
+#endif
 
 namespace Ass_Pain
 {
@@ -119,7 +121,9 @@ namespace Ass_Pain
         /// <param name="title">title of either an album or artist</param>
         public static void ReplaceFragments(FragmentType type, string title)
         {
-            Console.WriteLine("REPLACE FRAGMENTS TESTTTT");
+#if DEBUG
+            MyConsole.WriteLine("REPLACE FRAGMENTS TESTTTT");
+#endif
             /*
             var fragmentTransaction = manager.BeginTransaction();
             Bundle bundle = new Bundle();
