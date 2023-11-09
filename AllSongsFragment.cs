@@ -10,13 +10,13 @@ using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.Text.Style;
 using Android.Util;
-using Ass_Pain.BackEnd;
 using Google.Android.Material.FloatingActionButton;
+using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 
 
-namespace Ass_Pain
+namespace MWP
 {
     public class AllSongsFragment
     {

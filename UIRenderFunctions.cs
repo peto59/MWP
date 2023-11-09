@@ -8,12 +8,12 @@ using System.Linq;
 using Android.Graphics;
 using Android.OS;
 using AndroidX.Fragment.App;
-using Ass_Pain.BackEnd;
+using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using Orientation = Android.Widget.Orientation;
 
-namespace Ass_Pain
+namespace MWP
 {
     public class UIRenderFunctions
     {

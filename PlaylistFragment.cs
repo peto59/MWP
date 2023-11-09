@@ -6,11 +6,11 @@ using Android.Widget;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Android.Graphics;
-using Ass_Pain.BackEnd;
+using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <summary>
     /// 
@@ -19,7 +19,7 @@ namespace Ass_Pain
     {
         private readonly Context context;
         private RelativeLayout mainLayout;
-        private const int ActionScrollViewHeight = 150;
+        private const int ActionScrollViewHeight = 20;
         private readonly float scale;
         
         private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();

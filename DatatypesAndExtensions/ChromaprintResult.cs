@@ -1,4 +1,4 @@
-namespace Ass_Pain
+namespace MWP
 {
     public class ChromaprintResult
     {

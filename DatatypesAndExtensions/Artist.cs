@@ -5,13 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using Android.App;
-using Ass_Pain.BackEnd;
+using Android.Media.Browse;
+using Android.Support.V4.Media;
+using MWP.BackEnd;
 using Newtonsoft.Json;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     [Serializable]
     [JsonObject(MemberSerialization.OptIn)]
@@ -28,7 +30,7 @@ namespace Ass_Pain
         
         public string ImgPath { get; }
         public bool Initialized { get; private set; } = true;
-        public override Bitmap Image => GetImage();
+        //public override Bitmap Image => GetImage() ?? throw new InvalidOperationException();
 
         public void AddAlbum(ref List<Album> albums)
         {
@@ -103,9 +105,9 @@ namespace Ass_Pain
             return "Default";
         }
         
-        public override Bitmap GetImage(bool shouldFallBack = true)
+        public override Bitmap? GetImage(bool shouldFallBack = true)
         {
-            Bitmap image = null;
+            Bitmap? image = null;
 
             try
             {
@@ -115,48 +117,38 @@ namespace Ass_Pain
                     image = BitmapFactory.DecodeStream(f);
                     f.Close();
                 }
-                else if (shouldFallBack)
-                {
-                    foreach (Song song in Songs.Where(song => song.Initialized))
-                    {
-                        image = song.GetImage(false);
-                        if (image != null)
-                        {
-                            break;
-                        }
-                    }
-
-                    if (image == null)
-                    {
-                        foreach (Album album in Albums.Where(album => album.Initialized))
-                        {
-                            image = album.GetImage(false);
-                            if (image != null)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (image == null)
-                {
-                    if (Application.Context.Assets != null)
-                        image = BitmapFactory.DecodeStream(
-                            Application.Context.Assets.Open(
-                                "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
-                }
             }
             catch (Exception e)
             {
 #if DEBUG
                 MyConsole.WriteLine(e);
 #endif
-                if (Application.Context.Assets != null)
-                    image = BitmapFactory.DecodeStream(
-                        Application.Context.Assets.Open(
-                            "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assetsthrow;
+                return null;
+            }   
+            
+            if (image != null || !shouldFallBack)
+            {
+                return image;
             }
-            return image;
+            
+            foreach (Song song in Songs.Where(song => song.Initialized))
+            {
+                image = song.GetImage(false);
+                if (image != null)
+                {
+                    return image;
+                }
+            }
+            
+            foreach (Album album in Albums.Where(album => album.Initialized))
+            {
+                image = album.GetImage(false);
+                if (image != null)
+                {
+                    return image;
+                }
+            }
+            return placeholder;
         }
 
         public void AddAlias(string newAlias)
@@ -217,9 +209,30 @@ namespace Ass_Pain
             Albums = artist.Albums;
             ImgPath = imgPath;
         }
+        
+        public override MediaBrowserCompat.MediaItem? ToMediaItem()
+        {
+            if (Description == null) return null;
+            //MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagPlayable | MediaBrowserCompat.MediaItem.FlagBrowsable);
+            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagBrowsable);
+            return item;
+        }
+
+        protected override MediaDescriptionCompat? GetDescription()
+        {
+            return Builder?.Build();
+        }
+
+        protected override MediaDescriptionCompat.Builder? GetBuilder()
+        {
+            return new MediaDescriptionCompat.Builder()
+                .SetMediaId($"{(byte)MediaType.Artist}{Title}")?
+                .SetTitle(Title)?
+                .SetIconBitmap(Image);
+        }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is Artist item && Equals(item);
         }

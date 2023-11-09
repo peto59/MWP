@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace Ass_Pain
+namespace MWP
 {
     internal class Interval
     {

@@ -10,10 +10,10 @@ using Newtonsoft.Json;
 using Xamarin.Essentials;
 using Thread = System.Threading.Thread;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     internal static class NetworkManagerClient
     {
@@ -320,8 +320,7 @@ namespace Ass_Pain.BackEnd.Network
                         if (length != null)
                         {
                             //TODO: update
-                            int i = FileManager.GetAvailableFile("receive");
-                            string path = $"{FileManager.PrivatePath}/tmp/receive{i}.mp3";
+                            string path = FileManager.GetAvailableTempFile("receive", "mp3");
                             networkStream.ReadFile(path, (long)length, ref aes);
                             (List<string> missingArtists, (string missingAlbum, string albumArtistPath)) = FileManager.AddSong(path, true);
                             foreach (string name in missingArtists)

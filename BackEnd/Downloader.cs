@@ -1,9 +1,6 @@
-﻿using Android.App;
-using Android.Views;
-using Com.Arthenica.Ffmpegkit;
-using Google.Android.Material.Snackbar;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -11,8 +8,10 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Ass_Pain.BackEnd;
+using Android.Views;
+using Com.Arthenica.Ffmpegkit;
 using Com.Geecko.Fpcalc;
+using Google.Android.Material.Snackbar;
 using Newtonsoft.Json;
 using YoutubeExplode;
 using YoutubeExplode.Channels;
@@ -22,11 +21,10 @@ using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using Signal = Com.Arthenica.Ffmpegkit.Signal;
 #if DEBUG
-using System.Diagnostics;
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP.BackEnd
 {
     // TODO: add new song to state handler
     internal static class Downloader
@@ -38,65 +36,61 @@ namespace Ass_Pain
             //APIThrottler throttler = new APIThrottler();
             if (url.Contains("playlist"))
             {
-                
-                Snackbar.Make(view, $"Download started", Snackbar.LengthLong)
-                        .SetAction("Action", (View.IOnClickListener)null).Show();
+                Snackbar.Make(view, $"Download started", Snackbar.LengthLong).Show();
 
                 YoutubeClient youtube = new YoutubeClient();
                 Playlist playlist = await youtube.Playlists.GetAsync(url);
                 IReadOnlyList<PlaylistVideo> videos = await youtube.Playlists.GetVideosAsync(playlist.Id);
-                int a = FileManager.GetAvailableFile("playlistThumb");
-                string ext = GetImage(playlist.Thumbnails.AsEnumerable(), $"{FileManager.PrivatePath}/tmp", $"playlistThumb{a}");
+                string playlistThumbnailPath = FileManager.GetAvailableTempFile("playlistThumb", "img");
+                string realPlaylistThumbnailPath = GetImage(playlist.Thumbnails.AsEnumerable(), playlistThumbnailPath);
                 DownloadNotification notification = new DownloadNotification(videos.Count);
                 StatisticsCallback callback = new StatisticsCallback(notification);
                 FFmpegKitConfig.EnableStatisticsCallback(callback);
                 for (int index = 0; index < videos.Count; index++)
                 {
+                    (string songTempPath, string unprocessedTempPath, string thumbnailTempPath) = FileManager.GetAvailableDownloaderFiles();
                     PlaylistVideo video = videos[index];
                     string author = FileManager.Sanitize(FileManager.GetAlias(video.Author.ChannelTitle));
-                    bool getAuthorImage;
+                    bool shouldGetAuthorImage;
                     if (authors.Contains(author))
                     {
-                        getAuthorImage = false;
+                        shouldGetAuthorImage = false;
                     }
                     else
                     {
                         authors.Add(author);
-                        getAuthorImage = true;
+                        shouldGetAuthorImage = true;
                     }
 
-                    int i = FileManager.GetAvailableFile();
-                    int index1 = index;
+                    int poradieVPlayliste = index;
                     new Thread(() =>
                     {
-                        DownloadVideo(sender, video.Url, i, video.Id, video.Title, video.Author.ChannelTitle,
-                            getAuthorImage, video.Author.ChannelId, notification, playlist.Title, a,
-                            video == videos.Last(), ext, index1);
+                        DownloadVideo(sender, video.Url, songTempPath, unprocessedTempPath, thumbnailTempPath, video.Id, video.Title, video.Author.ChannelTitle,
+                            shouldGetAuthorImage, video.Author.ChannelId, notification, playlist.Title, realPlaylistThumbnailPath,
+                            video == videos.Last(), poradieVPlayliste);
                     }).Start();
                 }
             }
             else if (url.Contains("watch"))
             {
-                Snackbar.Make(view, $"Download started", Snackbar.LengthLong)
-                        .SetAction("Action", (View.IOnClickListener)null).Show();
+                Snackbar.Make(view, $"Download started", Snackbar.LengthLong).Show();
                 YoutubeClient youtube = new YoutubeClient();
                 Video video = await youtube.Videos.GetAsync(url);
-                int i = FileManager.GetAvailableFile();
+                (string songTempPath, string unprocessedTempPath, string thumbnailTempPath) = FileManager.GetAvailableDownloaderFiles();
                 DownloadNotification notification = new DownloadNotification();
                 StatisticsCallback callback = new StatisticsCallback(notification);
                 FFmpegKitConfig.EnableStatisticsCallback(callback);
-                new Thread(() => { DownloadVideo(sender, url, i, video.Id, video.Title, video.Author.ChannelTitle, true, video.Author.ChannelId, notification); }).Start();
+                new Thread(() => { DownloadVideo(sender, url, songTempPath, unprocessedTempPath, thumbnailTempPath, video.Id, video.Title, video.Author.ChannelTitle, true, video.Author.ChannelId, notification); }).Start();
             }
             else
             {
-                Snackbar.Make(view, $"This is neither video nor playlist", Snackbar.LengthLong)
-                        .SetAction("Action", (View.IOnClickListener)null).Show();
+                Snackbar.Make(view, $"This is neither video nor playlist", Snackbar.LengthLong).Show();
                 //throw new ArgumentException($"{url} is not video or playlist");
             }
         }
 
 
-        private static async void DownloadVideo(object sender, string url, int i, VideoId videoId, string videoTitle, string channelName, bool getAuthorImage, ChannelId channelId, DownloadNotification notification, string album = null, int a = 0, bool last = false, string playlistCoverExtension = null, int? poradieVPlayliste = null)
+        private static async void DownloadVideo(object sender, string url, string songTempPath, string unprocessedPath, string thumbnailTempPath, VideoId videoId, string videoTitle, string channelName, bool getAuthorImage, ChannelId channelId, DownloadNotification notification, string? album = null, string? playlistThumbnailPath = null, bool last = false, int? poradieVPlayliste = null)
         {
             try
             {
@@ -104,17 +98,18 @@ namespace Ass_Pain
                 notification.Stage1(downloadProgress, videoTitle, poradieVPlayliste);
                 
                 Task<(string title, string recordingId, string trackId, List<(string title, string id)> artists,
-                    List<(string title, string id)> releaseGroup, byte[] thumbnail)> mbSearchTask = null;
-                Task imageTask = GetImage(i, videoId);
+                    List<(string title, string id)> releaseGroup, byte[]? thumbnail)>? mbSearchTask = null;
+                Task imageTask = GetImage(thumbnailTempPath, videoId);
                 
                 YoutubeClient youtube = new YoutubeClient();
                 StreamManifest streamManifest = await youtube.Videos.Streams.GetManifestAsync(url);
                 IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-                await youtube.Videos.Streams.DownloadAsync(streamInfo, $"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3", downloadProgress);
+                await youtube.Videos.Streams.DownloadAsync(streamInfo, unprocessedPath, downloadProgress);
                 
                 if (SettingsManager.ShouldUseChromaprintAtDownload)
                 {
-                    async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artists, List<(string title, string id)> releaseGroup, byte[] thumbnail)> TaskFactory() => await GetMusicBrainzIdFromFingerprint($"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3", channelName, videoTitle);
+                    string? album1 = album;
+                    async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artists, List<(string title, string id)> releaseGroup, byte[]? thumbnail)> TaskFactory() => await GetMusicBrainzIdFromFingerprint(unprocessedPath, channelName, videoTitle, album1);
                     mbSearchTask = MainActivity.throttler.Throttle(TaskFactory, "GetMusicBrainzIdFromFingerprint");
                 }
                 
@@ -123,7 +118,7 @@ namespace Ass_Pain
                 await imageTask;
                 
                 int duration;
-                string s = FFprobeKit.Execute($"-i {FileManager.PrivatePath}/tmp/unprocessed{i}.mp3 -show_entries format=duration -v quiet -of csv=\"p=0\"")?.Output;
+                string? s = FFprobeKit.Execute($"-i {unprocessedPath} -show_entries format=duration -v quiet -of csv=\"p=0\"")?.Output;
                 try
                 {
                     duration = s != null ? (int)float.Parse(s) : 170;
@@ -136,7 +131,7 @@ namespace Ass_Pain
                 // ReSharper disable once InconsistentNaming
                 Task<FFmpegSession> FFmpegTask = Task.Run(() =>
                 {
-                    FFmpegSession session = new FFmpegSession(new []{"-i", $"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3", "-i", $"{FileManager.PrivatePath}/tmp/file{i}.jpg", "-filter_complex", "[1:v]crop=iw:iw/2[img]", "-map", "0:0", "-map", "[img]", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", $"{FileManager.PrivatePath}/tmp/video{i}.mp3"}); //aspect ratio 2:1
+                    FFmpegSession session = new FFmpegSession(new []{"-i", unprocessedPath, "-i", thumbnailTempPath, "-filter_complex", "[1:v]crop=iw:iw/2[img]", "-map", "0:0", "-map", "[img]", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", songTempPath}); //aspect ratio 2:1
                     //FFmpegSession session = new FFmpegSession(new []{"-i", $"{Path}/tmp/unprocessed{i}.mp3", "-i", $"{Path}/tmp/file{i}.jpg", "-map", "0:0", "-map", "1:0", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", $"{Path}/tmp/video{i}.mp3"}); //original aspect ration 
                     MainActivity.stateHandler.SessionIdToPlaylistOrderMapping.Add(session.SessionId, (poradieVPlayliste, duration));
                     FFmpegKitConfig.FfmpegExecute(session);
@@ -155,13 +150,13 @@ namespace Ass_Pain
                 });
                 
                 string title = videoTitle;
-                List<(string title, string id)> artists = new List<(string title, string id)>()
+                List<(string title, string id)> artists = new List<(string title, string id)>
                     { (channelName, string.Empty) };
-                List<(string title, string id)> releaseGroups = new List<(string title, string id)>()
+                List<(string title, string id)> releaseGroups = new List<(string title, string id)>
                     { (album ?? string.Empty, string.Empty)};
-                string recordingId, trackId;
-                trackId = recordingId = string.Empty;
-                byte[] thumbnail = null;
+                string recordingId;
+                string trackId = recordingId = string.Empty;
+                byte[]? thumbnail = null;
                 
                 
 #if DEBUG
@@ -172,7 +167,6 @@ namespace Ass_Pain
                     if (mbSearchTask != null)
                         (title, recordingId, trackId, artists, releaseGroups, thumbnail) = await mbSearchTask;
                 }
-                string fileName = FileManager.Sanitize(title);
                 string artistPath = FileManager.Sanitize(FileManager.GetAlias(artists.First().title));
                 Directory.CreateDirectory($"{FileManager.MusicFolder}/{artistPath}");
                 //string output = $"{FileManager.MusicFolder}/{artistPath}/{fileName}.mp3";
@@ -192,15 +186,18 @@ namespace Ass_Pain
                             File.Create($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{imgExtenstion}").Close();
                             _ = File.WriteAllBytesAsync($"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{imgExtenstion}", thumbnail);
                         }
-                        else
+                        else if(playlistThumbnailPath != null)
                         {
-                            Task t = Task.Run(() => {
-                                File.Copy($"{FileManager.PrivatePath}/tmp/playlistThumb{a}{playlistCoverExtension}", $"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{playlistCoverExtension}", true);
+                            Task t = Task.Run(() =>
+                            {
+                                    File.Copy(playlistThumbnailPath, $"{FileManager.MusicFolder}/{artistPath}/{albumPath}/cover{Path.GetExtension(playlistThumbnailPath)}", true);
                             });
                             if (last)
                             {
                                 _ = t.ContinueWith(_ =>
-                                    File.Delete($"{FileManager.PrivatePath}/tmp/playlistThumb{a}{playlistCoverExtension}"));
+                                { 
+                                    File.Delete(playlistThumbnailPath);
+                                });
 
                             }
                         }
@@ -220,8 +217,8 @@ namespace Ass_Pain
 
                 FFmpegSession session = await FFmpegTask;
                 _ = Task.Run(() => {
-                    File.Delete($"{FileManager.PrivatePath}/tmp/file{i}.jpg");
-                    File.Delete($"{FileManager.PrivatePath}/tmp/unprocessed{i}.mp3");
+                    File.Delete(thumbnailTempPath);
+                    File.Delete(unprocessedPath);
                 });
                 
                 if (session.ReturnCode is { IsSuccess: true })
@@ -229,11 +226,11 @@ namespace Ass_Pain
 
                     if (album != null)
                     {
-                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId, album, releaseGroups.First().id);
+                        FileManager.AddSong((View)sender, songTempPath, title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId, album, releaseGroups.First().id);
                     }
                     else
                     {
-                        FileManager.AddSong((View)sender, $"{FileManager.PrivatePath}/tmp/video{i}.mp3", title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId);
+                        FileManager.AddSong((View)sender, songTempPath, title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId);
                     }
                     notification.Stage4(true, string.Empty, poradieVPlayliste);
                     
@@ -241,14 +238,13 @@ namespace Ass_Pain
                 else 
                 {
                     notification.Stage4(false, $"{session.ReturnCode?.Value}", poradieVPlayliste);
-                    File.Delete($"{FileManager.PrivatePath}/tmp/video{i}.mp3");
+                    File.Delete(songTempPath);
                     if (session.ReturnCode == null) return;
 #if DEBUG
                     MyConsole.WriteLine($"FFmpeg failed with status code {session.ReturnCode} {session.Output} {session}");
 #endif
                     View view = (View)sender;
-                    Snackbar.Make(view, $"{session.ReturnCode} Failed: {title}", Snackbar.LengthLong)
-                        .SetAction("Action", (View.IOnClickListener)null).Show();
+                    Snackbar.Make(view, $"{session.ReturnCode} Failed: {title}", Snackbar.LengthLong).Show();
                 }
             }
             catch (Exception ex)
@@ -263,8 +259,7 @@ namespace Ass_Pain
                 MyConsole.WriteLine($"[tryCatch line: {line}]BIG EROOOOOOOOR: {ex}");
 #endif
                 View view = (View)sender;
-                Snackbar.Make(view, $"Failed: {videoTitle}", Snackbar.LengthLong)
-                        .SetAction("Action", (View.IOnClickListener)null).Show();
+                Snackbar.Make(view, $"Failed: {videoTitle}", Snackbar.LengthLong).Show();
             }
         }
 
@@ -288,34 +283,32 @@ namespace Ass_Pain
             }
         }
 
-        public static async Task GetImage(int i, VideoId id)
+        public static async Task GetImage(string path, VideoId id)
         {
             using WebClient cli = new WebClient();
             if (await GetHttpStatus($"https://img.youtube.com/vi/{id}/maxresdefault.jpg"))
             {
-                await File.WriteAllBytesAsync($"{FileManager.PrivatePath}/tmp/file{i}.jpg", cli.DownloadData($"https://img.youtube.com/vi/{id}/maxresdefault.jpg"));
+                await File.WriteAllBytesAsync(path, cli.DownloadData($"https://img.youtube.com/vi/{id}/maxresdefault.jpg"));
             }
             else
             {
-                await File.WriteAllBytesAsync($"{FileManager.PrivatePath}/tmp/file{i}.jpg", cli.DownloadData($"https://img.youtube.com/vi/{id}/0.jpg"));
+                await File.WriteAllBytesAsync(path, cli.DownloadData($"https://img.youtube.com/vi/{id}/0.jpg"));
             }
         }
-        
-        public static async Task<byte[]> GetImage(string url)
+
+        private static async Task<byte[]?> GetImage(string? url)
         {
-            //string path = Application.Context.GetExternalFilesDir(null).AbsolutePath;
-            using WebClient cli = new WebClient();
+            if (url == null) return null;
             if (!await GetHttpStatus(url)) return null;
+            using WebClient cli = new WebClient();
 #if DEBUG
             MyConsole.WriteLine($"Downloading {url}");       
 #endif
             return cli.DownloadData(url);
         }
 
-        public static string GetImage(IEnumerable<Thumbnail> authorThumbnails, string thumbnailPath, string fileName = "cover")
+        private static string GetImage(IEnumerable<Thumbnail> authorThumbnails, string thumbnailPath)
         {
-            Directory.CreateDirectory(thumbnailPath);
-            File.Create($"{thumbnailPath}/{fileName}.jpg").Close();
             int maxArea = 0;
             string thumbnailUrl = string.Empty;
             foreach (Thumbnail thumbnail in authorThumbnails)
@@ -326,29 +319,25 @@ namespace Ass_Pain
             }
 
             WebClient cli = new WebClient();
-            byte[] bytes = cli.DownloadData(thumbnailUrl);
+            File.WriteAllBytes(thumbnailPath, cli.DownloadData(thumbnailUrl));
             cli.Dispose();
-            string extension = FileManager.GetImageFormat(bytes);
-            if (extension == ".jpg")
-            {
-                File.WriteAllBytes($"{thumbnailPath}/{fileName}.jpg", bytes);
-                return ".jpg";
-            }
-            
-            if (extension == ".idk") return ".idk";
-            File.WriteAllBytes($"{thumbnailPath}/{fileName}.png", bytes);
-            File.Delete($"{thumbnailPath}/{fileName}.jpg");
-            return ".png";
+            string extension = FileManager.GetImageFormat(thumbnailPath);
+            string originalExtension = Path.GetExtension(thumbnailPath);
+            File.Move(thumbnailPath, thumbnailPath.Replace(originalExtension, extension));
+            return thumbnailPath.Replace(originalExtension, extension);
         }
 
-        private static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[] thumbnail)> GetMusicBrainzIdFromFingerprint(string filePath, string originalAuthor, string originalTitle)
+        private static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[]? thumbnail)> GetMusicBrainzIdFromFingerprint(string filePath, string originalAuthor, string originalTitle, string? originalAlbum)
         {
-            (string originalTitle, string, string, List<(string, string)>, List<(string, string)>, byte[]) output = (originalTitle, string.Empty, string.Empty, new List<(string, string)>{(originalAuthor, string.Empty)}, new List<(string, string)>{(string.Empty, string.Empty)}, null);
+            (string, string, string, List<(string, string)>, List<(string, string)>, byte[]?) output = (originalTitle, string.Empty, string.Empty, new List<(string, string)>{(originalAuthor, string.Empty)}, new List<(string, string)>{(originalAlbum ?? string.Empty, string.Empty)}, null);
             try
             {
-                ChromaprintResult chromaprintResult =
+                ChromaprintResult? chromaprintResult =
                     JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new[]
                         { "-json", $"{filePath}" }));
+                
+                if (chromaprintResult == null) return output;
+                
                 using HttpClient client = new HttpClient();
                 HttpResponseMessage response = await client.GetAsync(
                     $"https://api.acoustid.org/v2/lookup?format=xml&client=b\'5LIvrD3L&duration={(int)chromaprintResult.duration}&fingerprint={chromaprintResult.fingerprint}&meta=recordings+releasegroups+compress");
@@ -398,7 +387,7 @@ namespace Ass_Pain
                 int cnt = 0;
                 var buffer =
                     new List<(string, string, string, IEnumerable<(string, string)>, IEnumerable<(string, string)>)>();
-                List<CoverArt> coverBuffer = new List<CoverArt>();
+                List<CoverArt?> coverBuffer = new List<CoverArt?>();
                 List<byte[]> imgBuffer = new List<byte[]>();
                 bool hasNext = true;
 
@@ -406,7 +395,7 @@ namespace Ass_Pain
                 {
                     (string title, string recordingId, string trackId, IEnumerable<(string title, string id)> artists,
                         IEnumerable<(string title, string id)> releaseGroups) current;
-                    CoverArt coverArtResult;
+                    CoverArt? coverArtResult;
                     if (cnt >= buffer.Count && hasNext)
                     {
                         current = rEnumerator.Current;
@@ -430,10 +419,9 @@ namespace Ass_Pain
                             continue;
                         }
 
-                        coverArtResult =
-                            JsonConvert.DeserializeObject<CoverArt>(await response.Content.ReadAsStringAsync());
+                        coverArtResult = JsonConvert.DeserializeObject<CoverArt>(await response.Content.ReadAsStringAsync());
                         coverBuffer.Add(coverArtResult);
-                        string imgUrl = coverArtResult.images.First(image => image.approved).thumbnails.large;
+                        string? imgUrl = coverArtResult?.images.First(image => image.approved).thumbnails.large;
                         //TODO: possible optimization?
                         while (true)
                         {
@@ -456,7 +444,7 @@ namespace Ass_Pain
                             if (statusCode is >= 300 and <= 399)
                             {
 #if DEBUG
-                                MyConsole.WriteLine($"{imgUrl} redirect to {uriString ?? "NULL"}");
+                                MyConsole.WriteLine($"{imgUrl} redirect to {uriString}");
 #endif
                                 imgUrl = uriString;
                                 continue;
@@ -465,8 +453,8 @@ namespace Ass_Pain
                             break;
                         }
 
-                        byte[] imgArr = await GetImage(imgUrl?.Replace("http://", "https://"));
-                        imgBuffer.Add(imgArr);
+                        byte[]? imgArr = await GetImage(imgUrl?.Replace("http://", "https://"));
+                        if (imgArr != null) imgBuffer.Add(imgArr);
                     }
                     else
                     {
@@ -563,7 +551,7 @@ namespace Ass_Pain
         private DownloadNotification Notification { get; }
 
         /// <inheritdoc />
-        public void Apply(Statistics statistics)
+        public void Apply(Statistics? statistics)
         {
             try
             {

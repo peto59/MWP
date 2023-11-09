@@ -8,10 +8,10 @@ using System.Text;
 using System.Threading;
 using Newtonsoft.Json;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     internal static class ReadExtensions
     {

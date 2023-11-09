@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="270dp"
+              android:background="@drawable/rounded">
+    <TextView
+            android:id="@+id/share_are_you_sure_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textAlignment="center"
+            android:textColor="#ffffff"
+            android:layout_gravity="center"
+            android:layout_marginTop="50dp"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+  
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:paddingBottom="40dp"
+    >
+
+        <TextView android:layout_width="120dp" android:layout_height="50dp"
+                  android:text="Yes"
+                  android:layout_marginRight="10dp"
+                  android:background="@drawable/rounded_button"
+                  android:gravity="center"
+                  android:textSize="18dp"
+                  android:textColor="#ffffff"
+                  android:id="@+id/share_are_you_sure_yes"
+        />
+        <TextView android:layout_width="120dp" android:layout_height="50dp"
+                  android:text="No"
+                  android:layout_marginLeft="10dp"
+                  android:background="@drawable/rounded_button"
+                  android:gravity="center"
+                  android:textSize="18dp"
+                  android:textColor="#ffffff"
+                  android:id="@+id/share_are_you_sure_no"
+        />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Newtonsoft.Json;
 
-namespace Ass_Pain
+namespace MWP
 {
     // CoverArt myDeserializedClass = JsonConvert.DeserializeObject<CoverArt>(myJsonResponse);
     [SuppressMessage("ReSharper", "InconsistentNaming")]

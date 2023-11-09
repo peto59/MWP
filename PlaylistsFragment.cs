@@ -5,11 +5,11 @@ using Android.Widget;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Android.Graphics;
-using Ass_Pain.BackEnd;
+using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <summary>
     /// 
@@ -58,7 +58,7 @@ namespace Ass_Pain
                 ViewGroup.LayoutParams.MatchParent,
                 ViewGroup.LayoutParams.MatchParent
             );
-            playlistScrollParams.SetMargins(0, 150, 0, 0);
+            playlistScrollParams.SetMargins(0, 20, 0, 0);
             playlistsScroll.LayoutParameters = playlistScrollParams;
 
 

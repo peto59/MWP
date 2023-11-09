@@ -8,10 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     /// <summary>
     /// Class that manages network connections
@@ -128,6 +128,30 @@ namespace Ass_Pain.BackEnd.Network
                     sock.Dispose();
                 }
             }
+        }
+
+        /// <summary>
+        /// Get combination of all trusted and available hosts
+        /// </summary>
+        /// <returns>List of tuple with hostname, lastSeen, and whether this host is trusted</returns>
+        public static List<(string hostname, DateTime? lastSeen, bool state)> GetAllHosts()
+        {
+            List<string> trusted = FileManager.GetTrustedSyncTargets();
+            List<(string hostname, DateTime? lastSeen, bool state)> output = new List<(string hostname, DateTime? lastSeen, bool state)>();
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.stateHandler.AvailableHosts)
+            {
+                if (trusted.Contains(stateHandlerAvailableHost.hostname))
+                {
+                    output.Add((stateHandlerAvailableHost.hostname, stateHandlerAvailableHost.lastSeen, true));
+                    trusted.Remove(stateHandlerAvailableHost.hostname);
+                }
+                else
+                {
+                    output.Add((stateHandlerAvailableHost.hostname, stateHandlerAvailableHost.lastSeen, false));
+                }
+            }
+            output.AddRange(trusted.Select(s => ((string hostname, DateTime? lastSeen, bool state))(s, null, true)));
+            return output;
         }
 
         private static void AddAvailableHost(IPAddress targetIp, string hostname)

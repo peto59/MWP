@@ -26,8 +26,9 @@ using Android.Text;
 using Android.Widget;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
-using Ass_Pain.BackEnd;
-using Ass_Pain.BackEnd.Network;
+using MWP.BackEnd.Network;
+using MWP.BackEnd;
+using MWP.BackEnd.Player;
 using Octokit;
 using Xamarin.Essentials;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
@@ -38,10 +39,10 @@ using FileProvider = AndroidX.Core.Content.FileProvider;
 using Stream = System.IO.Stream;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <inheritdoc cref="AndroidX.AppCompat.App.AppCompatActivity" />
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true, Description = "@string/app_description")]
@@ -51,8 +52,23 @@ namespace Ass_Pain
         // public static Slovenska_prostituka player = new Slovenska_prostituka();
         public static APIThrottler throttler = new APIThrottler();
         private static MyBroadcastReceiver _receiver;
+        private static MyMediaBroadcastReceiver _mediaReceiver;
         public static StateHandler stateHandler = new StateHandler();
-        public static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        private static readonly MediaServiceConnection _serviceConnection = new MediaServiceConnection();
+        public static MediaServiceConnection ServiceConnection
+        {
+            get
+            {
+                if (!_serviceConnection.Connected)
+                {
+#if DEBUG
+                    MyConsole.WriteLine($"Session not connected");
+#endif
+                    stateHandler.mainActivity.StartMusicService();
+                }
+                return _serviceConnection;
+            }
+        }
         private const int ActionInstallPermissionRequestCode = 10356;
         private const int ActionPermissionsRequestCode = 13256;
         private Typeface? font;
@@ -60,15 +76,14 @@ namespace Ass_Pain
         /*
          * Fragments
          */
-        private YoutubeFragment youtubeFragment;
+        private YoutubeFragment? youtubeFragment;
+        private ShareFragment? shareFragment;
         
-        private SongsFragment songsFragment;
-        private SongsFragment PlaylistsFragment;
-        private AlbumAuthorFragment AlbumsFragment;
-        private AlbumFragment albumFragment;
-        private AuthorFragment authorFragment;
-        private PlaylistsFragment playlistsFragment;
-        private PlaylistFragment playlistFragment;
+        private SongsFragment? songsFragment;
+        private AlbumAuthorFragment? albumsFragment;
+        private PlaylistsFragment? playlistsFragment;
+        
+        
         bool activeFragment = false;
         
       
@@ -78,6 +93,10 @@ namespace Ass_Pain
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+#if DEBUG
+            MyConsole.WriteLine("Creating MainActivity");
+#endif
+            stateHandler.mainActivity = this;
             // Finish();   
             Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
@@ -104,6 +123,15 @@ namespace Ass_Pain
             stateHandler.SetView(this);
             _receiver = new MyBroadcastReceiver();
             RegisterReceiver(_receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
+            _mediaReceiver = new MyMediaBroadcastReceiver();
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionPlay);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionPause);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionShuffle);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionToggleLoop);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionNextSong);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionPreviousSong);
+            RegisterReceiver(_mediaReceiver, intentFilter);
             
             VersionTracking.Track();
             
@@ -189,8 +217,10 @@ namespace Ass_Pain
              * Managing Frgamentation
              */
             youtubeFragment = new YoutubeFragment(this);
+            shareFragment = new ShareFragment(this, Assets);
+            
             songsFragment = new SongsFragment(this, Assets);
-            AlbumsFragment = new AlbumAuthorFragment(this);
+            albumsFragment = new AlbumAuthorFragment(this);
             playlistsFragment = new PlaylistsFragment(this);
             
             
@@ -220,15 +250,16 @@ namespace Ass_Pain
                     var fragmentTransaction = SupportFragmentManager.BeginTransaction();
                     if (!activeFragment)
                     {
-                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, AlbumsFragment);
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, albumsFragment);
                         activeFragment = true;
                     }
                     else if (activeFragment)
-                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, AlbumsFragment);
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumsFragment);
 
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
                     drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Albums";
                 };
 
             if (playlistsNavigationButton != null)
@@ -246,6 +277,7 @@ namespace Ass_Pain
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
                     drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Playlists";
                 };
 
             if (songsNavigationButton != null)
@@ -263,6 +295,7 @@ namespace Ass_Pain
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
                     drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Songs";
                 };
             
 
@@ -280,8 +313,25 @@ namespace Ass_Pain
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
                     drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Download";
                 };
-            
+
+            if (shareNavigationButton != null)
+                shareNavigationButton.Click += (_, _) =>
+                {
+                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, shareFragment, "shareFragTag");
+                        activeFragment = true;
+                    }
+                    else fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, shareFragment, "shareFragTag");
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Share";
+                };
         }
 
         /// <inheritdoc />
@@ -292,7 +342,7 @@ namespace Ass_Pain
 #if DEBUG
             MyConsole.WriteLine($"resultCode: {resultCode}");       
 #endif
-            InstallUpdate($"{FileManager.PrivatePath}/update.apk");
+            InstallUpdate($"{FileManager.PrivatePath}/tmp/update.apk");
         }
 
         /// <inheritdoc />
@@ -454,7 +504,11 @@ namespace Ass_Pain
                     stateHandler.Artists.Add(new Artist("No Artist", "Default"));
                     FileManager.GenerateList(FileManager.MusicFolder);
                 }
-                stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
+
+                if (stateHandler.Songs.Count != 0)
+                {
+                    stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
+                }
                 RunOnUiThread(() => side_player.populate_side_bar(this, Assets));
 #if DEBUG
                 MyConsole.WriteLine($"Songs count {stateHandler.Songs.Count}");       
@@ -479,12 +533,17 @@ namespace Ass_Pain
 
 
             }).Start();
-            
-            
+
+
+            StartMusicService();
+        }
+
+        public void StartMusicService()
+        {
             Intent serviceIntent = new Intent(this, typeof(MediaService));
             
-            StartForegroundService(serviceIntent);
-            if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
+            //StartForegroundService(serviceIntent);
+            if (!BindService(serviceIntent, _serviceConnection, Bind.AutoCreate))
             {
 #if DEBUG
                 MyConsole.WriteLine("Cannot connect to MediaService");
@@ -496,7 +555,7 @@ namespace Ass_Pain
         {
             string currentVersionString = VersionTracking.CurrentBuild;
             const string owner = "peto59";
-            const string repoName = "Ass_Pain";
+            const string repoName = "MWP";
 #if DEBUG
             MyConsole.WriteLine("Checking for updates!");
             MyConsole.WriteLine($"Current version: {currentVersionString}");
@@ -536,7 +595,7 @@ namespace Ass_Pain
         private async void GetUpdate(string downloadUrl)
         {
             using HttpClient httpClient = new HttpClient();
-            await File.WriteAllBytesAsync($"{FileManager.PrivatePath}/update.apk", await httpClient.GetByteArrayAsync(downloadUrl));
+            await File.WriteAllBytesAsync($"{FileManager.PrivatePath}/tmp/update.apk", await httpClient.GetByteArrayAsync(downloadUrl));
             
 #if DEBUG
          MyConsole.WriteLine("Downloaded. Starting install!");   
@@ -571,13 +630,13 @@ namespace Ass_Pain
                 }
                 else
                 {
-                    InstallUpdate($"{FileManager.PrivatePath}/update.apk");
+                    InstallUpdate($"{FileManager.PrivatePath}/tmp/update.apk");
                 }
                 
             }
             else
             {
-                InstallUpdate($"{FileManager.PrivatePath}/update.apk");
+                InstallUpdate($"{FileManager.PrivatePath}/tmp/update.apk");
             }
         }
 

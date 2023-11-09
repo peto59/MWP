@@ -5,14 +5,16 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using Android.App;
-using Ass_Pain.BackEnd;
+using Android.Media.Browse;
+using Android.Support.V4.Media;
+using MWP.BackEnd;
 using Newtonsoft.Json;
 using File = TagLib.File;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     [Serializable]
     public class Song : MusicBaseClass
@@ -26,7 +28,6 @@ namespace Ass_Pain
         public DateTime DateCreated { get; }
         public string Path { get; }
         public bool Initialized { get; private set; } = true;
-        public override Bitmap Image => GetImage();
 
         public void AddArtist(ref List<Artist> artists)
         {
@@ -109,51 +110,35 @@ namespace Ass_Pain
             FileManager.Delete(Path);
         }
 
-        public override Bitmap GetImage(bool shouldFallBack = true)
+        public override Bitmap? GetImage(bool shouldFallBack = true)
         {
-            if (Path == "Default")
+            Bitmap? image = null;
+            if (Path != "Default")
             {
+                try
+                {
+                    using File tagFile = File.Create(Path);
+                    tagFile.Mode = File.AccessMode.Read;
+                    using MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
+                    image = BitmapFactory.DecodeStream(ms);
+                }
+                catch (Exception ex)
+                {
 #if DEBUG
-                MyConsole.WriteLine($"null????: {Application.Context.Assets != null}");
+                    MyConsole.WriteLine(ex);
+                    MyConsole.WriteLine($"Doesnt contain image: {Path}");
 #endif
-                if (Application.Context.Assets != null)
-                    return BitmapFactory.DecodeStream(
-                        Application.Context.Assets.Open(
-                            "music_placeholder.png"));
-            }
-            Bitmap image = null;
-            try
-            {
-                using File tagFile = File.Create(Path);
-                tagFile.Mode = File.AccessMode.Read;
-                using MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures[0].Data.Data);
-                image = BitmapFactory.DecodeStream(ms);
-            }
-            catch (Exception ex)
-            {
-#if DEBUG
-                MyConsole.WriteLine(ex);
-                MyConsole.WriteLine($"Doesnt contain image: {Path}");
-#endif
+                }
             }
 
-            if (image != null) return image;
-            if (!shouldFallBack)
-            {
-#if DEBUG
-                MyConsole.WriteLine($"null????: {Application.Context.Assets != null}");
-#endif
-                if (Application.Context.Assets != null)
-                    return BitmapFactory.DecodeStream(
-                        Application.Context.Assets.Open(
-                            "music_placeholder.png"));
-            }
+            if (image != null || !shouldFallBack) return image;
+            
             foreach (Album album in Albums.Where(album => album.Initialized))
             {
                 image = album.GetImage(false);
                 if (image != null)
                 {
-                    break;
+                    return image;
                 }
             }
 
@@ -163,11 +148,11 @@ namespace Ass_Pain
                 image = artist.GetImage(false);
                 if (image != null)
                 {
-                    break;
+                    return image;
                 }
             }
 
-            return image;
+            return placeholder;
         }
         public Song(List<Artist> artists, List<Album> albums, string title)
         {
@@ -244,8 +229,29 @@ namespace Ass_Pain
             Path = path;
         }
 
+        public override MediaBrowserCompat.MediaItem? ToMediaItem()
+        {
+            if (Description == null) return null;
+            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagPlayable);
+            return item;
+        }
+
+        protected override MediaDescriptionCompat? GetDescription()
+        {
+            return Builder?.Build();
+        }
+
+        protected override MediaDescriptionCompat.Builder? GetBuilder()
+        {
+            return new MediaDescriptionCompat.Builder()
+                .SetMediaId($"{(byte)MediaType.Song}{Title}")?
+                .SetTitle(Title)?
+                .SetSubtitle(Artist.Title)?
+                .SetIconBitmap(Image);
+        }
+
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is Song item && Equals(item);
         }

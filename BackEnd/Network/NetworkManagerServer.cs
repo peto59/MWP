@@ -1,14 +1,13 @@
-
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     internal static class NetworkManagerServer
     {

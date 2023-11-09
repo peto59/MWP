@@ -9,11 +9,11 @@ using Android.Graphics;
 using Android.Util;
 using Fragment = AndroidX.Fragment.App.Fragment;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <summary>
     /// Album fragment, initiated after one of the album buttons is clicked in the AlbumAuthorFragment
@@ -74,7 +74,7 @@ namespace Ass_Pain
                 ViewGroup.LayoutParams.MatchParent,
                 ViewGroup.LayoutParams.MatchParent
             );
-            songsScrollParams.SetMargins(0, 150, 0, 0);
+            songsScrollParams.SetMargins(0, 20, 0, 0);
             songsScroll.LayoutParameters = songsScrollParams;
             
 

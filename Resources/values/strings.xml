@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">Ass_Pain</string>
+    <string name="app_name">MWP</string>
     <string name="app_description">Best music player</string>
     <string name="service_name">Ass_Pain_MediaService</string>
-    <string name="service_description">Ass_Pain\'s service for playing music</string>
+    <string name="service_description">MWP\'s service for playing music</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="action_settings">Add alias</string>

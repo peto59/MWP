@@ -21,10 +21,10 @@ using SocketType = System.Net.Sockets.SocketType;
 using TransportType = Android.Net.TransportType;
 using Mono.Nat;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     internal class NetworkManagerCommon
     {
@@ -111,7 +111,7 @@ namespace Ass_Pain.BackEnd.Network
             }
             try
             {
-                NetworkRequest request = new NetworkRequest.Builder()
+                NetworkRequest? request = new NetworkRequest.Builder()
                     .AddTransportType(TransportType.Wifi)
                     ?.Build();
                 while (MainActivity.stateHandler.view == null)
@@ -121,11 +121,11 @@ namespace Ass_Pain.BackEnd.Network
 #endif
                     Thread.Sleep(10);
                 }
-                ConnectivityManager connectivityManager =
-                    (ConnectivityManager)MainActivity.stateHandler.view.GetSystemService(
+                ConnectivityManager? connectivityManager =
+                    (ConnectivityManager?)MainActivity.stateHandler.view.GetSystemService(
                         Context.ConnectivityService);
                 MyNetworkCallback myNetworkCallback = new MyNetworkCallback(NetworkCallbackFlags.IncludeLocationInfo);
-                if (request != null) connectivityManager?.RegisterNetworkCallback(request, myNetworkCallback);
+                if (request != null && connectivityManager != null) connectivityManager.RegisterNetworkCallback(request, myNetworkCallback);
 #if DEBUG
                 else MyConsole.WriteLine("request or connectivityManager is null"); 
 #endif
@@ -418,12 +418,13 @@ namespace Ass_Pain.BackEnd.Network
             {
                 WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
                 WifiInfo? info = wifiManager?.ConnectionInfo;
-                if (info?.SSID != null) CurrentSsid = info.SSID;
+                CurrentSsid = info?.SSID ?? string.Empty;
 
                 CanSend = GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
                 return;
             }
 
+            CurrentSsid = string.Empty;
             CanSend = CanSend.Rejected;
         }
 
@@ -468,7 +469,8 @@ namespace Ass_Pain.BackEnd.Network
                         }
                         string ssid = transportInfo["SSID"];
 #if DEBUG
-                        MyConsole.WriteLine($"SSID: {ssid}");               
+                        MyConsole.WriteLine($"SSID: {ssid}");         
+                        MyConsole.WriteLine($"BLUD: {ssid == "<unknown ssid>"}");
 #endif
                         if (ssid != NetworkManager.Common.CurrentSsid)
                         {
@@ -494,6 +496,7 @@ namespace Ass_Pain.BackEnd.Network
 #endif
             NetworkManager.Common.CanSend = CanSend.Rejected;
             NetworkManager.Common.MyIp = null;
+            NetworkManager.Common.CurrentSsid = string.Empty;
         }
 
         private static bool ValidateIPv4(string ipString)

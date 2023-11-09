@@ -123,6 +123,7 @@
             <LinearLayout 
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:gravity="center_horizontal"
+                    android:layout_marginBottom="10dp"
             >
                 <TextView android:layout_width="110dp" android:layout_height="50dp"
                           android:text="Songs"
@@ -166,7 +167,7 @@
                 />
             </LinearLayout>
             
-            <ScrollView android:layout_width="match_parent" android:layout_height="200dp" 
+            <ScrollView android:layout_width="match_parent" android:layout_height="190dp" 
                         android:background="@drawable/rounded_view_white"
             >
                 <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
