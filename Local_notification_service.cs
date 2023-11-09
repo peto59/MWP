@@ -11,13 +11,13 @@ using System;
 using System.IO;
 using System.Runtime.Remoting.Contexts;
 using MWP.BackEnd.Player;
-using MWP.Helpers;
 using Xamarin.Essentials;
 //using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
 using Context = Android.Content.Context;
 using TaskStackBuilder = AndroidX.Core.App.TaskStackBuilder;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP
@@ -59,44 +59,45 @@ namespace MWP
                 notificationBuilder.MActions?.Clear();
 
                 notificationBuilder.AddAction(
-                      MainActivity.stateHandler.IsShuffling ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2, "shuffle",
+                    
+                    MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2, "shuffle",
                       PendingIntent.GetService(
-                          AndroidApp.Context, Convert.ToInt32(MainActivity.stateHandler.IsShuffling),
-                          new Intent(MediaService.ActionShuffle, null, AndroidApp.Context, typeof(MediaService))
-                          .PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling), PendingIntentFlags.Mutable
+                          AndroidApp.Context, Convert.ToInt32(MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false),
+                          new Intent(MyMediaBroadcastReceiver.ActionShuffle, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
+                          .PutExtra("shuffle", !MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false), PendingIntentFlags.Mutable
                       )
                   );
 
                 if(MainActivity.ServiceConnection.Binder?.Service?.QueueObject.ShowPrevious ?? false){
                     notificationBuilder.AddAction(
                         Resource.Drawable.previous, "Previous",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.ActionPreviousSong, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
 
-                if (MainActivity.stateHandler.IsPlaying)
+                if (MainActivity.ServiceConnection.Binder?.Service?.mediaPlayer?.IsPlaying ?? false)
                 {
                     notificationBuilder.AddAction(
                         Resource.Drawable.pause_fill1_wght200_grad200_opsz48, "pause",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPause, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.ActionPause, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
                 else
                 {
                     notificationBuilder.AddAction(
                         Resource.Drawable.play, "play",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionTogglePlay, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.ActionPlay, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
                 
                 if(MainActivity.ServiceConnection.Binder?.Service?.QueueObject.ShowNext ?? false){
                     notificationBuilder.AddAction(
                         Resource.Drawable.next, "next",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.ActionNextSong, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
 
-                Enums.LoopState loopState = MainActivity.stateHandler.LoopState;
+                Enums.LoopState loopState = MainActivity.ServiceConnection.Binder?.Service?.QueueObject.LoopState ?? Enums.LoopState.None;
                 switch (loopState)
                 {
                     case Enums.LoopState.None:
@@ -107,7 +108,7 @@ namespace MWP
                             Resource.Drawable.no_repeat, "no_repeat",
                             PendingIntent.GetService(
                                 AndroidApp.Context, (int)loopState,
-                                new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                                new Intent(MyMediaBroadcastReceiver.ActionToggleLoop, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                                     .PutExtra("loopState", 1), PendingIntentFlags.Mutable
                             )
                         );
@@ -120,7 +121,7 @@ namespace MWP
                             Resource.Drawable.repeat, "repeat",
                             PendingIntent.GetService(
                                 AndroidApp.Context, (int)loopState,
-                                new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                                new Intent(MyMediaBroadcastReceiver.ActionToggleLoop, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                                     .PutExtra("loopState", 2), PendingIntentFlags.Mutable
                             )
                         );
@@ -133,7 +134,7 @@ namespace MWP
                             Resource.Drawable.repeat_one, "repeat_one",
                             PendingIntent.GetService(
                                 AndroidApp.Context, (int)loopState,
-                                new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                                new Intent(MyMediaBroadcastReceiver.ActionToggleLoop, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                                     .PutExtra("loopState", 0), PendingIntentFlags.Mutable
                             )
                         );

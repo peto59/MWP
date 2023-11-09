@@ -6,9 +6,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using MWP.Helpers;
 using Xamarin.Essentials;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP.BackEnd.Network

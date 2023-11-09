@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Android.App;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Xml.Serialization;
 using Android.Media.Browse;
 using Android.Support.V4.Media;
 using MWP.BackEnd;
-using MWP.Helpers;
 using Newtonsoft.Json;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP
@@ -202,7 +204,8 @@ namespace MWP
         public override MediaBrowserCompat.MediaItem? ToMediaItem()
         {
             if (Description == null) return null;
-            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagPlayable | MediaBrowserCompat.MediaItem.FlagBrowsable);
+            int flags = MediaBrowserCompat.MediaItem.FlagBrowsable | MediaBrowserCompat.MediaItem.FlagPlayable;
+            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, flags);
             return item;
         }
 
@@ -214,7 +217,7 @@ namespace MWP
         protected override MediaDescriptionCompat.Builder? GetBuilder()
         {
             return new MediaDescriptionCompat.Builder()
-                .SetMediaId(Title)? //TODO: id?
+                .SetMediaId($"{(byte)MediaType.Album}{Title}")?
                 .SetTitle(Title)?
                 .SetSubtitle(Artist.Title)?
                 .SetIconBitmap(Image);

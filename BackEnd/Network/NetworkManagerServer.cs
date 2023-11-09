@@ -1,11 +1,10 @@
-
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using MWP.Helpers;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP.BackEnd.Network

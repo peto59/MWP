@@ -28,7 +28,7 @@ using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using MWP.BackEnd.Network;
 using MWP.BackEnd;
-using MWP.Helpers;
+using MWP.BackEnd.Player;
 using Octokit;
 using Xamarin.Essentials;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
@@ -39,6 +39,7 @@ using FileProvider = AndroidX.Core.Content.FileProvider;
 using Stream = System.IO.Stream;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP
@@ -51,8 +52,23 @@ namespace MWP
         // public static Slovenska_prostituka player = new Slovenska_prostituka();
         public static APIThrottler throttler = new APIThrottler();
         private static MyBroadcastReceiver _receiver;
+        private static MyMediaBroadcastReceiver _mediaReceiver;
         public static StateHandler stateHandler = new StateHandler();
-        public static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        private static readonly MediaServiceConnection _serviceConnection = new MediaServiceConnection();
+        public static MediaServiceConnection ServiceConnection
+        {
+            get
+            {
+                if (!_serviceConnection.Connected)
+                {
+#if DEBUG
+                    MyConsole.WriteLine($"Session not connected");
+#endif
+                    stateHandler.mainActivity.StartMusicService();
+                }
+                return _serviceConnection;
+            }
+        }
         private const int ActionInstallPermissionRequestCode = 10356;
         private const int ActionPermissionsRequestCode = 13256;
         private Typeface? font;
@@ -77,6 +93,10 @@ namespace MWP
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+#if DEBUG
+            MyConsole.WriteLine("Creating MainActivity");
+#endif
+            stateHandler.mainActivity = this;
             // Finish();   
             Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
@@ -103,6 +123,15 @@ namespace MWP
             stateHandler.SetView(this);
             _receiver = new MyBroadcastReceiver();
             RegisterReceiver(_receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
+            _mediaReceiver = new MyMediaBroadcastReceiver();
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionPlay);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionPause);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionShuffle);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionToggleLoop);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionNextSong);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionPreviousSong);
+            RegisterReceiver(_mediaReceiver, intentFilter);
             
             VersionTracking.Track();
             
@@ -504,12 +533,17 @@ namespace MWP
 
 
             }).Start();
-            
-            
+
+
+            StartMusicService();
+        }
+
+        public void StartMusicService()
+        {
             Intent serviceIntent = new Intent(this, typeof(MediaService));
             
-            StartForegroundService(serviceIntent);
-            if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
+            //StartForegroundService(serviceIntent);
+            if (!BindService(serviceIntent, _serviceConnection, Bind.AutoCreate))
             {
 #if DEBUG
                 MyConsole.WriteLine("Cannot connect to MediaService");

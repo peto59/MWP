@@ -8,10 +8,10 @@ using Android.App;
 using Android.Media.Browse;
 using Android.Support.V4.Media;
 using MWP.BackEnd;
-using MWP.Helpers;
 using Newtonsoft.Json;
 using File = TagLib.File;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP
@@ -244,7 +244,7 @@ namespace MWP
         protected override MediaDescriptionCompat.Builder? GetBuilder()
         {
             return new MediaDescriptionCompat.Builder()
-                .SetMediaId(Title)? //TODO: id?
+                .SetMediaId($"{(byte)MediaType.Song}{Title}")?
                 .SetTitle(Title)?
                 .SetSubtitle(Artist.Title)?
                 .SetIconBitmap(Image);

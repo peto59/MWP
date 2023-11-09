@@ -8,9 +8,9 @@ using Android.App;
 using Android.Media.Browse;
 using Android.Support.V4.Media;
 using MWP.BackEnd;
-using MWP.Helpers;
 using Newtonsoft.Json;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP
@@ -213,7 +213,8 @@ namespace MWP
         public override MediaBrowserCompat.MediaItem? ToMediaItem()
         {
             if (Description == null) return null;
-            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagPlayable | MediaBrowserCompat.MediaItem.FlagBrowsable);
+            //MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagPlayable | MediaBrowserCompat.MediaItem.FlagBrowsable);
+            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagBrowsable);
             return item;
         }
 
@@ -225,7 +226,7 @@ namespace MWP
         protected override MediaDescriptionCompat.Builder? GetBuilder()
         {
             return new MediaDescriptionCompat.Builder()
-                .SetMediaId(Title)? //TODO: id?
+                .SetMediaId($"{(byte)MediaType.Artist}{Title}")?
                 .SetTitle(Title)?
                 .SetIconBitmap(Image);
         }

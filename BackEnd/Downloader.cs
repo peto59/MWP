@@ -12,7 +12,6 @@ using Android.Views;
 using Com.Arthenica.Ffmpegkit;
 using Com.Geecko.Fpcalc;
 using Google.Android.Material.Snackbar;
-using MWP.Helpers;
 using Newtonsoft.Json;
 using YoutubeExplode;
 using YoutubeExplode.Channels;
@@ -21,6 +20,9 @@ using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using Signal = Com.Arthenica.Ffmpegkit.Signal;
+#if DEBUG
+using MWP.Helpers;
+#endif
 
 namespace MWP.BackEnd
 {

@@ -71,6 +71,12 @@ namespace MWP
         Allowed,
         Rejected
     }
-    
+
+    public enum MediaType : byte
+    {
+        Song = 0,
+        Album = 1,
+        Artist = 2
+    }
     
 }

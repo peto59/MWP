@@ -31,8 +31,8 @@ using Android.Views.Inspectors;
 using System.Threading;
 using Java.Util;
 using MWP.BackEnd.Player;
-using MWP.Helpers;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP
@@ -74,7 +74,7 @@ namespace MWP
 					);
 					play_image.LayoutParameters = play_image_params;
 
-					if (MainActivity.stateHandler.IsPlaying)
+					if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
 						play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
 					else
 						play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
@@ -128,7 +128,7 @@ namespace MWP
 							  (int)(20 * scale + 0.5f)
 							);
 							last_image.LayoutParameters = last_image_params;
-							if (MainActivity.stateHandler.IsShuffling)
+							if (MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false)
 							{
 								last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
 							}
@@ -144,7 +144,7 @@ namespace MWP
 							 (int)(20 * scale + 0.5f)
 							);
 							last_image.LayoutParameters = last_image_params;
-							switch (MainActivity.stateHandler.LoopState)
+							switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? Enums.LoopState.None)
 							{
 								case Enums.LoopState.None:
 									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
@@ -176,13 +176,13 @@ namespace MWP
 			);*/
 			if (MainActivity.ServiceConnection.Connected)
 			{
-				if (MainActivity.ServiceConnection.Binder.Service.mediaPlayer.IsPlaying)
+				if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
 				{
-					MainActivity.ServiceConnection.Binder.Service.Pause();
+					MainActivity.ServiceConnection.Binder?.Service.Pause();
 				}
 				else
 				{
-					MainActivity.ServiceConnection.Binder.Service.Play();
+					MainActivity.ServiceConnection.Binder?.Service.Play();
 				}
 			}
 		}
@@ -269,14 +269,11 @@ namespace MWP
 				shuffle.Click += delegate
 				{
 					ImageView? shuffleImg = (ImageView?)shuffle.GetChildAt(0);
-					shuffleImg?.SetImageBitmap(MainActivity.stateHandler.IsShuffling
+					shuffleImg?.SetImageBitmap(MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false
 						? BitmapFactory.DecodeStream(context.Assets?.Open("shuffle.png"))
 						: BitmapFactory.DecodeStream(context.Assets?.Open("shuffle_on.png")));
-					context.StartService(
-						new Intent(MediaService.ActionShuffle, null, context, typeof(MediaService))
-						.PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling)
-					);
-
+					
+					MainActivity.ServiceConnection.Binder?.Service.Shuffle(!MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false);
 				};
 
 				LinearLayout repeat = cube_creator("small", scale, context, "repeat");
@@ -284,28 +281,19 @@ namespace MWP
 				repeat.Click += delegate
 				{
 					ImageView? repeatImg = (ImageView?)repeat.GetChildAt(0);
-					switch (MainActivity.stateHandler.LoopState)
+					switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? Enums.LoopState.None)
 					{
 						case Enums.LoopState.None:
 							repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
-							context.StartService(
-								new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
-								.PutExtra("loopState", 1)
-							);
+							MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.All);
 							break;
 						case Enums.LoopState.All:
 							repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
-                            context.StartService(
-                            new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
-								.PutExtra("loopState", 2)
-							);
+							MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.Single);
                             break;
 						case Enums.LoopState.Single:
 							repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
-							context.StartService(
-								new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
-								.PutExtra("loopState", 0)
-							);
+							MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.None);
 							break;
 					}
 
@@ -316,9 +304,7 @@ namespace MWP
 				LinearLayout last = cube_creator("small", scale, context, "left");
 				last.Click += delegate
 				{
-					context.StartService(
-						new Intent(MediaService.ActionPreviousSong, null, context, typeof(MediaService))
-					);
+					MainActivity.ServiceConnection.Binder?.Service.PreviousSong();
 				};
 				player_buttons.Add(last, "last");
 
@@ -329,9 +315,7 @@ namespace MWP
 				LinearLayout next = cube_creator("small", scale, context, "right");
 				next.Click += delegate
 				{
-					context.StartService(
-						new Intent(MediaService.ActionNextSong, null, context, typeof(MediaService))
-					);
+					MainActivity.ServiceConnection.Binder?.Service.NextSong();
 				};
 				player_buttons.Add(next, "next");
 
@@ -371,36 +355,30 @@ namespace MWP
 		            MainActivity.stateHandler.ProgTimeState = !MainActivity.stateHandler.ProgTimeState;
 	            };
 
-	            if (MainActivity.stateHandler.IsPlaying)
+	            if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
 	            {
-		            TextView constTime = context.FindViewById<TextView>(Resource.Id.end_time);
-		            SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
+		            TextView? constTime = context.FindViewById<TextView>(Resource.Id.end_time);
+		            SeekBar? sek = context.FindViewById<SeekBar>(Resource.Id.seek);
 		            if (constTime != null)
-			            constTime.Text = converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration);
+			            constTime.Text = converts_millis_to_seconds_and_minutes(MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0);
 		            if (sek != null)
 		            {
-			            sek.Max = MainActivity.stateHandler.Duration / 1000;
-			            sek.SetProgress(MainActivity.stateHandler.CurrentPosition / 1000, true);
+			            sek.Max = (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) / 1000;
+			            sek.SetProgress((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.CurrentPosition ?? 0) / 1000, true);
 			            if (MainActivity.stateHandler.ProgTimeState)
 			            {
 				            progTime.Text = "-" +
-				                            converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration - sek.Progress * 1000);
+				                            converts_millis_to_seconds_and_minutes((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) - sek.Progress * 1000);
 			            }
 			            else
 			            {
 				            progTime.Text = converts_seconds_to_seconds_and_minutes(sek.Progress);
 			            }
 
-			            sek.ProgressChanged += (object sender, SeekBar.ProgressChangedEventArgs e) =>
+			            sek.ProgressChanged += (_, e) =>
 			            {
 				            if (!e.FromUser) return;
-#if DEBUG
-				            MyConsole.WriteLine(sek.Progress.ToString());
-#endif
-				            context.StartService(
-					            new Intent(MediaService.ActionSeekTo, null, context, typeof(MediaService))
-						            .PutExtra("millis", sek.Progress * 1000)
-				            );
+				            MainActivity.ServiceConnection.Binder?.Service.SeekTo(sek.Progress * 1000);
 			            };
 		            }
 
@@ -411,17 +389,18 @@ namespace MWP
 
 		public static void StartMovingProgress(CancellationToken token, AppCompatActivity context)
 		{
-            SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
-            TextView progTime = context.FindViewById<TextView>(Resource.Id.progress_time);
+            SeekBar? sek = context.FindViewById<SeekBar>(Resource.Id.seek);
+            TextView? progTime = context.FindViewById<TextView>(Resource.Id.progress_time);
             _ = Interval.SetIntervalAsync(() =>
 			{
-                sek?.SetProgress(MainActivity.stateHandler.CurrentPosition / 1000, true);
+                sek?.SetProgress((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.CurrentPosition ?? 0) / 1000, true);
                 if (MainActivity.stateHandler.ProgTimeState)
                 {
 	                if (progTime == null) return;
 	                if (sek != null)
 		                progTime.Text = "-" +
-		                                converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration - sek.Progress * 1000);
+		                                converts_millis_to_seconds_and_minutes(
+			                                (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) - (sek.Progress * 1000));
                 }
 				else
                 {

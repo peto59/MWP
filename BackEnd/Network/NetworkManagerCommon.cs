@@ -20,8 +20,8 @@ using Socket = System.Net.Sockets.Socket;
 using SocketType = System.Net.Sockets.SocketType;
 using TransportType = Android.Net.TransportType;
 using Mono.Nat;
-using MWP.Helpers;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP.BackEnd.Network

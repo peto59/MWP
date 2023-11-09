@@ -1,13 +1,14 @@
-using System;
 using Android.Content;
 using Android.OS;
+#if DEBUG
 using MWP.Helpers;
+#endif
 
 namespace MWP
 {
     public class MediaServiceConnection : Java.Lang.Object, IServiceConnection
     {
-        public MediaServiceBinder Binder { get; private set; }
+        public MediaServiceBinder? Binder { get; private set; }
         public bool Connected { get; private set; }
 
         public void OnServiceConnected(ComponentName? name, IBinder? binder)
@@ -17,13 +18,12 @@ namespace MWP
             if (tempBinder != null)
             {
                 Binder = tempBinder;
-                MediaService? serviceInstance = Binder?.Service;
 #if DEBUG
                 MyConsole.WriteLine("OnServiceConnected");
 #endif
 
                 // You can now use the service instance to interact with your foreground service
-                if (serviceInstance != null)
+                if (Binder?.Service != null)
                 {
                     Connected = true;
 #if DEBUG
@@ -40,7 +40,7 @@ namespace MWP
         public void OnServiceDisconnected(ComponentName? name)
         {
             Connected = false;
-            //Binder = null;
+            Binder = null;
         }
 
         /*public void Dispose()

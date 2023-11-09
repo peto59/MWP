@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -8,8 +9,11 @@ using Android.Runtime;
 using Android.Support.V4.Media;
 using Android.Support.V4.Media.Session;
 using AndroidX.Media;
+using AndroidX.Media.Utils;
 using MWP.BackEnd;
+#if DEBUG
 using MWP.Helpers;
+#endif
 
 namespace MWP
 {
@@ -18,30 +22,19 @@ namespace MWP
     public class MyMediaBrowserService : MediaBrowserServiceCompat
     {
         private const string MY_MEDIA_ROOT_ID = "media_root_id";
-        private static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        //private static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
       
         public override void OnCreate() {
             base.OnCreate();
-            /*Intent serviceIntent = new Intent(this, typeof(MediaService));
-            
-            StartForegroundService(serviceIntent);
-            if (!BindService(serviceIntent, ServiceConnection, Bind.Important))
-            {
-#if DEBUG
-                MyConsole.WriteLine("Cannot connect to MediaService");
-#endif
-            }*/
-
             while (!MainActivity.ServiceConnection.Connected)
             {
-#if DEBUG
+            #if DEBUG
                 MyConsole.WriteLine("Waiting for service");
-#endif
+            #endif
                 Thread.Sleep(25);
             }
-
-            if (ServiceConnection.Binder != null) 
-                SessionToken = ServiceConnection.Binder.Service.Session.SessionToken;
+            if (MainActivity.ServiceConnection.Binder != null) 
+                SessionToken = MainActivity.ServiceConnection.Binder.Service.Session.SessionToken;
 #if DEBUG
             else
                 MyConsole.WriteLine("Empty binder");
@@ -57,6 +50,9 @@ namespace MWP
         {
             if (MainActivity.stateHandler.Songs.Count == 0)
             {
+#if DEBUG
+                MyConsole.WriteLine("Generating list");
+#endif
                 new Thread(() => {
                     FileManager.DiscoverFiles(true);
                     if (MainActivity.stateHandler.Songs.Count < FileManager.GetSongsCount())
@@ -97,9 +93,19 @@ namespace MWP
         {
             if (!ValidateClient(clientPackageName, clientUid))
             {
+#if DEBUG
+                MyConsole.WriteLine("OnGetRoot returning null");
+#endif
                 return null;
             }
-            return new BrowserRoot(MY_MEDIA_ROOT_ID, null);
+#if DEBUG
+            MyConsole.WriteLine("OnGetRoot returning BrowserRoot");
+#endif
+            Bundle extras = new Bundle();
+            extras.PutInt(MediaConstants.DescriptionExtrasKeyContentStyleBrowsable, MediaConstants.DescriptionExtrasValueContentStyleGridItem);
+            extras.PutInt(MediaConstants.DescriptionExtrasKeyContentStylePlayable, MediaConstants.DescriptionExtrasValueContentStyleListItem);
+            extras.PutBoolean(MediaConstants.BrowserServiceExtrasKeySearchSupported, true);
+            return new BrowserRoot(MY_MEDIA_ROOT_ID, extras);
 
         }
         
@@ -110,9 +116,7 @@ namespace MWP
                 LoadFiles();
             }*/
 #if DEBUG
-            MyConsole.WriteLine($"OnLoadChildren");
-            MyConsole.WriteLine($"cnt {MainActivity.stateHandler.Songs.Count}");
-            MyConsole.WriteLine($"art cnt {MainActivity.stateHandler.Artists.Count}");
+            MyConsole.WriteLine("OnLoadChildren");
 #endif
             
             List<MediaBrowserCompat.MediaItem?> mediaItems = new List<MediaBrowserCompat.MediaItem?>();
@@ -123,7 +127,51 @@ namespace MWP
             }
             else
             {
-                
+                MediaType mediaType = (MediaType)(parentId[0] - '0');
+#if DEBUG
+                MyConsole.WriteLine($"MediaType {mediaType}");
+#endif
+                parentId = parentId[1..];
+#if DEBUG
+                MyConsole.WriteLine($"parentId {parentId}");
+#endif
+                switch (mediaType)
+                {
+                    case MediaType.Album:
+                        List<Album> albums = MainActivity.stateHandler.Albums.Search(parentId);
+                        if (albums.Count > 0)
+                        {
+                            mediaItems.AddRange(albums[0].Songs.Select(song => song.ToMediaItem()));
+                        }
+#if DEBUG
+                        else
+                        {
+                            MyConsole.WriteLine($"No albums found for {parentId}");
+                        }
+#endif
+                        break;
+                    case MediaType.Artist:
+                        List<Artist> artists = MainActivity.stateHandler.Artists.Search(parentId);
+                        if (artists.Count > 0)
+                        {
+                            mediaItems.AddRange(artists[0].Albums.Where(alb => alb.Title != "Uncategorized").Select(alb => alb.ToMediaItem()));
+                            Album? album = artists[0].Albums.FirstOrDefault(alb => alb.Title == "Uncategorized");
+                            if (album != null)
+                            {
+                                mediaItems.AddRange(album.Songs.Select(song => song.ToMediaItem()));
+                            }
+                        }
+#if DEBUG
+                        else
+                        {
+                            MyConsole.WriteLine($"No artists found for {parentId}");
+                        }
+#endif
+                        break;
+                    case MediaType.Song:
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
             JavaList<MediaBrowserCompat.MediaItem?> javaMediaItems = new JavaList<MediaBrowserCompat.MediaItem?>(mediaItems);
             result.SendResult(javaMediaItems);
@@ -142,13 +190,13 @@ namespace MWP
 
         ~MyMediaBrowserService()
         {
-            ServiceConnection.Dispose();
+            //ServiceConnection.Dispose();
         }
 
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            ServiceConnection.Dispose();
+            //ServiceConnection.Dispose();
             base.Dispose(disposing);
         }
     }

@@ -28,7 +28,6 @@ namespace MWP.BackEnd.Player
             {
                 if (value == _isShuffled) return;
                 _isShuffled = value;
-                MainActivity.stateHandler.shuffle = value;
                 if (value)
                     Shuffle(); 
                 else
@@ -178,7 +177,6 @@ namespace MWP.BackEnd.Player
         {
             state %= 3;
             LoopState = (Enums.LoopState)state;
-            MainActivity.stateHandler.loopState = LoopState;
         }
         //------------------------Functions------------------------
     }

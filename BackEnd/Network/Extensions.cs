@@ -6,9 +6,9 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
-using MWP.Helpers;
 using Newtonsoft.Json;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP.BackEnd.Network

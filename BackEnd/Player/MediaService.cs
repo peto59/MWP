@@ -15,8 +15,8 @@ using Android.Graphics;
 using Android.Support.V4.Media.Session;
 using Android.Support.V4.Media;
 using MWP.BackEnd.Player;
-using MWP.Helpers;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP
@@ -25,51 +25,8 @@ namespace MWP
 	//TODO: https://developer.android.com/training/cars/media
 	public class MediaService : Service, AudioManager.IOnAudioFocusChangeListener
 	{
-		///<summary>
-		///Requests focus and starts playing new song or resumes playback if playback was paused
-		///</summary>
-		public const string ActionPlay = "ActionPlay";
-
-		///<summary>
-		///Pauses playback
-		///</summary>
-		public const string ActionPause = "ActionPause";
-
-		///<summary>
-		///Stops playing and abandons focus
-		///</summary>
-		public const string ActionStop = "ActionStop";
-		
-		///<summary>
-		///Shuffles or unshuffles queue and updates shuffling for all new queues oposite to last state
-		///</summary>
-		public const string ActionShuffle = "ActionShuffle";
-
-		///<summary>
-		///Changes current loop state based on last state
-		///</summary>
-		public const string ActionToggleLoop = "ActionToggleLoop";
-
-		///<summary>
-		///Toggles between playing and being paused
-		///</summary>
-		public const string ActionTogglePlay = "ActionTogglePlay";
-
-		///<summary>
-		///Plays next song in queue
-		///</summary>
-		public const string ActionNextSong = "ActionNextSong";
-
-		///<summary>
-		///Plays previous song in queue
-		///</summary>
-		public const string ActionPreviousSong = "ActionPreviousSong";
-		///<summary>
-		///Moves playback of current song intent extra int time in milliseconds
-		///</summary>
-		public const string ActionSeekTo = "ActionSeekTo";
-
 		private MediaSessionCompat? session;
+		public IBinder Binder { get; private set; }
 		
 		/// <summary>
 		/// handle for current media session
@@ -101,21 +58,6 @@ namespace MWP
 		private bool isSkippingToNext;
 		private bool isSkippingToPrevious;
 		private bool isBuffering = true;
-		
-
-
-        public override void OnCreate()
-		{
-			base.OnCreate();
-			InnitPlayer();
-			InnitAudioManager();
-			InnitSession();
-			InnitFocusRequest();
-			InnitNotification();
-#if DEBUG
-            MyConsole.WriteLine("CREATING NEW SESSION");
-#endif
-		}
 		public override void OnDestroy()
 		{
 			CleanUp();
@@ -134,7 +76,7 @@ namespace MWP
 			};
 			mediaPlayer.Completion += delegate
 			{
-				NextSong();
+				NextSong(false);
 			};
 			mediaPlayer.BufferingUpdate += (_, e) =>
 			{
@@ -145,7 +87,6 @@ namespace MWP
                 UpdatePlaybackState();
             };
 			MediaPlayer m = mediaPlayer;
-			MainActivity.stateHandler.setMediaPlayer(ref m);
         }
 
 		///<summary>
@@ -263,44 +204,14 @@ namespace MWP
 		/// <inheritdoc />
 		public override StartCommandResult OnStartCommand(Intent? intent, StartCommandFlags flags, int startId)
 		{
-			switch (intent?.Action)
-			{
-				case ActionPlay:
-					Play();
-					break;
-				case ActionPause:
-					Pause();
-					break;
-				case ActionStop:
-					Stop();
-					break;
-				case ActionShuffle:
-					Shuffle(intent.GetBooleanExtra("shuffle", false));
-					break;
-				case ActionTogglePlay:
-					if ((bool)mediaPlayer?.IsPlaying)
-					{
-						Pause();
-					}
-					else
-					{
-						if (isUsed)
-						{
-							Play();
-						}
-					}
-					break;
-				case ActionNextSong:
-					NextSong();
-					break;
-				case ActionPreviousSong:
-					PreviousSong();
-					break;
-				case ActionSeekTo:
-					SeekTo(intent.GetIntExtra("millis", 0));
-					break;
-			}
-            intent?.Dispose();
+			InnitPlayer();
+			InnitAudioManager();
+			InnitSession();
+			InnitFocusRequest();
+			InnitNotification();
+#if DEBUG
+			MyConsole.WriteLine("CREATING NEW SESSION");
+#endif
 			return StartCommandResult.Sticky;
 		}
 		private long GetAvailableActions()
@@ -418,7 +329,7 @@ namespace MWP
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyTitle,
 				song.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplaySubtitle,
-				song.Album + song.Artist.Title);
+				song.Artist.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAlbum,
 				song.Album.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAlbumArtist,
@@ -440,7 +351,7 @@ namespace MWP
 		///<summary>
 		///Requests focus and starts playing new song or resumes playback if playback was paused
 		///</summary>
-		public void Play()
+		public void Play(bool reset = false)
 		{
 			if (QueueObject.QueueCount == 0)
 			{
@@ -479,7 +390,7 @@ namespace MWP
 			{
 				InnitPlayer();
 			}
-			if (!IsPaused)
+			if (!IsPaused || reset)
 			{
 				mediaPlayer!.Reset();
 #if DEBUG
@@ -525,7 +436,7 @@ namespace MWP
 		///<summary>
 		///Stops playing and abandons focus
 		///</summary>
-		private void Stop()
+		public void Stop()
 		{
 			mediaPlayer?.Stop();
 			AbandonFocus();
@@ -536,12 +447,16 @@ namespace MWP
 		///<summary>
 		///Plays next song in queue
 		///</summary>
-		public void NextSong()
+		public void NextSong(bool user = true)
 		{
 			if (mediaPlayer == null) return;
 			isSkippingToNext = true;
 			IsPaused = false;
-			if (QueueObject.IncrementIndex())
+			if (!user && QueueObject.LoopState == Enums.LoopState.Single)
+			{
+				Play();
+			}
+			else if (QueueObject.IncrementIndex())
 			{
 				Play();
 			}
@@ -551,7 +466,7 @@ namespace MWP
 		///<summary>
 		///Plays previous song in queue
 		///</summary>
-		private void PreviousSong()
+		public void PreviousSong()
 		{
 			if (mediaPlayer == null) return;
 			if (mediaPlayer.CurrentPosition > 10000)//if current song is playing longer than 10 seconds
@@ -566,7 +481,7 @@ namespace MWP
 			isSkippingToPrevious = false;
 		}
 
-		private void SeekTo(int millis)
+		public void SeekTo(int millis)
 		{
 #if DEBUG
             MyConsole.WriteLine("SEEEEEKING");
@@ -585,14 +500,18 @@ namespace MWP
 			QueueObject.GenerateQueue(source, ind);
 			if (play)
 			{
-				//todo: reset
-				Play();
+				Play(true);
 			}
 		}
 		
 		public void GenerateQueue(MusicBaseContainer source, int ind = 0, bool play = true)
 		{
 			GenerateQueue(source.Songs, ind, play);
+		}
+		public void GenerateQueue(IEnumerable<MusicBaseContainer> source, int ind = 0, bool play = true)
+		{
+			IEnumerable<Song> songs = source.SelectMany(s => s.Songs);
+			GenerateQueue(songs, ind, play);
 		}
 
 		///<summary>
@@ -660,6 +579,14 @@ namespace MWP
             MyConsole.WriteLine("TOGGLE LOOP");
 #endif
         }
+
+		///<summary>
+		///Cycles through loop states based on <paramref name="state"/> value
+		///</summary>
+		public void ToggleLoop(Enums.LoopState loopState)
+		{
+			ToggleLoop((int)loopState);
+		}
 
 		///<summary>
 		///Requests audio focus
@@ -811,7 +738,8 @@ namespace MWP
 		public override IBinder OnBind(Intent? intent)
 		{
 			//TODO: publish interface?
-			return new MediaServiceBinder(this);
+			Binder = new MediaServiceBinder(this);
+			return Binder;
 		}
 
 		protected override void Dispose(bool disposing)

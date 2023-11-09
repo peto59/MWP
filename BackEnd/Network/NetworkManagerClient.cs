@@ -6,11 +6,11 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using Java.Lang;
-using MWP.Helpers;
 using Newtonsoft.Json;
 using Xamarin.Essentials;
 using Thread = System.Threading.Thread;
 #if DEBUG
+using MWP.Helpers;
 #endif
 
 namespace MWP.BackEnd.Network
