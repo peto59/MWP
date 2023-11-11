@@ -261,6 +261,7 @@ namespace Ass_Pain
                         {
                             dialog?.Hide();
 
+                            
                             TagManagerFragment tagFrag = new TagManagerFragment(context, assets);
                             var fragmentTransaction = manager.BeginTransaction();
                             fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, tagFrag);

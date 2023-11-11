@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Android.Animation;
 using Android.Content;
 using Android.Content.Res;
 using Android.Graphics;
@@ -8,6 +9,8 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using AndroidX.Fragment.App;
+using Ass_Pain.Helpers;
+using Google.Android.Material.FloatingActionButton;
 using Java.IO;
 
 namespace Ass_Pain
@@ -23,13 +26,17 @@ namespace Ass_Pain
         private AssetManager? assets;
 
         private ImageView? songCover;
+        
+        private string? initalTitleIn;
+        private string? initialAlbumIn;
+        private string? initialAuthorIn;
+        private string? initialAlauIn;
+        
+        private FloatingActionButton? saveChanges;
+        private TextView? backButton;
+        
 
-        private EditText? titleIn;
-        private EditText? albumIn;
-        private EditText? authorIn;
-        private EditText? alauIn;
-    
-
+        
         /// <inheritdoc cref="context"/>
         public TagManagerFragment(Context ctx, AssetManager? assets)
         {
@@ -37,6 +44,11 @@ namespace Ass_Pain
             this.assets = assets;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
+
+            initialAlauIn = "";
+            initialAuthorIn = "";
+            initalTitleIn = "google";
+            initialAlbumIn = "";
         }
 
 
@@ -49,9 +61,11 @@ namespace Ass_Pain
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.tag_manager_main);
 
+            ((MainActivity)Activity).Title = "Tag Manager";
             
-          
-
+            /*
+             * changing fonts 
+             */
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_album_label);
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_aual_label);
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_author_label);
@@ -62,7 +76,21 @@ namespace Ass_Pain
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_author_field);
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_title_field);
 
+            SetGenericFont<TextView>(view, Resource.Id.tagmngr_back_button);
             
+            /*
+             * Back Button handle
+             */
+            backButton = view?.FindViewById<TextView>(Resource.Id.tagmngr_back_button);
+            if (backButton != null)
+                backButton.Click += (sender, args) =>
+                {
+                    ParentFragmentManager.PopBackStack();
+                };
+
+            /*
+             * load image
+             */ 
             songCover = view?.FindViewById<ImageView>(Resource.Id.song_cover_tag_manager);
             try
             {
@@ -74,15 +102,52 @@ namespace Ass_Pain
             {
                 return view;
             }
+
             
+            /*
+             * Save Button
+             */
+            saveChanges = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.tag_manager_savebtn);
+            if (saveChanges != null)
+            {
+                saveChanges.Visibility = ViewStates.Gone;
+                
+                if (BlendMode.Multiply != null)
+                    saveChanges?.Background?.SetColorFilter(
+                        new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                    );
+            }
+
+            // if (createPlaylist != null) createPlaylist.Click += CreatePlaylistPopup;
+            
+            
+            
+            /*
+             * Inputs, handle on change, appearance of save button
+             */
+            if (view != null)
+            {
+                if (initalTitleIn   != null) HandleSaveButtonAppear(Resource.Id.tagmngr_title_field, initalTitleIn, view);
+                if (initialAlauIn   != null) HandleSaveButtonAppear(Resource.Id.tagmngr_alau_field, initialAlauIn, view);
+                if (initialAuthorIn != null) HandleSaveButtonAppear(Resource.Id.tagmngr_author_field, initialAuthorIn, view);
+                if (initialAlbumIn  != null) HandleSaveButtonAppear(Resource.Id.tagmngr_album_field, initialAlbumIn, view);
+            }
+
             return view;
         }
 
 
-        private void SetFont(View? view, int id)
+        private void HandleSaveButtonAppear(int id, string inital, View view)
         {
-            TextView? label = view?.FindViewById<TextView>(id);
-            if (label != null) label.Typeface = font;
+            EditText? input = view?.FindViewById<EditText>(id);
+            if (input != null)
+                input.TextChanged += (_, _) =>
+                {
+                    if (inital?.Equals(input.Text) == false)
+                        if (saveChanges != null) saveChanges.Visibility = ViewStates.Visible;
+                    if (inital?.Equals(input.Text) == true)
+                        if (saveChanges != null) saveChanges.Visibility = ViewStates.Gone;
+                };
         }
 
         private void SetGenericFont<T>(View? view, int id)
