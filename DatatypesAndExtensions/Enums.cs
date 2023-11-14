@@ -1,6 +1,6 @@
 using System;
 
-namespace Ass_Pain
+namespace MWP
 {
     internal enum SongSelectionDialogActions
     {
@@ -64,4 +64,19 @@ namespace Ass_Pain
         Forbidden,
         NoState
     }
+
+    internal enum CanUseNetworkState
+    {
+        None,
+        Allowed,
+        Rejected
+    }
+
+    public enum MediaType : byte
+    {
+        Song = 0,
+        Album = 1,
+        Artist = 2
+    }
+    
 }

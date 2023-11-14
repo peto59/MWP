@@ -21,12 +21,13 @@
     android:layout_gravity="start"
     android:fitsSystemWindows="true"
     app:headerLayout="@layout/nav_header_main"
-    app:menu="@menu/activity_main_drawer">
+    >
+      <!-- app:menu="@menu/activity_main_drawer" -->
     
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:app="http://schemas.android.com/apk/res-auto"
             android:layout_width="match_parent"
-            android:layout_height="500dp"
+            android:layout_height="match_parent"
             android:background="@drawable/side_nav_bar"
             android:gravity="center"
             android:orientation="vertical"
@@ -112,6 +113,111 @@
                     android:text="0:00"/>
             
             </LinearLayout>
+
+            <View
+                    android:layout_width="350dp"
+                    android:layout_height="1dp"
+                    android:background="@color/lightGray"
+                    android:layout_marginTop="20dp" android:layout_marginBottom="30dp"/>
+            
+            <LinearLayout 
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_horizontal"
+                    android:layout_marginBottom="10dp"
+            >
+                <TextView android:layout_width="110dp" android:layout_height="50dp"
+                          android:text="Songs"
+                          android:background="@drawable/rounded_button"
+                          android:id="@+id/MainNavManuItemSongs"
+                          android:gravity="center_vertical"
+                          android:layout_marginBottom="10dp"
+                          android:textColor="#ffffff"
+                          android:textSize="16dp"
+                          android:drawableStart="@drawable/music"
+                          android:paddingHorizontal="10dp"
+                          
+                />
+                <TextView android:layout_width="115dp" android:layout_height="50dp"
+                          android:text="Albums"
+                          android:background="@drawable/rounded_button"
+                          android:id="@+id/MainNavManuItemAlbums"
+                          android:gravity="center_vertical"
+                          android:layout_marginBottom="10dp"
+                          android:textColor="#ffffff"
+                          android:textSize="16dp"
+                          android:drawableStart="@drawable/albums"
+                          android:layout_marginLeft="10dp"
+                          android:paddingHorizontal="10dp"
+                          
+                          
+                />
+                <TextView android:layout_width="120dp" android:layout_height="50dp"
+                          android:text="Playlists"
+                          android:background="@drawable/rounded_button"
+                          android:id="@+id/MainNavManuItemPlaylists"
+                          android:gravity="center_vertical"
+                          android:layout_marginBottom="10dp"
+                          android:textColor="#ffffff"
+                          android:textSize="16dp"
+                          android:drawableStart="@drawable/playlists"
+                          android:layout_marginLeft="10dp"
+                          android:paddingHorizontal="10dp"
+                          
+                          
+                />
+            </LinearLayout>
+            
+            <ScrollView android:layout_width="match_parent" android:layout_height="190dp" 
+                        android:background="@drawable/rounded_view_white"
+            >
+                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                android:orientation="vertical" android:gravity="center_horizontal">
+                    
+                    
+                    <TextView android:layout_width="350dp" android:layout_height="50dp"
+                              android:text="Download"
+                              android:gravity="center_vertical"
+                              android:background="@drawable/rounded"
+                              android:id="@+id/MainNavManuItemDownload"
+                              android:paddingHorizontal="43dp"
+                              android:paddingVertical="12dp"
+                              android:layout_marginTop="10dp"
+                              android:textColor="#ffffff"
+                              android:textSize="16dp"
+                              android:drawablePadding="8dp"
+                              android:drawableStart="@drawable/download"
+                    />
+                    <TextView android:layout_width="350dp" android:layout_height="50dp"
+                              android:text="Share"
+                              android:gravity="center_vertical"
+                              android:background="@drawable/rounded"
+                              android:id="@+id/MainNavManuItemUpload"
+                              android:paddingHorizontal="43dp"
+                              android:paddingVertical="12dp"
+                              android:layout_marginTop="10dp"
+                              android:textColor="#ffffff"
+                              android:textSize="16dp"
+                              android:drawablePadding="8dp"
+                              android:drawableStart="@drawable/share"
+                    />
+                    <TextView android:layout_width="350dp" android:layout_height="50dp"
+                              android:text="Settings"
+                              android:gravity="center_vertical"
+                              android:background="@drawable/rounded"
+                              android:id="@+id/MainNavManuItemSettings"
+                              android:paddingHorizontal="43dp"
+                              android:paddingVertical="12dp"
+                              android:layout_marginTop="10dp"
+                              android:textColor="#ffffff"
+                              android:textSize="16dp"
+                              android:drawablePadding="8dp"
+                              android:drawableStart="@drawable/settings"
+                    />
+                    
+                  
+                   
+                </LinearLayout>
+            </ScrollView>
 
         </LinearLayout>
 

@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using Android.Webkit;
 
-namespace Ass_Pain
+namespace MWP
 {
     public class HelloWebViewClient : WebViewClient
     {

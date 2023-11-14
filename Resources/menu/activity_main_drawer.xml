@@ -5,22 +5,21 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_camera"
-            android:icon="@drawable/ic_menu_camera"
+            android:id="@+id/navBarItemSongs"
+            android:icon="@drawable/music"
             android:title="Songs" />
         <item
-            android:id="@+id/nav_gallery"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="Equalizer" />
-        <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
+            android:id="@+id/navBarItemYoutube"
+            android:icon="@drawable/download"
             android:title="Youtube" />
         <item 
-            android:id="@+id/nav_share"
-            android:icon="@drawable/ic_menu_share"
-            android:title="Share"
-        />
+            android:id="@+id/navBarItemShare"
+            android:icon="@drawable/share"
+            android:title="Share"/>
+        <item
+            android:id="@+id/navBarItemSettings"
+            android:icon="@drawable/settings"
+            android:title="Settings" />
     </group>
 
    

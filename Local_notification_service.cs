@@ -10,16 +10,17 @@ using AndroidX.Core.App;
 using System;
 using System.IO;
 using System.Runtime.Remoting.Contexts;
+using MWP.BackEnd.Player;
 using Xamarin.Essentials;
 //using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
 using Context = Android.Content.Context;
 using TaskStackBuilder = AndroidX.Core.App.TaskStackBuilder;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     public class Local_notification_service
     {
@@ -58,81 +59,82 @@ namespace Ass_Pain
                 notificationBuilder.MActions?.Clear();
 
                 notificationBuilder.AddAction(
-                      MainActivity.stateHandler.IsShuffling ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2, "shuffle",
+                    
+                    MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2, "shuffle",
                       PendingIntent.GetService(
-                          AndroidApp.Context, Convert.ToInt32(MainActivity.stateHandler.IsShuffling),
-                          new Intent(MediaService.ActionShuffle, null, AndroidApp.Context, typeof(MediaService))
-                          .PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling), PendingIntentFlags.Mutable
+                          AndroidApp.Context, Convert.ToInt32(MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false),
+                          new Intent(MyMediaBroadcastReceiver.ActionShuffle, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
+                          .PutExtra("shuffle", !MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false), PendingIntentFlags.Mutable
                       )
                   );
 
-                if((MainActivity.ServiceConnection.Binder?.Service?.Index > 0 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
+                if(MainActivity.ServiceConnection.Binder?.Service?.QueueObject.ShowPrevious ?? false){
                     notificationBuilder.AddAction(
                         Resource.Drawable.previous, "Previous",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.ActionPreviousSong, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
 
-                if (MainActivity.stateHandler.IsPlaying)
+                if (MainActivity.ServiceConnection.Binder?.Service?.mediaPlayer?.IsPlaying ?? false)
                 {
                     notificationBuilder.AddAction(
                         Resource.Drawable.pause_fill1_wght200_grad200_opsz48, "pause",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionPause, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.ActionPause, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
                 else
                 {
                     notificationBuilder.AddAction(
                         Resource.Drawable.play, "play",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionTogglePlay, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.ActionPlay, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
                 
-                if((MainActivity.ServiceConnection.Binder?.Service?.Index < MainActivity.ServiceConnection.Binder?.Service?.Queue.Count -1 || MainActivity.ServiceConnection.Binder?.Service?.LoopState == 1) && MainActivity.ServiceConnection.Binder?.Service?.LoopState != 2){
+                if(MainActivity.ServiceConnection.Binder?.Service?.QueueObject.ShowNext ?? false){
                     notificationBuilder.AddAction(
                         Resource.Drawable.next, "next",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.ActionNextSong, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
 
-                int loopState = MainActivity.stateHandler.LoopState;
+                Enums.LoopState loopState = MainActivity.ServiceConnection.Binder?.Service?.QueueObject.LoopState ?? Enums.LoopState.None;
                 switch (loopState)
                 {
-                    case 0:
+                    case Enums.LoopState.None:
 #if DEBUG
                         MyConsole.WriteLine("no_repeat >>>>>>>>");
 #endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.no_repeat, "no_repeat",
                             PendingIntent.GetService(
-                                AndroidApp.Context, loopState,
-                                new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                                AndroidApp.Context, (int)loopState,
+                                new Intent(MyMediaBroadcastReceiver.ActionToggleLoop, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                                     .PutExtra("loopState", 1), PendingIntentFlags.Mutable
                             )
                         );
                         break;
-                    case 1:
+                    case Enums.LoopState.All:
 #if DEBUG
                         MyConsole.WriteLine("repeat >>>>>>>>");
 #endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.repeat, "repeat",
                             PendingIntent.GetService(
-                                AndroidApp.Context, loopState,
-                                new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                                AndroidApp.Context, (int)loopState,
+                                new Intent(MyMediaBroadcastReceiver.ActionToggleLoop, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                                     .PutExtra("loopState", 2), PendingIntentFlags.Mutable
                             )
                         );
                         break;
-                    case 2:
+                    case Enums.LoopState.Single:
 #if DEBUG
                         MyConsole.WriteLine("repeat_one >>>>>>>>");
 #endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.repeat_one, "repeat_one",
                             PendingIntent.GetService(
-                                AndroidApp.Context, loopState,
-                                new Intent(MediaService.ActionToggleLoop, null, AndroidApp.Context, typeof(MediaService))
+                                AndroidApp.Context, (int)loopState,
+                                new Intent(MyMediaBroadcastReceiver.ActionToggleLoop, null, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                                     .PutExtra("loopState", 0), PendingIntentFlags.Mutable
                             )
                         );
@@ -172,7 +174,7 @@ namespace Ass_Pain
                 create_notification_channel();
             }
             
-            Intent songsIntent = new Intent(AndroidApp.Context, typeof(AllSongs)).PutExtra("action", "openDrawer");
+            Intent songsIntent = new Intent(AndroidApp.Context, typeof(MainActivity)).PutExtra("action", "openDrawer");
             /*TaskStackBuilder stackBuilder = TaskStackBuilder.Create(AndroidApp.Context);
             stackBuilder.AddNextIntentWithParentStack(songsIntent);
             PendingIntent songsPendingIntent =

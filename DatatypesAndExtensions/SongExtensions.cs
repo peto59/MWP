@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace Ass_Pain
+namespace MWP
 {
     public static class SongExtensions
     {
@@ -12,7 +12,7 @@ namespace Ass_Pain
         ///</summary>
         public static List<Song> OrderAlphabetically( [NotNull] this List<Song> songs, bool reverse = false)
         {
-            return reverse ? songs.OrderByDescending(song => song.Name).ToList() : songs.OrderBy(song => song.Name).ToList();
+            return reverse ? songs.OrderByDescending(song => song.Title).ToList() : songs.OrderBy(song => song.Title).ToList();
         }
         
         ///<summary>

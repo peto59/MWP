@@ -30,11 +30,12 @@ using Xamarin.Essentials;
 using Android.Views.Inspectors;
 using System.Threading;
 using Java.Util;
+using MWP.BackEnd.Player;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
 	public static class side_player
 	{
@@ -73,7 +74,7 @@ namespace Ass_Pain
 					);
 					play_image.LayoutParameters = play_image_params;
 
-					if (MainActivity.stateHandler.IsPlaying)
+					if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
 						play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("pause.png")));
 					else
 						play_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("play.png")));
@@ -127,7 +128,7 @@ namespace Ass_Pain
 							  (int)(20 * scale + 0.5f)
 							);
 							last_image.LayoutParameters = last_image_params;
-							if (MainActivity.stateHandler.IsShuffling)
+							if (MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false)
 							{
 								last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("shuffle_on.png")));
 							}
@@ -143,16 +144,16 @@ namespace Ass_Pain
 							 (int)(20 * scale + 0.5f)
 							);
 							last_image.LayoutParameters = last_image_params;
-							switch (MainActivity.stateHandler.LoopState)
+							switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? Enums.LoopState.None)
 							{
-								case 0:
-									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("no_repeat.png")));
+								case Enums.LoopState.None:
+									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
 									break;
-								case 1:
-									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat.png")));
+								case Enums.LoopState.All:
+									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
 									break;
-								case 2:
-									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets.Open("repeat_one.png")));
+								case Enums.LoopState.Single:
+									last_image.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
 									break;
 							}
 							break;
@@ -175,13 +176,13 @@ namespace Ass_Pain
 			);*/
 			if (MainActivity.ServiceConnection.Connected)
 			{
-				if (MainActivity.ServiceConnection.Binder.Service.mediaPlayer.IsPlaying)
+				if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
 				{
-					MainActivity.ServiceConnection.Binder.Service.Pause();
+					MainActivity.ServiceConnection.Binder?.Service.Pause();
 				}
 				else
 				{
-					MainActivity.ServiceConnection.Binder.Service.Play();
+					MainActivity.ServiceConnection.Binder?.Service.Play();
 				}
 			}
 		}
@@ -198,21 +199,26 @@ namespace Ass_Pain
 		}
 
 	  
-		public static void populate_side_bar(AppCompatActivity context)
+		public static void populate_side_bar(AppCompatActivity context, AssetManager assets)
 		{
 			// basic  vars
-			string path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryMusic).AbsolutePath;
 			float scale = context.Resources.DisplayMetrics.Density;
-
-			// sing title image
+			Typeface font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
+			
+			// song title image
 			ImageView song_image = context.FindViewById<ImageView>(Resource.Id.song_cover);
 
 			// texts
-			TextView song_title = context.FindViewById<TextView>(Resource.Id.song_cover_name);
-			TextView song_author = context.FindViewById<TextView>(Resource.Id.side_author);
-			TextView song_album = context.FindViewById<TextView>(Resource.Id.side_album);
+			TextView? songTitle = context.FindViewById<TextView>(Resource.Id.song_cover_name);
+			TextView? songAuthor = context.FindViewById<TextView>(Resource.Id.side_author);
+			TextView? songAlbum = context.FindViewById<TextView>(Resource.Id.side_album);
 
 			
+			if (songTitle != null) songTitle.Typeface = font;
+			if (songAuthor != null) songAuthor.Typeface = font;
+			if (songAlbum != null) songAlbum.Typeface = font;
+
+
 			LinearLayout.LayoutParams song_title_params = new LinearLayout.LayoutParams(
 				LinearLayout.LayoutParams.WrapContent,
 				(int)(30 * scale + 0.5f)
@@ -222,27 +228,37 @@ namespace Ass_Pain
 			);
 
 
-			song_title.LayoutParameters = song_title_params;
-			song_title.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Title;
-			
-			song_author.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.Title;
-			song_author.Click += (sender, e) =>
+			if (songTitle != null)
 			{
+				songTitle.LayoutParameters = song_title_params;
+				songTitle.Text = MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Title ?? "No Name";
+			}
+
+
+			if (songAuthor != null)
+			{
+				songAuthor.Text = MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Artist.Title ??
+				                  "No Artist";
+				songAuthor.Click += (sender, e) =>
+				{
+					/*
 				Intent intent = new Intent(context, typeof(AllSongs));
 				int? x = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.GetHashCode();
 				if (x is not { } hash) return;
 				intent.PutExtra("link_author", hash);
 				context.StartActivity(intent);
+				*/
+				};
+			}
 
-			};
-				
-			song_album.Text = MainActivity.ServiceConnection?.Binder?.Service?.Current.Album.Title;
+			if (songAlbum != null)
+				songAlbum.Text = MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Album.Title ?? "No Album";
 
-			/* 
+			/*
 			 * player buttons
 			 */
-			LinearLayout buttons_main_lin = context.FindViewById<LinearLayout>(Resource.Id.player_buttons);
-			buttons_main_lin.RemoveAllViews();
+			LinearLayout buttonsMainLin = context.FindViewById<LinearLayout>(Resource.Id.player_buttons);
+			buttonsMainLin?.RemoveAllViews();
 			player_buttons.Clear();
 			{
 
@@ -252,44 +268,32 @@ namespace Ass_Pain
 				player_buttons.Add(shuffle, "shuffle");
 				shuffle.Click += delegate
 				{
-					ImageView shuffleImg = (ImageView)shuffle.GetChildAt(0);
-					shuffleImg?.SetImageBitmap(MainActivity.stateHandler.IsShuffling
+					ImageView? shuffleImg = (ImageView?)shuffle.GetChildAt(0);
+					shuffleImg?.SetImageBitmap(MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false
 						? BitmapFactory.DecodeStream(context.Assets?.Open("shuffle.png"))
 						: BitmapFactory.DecodeStream(context.Assets?.Open("shuffle_on.png")));
-					context.StartService(
-						new Intent(MediaService.ActionShuffle, null, context, typeof(MediaService))
-						.PutExtra("shuffle", !MainActivity.stateHandler.IsShuffling)
-					);
-
+					
+					MainActivity.ServiceConnection.Binder?.Service.Shuffle(!MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false);
 				};
 
 				LinearLayout repeat = cube_creator("small", scale, context, "repeat");
 				player_buttons.Add(repeat, "repeat");
 				repeat.Click += delegate
 				{
-					ImageView repeatImg = (ImageView)repeat.GetChildAt(0);
-					switch (MainActivity.stateHandler.LoopState)
+					ImageView? repeatImg = (ImageView?)repeat.GetChildAt(0);
+					switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? Enums.LoopState.None)
 					{
-						case 0:
+						case Enums.LoopState.None:
 							repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
-							context.StartService(
-								new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
-								.PutExtra("loopState", 1)
-							);
+							MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.All);
 							break;
-						case 1:
+						case Enums.LoopState.All:
 							repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
-                            context.StartService(
-                            new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
-								.PutExtra("loopState", 2)
-							);
+							MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.Single);
                             break;
-						case 2:
+						case Enums.LoopState.Single:
 							repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
-							context.StartService(
-								new Intent(MediaService.ActionToggleLoop, null, context, typeof(MediaService))
-								.PutExtra("loopState", 0)
-							);
+							MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.None);
 							break;
 					}
 
@@ -300,9 +304,7 @@ namespace Ass_Pain
 				LinearLayout last = cube_creator("small", scale, context, "left");
 				last.Click += delegate
 				{
-					context.StartService(
-						new Intent(MediaService.ActionPreviousSong, null, context, typeof(MediaService))
-					);
+					MainActivity.ServiceConnection.Binder?.Service.PreviousSong();
 				};
 				player_buttons.Add(last, "last");
 
@@ -313,18 +315,16 @@ namespace Ass_Pain
 				LinearLayout next = cube_creator("small", scale, context, "right");
 				next.Click += delegate
 				{
-					context.StartService(
-						new Intent(MediaService.ActionNextSong, null, context, typeof(MediaService))
-					);
+					MainActivity.ServiceConnection.Binder?.Service.NextSong();
 				};
 				player_buttons.Add(next, "next");
 
 
-				buttons_main_lin.AddView(shuffle);
-				buttons_main_lin.AddView(last);
-				buttons_main_lin.AddView(play_pause);
-				buttons_main_lin.AddView(next);
-				buttons_main_lin.AddView(repeat);
+				buttonsMainLin?.AddView(shuffle);
+				buttonsMainLin?.AddView(last);
+				buttonsMainLin?.AddView(play_pause);
+				buttonsMainLin?.AddView(next);
+				buttonsMainLin?.AddView(repeat);
 			}
 
 			/*
@@ -340,66 +340,74 @@ namespace Ass_Pain
 			// song_image.LayoutParameters = song_image_params;
 
 			// set the image
-			song_image.SetImageBitmap(
-				MainActivity.ServiceConnection?.Binder?.Service?.Current.Image
+			song_image?.SetImageBitmap(
+				MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Image ?? new Song("No Name", new DateTime(), "Default").Image
 			);
 
 
             // progress song
 
-            TextView prog_time = context.FindViewById<TextView>(Resource.Id.progress_time);
-			prog_time.Click += delegate
-			{
-				MainActivity.stateHandler.ProgTimeState = !MainActivity.stateHandler.ProgTimeState;
+            TextView progTime = context.FindViewById<TextView>(Resource.Id.progress_time);
+            if (progTime != null)
+            {
+	            progTime.Click += delegate
+	            {
+		            MainActivity.stateHandler.ProgTimeState = !MainActivity.stateHandler.ProgTimeState;
+	            };
 
-            };
+	            if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
+	            {
+		            TextView? constTime = context.FindViewById<TextView>(Resource.Id.end_time);
+		            SeekBar? sek = context.FindViewById<SeekBar>(Resource.Id.seek);
+		            if (constTime != null)
+			            constTime.Text = converts_millis_to_seconds_and_minutes(MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0);
+		            if (sek != null)
+		            {
+			            sek.Max = (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) / 1000;
+			            sek.SetProgress((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.CurrentPosition ?? 0) / 1000, true);
+			            if (MainActivity.stateHandler.ProgTimeState)
+			            {
+				            progTime.Text = "-" +
+				                            converts_millis_to_seconds_and_minutes((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) - sek.Progress * 1000);
+			            }
+			            else
+			            {
+				            progTime.Text = converts_seconds_to_seconds_and_minutes(sek.Progress);
+			            }
 
-            if (MainActivity.stateHandler.IsPlaying) {
-                TextView const_time = context.FindViewById<TextView>(Resource.Id.end_time);
-                SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
-                const_time.Text = converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration);
-                sek.Max = MainActivity.stateHandler.Duration / 1000;
-                sek.SetProgress((MainActivity.stateHandler.CurrentPosition / 1000), true);
-                if (MainActivity.stateHandler.ProgTimeState)
-                {
-                    prog_time.Text = "-" + converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration - (sek.Progress * 1000));
-                }
-                else
-                {
-                    prog_time.Text = converts_seconds_to_seconds_and_minutes(sek.Progress);
-                }
-                sek.ProgressChanged += (object sender, SeekBar.ProgressChangedEventArgs e) =>
-                {
-                    if (e.FromUser)
-                    {
-#if DEBUG
-                        MyConsole.WriteLine(sek.Progress.ToString());
-#endif
-						context.StartService(
-							new Intent(MediaService.ActionSeekTo, null, context, typeof(MediaService))
-							.PutExtra("millis", sek.Progress * 1000)
-						);
-                    }
-                };
-				StartMovingProgress(MainActivity.stateHandler.cts.Token, context);
-            }         
+			            sek.ProgressChanged += (_, e) =>
+			            {
+				            if (!e.FromUser) return;
+				            MainActivity.ServiceConnection.Binder?.Service.SeekTo(sek.Progress * 1000);
+			            };
+		            }
+
+		            StartMovingProgress(MainActivity.stateHandler.cts.Token, context);
+	            }
+            }
 		}
 
 		public static void StartMovingProgress(CancellationToken token, AppCompatActivity context)
 		{
-            SeekBar sek = context.FindViewById<SeekBar>(Resource.Id.seek);
-            TextView prog_time = context.FindViewById<TextView>(Resource.Id.progress_time);
+            SeekBar? sek = context.FindViewById<SeekBar>(Resource.Id.seek);
+            TextView? progTime = context.FindViewById<TextView>(Resource.Id.progress_time);
             _ = Interval.SetIntervalAsync(() =>
 			{
-                sek.SetProgress((MainActivity.stateHandler.CurrentPosition / 1000), true);
+                sek?.SetProgress((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.CurrentPosition ?? 0) / 1000, true);
                 if (MainActivity.stateHandler.ProgTimeState)
-				{
-                    prog_time.Text = "-"+converts_millis_to_seconds_and_minutes(MainActivity.stateHandler.Duration - (sek.Progress * 1000));
+                {
+	                if (progTime == null) return;
+	                if (sek != null)
+		                progTime.Text = "-" +
+		                                converts_millis_to_seconds_and_minutes(
+			                                (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) - (sek.Progress * 1000));
                 }
 				else
-				{
-					prog_time.Text = converts_seconds_to_seconds_and_minutes(sek.Progress);
-				}
+                {
+	                if (progTime == null) return;
+	                if (sek != null)
+		                progTime.Text = converts_seconds_to_seconds_and_minutes(sek.Progress);
+                }
 
             }, 1000, token);
 		}

@@ -1,44 +1,37 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Android.App;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Xml.Serialization;
+using Android.Media.Browse;
+using Android.Support.V4.Media;
+using MWP.BackEnd;
+using Newtonsoft.Json;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
+    [Serializable]
+    [JsonObject(MemberSerialization.OptIn)]
     public class Album : MusicBaseContainer
     {
+        [JsonProperty]
         public override string Title { get; }
         public override List<Song> Songs { get; } = new List<Song>();
-        public Song Song
-        {
-            get
-            {
-                return Songs.Count > 0 ? Songs[0] : new Song("No Name", new DateTime(1970, 1, 1), "Default", false);
-            }
-        }
-
+        public Song Song => Songs.Count > 0 ? Songs[0] : new Song("No Name", new DateTime(1970, 1, 1), "Default", false);
         public List<Artist> Artists { get; } = new List<Artist>();
-        public Artist Artist
-        {
-            get
-            {
-                return Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
-            }
-        }
-        
+        public Artist Artist => Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
         public string ImgPath { get; }
         public bool Initialized { get; private set; } = true;
         public bool Showable { get; private set; } = true;
-        public override Bitmap Image
-        {
-            get { return GetImage(); }
-        }
-        
+        //public override Bitmap Image => GetImage() ?? throw new InvalidOperationException();
+
         public void AddArtist(ref List<Artist> artists)
         {
             foreach (Artist artist in artists.Where(artist => !Artists.Contains(artist)))
@@ -106,9 +99,9 @@ namespace Ass_Pain
             return "Default";
         }
 
-        public override Bitmap GetImage(bool shouldFallBack = true)
+        public override Bitmap? GetImage(bool shouldFallBack = true)
         {
-            Bitmap image = null;
+            Bitmap? image = null;
 
             try
             {
@@ -118,48 +111,38 @@ namespace Ass_Pain
                     image = BitmapFactory.DecodeStream(f);
                     f.Close();
                 }
-                else if (shouldFallBack)
-                {
-                    foreach (Song song in Songs.Where(song => song.Initialized))
-                    {
-                        image = song.GetImage(false);
-                        if (image != null)
-                        {
-                            break;
-                        }
-                    }
-
-                    if (image == null)
-                    {
-                        foreach (Artist artist in Artists.Where(artist => artist.Initialized))
-                        {
-                            image = artist.GetImage(false);
-                            if (image != null)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (image == null)
-                {
-                    if (Application.Context.Assets != null)
-                        image = BitmapFactory.DecodeStream(
-                            Application.Context.Assets.Open(
-                                "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets 
-                }
             }
             catch (Exception e)
             {
 #if DEBUG
-                MyConsole.WriteLine(e.ToString());
+                MyConsole.WriteLine(e);
 #endif
-                if (Application.Context.Assets != null)
-                    image = BitmapFactory.DecodeStream(
-                        Application.Context.Assets.Open(
-                            "music_placeholder.png")); //In case of no cover and no embedded picture show default image from assets
+                return null;
             }
-            return image;
+
+            if (image != null || !shouldFallBack)
+            {
+                return image;
+            }
+            
+            foreach (Song song in Songs.Where(song => song.Initialized))
+            {
+                image = song.GetImage(false);
+                if (image != null)
+                {
+                    return image;
+                }
+            }
+            foreach (Artist artist in Artists.Where(artist => artist.Initialized))
+            {
+                image = artist.GetImage(false);
+                if (image != null)
+                {
+                    return image;
+                }
+            }
+
+            return placeholder;
         }
 
         public Album(string title, Song song, Artist artist, string imgPath)
@@ -201,27 +184,64 @@ namespace Ass_Pain
             Initialized = initialized;
             Showable = showable;
         }
-        
-        public override bool Equals(object obj)
+
+        [JsonConstructor]
+        public Album(string title)
         {
-            if (!(obj is Album item))
-            {
-                return false;
-            }
-            
-            return Equals(item);
+            Title = title;
+            Showable = false;
+            Initialized = false;
+        }
+
+        public Album(Album album, string imgPath)
+        {
+            Title = album.Title;
+            Songs = album.Songs;
+            Artists = album.Artists;
+            ImgPath = imgPath;
+        }
+        
+        public override MediaBrowserCompat.MediaItem? ToMediaItem()
+        {
+            if (Description == null) return null;
+            int flags = MediaBrowserCompat.MediaItem.FlagBrowsable | MediaBrowserCompat.MediaItem.FlagPlayable;
+            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, flags);
+            return item;
+        }
+
+        protected override MediaDescriptionCompat? GetDescription()
+        {
+            return Builder?.Build();
+        }
+
+        protected override MediaDescriptionCompat.Builder? GetBuilder()
+        {
+            return new MediaDescriptionCompat.Builder()
+                .SetMediaId($"{(byte)MediaType.Album}{Title}")?
+                .SetTitle(Title)?
+                .SetSubtitle(Artist.Title)?
+                .SetIconBitmap(Image);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj)
+        {
+            return obj is Album item && Equals(item);
         }
 
         protected bool Equals(Album other)
         {
+            //todo: stack smashing?
             return Title == other.Title && Equals(Songs, other.Songs) && Equals(Artists, other.Artists) && Equals(ImgPath, other.ImgPath);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return HashCode.Combine(Title, Songs, Artists, ImgPath);
         }
-        
+
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Album: title> {Title} song> {Song.Title} artist> {Artist.Title}";

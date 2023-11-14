@@ -7,10 +7,10 @@ using AndroidX.Core.App;
 using AndroidApp = Android.App.Application;
 
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     public class DownloadNotification
     {
@@ -208,6 +208,7 @@ namespace Ass_Pain
         private void stage4_song(bool success, string message)
         {
             notificationBuilder
+                .SetSmallIcon(Resource.Drawable.download)
                 .SetContentText(currentSongTitle)
                 .SetOngoing(false)
                 .SetShowWhen(false)
