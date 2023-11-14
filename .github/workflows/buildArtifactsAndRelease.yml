@@ -27,7 +27,7 @@ jobs:
           7.0.x
           
     - name: Install dependencies
-      run: nuget restore Ass_Pain.sln
+      run: nuget restore MWP.sln
 
     - name: Generate build number
       id: buildnumber
@@ -49,7 +49,7 @@ jobs:
     - name: BuildAndSign
       uses: bradyjoslin/xamarinandroid-signedbuild-action@v1
       with:
-          csproj_path: Ass_Pain.csproj
+          csproj_path: MWP.csproj
           signing_keystore: ${{ secrets.KEYSTORE }}
           keystore_password: ${{ secrets.KEYSTORE_PASS }}
           signing_key_alias: ${{ secrets.KEY_ALIAS }}
