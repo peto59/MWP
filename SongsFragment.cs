@@ -186,7 +186,6 @@ namespace Ass_Pain
             
             for (int i = 0; i < songs.Count; i++)
             {
-
                 LinearLayout lnIn = UIRenderFunctions.PopulateHorizontal(
                     songs[i], scale,
                     150, 100,

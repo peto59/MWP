@@ -89,8 +89,6 @@ namespace Ass_Pain
 
             for (int i = 0; i < MainActivity.stateHandler.Albums.Count; i++)
             {
-                Bundle bundle = new Bundle();
-                
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
                     MainActivity.stateHandler.Albums[i], scale, cardMargins, 15, i, context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);

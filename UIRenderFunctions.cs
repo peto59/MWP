@@ -262,7 +262,7 @@ namespace Ass_Pain
                             dialog?.Hide();
 
                             
-                            TagManagerFragment tagFrag = new TagManagerFragment(context, assets);
+                            TagManagerFragment tagFrag = new TagManagerFragment(context, assets, path);
                             var fragmentTransaction = manager.BeginTransaction();
                             fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, tagFrag);
                             fragmentTransaction.AddToBackStack(null);
@@ -504,6 +504,8 @@ namespace Ass_Pain
             mori.SetImageBitmap(
                 obj.Image
             );
+            
+            
             
 
             parent.AddView(mori);
