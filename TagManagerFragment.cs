@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Android.Animation;
 using Android.App;
 using Android.Content;
@@ -30,10 +31,6 @@ namespace Ass_Pain
 
         private ImageView? songCover;
         
-        private string? initalTitleIn;
-        private string? initialAlbumIn;
-        private string? initialAuthorIn;
-        private string? initialAlauIn;
         private EditText? titleIn;
         private EditText? albumIn;
         private EditText? authorIn;
@@ -42,6 +39,8 @@ namespace Ass_Pain
         
         private FloatingActionButton? saveChanges;
         private TextView? backButton;
+
+        private TagManager tagManager;
         
 
         
@@ -54,14 +53,9 @@ namespace Ass_Pain
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             if (context.Resources is { DisplayMetrics: not null }) scale = context.Resources.DisplayMetrics.Density;
 
-            TagManager tagManager = new TagManager((Song) song);
+            if (song is not Song song1) return;
             
-            initialAlauIn = tagManager.Album;
-            initialAuthorIn = tagManager.Artist;
-            initalTitleIn = tagManager.Title;
-            initialAlbumIn = tagManager.Album;
-            
-            tagManager.Dispose();
+            tagManager = new TagManager(song1);
         }
 
 
@@ -98,7 +92,14 @@ namespace Ass_Pain
             if (backButton != null)
                 backButton.Click += (sender, args) =>
                 {
-                    ParentFragmentManager.PopBackStack();
+                    if (tagManager.Changed)
+                    {
+                        AreYouSureDiscard();
+                    }
+                    else
+                    {
+                        ParentFragmentManager.PopBackStack();
+                    }
                 };
 
             /*
@@ -123,7 +124,7 @@ namespace Ass_Pain
             saveChanges = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.tag_manager_savebtn);
             if (saveChanges != null)
             {
-                saveChanges.Click += delegate { AreYouSure(); };
+                saveChanges.Click += delegate { AreYouSureSave(); };
                 saveChanges.Visibility = ViewStates.Gone;
                 
                 if (BlendMode.Multiply != null)
@@ -148,22 +149,40 @@ namespace Ass_Pain
             
             if (view != null)
             {
-                if (initalTitleIn   != null) HandleSaveButtonAppear(titleIn, initalTitleIn);
-                if (initialAlauIn   != null) HandleSaveButtonAppear(alauIn, initialAlauIn);
-                if (initialAuthorIn != null) HandleSaveButtonAppear(authorIn, initialAuthorIn);
-                if (initialAlbumIn  != null) HandleSaveButtonAppear(albumIn, initialAlbumIn);
+                HandleSaveButtonAppear(titleIn, tagManager.OriginalTitle, FieldTypes.Title);
+                //HandleSaveButtonAppear(alauIn, initialAlauIn, FieldTypes.Alau);
+                HandleSaveButtonAppear(authorIn, tagManager.OriginalArtist, FieldTypes.Author);
+                HandleSaveButtonAppear(albumIn, tagManager.OriginalAlbum, FieldTypes.Album);
             }
 
-            if (titleIn != null) titleIn.Text = initalTitleIn;
-            if (albumIn != null) albumIn.Text = initialAlbumIn;
-            if (authorIn != null) authorIn.Text = initialAuthorIn;
-            if (alauIn != null) alauIn.Text = initialAlauIn;
+            if (titleIn != null) titleIn.Text = tagManager.OriginalTitle;
+            if (albumIn != null) albumIn.Text = tagManager.OriginalAlbum;
+            if (authorIn != null) authorIn.Text = tagManager.OriginalArtist;
+            //if (alauIn != null) alauIn.Text = initialAlauIn;
 
             return view;
         }
 
-        
-        private void HandleSaveButtonAppear(EditText? input, string initial)
+        public override void OnDestroy()
+        {
+            base.OnDestroy();
+            tagManager.Dispose();
+        }
+
+        public override void OnDestroyView()
+        {
+            base.OnDestroyView();
+            tagManager.Dispose();
+        }
+
+        public override void OnStop()
+        {
+            base.OnStop();
+            tagManager.Dispose();
+        }
+
+
+        private void HandleSaveButtonAppear(EditText? input, string initial, FieldTypes type)
         {
             if (input != null)
                 input.TextChanged += (_, _) =>
@@ -172,7 +191,27 @@ namespace Ass_Pain
                         saveChanges.Visibility = ViewStates.Visible;
                     if (initial?.Equals(input.Text) == true && saveChanges != null)
                         saveChanges.Visibility = ViewStates.Gone;
+                    switch (type)
+                    {
+                        case FieldTypes.Title:
+                            tagManager.Title = titleIn?.Text ?? tagManager.Title;
+                            break;
+                        case FieldTypes.Alau:
+                            break;
+                        case FieldTypes.Author:
+                            tagManager.Artist = authorIn?.Text ?? tagManager.Artist;
+                            break;
+                        case FieldTypes.Album:
+                            if(albumIn?.Text == "No Album")
+                                tagManager.NoAlbum();
+                            else
+                                tagManager.Album = albumIn?.Text ?? tagManager.Album;
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(type), type, null);
+                    }
                 };
+                
         }
 
         private void SetGenericFont<T>(View? view, int id)
@@ -183,17 +222,11 @@ namespace Ass_Pain
 
         private void SaveChanges()
         {
-            TagManager tagManager = new TagManager((Song) song);
-
-            tagManager.Artist = authorIn?.Text ?? string.Empty;
-            tagManager.Album = albumIn?.Text ?? string.Empty;
-            tagManager.Title = titleIn?.Text ?? string.Empty;
-      
             tagManager.Save();
             tagManager.Dispose();
         }
 
-        private void AreYouSure()
+        private void AreYouSureSave()
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? popupView = ifl?.Inflate(Resource.Layout.share_are_you_sure, null);
@@ -211,22 +244,72 @@ namespace Ass_Pain
             AlertDialog? dialog = alert.Create();
             dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
 
-            if (title != null) title.Text = "Are you sure";
+            if (title != null) title.Text = "Do you want to write changes?";
             if (yes != null)
             {
                 yes.Click += (_, _) =>
                 {   
                     SaveChanges();
+                    dialog?.Cancel();
+                    ParentFragmentManager.PopBackStack();
                 };
             }
             
             if (no != null) no.Click += (_, _) => dialog?.Cancel();
             dialog?.Show();
-            
+        }
+        
+        private void AreYouSureDiscard()
+        {
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? popupView = ifl?.Inflate(Resource.Layout.share_are_you_sure, null);
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(popupView);
 
+            TextView? title = popupView?.FindViewById<TextView>(Resource.Id.share_are_you_sure_title);
+            TextView? yes = popupView?.FindViewById<TextView>(Resource.Id.share_are_you_sure_yes);
+            TextView? no = popupView?.FindViewById<TextView>(Resource.Id.share_are_you_sure_no);
+
+            if (title != null) title.Typeface = font;
+            if (yes != null) yes.Typeface = font;
+            if (no != null) no.Typeface = font;
+
+            AlertDialog? dialog = alert.Create();
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+
+            if (title != null) title.Text = "You have changes pending. Discard?";
+            if (yes != null)
+            {
+                yes.Click += (_, _) =>
+                {   
+                    dialog?.Cancel();
+                    ParentFragmentManager.PopBackStack();
+                };
+            }
+            
+            if (no != null) no.Click += (_, _) => dialog?.Cancel();
+            dialog?.Show();
+        }
+
+
+        ~TagManagerFragment()
+        {
+            tagManager.Dispose();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            tagManager.Dispose();
         }
     }
-    
-    
+
+    internal enum FieldTypes
+    {
+        Title,
+        Alau,
+        Author,
+        Album
+    }
         
 }

@@ -9,13 +9,39 @@ namespace Ass_Pain.BackEnd
     {
         private TagLib.File? _tfile;
         private bool _changed;
+
+        public bool Changed => _changed;
         private Song? _song;
         private SongSave _saveFlags = SongSave.None;
+
+        public string OriginalTitle
+        {
+            get;
+            private set;
+        }
+
+        public string[] OriginalArtists
+        {
+            get;
+            private set;
+        }
+
+        public string OriginalArtist => string.Join(';', OriginalArtists);
+
+        public string OriginalAlbum
+        {
+            get;
+            private set;
+        }
 
         public TagManager(Song song)
         {
             _tfile = TagLib.File.Create(song.Path);
-            this._song = song;
+            _song = song;
+            OriginalTitle = _tfile?.Tag.Title ?? _song?.Title ?? "No Title";
+            OriginalArtists = _tfile?.Tag.Performers ??
+                              _song?.Artists.Select(a => a.Title).ToArray() ?? new[] { "No Artist" };
+            OriginalAlbum = _tfile?.Tag.Album ?? _song?.Album.Title ?? "No Album";
         }
 
         public string Title
@@ -24,7 +50,7 @@ namespace Ass_Pain.BackEnd
             set
             {
                 if (_tfile == null) return;
-                if (value == Title || string.IsNullOrEmpty(value)) return;
+                if (value == OriginalTitle || string.IsNullOrEmpty(value)) return;
                 _tfile.Tag.Title = value;
                 _changed = true;
                 _saveFlags |= SongSave.Title;
@@ -37,10 +63,8 @@ namespace Ass_Pain.BackEnd
             set
             {
                 if (_tfile == null) return;
-                if (value == _tfile.Tag.Performers.FirstOrDefault() || string.IsNullOrEmpty(value)) return;
-                _tfile.Tag.Performers = new[] { value };
-                _changed = true;
-                _saveFlags |= SongSave.Artist;
+                string[] artists = value.Split(';');
+                Artists = artists;
             }
         }
 
@@ -50,7 +74,7 @@ namespace Ass_Pain.BackEnd
             set
             {
                 if (_tfile == null) return;
-                if (value.SequenceEqual(_tfile.Tag.Performers) || value.Length <= 0) return;
+                if (value.SequenceEqual(OriginalArtists) || value.Length <= 0) return;
                 _tfile.Tag.Performers = value;
                 _changed = true;
                 _saveFlags |= SongSave.Artist;
@@ -63,8 +87,15 @@ namespace Ass_Pain.BackEnd
             set
             {
                 if (_tfile == null) return;
-                if (value == _tfile.Tag.Album || string.IsNullOrEmpty(value)) return;
-                _tfile.Tag.Album = value;
+                if (value == OriginalAlbum) return;
+                if (value == "No Album" || string.IsNullOrEmpty(value))
+                {
+                    NoAlbum();
+                }
+                else
+                {
+                    _tfile.Tag.Album = value;
+                }
                 _changed = true;
                 _saveFlags |= SongSave.Album;
                 _saveFlags &= ~SongSave.NoAlbum;
@@ -114,26 +145,31 @@ namespace Ass_Pain.BackEnd
 
             if (_saveFlags.HasFlag(SongSave.Album) && _tfile != null)
             {
-                path = $"{path}/{FileManager.Sanitize(_tfile.Tag.Album)}";
+                if (string.IsNullOrEmpty(_tfile.Tag.Album))
+                {
+                    path = $"{path}/{FileManager.Sanitize(_tfile.Tag.Album)}";
+                }
             }
-            else if (!_saveFlags.HasFlag(SongSave.NoAlbum) && _song is { Albums: { Count: > 0 } })
+            /*else if (!_saveFlags.HasFlag(SongSave.NoAlbum) && _song is { Albums: { Count: > 0 } })
             {
                 path = $"{path}/{FileManager.Sanitize(_song.Album.Title)}";
-            }
+            }*/
 
 
             Song? s = null;
-            if (_saveFlags.HasFlag(SongSave.Title) && _tfile != null)
+            if (_tfile != null)
             {
-                
                 path = $"{path}/{FileManager.Sanitize(_tfile.Tag.Title)}";
-                if(_song != null)
-                    s = new Song(_song, _tfile.Tag.Title, path);
+                if (_saveFlags.HasFlag(SongSave.Title))
+                {
+                
+                    if(_song != null)
+                        s = new Song(_song, _tfile.Tag.Title, path);
 
-            }else if (_song != null)
-            {
-                path = $"{path}/{FileManager.Sanitize(_song.Title)}";
-                s = new Song(_song, _song.Title, path);
+                }else if (_song != null)
+                {
+                    s = new Song(_song, _song.Title, path);
+                }
             }
 
             Album? a = null;
