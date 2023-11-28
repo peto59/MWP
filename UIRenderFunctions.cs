@@ -70,7 +70,7 @@ namespace Ass_Pain
                     Toast.MakeText(context, $"{song.Title} has been deleted", ToastLength.Short)?.Show();
                 };
 
-            Button no = view?.FindViewById<Button>(Resource.Id.you_are_not_sure);
+            Button? no = view?.FindViewById<Button>(Resource.Id.you_are_not_sure);
             if (BlendMode.Multiply != null)
                 no?.Background?.SetColorFilter(
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
@@ -134,7 +134,7 @@ namespace Ass_Pain
             }
             
             
-            Button submit = view?.FindViewById<Button>(Resource.Id.submit_plas);
+            Button? submit = view?.FindViewById<Button>(Resource.Id.submit_plas);
             if (BlendMode.Multiply != null)
                 submit?.Background?.SetColorFilter(
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
@@ -321,7 +321,6 @@ namespace Ass_Pain
                     if (pr.Key == pressedButton)
                     {
 #if DEBUG
-                        
                         MyConsole.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
 #endif
                         switch (songType)
@@ -346,7 +345,6 @@ namespace Ass_Pain
 
             songButtons.Add(lnIn, index);
             
-
             lnIn.SetHorizontalGravity(GravityFlags.Center);
             return lnIn;
         }
@@ -404,14 +402,12 @@ namespace Ass_Pain
                             var fragmentTransaction = manager.BeginTransaction();
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", album1.Title);
-
-                            if (albumFragment != null)
-                            {
-                                albumFragment.Arguments = bundle;
-                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumFragment);
-                                fragmentTransaction.AddToBackStack(null);
-                                fragmentTransaction.Commit();
-                            }
+                            
+                            albumFragment.Arguments = bundle;
+                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumFragment);
+                            fragmentTransaction.AddToBackStack(null);
+                            fragmentTransaction.Commit();
+                        
                             break;
                         }
                     }
@@ -443,13 +439,12 @@ namespace Ass_Pain
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", artist1.Title);
 
-                            if (authorFragment != null)
-                            {
-                                authorFragment.Arguments = bundle;
-                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, authorFragment);
-                                fragmentTransaction.AddToBackStack(null);
-                                fragmentTransaction.Commit();
-                            }
+                            
+                            authorFragment.Arguments = bundle;
+                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, authorFragment);
+                            fragmentTransaction.AddToBackStack(null);
+                            fragmentTransaction.Commit();
+                            
                             break;
                         }
                     }

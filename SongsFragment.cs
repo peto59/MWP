@@ -169,7 +169,9 @@ namespace Ass_Pain
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
                 );
             if (createPlaylist != null) createPlaylist.Click += CreatePlaylistPopup;
-            
+
+            if (createPlaylist != null) createPlaylist.LongClick += delegate { InvalidateCache(); };
+
             return view;
         }
 
@@ -209,7 +211,7 @@ namespace Ass_Pain
 
             allSongsScroll.ScrollChange += (sender, e) =>
             {
-                View view = allSongsLnMain.GetChildAt(allSongsLnMain.ChildCount - 1);
+                View? view = allSongsLnMain.GetChildAt(allSongsLnMain.ChildCount - 1);
                 int topDetect = allSongsScroll.ScrollY;
                 int bottomDetect = view.Bottom - (allSongsScroll.Height + allSongsScroll.ScrollY);
 
@@ -269,18 +271,24 @@ namespace Ass_Pain
 
             TextView? nButton = view?.FindViewById<TextView>(Resource.Id.AddPlaylist_cancel);
             if (nButton != null) nButton.Typeface = font;
-         
-
+            
             AlertDialog? dialog = alert.Create();
             dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
             if (nButton != null) nButton.Click += (_, _) => dialog?.Cancel();
             
-            
             dialog?.Show();
-            
-
         }
-        
+
+
+        /// <summary>
+        /// Use for invalidating rendered songs and rerender them again
+        /// </summary>
+        public void InvalidateCache()
+        {
+            songButtons.Clear();
+            allSongsLnMain.RemoveAllViews();
+            RenderSongs(MainActivity.stateHandler.Songs);
+        }
         
         
         private void add_alias_popup(string authorN)
