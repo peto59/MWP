@@ -27,7 +27,7 @@ namespace Ass_Pain
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class SongsFragment : Fragment
     {
-        private const int ActionScrollViewHeight = 200;
+        private const int ActionScrollViewHeight = 320;
         private float scale;
         private readonly Context context;
         private RelativeLayout? mainLayout;
@@ -62,6 +62,9 @@ namespace Ass_Pain
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.songs_fragment_main);
             
+            /*
+             * Handle creating base block views
+             */
             allSongsScroll = new ScrollView(context);
             RelativeLayout.LayoutParams allSongsScrollParams = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
@@ -84,8 +87,88 @@ namespace Ass_Pain
             mainLayout?.AddView(allSongsScroll);
             
             
+            /*
+             * Handle rendering songs by some order
+             */
+            SongOrder(view);
+
             
             /*
+             * Handle song searching
+             */
+            SongSearch(view);
+
+            
+            /*
+             * Handle floating button for creating new playlist
+             */
+            FloatingActionButton? createPlaylist = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.fab);
+            if (BlendMode.Multiply != null)
+                createPlaylist?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+            if (createPlaylist != null) createPlaylist.Click += CreatePlaylistPopup;
+
+            return view;
+        }
+
+
+
+        private void SongOrder(View? view)
+        {
+            TextView? aZ = view?.FindViewById<TextView>(Resource.Id.A_Z_btn);
+            TextView? zA = view?.FindViewById<TextView>(Resource.Id.Z_A_btn);
+            TextView? newDate = view?.FindViewById<TextView>(Resource.Id.new_order_btn);
+            TextView? oldDate = view?.FindViewById<TextView>(Resource.Id.old_order_btn);
+            TextView? reset = view?.FindViewById<TextView>(Resource.Id.reset_order_btn);
+
+            if (aZ != null) aZ.Typeface = font;
+            if (zA != null) zA.Typeface = font;
+            if (newDate != null) newDate.Typeface = font;
+            if (oldDate != null) oldDate.Typeface = font;
+            if (reset != null) reset.Typeface = font;
+
+            if (aZ != null && zA != null && newDate != null && oldDate != null && reset != null)
+            {
+                aZ.Typeface = font;
+                zA.Typeface = font;
+                newDate.Typeface = font;
+                oldDate.Typeface = font;
+                reset.Typeface = font;
+                
+                aZ.Click += delegate
+                {
+                    allSongsLnMain.RemoveAllViews();
+                    RenderSongs(MainActivity.stateHandler.Songs.OrderAlphabetically());
+                };
+                zA.Click += delegate
+                {
+                    allSongsLnMain.RemoveAllViews();
+                    RenderSongs(MainActivity.stateHandler.Songs.OrderAlphabetically(true));
+                };
+                newDate.Click += delegate
+                {
+                    allSongsLnMain.RemoveAllViews();
+                    RenderSongs(MainActivity.stateHandler.Songs.OrderByDate());
+                };
+                oldDate.Click += delegate
+                {
+                    allSongsLnMain.RemoveAllViews();
+                    RenderSongs(MainActivity.stateHandler.Songs.OrderByDate(true));
+                };
+                reset.Click += delegate
+                {
+                    allSongsLnMain.RemoveAllViews();
+                    RenderSongs(MainActivity.stateHandler.Songs.OrderByDate());
+                };
+            }
+       
+        }
+        
+
+        private void SongSearch(View? view)
+        {
+             /*
              * VYHLADAVNIE
              */
             Action<List<Song>, View, Context> inputFinishChecker = (songs, view1, ctx) =>
@@ -146,6 +229,8 @@ namespace Ass_Pain
                     }
                 };
 
+                
+                
                 /*
                  * Nacitanie songov po tom co pouzivatel stlaci tlacidlo na potvrdenie vyhladavania
                  */
@@ -160,23 +245,10 @@ namespace Ass_Pain
                             );
                     };
             }
-            
-
-            
-            FloatingActionButton? createPlaylist = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.fab);
-            if (BlendMode.Multiply != null)
-                createPlaylist?.Background?.SetColorFilter(
-                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                );
-            if (createPlaylist != null) createPlaylist.Click += CreatePlaylistPopup;
-
-            if (createPlaylist != null) createPlaylist.LongClick += delegate { InvalidateCache(); };
-
-            return view;
         }
 
-        
-        
+
+
         private void RenderSongs(List<Song> songs)
         {
             int[] allSongsButtonMargins = { 50, 50, 50, 50 };

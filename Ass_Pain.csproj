@@ -176,6 +176,10 @@
     </AndroidResource>
     <AndroidResource Include="Resources\drawable\music.xml" />
     <AndroidResource Include="Resources\drawable\new_playlist.xml" />
+    <AndroidResource Include="Resources\drawable\noround_button.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\drawable\no_shuffle2.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -192,6 +196,14 @@
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
     <AndroidResource Include="Resources\drawable\rounded_button_green.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\rounded_button_left.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\rounded_button_right.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
@@ -310,7 +322,7 @@
     <PackageReference Include="Xamarin.AndroidX.Migration">
       <Version>1.0.10</Version>
     </PackageReference>
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.0.0.1" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.10.0.2" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
     <PackageReference Include="YoutubeExplode">
       <Version>6.3.4</Version>
@@ -325,7 +337,7 @@
     <AndroidAsset Include="Assets\music_placeholder.png" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidResource Include="Resources\drawable\rounded.xml" />
+    <AndroidResource Include="Resources\drawable\rounded_primaryColor.xml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Chromaprint\Chromaprint.csproj">

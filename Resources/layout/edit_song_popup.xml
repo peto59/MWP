@@ -4,7 +4,7 @@
     android:layout_width="match_parent"  
     android:layout_height="270dp"
               android:gravity="center"
-    android:background="@drawable/rounded">  
+    android:background="@drawable/rounded_primaryColor">  
 
     <LinearLayout
         android:layout_width="match_parent"

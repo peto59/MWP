@@ -303,7 +303,7 @@ namespace Ass_Pain
             //リネアルレーアート作る
             LinearLayout lnIn = new LinearLayout(context);
             lnIn.Orientation = Orientation.Horizontal;
-            lnIn.SetBackgroundResource(Resource.Drawable.rounded);
+            lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
             LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
@@ -377,7 +377,7 @@ namespace Ass_Pain
             //リネアルレーアート作る
             LinearLayout lnIn = new LinearLayout(context);
             lnIn.Orientation = Orientation.Vertical;
-            lnIn.SetBackgroundResource(Resource.Drawable.rounded);
+            lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
             LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,

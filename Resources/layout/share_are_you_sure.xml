@@ -3,7 +3,7 @@
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="270dp"
-              android:background="@drawable/rounded">
+              android:background="@drawable/rounded_primaryColor">
     <TextView
             android:id="@+id/share_are_you_sure_title"
             android:layout_width="wrap_content"
