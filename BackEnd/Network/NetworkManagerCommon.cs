@@ -58,7 +58,20 @@ namespace Ass_Pain.BackEnd.Network
         internal const int BroadcastPort = 8008;
         private const int P2PPort = 8009;
         internal const int RsaDataSize = 256;
+#if DEBUG
+        private string _currentSsid = string.Empty;
+        internal string CurrentSsid
+        {
+            get => _currentSsid;
+            set
+            {
+                MyConsole.WriteLine($"Changing CurrentSsid to {value}");
+                _currentSsid = value;
+            }
+        }
+#else
         internal string CurrentSsid = string.Empty;
+#endif
 
         public NetworkManagerCommon()
         {
@@ -353,18 +366,18 @@ namespace Ass_Pain.BackEnd.Network
             try
             {
                 InetAddress inetAddress = InetAddress.GetByAddress(MyIp.GetAddressBytes());
-                NetworkInterface networkInterface = NetworkInterface.GetByInetAddress(inetAddress);
+                NetworkInterface? networkInterface = NetworkInterface.GetByInetAddress(inetAddress);
                 if (networkInterface is not { InterfaceAddresses: not null }) return false;
-                InetAddress broadcast = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress)).Broadcast;
+                InetAddress? broadcast = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress)).Broadcast;
                 if (broadcast != null)
                 {
                     myBroadcastIp = IPAddress.Parse(broadcast.ToString().Trim('/'));
                 }
                 else
                 {
-                    short prefix = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
+                    short? prefix = networkInterface?.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
                         .NetworkPrefixLength;
-                    myMask = PrefixLengthToNetmask(prefix);
+                    myMask = PrefixLengthToNetmask(prefix ?? 0);
                     myBroadcastIp = GetBroadCastIp(MyIp, myMask);
                 }
 #if DEBUG
@@ -402,6 +415,12 @@ namespace Ass_Pain.BackEnd.Network
                 NetworkManager.Common.CanSend = CanSend.Rejected;
                 return;
             }
+            
+            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S && NetworkManager.Common.CurrentSsid == string.Empty)
+            {
+                NetworkManager.Common.GetWifiSsid();
+            }
+            
             if (!FileManager.IsTrustedSyncTarget(NetworkManager.Common.CurrentSsid))
             {
                 NetworkManager.Common.CanSend = CanSend.Rejected;
@@ -425,6 +444,7 @@ namespace Ass_Pain.BackEnd.Network
                 WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
                 WifiInfo? info = wifiManager?.ConnectionInfo;
                 CurrentSsid = info?.SSID ?? string.Empty;
+                StateHandler.TriggerShareFragmentRefresh();
 
                 CanSend = GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
                 return;
@@ -432,6 +452,19 @@ namespace Ass_Pain.BackEnd.Network
 
             CurrentSsid = string.Empty;
             CanSend = CanSend.Rejected;
+        }
+
+        [Obsolete("Deprecated")]
+        internal void GetWifiSsid()
+        {
+            ConnectivityManager? connectivityManager = (ConnectivityManager?)Application.Context.GetSystemService(Context.ConnectivityService);
+            NetworkInfo? activeNetwork = connectivityManager?.ActiveNetworkInfo;
+
+            if (activeNetwork?.Type != ConnectivityType.Wifi) return;
+            WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
+            WifiInfo? wifiInfo = wifiManager?.ConnectionInfo;
+            CurrentSsid = wifiInfo?.SSID ?? string.Empty;
+            StateHandler.TriggerShareFragmentRefresh();
         }
 
         internal static async Task<(string? storedPrivKey, string? storedPubKey)> LoadKeys(string remoteHostname)
@@ -482,6 +515,7 @@ namespace Ass_Pain.BackEnd.Network
                         {
                             NetworkManager.Common.CanSend = CanSend.Test;
                             NetworkManager.Common.CurrentSsid = ssid;
+                            StateHandler.TriggerShareFragmentRefresh();
                         }
                         else if (NetworkManager.Common.CanSend == CanSend.Rejected)
                         {

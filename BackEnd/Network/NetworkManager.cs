@@ -41,11 +41,13 @@ namespace Ass_Pain.BackEnd.Network
 
             if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
                 Connectivity.ConnectivityChanged += delegate(object _, ConnectivityChangedEventArgs args) { Common.OnWiFiChange(args); };
+                Common.GetWifiSsid();
                 if (Common.MyIp == null)
                 {
                     Common.CanSend = Common.GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
                 }
             }
+
             
             //Thread.Sleep(5000);
             //Common.SendBroadcast();
