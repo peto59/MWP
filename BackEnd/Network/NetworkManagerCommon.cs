@@ -452,6 +452,7 @@ namespace Ass_Pain.BackEnd.Network
 
             CurrentSsid = string.Empty;
             CanSend = CanSend.Rejected;
+            StateHandler.TriggerShareFragmentRefresh();
         }
 
         [Obsolete("Deprecated")]
@@ -537,6 +538,7 @@ namespace Ass_Pain.BackEnd.Network
             NetworkManager.Common.CanSend = CanSend.Rejected;
             NetworkManager.Common.MyIp = null;
             NetworkManager.Common.CurrentSsid = string.Empty;
+            StateHandler.TriggerShareFragmentRefresh();
         }
 
         private static bool ValidateIPv4(string ipString)

@@ -486,7 +486,7 @@ namespace Ass_Pain
 
             if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
             {
-                //new Thread(NetworkManager.Listener).Start();
+                new Thread(NetworkManager.Listener).Start();
             }
             
             new Thread(() => {
@@ -544,43 +544,53 @@ namespace Ass_Pain
 
         private async void CheckUpdates()
         {
-            string currentVersionString = VersionTracking.CurrentBuild;
-            const string owner = "peto59";
-            const string repoName = "Ass_Pain";
+            try
+            {
+                string currentVersionString = VersionTracking.CurrentBuild;
+                const string owner = "peto59";
+                const string repoName = "Ass_Pain";
 #if DEBUG
-            MyConsole.WriteLine("Checking for updates!");
-            MyConsole.WriteLine($"Current version: {currentVersionString}");
+                MyConsole.WriteLine("Checking for updates!");
+                MyConsole.WriteLine($"Current version: {currentVersionString}");
 #endif      
-            GitHubClient client = new GitHubClient(new ProductHeaderValue("AssPain"));
-            IReadOnlyList<Release> releases = await client.Repository.Release.GetAll(owner, repoName);
-            Release release = releases.First(r => r.TagName == "latest");
+                GitHubClient client = new GitHubClient(new ProductHeaderValue("AssPain"));
+                IReadOnlyList<Release> releases = await client.Repository.Release.GetAll(owner, repoName);
+                Release release = releases.First(r => r.TagName == "latest");
             
-            int.TryParse(release.Name, out int remoteVersion);
-            int.TryParse(currentVersionString, out int currentVersion);
-            if (remoteVersion <= currentVersion) return;
+                int.TryParse(release.Name, out int remoteVersion);
+                int.TryParse(currentVersionString, out int currentVersion);
+                if (remoteVersion <= currentVersion) return;
             
             
-            AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
-            builder.SetTitle("New Update");
-            builder.SetMessage("Would you like to download this update?");
+                AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
+                builder.SetTitle("New Update");
+                builder.SetMessage("Would you like to download this update?");
 
-            builder.SetPositiveButton("Yes", (sender, args) =>
-            {
-                _ = Task.Run(async () =>
+                builder.SetPositiveButton("Yes", (sender, args) =>
                 {
-                    ReleaseAsset asset = await client.Repository.Release.GetAsset(owner, repoName, release.Assets.First(a => a.Name == "com.companyname.ass_pain-Signed.apk").Id);
-                    GetUpdate(asset.BrowserDownloadUrl);
-                });
+                    _ = Task.Run(async () =>
+                    {
+                        ReleaseAsset asset = await client.Repository.Release.GetAsset(owner, repoName, release.Assets.First(a => a.Name == "com.companyname.ass_pain-Signed.apk").Id);
+                        GetUpdate(asset.BrowserDownloadUrl);
+                    });
                 
-            });
+                });
 
-            builder.SetNegativeButton("No", (_, _) =>
+                builder.SetNegativeButton("No", (_, _) =>
+                {
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+
+            }
+            catch (Exception e)
             {
-            });
-
-            AlertDialog dialog = builder.Create();
-            dialog.Show();
-            
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+            }
+          
         }
 
         private async void GetUpdate(string downloadUrl)
