@@ -414,8 +414,14 @@ namespace Ass_Pain.BackEnd.Network
         [Obsolete("Deprecated")]
         internal void OnWiFiChange(ConnectivityChangedEventArgs e)
         {
+#if DEBUG
+            MyConsole.WriteLine("Changing wifi states: deprecated mode");
+#endif
             if (e.NetworkAccess is NetworkAccess.Internet or NetworkAccess.Local && e.ConnectionProfiles.Contains(ConnectionProfile.WiFi))
             {
+#if DEBUG
+                MyConsole.WriteLine($"NetworkAccess is {e.NetworkAccess}");
+#endif
                 WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
                 WifiInfo? info = wifiManager?.ConnectionInfo;
                 CurrentSsid = info?.SSID ?? string.Empty;
