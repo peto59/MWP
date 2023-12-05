@@ -39,7 +39,10 @@ namespace Ass_Pain
         public static object FragmentPositionObject;
         
         
-        private static void AreYouSure(object sender, EventArgs e, Song song, AlertDialog? di, LinearLayout linFromDelete, LinearLayout linForDelete, Context context)
+        private static void AreYouSure(
+            object sender, EventArgs e, Song song, AlertDialog? di, 
+            LinearLayout linFromDelete, LinearLayout linForDelete, 
+            Context context, SongsFragment songsFragmentContext)
         {
             LayoutInflater ifl = LayoutInflater.From(context);
             View view = ifl?.Inflate(Resource.Layout.are_you_sure_popup, null);
@@ -65,12 +68,13 @@ namespace Ass_Pain
                     song.Delete();
                     dialog?.Hide();
                     di.Hide();
+                    songsFragmentContext.InvalidateCache();
 
                     linFromDelete.RemoveView(linForDelete);
                     Toast.MakeText(context, $"{song.Title} has been deleted", ToastLength.Short)?.Show();
                 };
 
-            Button no = view?.FindViewById<Button>(Resource.Id.you_are_not_sure);
+            Button? no = view?.FindViewById<Button>(Resource.Id.you_are_not_sure);
             if (BlendMode.Multiply != null)
                 no?.Background?.SetColorFilter(
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
@@ -134,7 +138,7 @@ namespace Ass_Pain
             }
             
             
-            Button submit = view?.FindViewById<Button>(Resource.Id.submit_plas);
+            Button? submit = view?.FindViewById<Button>(Resource.Id.submit_plas);
             if (BlendMode.Multiply != null)
                 submit?.Background?.SetColorFilter(
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
@@ -185,7 +189,7 @@ namespace Ass_Pain
 
         private static void ShowPopupSongEdit(
             MusicBaseClass path, LinearLayout linFromDelete, LinearLayout linForDelete, Context context, float scale, 
-            AssetManager? assets, FragmentManager manager
+            AssetManager? assets, FragmentManager manager, SongsFragment SongsFragmentContext = null
         )
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
@@ -253,7 +257,7 @@ namespace Ass_Pain
                     if (delete != null)
                         delete.Click += (o, args) =>
                         {
-                            AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context);
+                            AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context, SongsFragmentContext);
                         };
 
                     if (edit != null)
@@ -297,13 +301,13 @@ namespace Ass_Pain
         public static LinearLayout PopulateHorizontal(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize, int index,
             Context context, Dictionary<LinearLayout, int> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
-            LinearLayout linForDelete = null
+            LinearLayout linForDelete = null, SongsFragment SongsfragmentContext = null 
         )
         {
             //リネアルレーアート作る
             LinearLayout lnIn = new LinearLayout(context);
             lnIn.Orientation = Orientation.Horizontal;
-            lnIn.SetBackgroundResource(Resource.Drawable.rounded);
+            lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
             LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
@@ -321,7 +325,6 @@ namespace Ass_Pain
                     if (pr.Key == pressedButton)
                     {
 #if DEBUG
-                        
                         MyConsole.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
 #endif
                         switch (songType)
@@ -341,12 +344,11 @@ namespace Ass_Pain
             };
             lnIn.LongClick += (_, _) =>
             {
-                ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale, assets, manager);
+                ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
             };
 
             songButtons.Add(lnIn, index);
             
-
             lnIn.SetHorizontalGravity(GravityFlags.Center);
             return lnIn;
         }
@@ -373,13 +375,13 @@ namespace Ass_Pain
             Context context, Dictionary<LinearLayout, object> albumButtons, 
             FragmentManager manager, AssetManager? assets,
             AlbumFragment albumFragment = null, AuthorFragment authorFragment = null,
-            LinearLayout linForDelete = null
+            LinearLayout linForDelete = null, SongsFragment SongsfragmentContext = null 
         )
         {
             //リネアルレーアート作る
             LinearLayout lnIn = new LinearLayout(context);
             lnIn.Orientation = Orientation.Vertical;
-            lnIn.SetBackgroundResource(Resource.Drawable.rounded);
+            lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
             LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
@@ -404,14 +406,12 @@ namespace Ass_Pain
                             var fragmentTransaction = manager.BeginTransaction();
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", album1.Title);
-
-                            if (albumFragment != null)
-                            {
-                                albumFragment.Arguments = bundle;
-                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumFragment);
-                                fragmentTransaction.AddToBackStack(null);
-                                fragmentTransaction.Commit();
-                            }
+                            
+                            albumFragment.Arguments = bundle;
+                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumFragment);
+                            fragmentTransaction.AddToBackStack(null);
+                            fragmentTransaction.Commit();
+                        
                             break;
                         }
                     }
@@ -421,7 +421,7 @@ namespace Ass_Pain
                 
                 lnIn.LongClick += (_, _) =>
                 {
-                    ShowPopupSongEdit(album, linForDelete, lnIn, context, scale, assets, manager);
+                    ShowPopupSongEdit(album, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
                 };
                 
 
@@ -443,13 +443,12 @@ namespace Ass_Pain
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", artist1.Title);
 
-                            if (authorFragment != null)
-                            {
-                                authorFragment.Arguments = bundle;
-                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, authorFragment);
-                                fragmentTransaction.AddToBackStack(null);
-                                fragmentTransaction.Commit();
-                            }
+                            
+                            authorFragment.Arguments = bundle;
+                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, authorFragment);
+                            fragmentTransaction.AddToBackStack(null);
+                            fragmentTransaction.Commit();
+                            
                             break;
                         }
                     }
@@ -458,7 +457,7 @@ namespace Ass_Pain
                 
                 lnIn.LongClick += (_, _) =>
                 {
-                    ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale, assets, manager);
+                    ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
                 };
                 
 

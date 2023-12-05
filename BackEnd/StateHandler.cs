@@ -43,6 +43,16 @@ namespace Ass_Pain
         internal readonly AutoResetEvent FileEvent = new AutoResetEvent(true);
         internal readonly AutoResetEvent ResultEvent = new AutoResetEvent(false);
         //---------------------------------------------------------
+        
+        //----------Custom callbacks for internal control---------
+        public static event Action OnShareFragmentRefresh;
+
+        public static void TriggerShareFragmentRefresh()
+        {
+            OnShareFragmentRefresh.Invoke();
+        }
+        //---------------------------------------------------------
+        
         public bool ProgTimeState
         {
             get; set;

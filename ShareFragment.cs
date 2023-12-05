@@ -13,6 +13,9 @@ using AndroidX.AppCompat.Widget;
 using AndroidX.Core.Text;
 using Ass_Pain.BackEnd;
 using Ass_Pain.BackEnd.Network;
+using Java.Lang;
+using TagLib.Tiff.Arw;
+using Exception = System.Exception;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Orientation = Android.Widget.Orientation;
@@ -32,6 +35,10 @@ namespace Ass_Pain
         private View? view;
         private AssetManager assets;
 
+        private List<string> trustedSsids;
+        private LinearLayout? trustedNetworkList;
+        private LinearLayout? availableHostsList;
+        
         private enum ShareActionType
         {
             TrustedNetworkAdd,
@@ -63,6 +70,7 @@ namespace Ass_Pain
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             this.assets = assets;
+            StateHandler.OnShareFragmentRefresh += RefreshFragment;
         }
 
 
@@ -102,9 +110,13 @@ namespace Ass_Pain
              * zamknutie moznosti pridania novej doveryhodnej siete v pripade ak aktualne siet nie je doveryhodna
              * ak je doveryhodna, pridanie noveho click eventu pre tlacidlo a odomknutie moznosti pridania soveryhodnej siete
              */
+#if DEBUG
+            MyConsole.WriteLine(NetworkManager.Common.CurrentSsid);
+#endif
+            
             if (NetworkManager.Common.CurrentSsid == string.Empty     || 
                 NetworkManager.Common.CurrentSsid == "<unknown ssid>" || 
-                !FileManager.IsTrustedSsid(NetworkManager.Common.CurrentSsid)
+                FileManager.IsTrustedSsid(NetworkManager.Common.CurrentSsid)
                 )
             {
                 /*
@@ -133,8 +145,8 @@ namespace Ass_Pain
             /*
              * Vykreslenie policok pre doveryhodne siete vhodne na pripojenie
              */
-            List<string> trustedSsids = FileManager.GetTrustedSsids();
-            LinearLayout? trustedNetworkList = view?.FindViewById<LinearLayout>(Resource.Id.trusted_network_list);
+            trustedSsids = FileManager.GetTrustedSsids();
+            trustedNetworkList = view?.FindViewById<LinearLayout>(Resource.Id.trusted_network_list);
             for (int i = 0; i < trustedSsids.Count; i++)
                 trustedNetworkList?.AddView(TrustedNetworkTile(trustedSsids[i]));
 
@@ -143,7 +155,7 @@ namespace Ass_Pain
              * Vykreslenie policok pre moznych hostitelov na spojenie
              */ 
             List<(string hostname, DateTime? lastSeen, bool state)> allHosts = NetworkManager.GetAllHosts();
-            LinearLayout? availableHostsList = view?.FindViewById<LinearLayout>(Resource.Id.available_hosts_list);
+            availableHostsList = view?.FindViewById<LinearLayout>(Resource.Id.available_hosts_list);
             foreach (var (hostname, lastSeen, state) in allHosts)
                 availableHostsList?.AddView(AvailableHostsTile(hostname, lastSeen, state));
             
@@ -279,7 +291,7 @@ namespace Ass_Pain
             else
             {
                 crossButton.SetPadding(
-                    (int)(padding * scale + 0.5f), 
+                    (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f));
@@ -387,6 +399,7 @@ namespace Ass_Pain
             switch (actionType)
             {
                 case ShareActionType.TrustedNetworkAdd:
+                
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will add <font color='#fa6648'>{NetworkManager.Common.CurrentSsid}" +
                         $"</font> to trusted networks list, proceed ?",
@@ -395,13 +408,22 @@ namespace Ass_Pain
 
                     if (yes != null)
                     {
+                        if (!trustedSsids.Contains(NetworkManager.Common.CurrentSsid))
+                        {
+                            dialog?.Cancel();
+                        }
+
                         yes.Click += (_, _) =>
                         {
+                            NetworkManagerCommon.TestNetwork();
                             FileManager.AddTrustedSsid(NetworkManager.Common.CurrentSsid);
+                            
+                            dialog?.Dismiss();
                             RefreshFragment();
-                            dialog?.Cancel();
                         };
                     }
+                        
+                  
                     break;
                 case ShareActionType.TrustedNetworkDelete:
                     title?.SetText( Html.FromHtml(
@@ -412,9 +434,10 @@ namespace Ass_Pain
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        if (ssid != null) FileManager.DeleteTrustedSsid(ssid);
-                        RefreshFragment();
+                        NetworkManagerCommon.TestNetwork();
+                        FileManager.DeleteTrustedSsid(ssid);
                         dialog?.Cancel();
+                        RefreshFragment();
                     };
                     break;
                 case ShareActionType.AvailableHostAdd:
@@ -427,9 +450,9 @@ namespace Ass_Pain
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        if (ssid != null) FileManager.AddTrustedSyncTarget(ssid);
-                        RefreshFragment();
+                        FileManager.AddTrustedSyncTarget(ssid);
                         dialog?.Cancel();
+                        RefreshFragment();
                     };
                     break;
                 case ShareActionType.AvailableHostDelete:
@@ -441,9 +464,9 @@ namespace Ass_Pain
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        if (ssid != null) FileManager.DeleteTrustedSyncTarget(ssid);
-                        RefreshFragment();
+                        FileManager.DeleteTrustedSyncTarget(ssid);
                         dialog?.Cancel();
+                        RefreshFragment();
                     };
                     break;
             }
@@ -458,11 +481,38 @@ namespace Ass_Pain
         
         private void RefreshFragment()
         {
-            Fragment frg = ParentFragmentManager.FindFragmentByTag("shareFragTag");
-            FragmentTransaction? ft = ParentFragmentManager.BeginTransaction();
-            ft.Detach(frg);
-            ft.Attach(frg);
-            ft.Commit();
+            try
+            { 
+                /*
+                    Fragment? frg = ChildFragmentManager.FindFragmentByTag("shareFragTag");
+                    var ft = ParentFragmentManager.BeginTransaction();
+                    if (frg != null)
+                    {
+                        ft.Detach(frg);
+                        ft.Attach(frg);
+                    }
+
+                    ft.Commit();
+                */
+                if (IsAdded)
+                {
+                    Activity?.RunOnUiThread(() =>
+                    {
+                        view?.FindViewById<RelativeLayout>(Resource.Id.share_fragment_main)?.Invalidate();
+                        availableHostsList?.RemoveAllViews();
+                        trustedNetworkList?.RemoveAllViews();
+                        trustedSsids.Clear();
+                        RenderUi();
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+            }
+          
         }
 
 
