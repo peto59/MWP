@@ -8,13 +8,13 @@ using Android.Widget;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
-using Android.Net;
 using Android.Text;
 using AndroidX.AppCompat.Widget;
+using AndroidX.Core.Text;
 using Ass_Pain.BackEnd;
 using Ass_Pain.BackEnd.Network;
-using TagLib.Tiff.Arw;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
 using Ass_Pain.Helpers;
@@ -212,8 +212,8 @@ namespace Ass_Pain
             string timeAwayString = "";
             if (lastSeen != null)
             {
-                var today = DateTime.Now;
-                var diffOfDates = today - lastSeen;
+                DateTime today = DateTime.Now;
+                TimeSpan? diffOfDates = today - lastSeen;
 
                 if (diffOfDates?.Days != 0) timeAwayString += diffOfDates?.Days + "d ";
                 if (diffOfDates?.Hours != 0) timeAwayString += diffOfDates?.Hours + "h ";
@@ -367,7 +367,7 @@ namespace Ass_Pain
         }
 
         
-        private void AreYouSure(ShareActionType actionType, string ssid = null)
+        private void AreYouSure(ShareActionType actionType, string? ssid = null)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? popupView = ifl?.Inflate(Resource.Layout.share_are_you_sure, null);
@@ -389,7 +389,8 @@ namespace Ass_Pain
                 case ShareActionType.TrustedNetworkAdd:
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will add <font color='#fa6648'>{NetworkManager.Common.CurrentSsid}" +
-                        $"</font> to trusted networks list, proceed ?"
+                        $"</font> to trusted networks list, proceed ?",
+                        HtmlCompat.FromHtmlModeLegacy
                     ), TextView.BufferType.Spannable);
 
                     if (yes != null)
@@ -405,25 +406,28 @@ namespace Ass_Pain
                 case ShareActionType.TrustedNetworkDelete:
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will blocklist <font color='#fa6648'>{ssid}" +
-                        $"</font> from trusted networks list, proceed ?"
+                        $"</font> from trusted networks list, proceed ?",
+                        HtmlCompat.FromHtmlModeLegacy
                     ), TextView.BufferType.Spannable);
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        FileManager.DeleteTrustedSsid(ssid);
+                        if (ssid != null) FileManager.DeleteTrustedSsid(ssid);
                         RefreshFragment();
                         dialog?.Cancel();
                     };
                     break;
                 case ShareActionType.AvailableHostAdd:
                     title?.SetText( Html.FromHtml(
-                        $"By performing this action, you will add <font color='#fa6648'>{ssid}" +
-                        $"</font> to trusted hosts list, proceed ?"
+                        $"By performing this action, you will allow <font color='#fa6648'>{ssid}" +
+                        $"</font> to send and receive songs to and from you. Receiving and sending songs to and from devices you don't own is both dangerous" +
+                        $" and <font color='#fa6648'>illegal</font>. Proceed?",
+                        HtmlCompat.FromHtmlModeLegacy
                     ), TextView.BufferType.Spannable);
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        FileManager.AddTrustedSyncTarget(ssid);
+                        if (ssid != null) FileManager.AddTrustedSyncTarget(ssid);
                         RefreshFragment();
                         dialog?.Cancel();
                     };
@@ -431,12 +435,13 @@ namespace Ass_Pain
                 case ShareActionType.AvailableHostDelete:
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will blocklist <font color='#fa6648'>{ssid}" +
-                        $"</font> from trusted hosts list, proceed ?"
+                        $"</font> from trusted hosts list. Proceed ?",
+                        HtmlCompat.FromHtmlModeLegacy
                     ), TextView.BufferType.Spannable);
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        FileManager.DeleteTrustedSyncTarget(ssid);
+                        if (ssid != null) FileManager.DeleteTrustedSyncTarget(ssid);
                         RefreshFragment();
                         dialog?.Cancel();
                     };
@@ -454,7 +459,7 @@ namespace Ass_Pain
         private void RefreshFragment()
         {
             Fragment frg = ParentFragmentManager.FindFragmentByTag("shareFragTag");
-            var ft = ParentFragmentManager.BeginTransaction();
+            FragmentTransaction? ft = ParentFragmentManager.BeginTransaction();
             ft.Detach(frg);
             ft.Attach(frg);
             ft.Commit();
@@ -488,8 +493,8 @@ namespace Ass_Pain
             if (confirm != null)
                 confirm.Click += delegate
                 {
-                    if (Int32.TryParse(input?.Text, out var res))
-                        if (res >= 1024 && res <= 65535)
+                    if (int.TryParse(input?.Text, out int res))
+                        if (res is >= 1024 and <= 65535)
                             SettingsManager.WanPort = res;
                         else
                             Toast.MakeText(context,
