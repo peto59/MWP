@@ -13,11 +13,7 @@ using AndroidX.AppCompat.Widget;
 using AndroidX.Core.Text;
 using Ass_Pain.BackEnd;
 using Ass_Pain.BackEnd.Network;
-using Java.Lang;
-using TagLib.Tiff.Arw;
-using Exception = System.Exception;
 using Fragment = AndroidX.Fragment.App.Fragment;
-using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
 using Ass_Pain.Helpers;
@@ -435,7 +431,7 @@ namespace Ass_Pain
                     if (yes != null) yes.Click += (_, _) =>
                     {
                         NetworkManagerCommon.TestNetwork();
-                        FileManager.DeleteTrustedSsid(ssid);
+                        if (ssid != null) FileManager.DeleteTrustedSsid(ssid);
                         dialog?.Cancel();
                         RefreshFragment();
                     };
@@ -450,7 +446,7 @@ namespace Ass_Pain
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        FileManager.AddTrustedSyncTarget(ssid);
+                        if (ssid != null) FileManager.AddTrustedSyncTarget(ssid);
                         dialog?.Cancel();
                         RefreshFragment();
                     };
@@ -464,7 +460,7 @@ namespace Ass_Pain
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        FileManager.DeleteTrustedSyncTarget(ssid);
+                        if (ssid != null) FileManager.DeleteTrustedSyncTarget(ssid);
                         dialog?.Cancel();
                         RefreshFragment();
                     };

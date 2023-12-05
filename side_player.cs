@@ -365,7 +365,7 @@ namespace Ass_Pain
 						);
                     }
                 };
-				StartMovingProgress(MainActivity.stateHandler.cts.Token, context);
+				StartMovingProgress(MainActivity.stateHandler.SongProgressCts.Token, context);
             }         
 		}
 

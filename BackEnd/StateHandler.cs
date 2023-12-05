@@ -21,7 +21,7 @@ namespace Ass_Pain
     public class StateHandler
     {
         public static Random Rng = new Random();
-        public CancellationTokenSource cts = new CancellationTokenSource();
+        public CancellationTokenSource SongProgressCts = new CancellationTokenSource();
         public AppCompatActivity view;
         //todo: use binder;
         private MediaPlayer mediaPlayer = null;

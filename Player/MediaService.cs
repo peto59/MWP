@@ -366,16 +366,16 @@ namespace Ass_Pain
 				position = mediaPlayer.CurrentPosition;
 				state = PlaybackStateCode.Playing;
 				side_player.SetStopButton(MainActivity.stateHandler.view);
-				MainActivity.stateHandler.cts.Cancel();
-				MainActivity.stateHandler.cts = new CancellationTokenSource();
-				side_player.StartMovingProgress(MainActivity.stateHandler.cts.Token, MainActivity.stateHandler.view);
+				MainActivity.stateHandler.SongProgressCts.Cancel();
+				MainActivity.stateHandler.SongProgressCts = new CancellationTokenSource();
+				side_player.StartMovingProgress(MainActivity.stateHandler.SongProgressCts.Token, MainActivity.stateHandler.view);
 			}
 			else if (IsPaused)
 			{
 				state = PlaybackStateCode.Paused;
 				position = mediaPlayer?.CurrentPosition ?? 0;
 				side_player.SetPlayButton(MainActivity.stateHandler.view);
-				MainActivity.stateHandler.cts.Cancel();
+				MainActivity.stateHandler.SongProgressCts.Cancel();
 			}
 			else if (isSkippingToNext)
 			{
