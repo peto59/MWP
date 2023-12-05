@@ -208,29 +208,26 @@ namespace Ass_Pain
         private void add_alias_popup(string authorN)
         {
 
-            LayoutInflater ifl = LayoutInflater.From(context);
-            View view = ifl?.Inflate(Resource.Layout.add_alias_popup, null);
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? view = ifl?.Inflate(Resource.Layout.add_alias_popup, null);
             AlertDialog.Builder alert = new AlertDialog.Builder(context);
             alert.SetView(view);
 
-            AlertDialog dialog = alert.Create();
+            AlertDialog? dialog = alert.Create();
 
-            if (view != null)
-            {
-                TextView author = view.FindViewById<TextView>(Resource.Id.author_name);
-                if (author != null) author.Text = authorN;
-            }
+            TextView? author = view?.FindViewById<TextView>(Resource.Id.author_name);
+            if (author != null) author.Text = authorN;
 
-            EditText userInput = view?.FindViewById<EditText>(Resource.Id.user_author);
-            Button sub = view?.FindViewById<Button>(Resource.Id.submit_alias);
+            EditText? userInput = view?.FindViewById<EditText>(Resource.Id.user_author);
+            Button? sub = view?.FindViewById<Button>(Resource.Id.submit_alias);
             if (sub != null)
                 sub.Click += delegate
                 {
-                    if (userInput != null) FileManager.AddAlias(authorN, userInput.Text);
+                    if (userInput is { Text: not null }) FileManager.AddAlias(authorN, userInput.Text);
                     dialog?.Hide();
                 };
 
-            Button cancel = view?.FindViewById<Button>(Resource.Id.cancel_alias);
+            Button? cancel = view?.FindViewById<Button>(Resource.Id.cancel_alias);
             if (cancel != null)
                 cancel.Click += delegate { dialog?.Hide(); };
 

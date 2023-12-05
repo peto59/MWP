@@ -13,6 +13,7 @@ using AndroidX.Fragment.App;
 using Ass_Pain.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
+using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
 using Ass_Pain.Helpers;
@@ -403,7 +404,7 @@ namespace Ass_Pain
                         {
                             // ((AllSongsFragment)activity).ReplaceFragments(AllSongsFragment.FragmentType.AlbumFrag, album1.Title);
                             // AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AlbumFrag, album1.Title);
-                            var fragmentTransaction = manager.BeginTransaction();
+                            FragmentTransaction fragmentTransaction = manager.BeginTransaction();
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", album1.Title);
                             
@@ -439,7 +440,7 @@ namespace Ass_Pain
                         {
                             // ((AllSongsFragment)activity).ReplaceFragments(AllSongsFragment.FragmentType.AuthorFrag, artist1.Title);
                             // AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AuthorFrag, artist1.Title);
-                            var fragmentTransaction = manager.BeginTransaction();
+                            FragmentTransaction fragmentTransaction = manager.BeginTransaction();
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", artist1.Title);
 
@@ -495,7 +496,7 @@ namespace Ass_Pain
             ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
             mori.LayoutParameters = ll;
 
-            if (!(obj is Album || obj is Artist || obj is Song))
+            if (obj is not (Album or Artist or Song))
             {
                 return;
             }
