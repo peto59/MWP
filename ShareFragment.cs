@@ -290,7 +290,7 @@ namespace Ass_Pain
             else
             {
                 crossButton.SetPadding(
-                    (int)(padding * scale + 0.5f), 
+                    (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f));

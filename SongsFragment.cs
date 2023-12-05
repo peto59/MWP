@@ -37,6 +37,7 @@ namespace Ass_Pain
         private AssetManager? assets;
 
         private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
+        private List<Tuple<LinearLayout, int>> lazyBuffer;
         
         long delay = 1000; 
         long lastTextEdit = 0;
@@ -233,6 +234,7 @@ namespace Ass_Pain
                 
                 /*
                  * Nacitanie songov po tom co pouzivatel stlaci tlacidlo na potvrdenie vyhladavania
+                 * 
                  */
                 if (searchButton != null)
                     searchButton.Click += delegate
@@ -256,7 +258,7 @@ namespace Ass_Pain
             int[] allSongsCardMargins = { 0, 50, 0, 0 };
 
 
-            List<Tuple<LinearLayout, int>> lazyBuffer = new List<Tuple<LinearLayout, int>>();
+            lazyBuffer = new List<Tuple<LinearLayout, int>>();
             
             for (int i = 0; i < songs.Count; i++)
             {
@@ -264,7 +266,8 @@ namespace Ass_Pain
                     songs[i], scale,
                     150, 100,
                     allSongsButtonMargins, allSongsNameMargins, allSongsCardMargins,
-                    17, i, context, songButtons, UIRenderFunctions.SongType.allSong, assets, ParentFragmentManager, allSongsLnMain
+                    17, i, context, songButtons, UIRenderFunctions.SongType.allSong, assets, ParentFragmentManager, 
+                    allSongsLnMain, this
                 );
                 
                 lazyBuffer.Add(new Tuple<LinearLayout, int>(lnIn, i));
@@ -300,6 +303,7 @@ namespace Ass_Pain
                     lazyBuffer.RemoveRange(0, Math.Min(5, lazyBuffer.Count));
                 }
             };
+            
             
         } 
         
@@ -353,7 +357,8 @@ namespace Ass_Pain
 
 
         /// <summary>
-        /// Use for invalidating rendered songs and rerender them again
+        /// Use for invalidating rendered songs and rerender them again, due to rerendering
+        /// whole view when something changed, e.g. song was deleted
         /// </summary>
         public void InvalidateCache()
         {

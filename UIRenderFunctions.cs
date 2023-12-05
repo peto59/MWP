@@ -39,7 +39,10 @@ namespace Ass_Pain
         public static object FragmentPositionObject;
         
         
-        private static void AreYouSure(object sender, EventArgs e, Song song, AlertDialog? di, LinearLayout linFromDelete, LinearLayout linForDelete, Context context)
+        private static void AreYouSure(
+            object sender, EventArgs e, Song song, AlertDialog? di, 
+            LinearLayout linFromDelete, LinearLayout linForDelete, 
+            Context context, SongsFragment songsFragmentContext)
         {
             LayoutInflater ifl = LayoutInflater.From(context);
             View view = ifl?.Inflate(Resource.Layout.are_you_sure_popup, null);
@@ -65,6 +68,7 @@ namespace Ass_Pain
                     song.Delete();
                     dialog?.Hide();
                     di.Hide();
+                    songsFragmentContext.InvalidateCache();
 
                     linFromDelete.RemoveView(linForDelete);
                     Toast.MakeText(context, $"{song.Title} has been deleted", ToastLength.Short)?.Show();
@@ -185,7 +189,7 @@ namespace Ass_Pain
 
         private static void ShowPopupSongEdit(
             MusicBaseClass path, LinearLayout linFromDelete, LinearLayout linForDelete, Context context, float scale, 
-            AssetManager? assets, FragmentManager manager
+            AssetManager? assets, FragmentManager manager, SongsFragment SongsFragmentContext = null
         )
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
@@ -253,7 +257,7 @@ namespace Ass_Pain
                     if (delete != null)
                         delete.Click += (o, args) =>
                         {
-                            AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context);
+                            AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context, SongsFragmentContext);
                         };
 
                     if (edit != null)
@@ -297,7 +301,7 @@ namespace Ass_Pain
         public static LinearLayout PopulateHorizontal(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize, int index,
             Context context, Dictionary<LinearLayout, int> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
-            LinearLayout linForDelete = null
+            LinearLayout linForDelete = null, SongsFragment SongsfragmentContext = null 
         )
         {
             //リネアルレーアート作る
@@ -340,7 +344,7 @@ namespace Ass_Pain
             };
             lnIn.LongClick += (_, _) =>
             {
-                ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale, assets, manager);
+                ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
             };
 
             songButtons.Add(lnIn, index);
@@ -371,7 +375,7 @@ namespace Ass_Pain
             Context context, Dictionary<LinearLayout, object> albumButtons, 
             FragmentManager manager, AssetManager? assets,
             AlbumFragment albumFragment = null, AuthorFragment authorFragment = null,
-            LinearLayout linForDelete = null
+            LinearLayout linForDelete = null, SongsFragment SongsfragmentContext = null 
         )
         {
             //リネアルレーアート作る
@@ -417,7 +421,7 @@ namespace Ass_Pain
                 
                 lnIn.LongClick += (_, _) =>
                 {
-                    ShowPopupSongEdit(album, linForDelete, lnIn, context, scale, assets, manager);
+                    ShowPopupSongEdit(album, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
                 };
                 
 
@@ -453,7 +457,7 @@ namespace Ass_Pain
                 
                 lnIn.LongClick += (_, _) =>
                 {
-                    ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale, assets, manager);
+                    ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
                 };
                 
 
