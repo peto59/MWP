@@ -9,124 +9,55 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.IO;
 using Android.Content.PM;
 using Android.Graphics;
 using Android.Support.V4.Media.Session;
 using Android.Support.V4.Media;
+using MWP.BackEnd.Player;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
 	[Service(ForegroundServiceType = ForegroundService.TypeMediaPlayback, Label = "@string/service_name")]
 	//TODO: https://developer.android.com/training/cars/media
 	public class MediaService : Service, AudioManager.IOnAudioFocusChangeListener
 	{
-		///<summary>
-		///Requests focus and starts playing new song or resumes playback if playback was paused
-		///</summary>
-		public const string ActionPlay = "ActionPlay";
-
-		///<summary>
-		///Pauses playback
-		///</summary>
-		public const string ActionPause = "ActionPause";
-
-		///<summary>
-		///Stops playing and abandons focus
-		///</summary>
-		public const string ActionStop = "ActionStop";
-		
-		///<summary>
-		///Shuffles or unshuffles queue and updates shuffling for all new queues oposite to last state
-		///</summary>
-		public const string ActionShuffle = "ActionShuffle";
-
-		///<summary>
-		///Changes current loop state based on last state
-		///</summary>
-		public const string ActionToggleLoop = "ActionToggleLoop";
-
-		///<summary>
-		///Toggles between playing and being paused
-		///</summary>
-		public const string ActionTogglePlay = "ActionTogglePlay";
-
-		///<summary>
-		///Plays next song in queue
-		///</summary>
-		public const string ActionNextSong = "ActionNextSong";
-
-		///<summary>
-		///Plays previous song in queue
-		///</summary>
-		public const string ActionPreviousSong = "ActionPreviousSong";
-
-		///<summary>
-		///Clears queue and resets index to 0
-		///</summary>
-		public const string ActionClearQueue = "ActionClearQueue";
-		///<summary>
-		///Moves playback of current song intent extra int time in milliseconds
-		///</summary>
-		public const string ActionSeekTo = "ActionSeekTo";
-
 		private MediaSessionCompat? session;
+		public IBinder Binder { get; private set; }
+		
+		/// <summary>
+		/// handle for current media session
+		/// </summary>
+		public MediaSessionCompat Session
+		{
+			get
+			{
+				if (session == null)
+				{
+					InnitSession();
+				}
+
+				return session!;
+			}
+		}
+		
 		public MediaPlayer? mediaPlayer { get; private set; }
 		private AudioManager? audioManager;
 		private AudioFocusRequestClass? audioFocusRequest;
 		private readonly Local_notification_service notificationService = new Local_notification_service();
+		public readonly MyMediaQueue QueueObject = new MyMediaQueue();
 		public long Actions { get; private set; }
 		private bool isFocusGranted;
 		private bool isUsed;
 		private bool lostFocusDuringPlay;
 		public bool IsPaused { get; private set; }
-		public bool IsShuffled { get; private set; }
-		public bool loopAll { get; private set; }
-		public bool loopSingle { get; private set; }
+		
 		private bool isSkippingToNext;
 		private bool isSkippingToPrevious;
 		private bool isBuffering = true;
-		public int LoopState { get; private set; }
-		private int i;
-		public int Index
-		{
-			get => i;
-			private set { i = value.KeepPositive(); MainActivity.stateHandler.setIndex(ref i); }
-		}
-		// private List<Song> q = new List<Song>();
-		public List<Song> Queue = new List<Song>();
-        private List<Song> originalQueue = new List<Song>();
-        internal readonly AutoResetEvent shuffling = new AutoResetEvent(true);
-
-        public Song Current
-        {
-	        get
-	        {
-		        try
-		        {
-			        return Queue[Index];
-		        }
-		        catch
-		        {
-			        return new Song("No Name", new DateTime(), "Default");
-		        }
-	        }
-        }
-
-        public override void OnCreate()
-		{
-			base.OnCreate();
-			InnitPlayer();
-			InnitAudioManager();
-			InnitSession();
-			InnitFocusRequest();
-			InnitNotification();
-#if DEBUG
-            MyConsole.WriteLine("CREATING NEW SESSION");
-#endif
-		}
 		public override void OnDestroy()
 		{
 			CleanUp();
@@ -145,7 +76,7 @@ namespace Ass_Pain
 			};
 			mediaPlayer.Completion += delegate
 			{
-				NextSong();
+				NextSong(false);
 			};
 			mediaPlayer.BufferingUpdate += (_, e) =>
 			{
@@ -156,7 +87,6 @@ namespace Ass_Pain
                 UpdatePlaybackState();
             };
 			MediaPlayer m = mediaPlayer;
-			MainActivity.stateHandler.setMediaPlayer(ref m);
         }
 
 		///<summary>
@@ -203,7 +133,7 @@ namespace Ass_Pain
 			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
 			try
 			{
-				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, Queue[0].Image);
+				metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, QueueObject.Queue[0].Image);
 			}
 			catch (Exception)
 			{
@@ -212,7 +142,7 @@ namespace Ass_Pain
 					metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, MusicBaseClassStatic.placeholder);	
 				}
 			}
-		
+			
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplayTitle, "No Song");
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplaySubtitle, "No Artist");
 			session?.SetMetadata(metadataBuilder.Build());
@@ -225,14 +155,15 @@ namespace Ass_Pain
 			if (stateBuilder != null)
 			{
 				stateBuilder.SetState((int)state, position, 1.0f);
-				int icon = LoopState switch
+				int icon = QueueObject.LoopState switch
 				{
-					0 => Resource.Drawable.no_repeat,
-					1 => Resource.Drawable.repeat,
-					_ => Resource.Drawable.repeat_one
+					Enums.LoopState.All => Resource.Drawable.repeat,
+					Enums.LoopState.Single => Resource.Drawable.repeat_one,
+					Enums.LoopState.None => Resource.Drawable.no_repeat,
+					_ => Resource.Drawable.no_repeat
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
-				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", QueueObject.IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
 				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
@@ -273,53 +204,14 @@ namespace Ass_Pain
 		/// <inheritdoc />
 		public override StartCommandResult OnStartCommand(Intent? intent, StartCommandFlags flags, int startId)
 		{
-			switch (intent?.Action)
-			{
-				case ActionPlay:
-					Play();
-					break;
-				case ActionPause:
-					Pause();
-					break;
-				case ActionStop:
-					Stop();
-					break;
-				case ActionShuffle:
-					Shuffle(intent.GetBooleanExtra("shuffle", false));
-					break;
-				case ActionToggleLoop:
-					ToggleLoop(intent.GetIntExtra("loopState", 0));
+			InnitPlayer();
+			InnitAudioManager();
+			InnitSession();
+			InnitFocusRequest();
+			InnitNotification();
 #if DEBUG
-                    MyConsole.WriteLine("TOGGLE LOOP SWITCH");
+			MyConsole.WriteLine("CREATING NEW SESSION");
 #endif
-                    break;
-				case ActionTogglePlay:
-					if ((bool)mediaPlayer?.IsPlaying)
-					{
-						Pause();
-					}
-					else
-					{
-						if (isUsed)
-						{
-							Play();
-						}
-					}
-					break;
-				case ActionNextSong:
-					NextSong();
-					break;
-				case ActionPreviousSong:
-					PreviousSong();
-					break;
-				case ActionSeekTo:
-					SeekTo(intent.GetIntExtra("millis", 0));
-					break;
-				case ActionClearQueue:
-					ClearQueue();
-					break;
-			}
-            intent?.Dispose();
 			return StartCommandResult.Sticky;
 		}
 		private long GetAvailableActions()
@@ -335,18 +227,18 @@ namespace Ass_Pain
 				Actions = PlaybackState.ActionPlay;
 			}
 			
-			if (Queue.Count == 0)
+			if (QueueObject.QueueCount == 0)
 			{
 				return Actions;
 			}
 			
 			Actions |= PlaybackState.ActionSeekTo;
 			
-			if ((Index > 0 || loopAll) && !loopSingle)
+			if (QueueObject.HasPrevious)
 			{
 				Actions |= PlaybackState.ActionSkipToPrevious;
 			}
-			if ((Index < Queue.Count -1 || loopAll) && !loopSingle)
+			if (QueueObject.HasNext)
 			{
 				Actions |= PlaybackState.ActionSkipToNext;
 			}
@@ -365,16 +257,16 @@ namespace Ass_Pain
 			{
 				position = mediaPlayer.CurrentPosition;
 				state = PlaybackStateCode.Playing;
-				side_player.SetStopButton(MainActivity.stateHandler.view);
+				SidePlayer.SetStopButton(MainActivity.stateHandler.view);
 				MainActivity.stateHandler.SongProgressCts.Cancel();
 				MainActivity.stateHandler.SongProgressCts = new CancellationTokenSource();
-				side_player.StartMovingProgress(MainActivity.stateHandler.SongProgressCts.Token, MainActivity.stateHandler.view);
+				SidePlayer.StartMovingProgress(MainActivity.stateHandler.SongProgressCts.Token, MainActivity.stateHandler.view);
 			}
 			else if (IsPaused)
 			{
 				state = PlaybackStateCode.Paused;
 				position = mediaPlayer?.CurrentPosition ?? 0;
-				side_player.SetPlayButton(MainActivity.stateHandler.view);
+				SidePlayer.SetPlayButton(MainActivity.stateHandler.view);
 				MainActivity.stateHandler.SongProgressCts.Cancel();
 			}
 			else if (isSkippingToNext)
@@ -399,30 +291,31 @@ namespace Ass_Pain
 			if (stateBuilder != null)
 			{
 				stateBuilder.SetState((int)state, position, 1.0f);
-				int icon = LoopState switch
+				int icon = QueueObject.LoopState switch
 				{
-					0 => Resource.Drawable.no_repeat,
-					1 => Resource.Drawable.repeat,
-					_ => Resource.Drawable.repeat_one
+					Enums.LoopState.All => Resource.Drawable.repeat,
+					Enums.LoopState.Single => Resource.Drawable.repeat_one,
+					Enums.LoopState.None => Resource.Drawable.no_repeat,
+					_ => Resource.Drawable.no_repeat
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
-				stateBuilder.AddCustomAction("shuffle", "shuffle", IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", QueueObject.IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
 				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
-			if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
+			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.stateHandler.view, Assets);
 			notificationService.Notify();
 		}
 
 		private void UpdateMetadata()
 		{
-			if (mediaPlayer == null || Queue.Count <= 0) return;
+			if (mediaPlayer == null || QueueObject.QueueCount <= 0) return;
 			if (session == null)
 			{
 				InnitSession();
 			}
 			MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
-			Song song = Queue[Index];
+			Song song = QueueObject.Current;
 			Bitmap image = song.Image;
 			metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt,
 				image);
@@ -436,7 +329,7 @@ namespace Ass_Pain
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyTitle,
 				song.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyDisplaySubtitle,
-				song.Album + song.Artist.Title);
+				song.Artist.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAlbum,
 				song.Album.Title);
 			metadataBuilder.PutString(MediaMetadataCompat.MetadataKeyAlbumArtist,
@@ -458,9 +351,9 @@ namespace Ass_Pain
 		///<summary>
 		///Requests focus and starts playing new song or resumes playback if playback was paused
 		///</summary>
-		public void Play()
+		public void Play(bool reset = false)
 		{
-			if (Queue.Count == 0)
+			if (QueueObject.QueueCount == 0)
 			{
 				try
 				{
@@ -489,20 +382,20 @@ namespace Ass_Pain
 			if (!notificationService.IsCreated)
 			{
 				if (session.SessionToken != null) notificationService.song_control_notification(session.SessionToken);
-				//StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
+				StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
 				//android:foregroundServiceType="mediaPlayback"
-				StartForeground(notificationService.NotificationId, notificationService.Notification);
+				//StartForeground(notificationService.NotificationId, notificationService.Notification);
 			}
 			if (mediaPlayer == null)
 			{
 				InnitPlayer();
 			}
-			if (!IsPaused)
+			if (!IsPaused || reset)
 			{
 				mediaPlayer!.Reset();
 #if DEBUG
-                MyConsole.WriteLine($"SERVICE INDEX {Index}");
-                MyConsole.WriteLine($"SERVICE QUEUE {Queue.Count}");
+                MyConsole.WriteLine($"SERVICE INDEX {QueueObject.Index}");
+                MyConsole.WriteLine($"SERVICE QUEUE {QueueObject.QueueCount}");
 #endif
 
 
@@ -511,7 +404,7 @@ namespace Ass_Pain
                 // 	NextSong();
                 // 	return;
                 // }
-                mediaPlayer.SetDataSource(Current.Path);
+                mediaPlayer.SetDataSource(QueueObject.Current.Path);
 				mediaPlayer.Prepare();
 			}
 			mediaPlayer!.Start();
@@ -543,7 +436,7 @@ namespace Ass_Pain
 		///<summary>
 		///Stops playing and abandons focus
 		///</summary>
-		private void Stop()
+		public void Stop()
 		{
 			mediaPlayer?.Stop();
 			AbandonFocus();
@@ -554,24 +447,17 @@ namespace Ass_Pain
 		///<summary>
 		///Plays next song in queue
 		///</summary>
-		public void NextSong()
+		public void NextSong(bool user = true)
 		{
 			if (mediaPlayer == null) return;
-			if (loopSingle)
-			{
-				Play();
-				return;
-			}
 			isSkippingToNext = true;
 			IsPaused = false;
-			if (Queue.Count -1 > Index)
+			if (!user && QueueObject.LoopState == Enums.LoopState.Single)
 			{
-				Index++;
 				Play();
 			}
-			else if (loopAll)
+			else if (QueueObject.IncrementIndex())
 			{
-				Index = 0;
 				Play();
 			}
 			isSkippingToNext = false;
@@ -580,7 +466,7 @@ namespace Ass_Pain
 		///<summary>
 		///Plays previous song in queue
 		///</summary>
-		private void PreviousSong()
+		public void PreviousSong()
 		{
 			if (mediaPlayer == null) return;
 			if (mediaPlayer.CurrentPosition > 10000)//if current song is playing longer than 10 seconds
@@ -590,19 +476,12 @@ namespace Ass_Pain
 			}
 			isSkippingToPrevious = true;
 			IsPaused = false;
-			Index--;
-			if(Index < 0 && loopAll){
-				Index = Queue.Count -1;
-			}
-#if DEBUG
-            MyConsole.WriteLine($"Index in previous song: {Index}");
-#endif
-
+			QueueObject.DecrementIndex();
             Play();
 			isSkippingToPrevious = false;
 		}
 
-		private void SeekTo(int millis)
+		public void SeekTo(int millis)
 		{
 #if DEBUG
             MyConsole.WriteLine("SEEEEEKING");
@@ -611,81 +490,36 @@ namespace Ass_Pain
             mediaPlayer.SeekTo(millis);
 		}
 
-		///<summary>
-		///Generates new queue from single song path or directory path and set index to 0
-		///</summary>
-		// public void GenerateQueue(string source)
-		// {
-		// 	Index = 0;
-  //           if (FileManager.IsDirectory(source))
-		// 	{
-		// 		GenerateQueue(FileManager.GetSongs(source));
-		// 	}
-		// 	else
-		// 	{
-		// 		Queue = new List<string> { source };
-  //               Play();
-		// 	}
-		// }
-
-		///<summary>
-		///Generates new queue from list and resets index to 0
-		///</summary>
-		// public void GenerateQueue(List<string> source, int i = 0)
-		// {
-		// 	Queue = source;
-  //           Index = i;
-  //           Shuffle(IsShuffled);
-		// 	Play();
-		// }
-
-		public void GenerateQueue(Song source, int? ind = null)
+		public void GenerateQueue(Song source, int ind = 0, bool play = true)
 		{
-			Queue = new List<Song> { source };
-			Index = ind ?? 0;
-			Play();
+			GenerateQueue(new List<Song> { source }, ind, play);
 		}
 		
-		public void GenerateQueue(IEnumerable<Song> source, int? ind = null, bool play = true)
+		public void GenerateQueue(IEnumerable<Song> source, int ind = 0, bool play = true)
 		{
-			Queue = source.ToList();
-			Index = ind ?? 0;
-			if (IsShuffled)
-			{
-				Shuffle(true, ind);
-			}
+			QueueObject.GenerateQueue(source, ind);
 			if (play)
 			{
-				Play();
+				Play(true);
 			}
 		}
 		
-		public void GenerateQueue(MusicBaseContainer source, int? ind = null)
+		public void GenerateQueue(MusicBaseContainer source, int ind = 0, bool play = true)
 		{
-			Queue = source.Songs;
-			Index = ind ?? 0;
-			Play();
+			GenerateQueue(source.Songs, ind, play);
 		}
-
-		///<summary>
-		///Clears queue and resets index to 0
-		///</summary>
-		public void ClearQueue()
+		public void GenerateQueue(IEnumerable<MusicBaseContainer> source, int ind = 0, bool play = true)
 		{
-			Queue = new List<Song>();
-            Index = 0;
-        }
+			IEnumerable<Song> songs = source.SelectMany(s => s.Songs);
+			GenerateQueue(songs, ind, play);
+		}
 
 		///<summary>
 		///Adds single track or entire album/author to the end of queue from <paramref name="addition"/> path
 		///</summary>
 		public void AddToQueue(Song addition)
 		{
-			Queue.Add(addition);
-            if (IsShuffled)
-			{
-				originalQueue.Add(addition);
-			}
+			AddToQueue(new List<Song>{addition});
 		}
 
 		///<summary>
@@ -693,11 +527,7 @@ namespace Ass_Pain
 		///</summary>
 		public void AddToQueue(List<Song> addition)
 		{
-			Queue.AddRange(addition);
-            if (IsShuffled)
-			{
-				originalQueue.AddRange(addition);
-			}
+			QueueObject.AppendToQueue(addition);
 		}
 
 		public void AddToQueue(MusicBaseContainer obj)
@@ -710,11 +540,7 @@ namespace Ass_Pain
 		///</summary>
 		public void PlayNext(Song addition)
 		{
-			Queue.Insert(Index+1, addition);
-            if (IsShuffled)
-			{
-				originalQueue.Insert(Index+1, addition);
-			}
+			PlayNext(new List<Song>{addition});
 
 		}
 
@@ -723,23 +549,7 @@ namespace Ass_Pain
 		///</summary>
 		public void PlayNext(List<Song> addition)
 		{
-			if (IsShuffled)
-			{
-				//TODO: opravit podla inej logiky nizsie
-				addition.AddRange(originalQueue);
-				originalQueue = addition;
-			}
-			if(Index >= Queue.Count)
-			{
-                AddToQueue(addition);
-			}
-			else
-			{
-				List<Song> tmp = Queue.GetRange(0, Index+1);
-				tmp.AddRange(addition);
-				tmp.AddRange(Queue.Skip(Index + 1));
-                Queue = tmp;
-            }
+			QueueObject.PrependToQueue(addition);
         }
 
 		public void PlayNext(MusicBaseContainer addition)
@@ -750,35 +560,11 @@ namespace Ass_Pain
 		///<summary>
 		///Shuffles or unshuffles queue and updates shuffling for all new queues based on <paramref name="newShuffleState"/> state
 		///</summary>
-		public void Shuffle(bool newShuffleState, int? indx = null)
+		public void Shuffle(bool newShuffleState)
 		{
-            if(Queue.Count == 0) { return; }
-
-            int ind = indx ?? Index;
-
-            shuffling.WaitOne();
-			if (newShuffleState)
-			{
-				originalQueue = Queue.ToList();
-				Song tmp = Queue.Pop(ind);
-				Index = 0;
-                Queue.Shuffle();
-				Queue = Queue.Prepend(tmp).ToList();
-            }
-			else
-			{
-				if (originalQueue.Count > 0)
-				{
-					Index = originalQueue.IndexOf(Queue[Index]);
-                    Queue = originalQueue;
-                    originalQueue = new List<Song>();
-				}
-			}
-			IsShuffled = newShuffleState;
-			MainActivity.stateHandler.shuffle = newShuffleState;
+			QueueObject.IsShuffled = newShuffleState;
 			UpdatePlaybackState();
-			if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
-			shuffling.Set();
+			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.stateHandler.view, Assets);
 		}
 
 		///<summary>
@@ -786,31 +572,21 @@ namespace Ass_Pain
 		///</summary>
 		public void ToggleLoop(int state)
 		{
-			state %= 3;
-			LoopState = state;
-			switch (state)
-			{
-				case 0:
-					loopAll = false;
-					loopSingle = false;
-					break;
-				case 1:
-					loopAll = true;
-					loopSingle = false;
-					break;
-				case 2:
-					loopAll = false;
-					loopSingle = true;
-					break;
-			}
-			//mediaPlayer.Looping = loopSingle;
-			MainActivity.stateHandler.loopState = LoopState;
+			QueueObject.ToggleLoop(state);
             UpdatePlaybackState();
-            if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
+            if (Assets != null) SidePlayer.populate_side_bar(MainActivity.stateHandler.view, Assets);
 #if DEBUG
             MyConsole.WriteLine("TOGGLE LOOP");
 #endif
         }
+
+		///<summary>
+		///Cycles through loop states based on <paramref name="state"/> value
+		///</summary>
+		public void ToggleLoop(Enums.LoopState loopState)
+		{
+			ToggleLoop((int)loopState);
+		}
 
 		///<summary>
 		///Requests audio focus
@@ -961,7 +737,19 @@ namespace Ass_Pain
 		/// <inheritdoc />
 		public override IBinder OnBind(Intent? intent)
 		{
-			return new MediaServiceBinder(this);
+			Binder = new MediaServiceBinder(this);
+			return Binder;
 		}
+
+		protected override void Dispose(bool disposing)
+		{
+			CleanUp();
+			base.Dispose(disposing);
+		}
+
+		/*public void Dispose()
+		{
+			throw new NotImplementedException();
+		}*/
 	}
 }

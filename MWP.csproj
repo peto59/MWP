@@ -13,8 +13,8 @@
     <TemplateGuid>{d0238942-4dcf-4d08-b23a-81159ca3b345}</TemplateGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Ass_Pain</RootNamespace>
-    <AssemblyName>Ass_Pain</AssemblyName>
+    <RootNamespace>MWP</RootNamespace>
+    <AssemblyName>MWP</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <Deterministic>True</Deterministic>
     <AndroidApplication>True</AndroidApplication>
@@ -110,6 +110,14 @@
     <Compile Include="AlbumFragment.cs" />
     <Compile Include="AllSongsFragment.cs" />
     <Compile Include="AuthorFragment.cs" />
+    <Compile Include="BackEnd\Player\Enums.cs" />
+    <Compile Include="BackEnd\Player\MediaService.cs" />
+    <Compile Include="BackEnd\Player\MediaServiceBinder.cs" />
+    <Compile Include="BackEnd\Player\MediaServiceConnection.cs" />
+    <Compile Include="BackEnd\Player\MediaSessionCallback.cs" />
+    <Compile Include="BackEnd\Player\MyBroadcastReceiver.cs" />
+    <Compile Include="BackEnd\Player\MyMediaBrowserService.cs" />
+    <Compile Include="BackEnd\Player\MyMediaQueue.cs" />
     <Compile Include="BackEnd\SettingsManager.cs" />
     <Compile Include="DatatypesAndExtensions\Album.cs" />
     <Compile Include="DatatypesAndExtensions\ChromaprintResult.cs" />
@@ -121,16 +129,11 @@
     <Compile Include="DownloadNotification.cs" />
     <Compile Include="Helpers\SongJsonConverter.cs" />
     <Compile Include="Helpers\MyConsole.cs" />
-    <Compile Include="Player\MediaService.cs" />
     <Compile Include="Helpers\Interval.cs" />
     <Compile Include="DatatypesAndExtensions\Extensions.cs" />
     <Compile Include="Helpers\Levenshtein.cs" />
-    <Compile Include="Player\MediaServiceBinder.cs" />
-    <Compile Include="Player\MediaServiceConnection.cs" />
-    <Compile Include="Player\MediaSessionCallback.cs" />
     <Compile Include="Local_notification_service.cs" />
     <Compile Include="DatatypesAndExtensions\MusicBaseClass.cs" />
-    <Compile Include="Player\MyBroadcastReceiver.cs" />
     <Compile Include="BackEnd\Downloader.cs" />
     <Compile Include="BackEnd\FileManager.cs" />
     <Compile Include="Helpers\HelloWebViewClient.cs" />
@@ -282,6 +285,7 @@
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\xml\automotive_app_desc.xml" />
     <AndroidResource Include="Resources\xml\provider_paths.xml" />
   </ItemGroup>
   <ItemGroup>

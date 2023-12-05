@@ -10,7 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
-namespace Ass_Pain
+namespace MWP
 {
     internal static class Extensions
     {

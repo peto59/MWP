@@ -10,16 +10,16 @@ using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.OS;
 using AndroidX.Fragment.App;
-using Ass_Pain.BackEnd;
+using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     public class UIRenderFunctions
     {

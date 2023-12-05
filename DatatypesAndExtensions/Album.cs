@@ -1,17 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Android.App;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Xml.Serialization;
-using Ass_Pain.BackEnd;
+using Android.Support.V4.Media;
+using MWP.BackEnd;
 using Newtonsoft.Json;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     [Serializable]
     [JsonObject(MemberSerialization.OptIn)]
@@ -195,6 +198,28 @@ namespace Ass_Pain
             Songs = album.Songs;
             Artists = album.Artists;
             ImgPath = imgPath;
+        }
+        
+        public override MediaBrowserCompat.MediaItem? ToMediaItem()
+        {
+            if (Description == null) return null;
+            int flags = MediaBrowserCompat.MediaItem.FlagBrowsable | MediaBrowserCompat.MediaItem.FlagPlayable;
+            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, flags);
+            return item;
+        }
+
+        protected override MediaDescriptionCompat? GetDescription()
+        {
+            return Builder?.Build();
+        }
+
+        protected override MediaDescriptionCompat.Builder? GetBuilder()
+        {
+            return new MediaDescriptionCompat.Builder()
+                .SetMediaId($"{(byte)MediaType.Album}{Title}")?
+                .SetTitle(Title)?
+                .SetSubtitle(Artist.Title)?
+                .SetIconBitmap(Image);
         }
 
         /// <inheritdoc />

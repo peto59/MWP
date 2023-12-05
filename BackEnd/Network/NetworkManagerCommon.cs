@@ -21,10 +21,10 @@ using SocketType = System.Net.Sockets.SocketType;
 using TransportType = Android.Net.TransportType;
 using Mono.Nat;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     internal class NetworkManagerCommon
     {

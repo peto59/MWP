@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Android.Views;
-using Ass_Pain.Helpers;
 using Com.Arthenica.Ffmpegkit;
 using Com.Geecko.Fpcalc;
 using Google.Android.Material.Snackbar;
@@ -21,8 +20,11 @@ using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using Signal = Com.Arthenica.Ffmpegkit.Signal;
+#if DEBUG
+using MWP.Helpers;
+#endif
 
-namespace Ass_Pain.BackEnd
+namespace MWP.BackEnd
 {
     // TODO: add new song to state handler
     internal static class Downloader

@@ -10,10 +10,10 @@ using Newtonsoft.Json;
 using Xamarin.Essentials;
 using Thread = System.Threading.Thread;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     internal static class NetworkManagerClient
     {

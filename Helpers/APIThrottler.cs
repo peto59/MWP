@@ -12,7 +12,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <summary>
     /// Class to throttle function calls

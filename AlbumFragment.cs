@@ -11,11 +11,11 @@ using Android.Util;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <summary>
     /// Album fragment, initiated after one of the album buttons is clicked in the AlbumAuthorFragment

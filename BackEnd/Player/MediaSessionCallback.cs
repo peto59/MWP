@@ -14,10 +14,10 @@ using System.Runtime.Remoting.Contexts;
 using System.Text;
 using AndroidApp = Android.App.Application;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     class MediaSessionCallback : Android.Support.V4.Media.Session.MediaSessionCompat.Callback
     {
@@ -26,9 +26,7 @@ namespace Ass_Pain
 #if DEBUG
             MyConsole.WriteLine("OnPlay");
 #endif
-            AndroidApp.Context.StartService(
-                            new Intent(MediaService.ActionPlay, null, AndroidApp.Context, typeof(MediaService))
-                        );
+            MainActivity.ServiceConnection.Binder?.Service.Play();
             //OnPlayImpl();
             base.OnPlay();
         }
@@ -48,20 +46,46 @@ namespace Ass_Pain
             MyConsole.WriteLine("OnSeekTo");
             MyConsole.WriteLine($"POSTION: {pos}");
 #endif
-            AndroidApp.Context.StartService(
-                            new Intent(MediaService.ActionSeekTo, null, AndroidApp.Context, typeof(MediaService))
-                            .PutExtra("millis", (int)pos)
-                        );
+
+            MainActivity.ServiceConnection.Binder?.Service.SeekTo((int)pos);
             //OnSeekToImpl(pos);
             base.OnSeekTo(pos);
         }
 
-        public override void OnPlayFromMediaId(string mediaId, Bundle extras)
+        public override void OnPlayFromMediaId(string? mediaId, Bundle? extras)
         {
+            if (mediaId == null)
+            {
+                base.OnPlayFromMediaId(mediaId, extras);
+                return;
+            }
 #if DEBUG
-            MyConsole.WriteLine("OnPlayFromMediaId");
+            MyConsole.WriteLine($"OnPlayFromMediaId mediaId {mediaId}");
 #endif
-            //OnPlayFromMediaIdImpl(mediaId, extras);
+            MediaType mediaType = (MediaType)(mediaId[0] - '0');
+#if DEBUG
+            MyConsole.WriteLine($"MediaType {mediaType}");
+
+#endif
+            mediaId = mediaId[1..];
+#if DEBUG
+            MyConsole.WriteLine($"mediaId {mediaId}");
+#endif
+
+            switch (mediaType)
+            {
+                case MediaType.Song:
+                    MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Songs.Search(mediaId));
+                    break;
+                case MediaType.Album:
+                    MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Albums.Search(mediaId));
+                    break;
+                case MediaType.Artist:
+                    MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Artists.Search(mediaId));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
             base.OnPlayFromMediaId(mediaId, extras);
         }
 
@@ -70,9 +94,7 @@ namespace Ass_Pain
 #if DEBUG
             MyConsole.WriteLine("OnPause");
 #endif
-            AndroidApp.Context.StartService(
-                            new Intent(MediaService.ActionPause, null, AndroidApp.Context, typeof(MediaService))
-                        );
+            MainActivity.ServiceConnection.Binder?.Service.Pause();
             //OnPauseImpl();
             base.OnPause();
         }
@@ -82,9 +104,7 @@ namespace Ass_Pain
 #if DEBUG
             MyConsole.WriteLine("OnStop");
 #endif
-            AndroidApp.Context.StartService(
-                            new Intent(MediaService.ActionStop, null, AndroidApp.Context, typeof(MediaService))
-                        );
+            MainActivity.ServiceConnection.Binder?.Service.Stop();
             //OnStopImpl();
             base.OnStop();
         }
@@ -94,9 +114,7 @@ namespace Ass_Pain
 #if DEBUG
             MyConsole.WriteLine("OnSkipToNext");
 #endif
-            AndroidApp.Context.StartService(
-                            new Intent(MediaService.ActionNextSong, null, AndroidApp.Context, typeof(MediaService))
-                        );
+            MainActivity.ServiceConnection.Binder?.Service.NextSong();
             //OnSkipToNextImpl();
             base.OnSkipToNext();
         }
@@ -106,9 +124,7 @@ namespace Ass_Pain
 #if DEBUG
             MyConsole.WriteLine("OnSkipToPrevious");
 #endif
-            AndroidApp.Context.StartService(
-                            new Intent(MediaService.ActionPreviousSong, null, AndroidApp.Context, typeof(MediaService))
-                        );
+            MainActivity.ServiceConnection.Binder?.Service.PreviousSong();
             //OnSkipToPreviousImpl();
             base.OnSkipToPrevious();
         }
@@ -123,10 +139,10 @@ namespace Ass_Pain
                 switch (action)
                 {
                     case "loop":
-                        MainActivity.ServiceConnection.Binder?.Service?.ToggleLoop(MainActivity.ServiceConnection.Binder.Service.LoopState + 1);
+                        MainActivity.ServiceConnection.Binder?.Service.ToggleLoop((int)MainActivity.ServiceConnection.Binder.Service.QueueObject.LoopState + 1);
                         break;
                     case "shuffle":
-                        MainActivity.ServiceConnection.Binder?.Service?.Shuffle(!MainActivity.ServiceConnection.Binder.Service.IsShuffled);
+                        MainActivity.ServiceConnection.Binder?.Service.Shuffle(!MainActivity.ServiceConnection.Binder.Service.QueueObject.IsShuffled);
                         break;
                     default:
                         throw new ArgumentException("Must use loop or shuffle as action argument");

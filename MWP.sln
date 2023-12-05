@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ass_Pain", "Ass_Pain.csproj", "{44E81BE3-AE9F-4215-B33F-D17EA3507138}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MWP", "MWP.csproj", "{44E81BE3-AE9F-4215-B33F-D17EA3507138}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A2EDE33D-4A77-4F05-A761-FF32462D0C13} = {A2EDE33D-4A77-4F05-A761-FF32462D0C13}
 	EndProjectSection

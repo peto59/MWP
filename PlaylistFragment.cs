@@ -7,12 +7,12 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Android.Content.Res;
 using Android.Graphics;
-using Ass_Pain.BackEnd;
+using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <summary>
     /// 

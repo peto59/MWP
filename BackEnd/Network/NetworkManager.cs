@@ -8,10 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd.Network
+namespace MWP.BackEnd.Network
 {
     /// <summary>
     /// Class that manages network connections

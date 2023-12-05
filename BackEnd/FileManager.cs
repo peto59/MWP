@@ -11,10 +11,10 @@ using TagLib.Id3v2;
 using File = System.IO.File;
 using Tag = TagLib.Id3v2.Tag;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain.BackEnd
+namespace MWP.BackEnd
 {
     internal static class FileManager
     {
@@ -85,7 +85,9 @@ namespace Ass_Pain.BackEnd
         /// </summary>
         public static void DiscoverFiles(bool generateStateHandlerEntry = false)
         {
+            MainActivity.stateHandler.FileListGenerationEvent.WaitOne();
             if (Root != null) DiscoverFiles(Root, generateStateHandlerEntry);
+            MainActivity.stateHandler.FileListGenerationEvent.Set();
         }
 
         private static void DiscoverFiles(string path, bool generateStateHandlerEntry)
@@ -138,17 +140,26 @@ namespace Ass_Pain.BackEnd
         ///<summary>
         ///Creates virtual song topology in MainActivity.StateHandler
         ///</summary>
-        public static void GenerateList(string path)
+        public static void GenerateList(string path, bool first = true)
         {
 
+            if (first)
+            {
+                MainActivity.stateHandler.FileListGenerationEvent.WaitOne();
+            }
             foreach (string dir in Directory.EnumerateDirectories(path))
             {
-                GenerateList(dir);
+                GenerateList(dir, false);
             }
 
             foreach (string file in Directory.EnumerateFiles(path, "*.mp3"))
             {
                 AddSong(file);
+            }
+
+            if (first)
+            {
+                MainActivity.stateHandler.FileListGenerationEvent.Set();
             }
         }
         

@@ -12,7 +12,7 @@ using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 
 
-namespace Ass_Pain
+namespace MWP
 {
     
     /// <summary>

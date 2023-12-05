@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Ass_Pain.BackEnd
+namespace MWP.BackEnd
 {
     internal class TagManager : IDisposable
     {
@@ -184,7 +184,7 @@ namespace Ass_Pain.BackEnd
                 }
                 else
                 {
-                    a = new Album(_tfile.Tag.Album, Ass_Pain.Album.GetImagePath(_tfile.Tag.Album, FileManager.Sanitize(FileManager.GetAlias(_tfile.Tag.Performers.FirstOrDefault() ?? _tfile.Tag.Performers[0]))));
+                    a = new Album(_tfile.Tag.Album, MWP.Album.GetImagePath(_tfile.Tag.Album, FileManager.Sanitize(FileManager.GetAlias(_tfile.Tag.Performers.FirstOrDefault() ?? _tfile.Tag.Performers[0]))));
                     a.AddSong(ref s);
                     MainActivity.stateHandler.Albums.Add(a);
                 }
@@ -214,7 +214,7 @@ namespace Ass_Pain.BackEnd
                     }
                     else
                     {
-                        art = new Artist(alias, Ass_Pain.Artist.GetImagePath(FileManager.Sanitize(alias)));
+                        art = new Artist(alias, MWP.Artist.GetImagePath(FileManager.Sanitize(alias)));
                         art.AddSong(ref s);
                         if (_saveFlags.HasFlag(SongSave.Album))
                         {

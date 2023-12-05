@@ -11,14 +11,15 @@ using Android.Graphics.Drawables;
 using Android.Text;
 using AndroidX.AppCompat.Widget;
 using AndroidX.Core.Text;
-using Ass_Pain.BackEnd;
-using Ass_Pain.BackEnd.Network;
+using MWP.BackEnd;
+using MWP.BackEnd.Network;
+using TagLib.Tiff.Arw;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
-namespace Ass_Pain
+namespace MWP
 {
     /// <inheritdoc />
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
@@ -395,7 +396,6 @@ namespace Ass_Pain
             switch (actionType)
             {
                 case ShareActionType.TrustedNetworkAdd:
-                
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will add <font color='#fa6648'>{NetworkManager.Common.CurrentSsid}" +
                         $"</font> to trusted networks list, proceed ?",

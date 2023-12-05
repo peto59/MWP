@@ -10,13 +10,13 @@ using Android.Graphics.Drawables;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
-using Ass_Pain.BackEnd;
-using Ass_Pain.Helpers;
+using MWP.BackEnd;
+using MWP.Helpers;
 using Google.Android.Material.FloatingActionButton;
 using Java.IO;
 using Fragment = AndroidX.Fragment.App.Fragment;
 
-namespace Ass_Pain
+namespace MWP
 {
     /// <inheritdoc />
     public class TagManagerFragment : Fragment

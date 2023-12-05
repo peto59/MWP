@@ -1,24 +1,17 @@
 using System;
 using Android.App;
 using Android.Content;
-using Android.OS;
 using Android.Views;
 using Android.Widget;
-using System.Collections.Generic;
-using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
-using Android.Text.Style;
-using Android.Util;
-using Ass_Pain.BackEnd;
-using Google.Android.Material.FloatingActionButton;
-using Fragment = AndroidX.Fragment.App.Fragment;
+using MWP.BackEnd;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     public class AllSongsFragment
     {

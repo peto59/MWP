@@ -7,10 +7,10 @@ using AndroidX.Core.App;
 using AndroidApp = Android.App.Application;
 
 #if DEBUG
-using Ass_Pain.Helpers;
+using MWP.Helpers;
 #endif
 
-namespace Ass_Pain
+namespace MWP
 {
     public class DownloadNotification
     {
