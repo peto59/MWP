@@ -525,3 +525,4 @@ obj/
 
 # End of https://www.toptal.com/developers/gitignore/api/rider,csharp,android,xamarinstudio
 /Properties/.AndroidManifest.xml.bck
+/Resources/Resource.designer.cs
