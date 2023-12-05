@@ -23,6 +23,7 @@ using Android.Media;
 using System.Text;
 using Android.Provider;
 using Android.Text;
+using Android.Views.InputMethods;
 using Android.Widget;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
@@ -31,6 +32,7 @@ using MWP.BackEnd;
 using MWP.BackEnd.Player;
 using Octokit;
 using Xamarin.Essentials;
+using Activity = Android.App.Activity;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
 using Application = Android.App.Application;
 using Encoding = System.Text.Encoding;
@@ -119,7 +121,7 @@ namespace MWP
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView?.SetNavigationItemSelectedListener(this);
             
-            side_player.populate_side_bar(this, Assets);
+            SidePlayer.populate_side_bar(this, Assets);
             stateHandler.SetView(this);
             _receiver = new MyBroadcastReceiver();
             RegisterReceiver(_receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
@@ -220,8 +222,8 @@ namespace MWP
             shareFragment = new ShareFragment(this, Assets);
             
             songsFragment = new SongsFragment(this, Assets);
-            albumsFragment = new AlbumAuthorFragment(this);
-            playlistsFragment = new PlaylistsFragment(this);
+            albumsFragment = new AlbumAuthorFragment(this, Assets);
+            playlistsFragment = new PlaylistsFragment(this, Assets);
             
             
             /*
@@ -333,6 +335,29 @@ namespace MWP
                     Title = "Share";
                 };
         }
+
+
+        /// <inheritdoc />
+        public override bool DispatchTouchEvent(MotionEvent ev)
+        {
+            if (ev.Action == MotionEventActions.Down)
+            {
+                View? v = CurrentFocus;
+                if (v is EditText)
+                {
+                    Rect outRect = new Rect();
+                    v.GetGlobalVisibleRect(outRect);
+                    if (!outRect.Contains((int)ev.RawX, (int)ev.RawY))
+                    {
+                        v.ClearFocus();
+                        InputMethodManager imm = (InputMethodManager)GetSystemService(Context.InputMethodService);
+                        imm.HideSoftInputFromWindow(v.WindowToken, 0);
+                    }
+                }
+            }
+            return base.DispatchTouchEvent(ev);
+        }
+        
 
         /// <inheritdoc />
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
@@ -509,7 +534,7 @@ namespace MWP
                 {
                     stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
                 }
-                RunOnUiThread(() => side_player.populate_side_bar(this, Assets));
+                RunOnUiThread(() => SidePlayer.populate_side_bar(this, Assets));
 #if DEBUG
                 MyConsole.WriteLine($"Songs count {stateHandler.Songs.Count}");       
 #endif
@@ -553,43 +578,53 @@ namespace MWP
 
         private async void CheckUpdates()
         {
-            string currentVersionString = VersionTracking.CurrentBuild;
-            const string owner = "peto59";
-            const string repoName = "MWP";
+            try
+            {
+                string currentVersionString = VersionTracking.CurrentBuild;
+                const string owner = "peto59";
+                const string repoName = "MWP";
 #if DEBUG
-            MyConsole.WriteLine("Checking for updates!");
-            MyConsole.WriteLine($"Current version: {currentVersionString}");
+                MyConsole.WriteLine("Checking for updates!");
+                MyConsole.WriteLine($"Current version: {currentVersionString}");
 #endif      
-            GitHubClient client = new GitHubClient(new ProductHeaderValue("AssPain"));
-            IReadOnlyList<Release> releases = await client.Repository.Release.GetAll(owner, repoName);
-            Release release = releases.First(r => r.TagName == "latest");
+                GitHubClient client = new GitHubClient(new ProductHeaderValue("AssPain"));
+                IReadOnlyList<Release> releases = await client.Repository.Release.GetAll(owner, repoName);
+                Release release = releases.First(r => r.TagName == "latest");
             
-            int.TryParse(release.Name, out int remoteVersion);
-            int.TryParse(currentVersionString, out int currentVersion);
-            if (remoteVersion <= currentVersion) return;
+                int.TryParse(release.Name, out int remoteVersion);
+                int.TryParse(currentVersionString, out int currentVersion);
+                if (remoteVersion <= currentVersion) return;
             
             
-            AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
-            builder.SetTitle("New Update");
-            builder.SetMessage("Would you like to download this update?");
+                AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
+                builder.SetTitle("New Update");
+                builder.SetMessage("Would you like to download this update?");
 
-            builder.SetPositiveButton("Yes", (sender, args) =>
-            {
-                _ = Task.Run(async () =>
+                builder.SetPositiveButton("Yes", (sender, args) =>
                 {
-                    ReleaseAsset asset = await client.Repository.Release.GetAsset(owner, repoName, release.Assets.First(a => a.Name == "com.companyname.ass_pain-Signed.apk").Id);
-                    GetUpdate(asset.BrowserDownloadUrl);
-                });
+                    _ = Task.Run(async () =>
+                    {
+                        ReleaseAsset asset = await client.Repository.Release.GetAsset(owner, repoName, release.Assets.First(a => a.Name == "com.companyname.ass_pain-Signed.apk").Id);
+                        GetUpdate(asset.BrowserDownloadUrl);
+                    });
                 
-            });
+                });
 
-            builder.SetNegativeButton("No", (_, _) =>
+                builder.SetNegativeButton("No", (_, _) =>
+                {
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+
+            }
+            catch (Exception e)
             {
-            });
-
-            AlertDialog dialog = builder.Create();
-            dialog.Show();
-            
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+            }
+          
         }
 
         private async void GetUpdate(string downloadUrl)

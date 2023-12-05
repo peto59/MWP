@@ -22,7 +22,7 @@ namespace MWP
     public class StateHandler
     {
         public static Random Rng = new Random();
-        public CancellationTokenSource cts = new CancellationTokenSource();
+        public CancellationTokenSource SongProgressCts = new CancellationTokenSource();
         public AppCompatActivity view;
         public MainActivity mainActivity;
         public List<int> NotificationIDs = new List<int>();
@@ -41,19 +41,25 @@ namespace MWP
         internal readonly AutoResetEvent FileListGenerationEvent = new AutoResetEvent(true);
         
 
+        //---------------------------------------------------------
+        
+        //----------Custom callbacks for internal control---------
+        public static event Action OnShareFragmentRefresh;
 
-        public List<Song> Songs = new List<Song>();
-        public List<Artist> Artists = new List<Artist>();
-        public List<Album> Albums = new List<Album>();
-
+        public static void TriggerShareFragmentRefresh()
+        {
+            OnShareFragmentRefresh.Invoke();
+        }
+        //---------------------------------------------------------
+        
         public bool ProgTimeState
         {
             get; set;
         }
 
-
-
-
+        public List<Song> Songs = new List<Song>();
+        public List<Artist> Artists = new List<Artist>();
+        public List<Album> Albums = new List<Album>();
 
         ///<summary>
         ///Sets view to current screen's view

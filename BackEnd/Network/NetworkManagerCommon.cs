@@ -58,7 +58,20 @@ namespace MWP.BackEnd.Network
         internal const int BroadcastPort = 8008;
         private const int P2PPort = 8009;
         internal const int RsaDataSize = 256;
+#if DEBUG
+        private string _currentSsid = string.Empty;
+        internal string CurrentSsid
+        {
+            get => _currentSsid;
+            set
+            {
+                MyConsole.WriteLine($"Changing CurrentSsid to {value}");
+                _currentSsid = value;
+            }
+        }
+#else
         internal string CurrentSsid = string.Empty;
+#endif
 
         public NetworkManagerCommon()
         {
@@ -353,18 +366,18 @@ namespace MWP.BackEnd.Network
             try
             {
                 InetAddress inetAddress = InetAddress.GetByAddress(MyIp.GetAddressBytes());
-                NetworkInterface networkInterface = NetworkInterface.GetByInetAddress(inetAddress);
+                NetworkInterface? networkInterface = NetworkInterface.GetByInetAddress(inetAddress);
                 if (networkInterface is not { InterfaceAddresses: not null }) return false;
-                InetAddress broadcast = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress)).Broadcast;
+                InetAddress? broadcast = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress)).Broadcast;
                 if (broadcast != null)
                 {
                     myBroadcastIp = IPAddress.Parse(broadcast.ToString().Trim('/'));
                 }
                 else
                 {
-                    short prefix = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
+                    short? prefix = networkInterface?.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
                         .NetworkPrefixLength;
-                    myMask = PrefixLengthToNetmask(prefix);
+                    myMask = PrefixLengthToNetmask(prefix ?? 0);
                     myBroadcastIp = GetBroadCastIp(MyIp, myMask);
                 }
 #if DEBUG
@@ -402,6 +415,12 @@ namespace MWP.BackEnd.Network
                 NetworkManager.Common.CanSend = CanSend.Rejected;
                 return;
             }
+            
+            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S && NetworkManager.Common.CurrentSsid == string.Empty)
+            {
+                NetworkManager.Common.GetWifiSsid();
+            }
+            
             if (!FileManager.IsTrustedSyncTarget(NetworkManager.Common.CurrentSsid))
             {
                 NetworkManager.Common.CanSend = CanSend.Rejected;
@@ -414,11 +433,18 @@ namespace MWP.BackEnd.Network
         [Obsolete("Deprecated")]
         internal void OnWiFiChange(ConnectivityChangedEventArgs e)
         {
+#if DEBUG
+            MyConsole.WriteLine("Changing wifi states: deprecated mode");
+#endif
             if (e.NetworkAccess is NetworkAccess.Internet or NetworkAccess.Local && e.ConnectionProfiles.Contains(ConnectionProfile.WiFi))
             {
+#if DEBUG
+                MyConsole.WriteLine($"NetworkAccess is {e.NetworkAccess}");
+#endif
                 WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
                 WifiInfo? info = wifiManager?.ConnectionInfo;
                 CurrentSsid = info?.SSID ?? string.Empty;
+                StateHandler.TriggerShareFragmentRefresh();
 
                 CanSend = GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
                 return;
@@ -426,6 +452,20 @@ namespace MWP.BackEnd.Network
 
             CurrentSsid = string.Empty;
             CanSend = CanSend.Rejected;
+            StateHandler.TriggerShareFragmentRefresh();
+        }
+
+        [Obsolete("Deprecated")]
+        internal void GetWifiSsid()
+        {
+            ConnectivityManager? connectivityManager = (ConnectivityManager?)Application.Context.GetSystemService(Context.ConnectivityService);
+            NetworkInfo? activeNetwork = connectivityManager?.ActiveNetworkInfo;
+
+            if (activeNetwork?.Type != ConnectivityType.Wifi) return;
+            WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
+            WifiInfo? wifiInfo = wifiManager?.ConnectionInfo;
+            CurrentSsid = wifiInfo?.SSID ?? string.Empty;
+            StateHandler.TriggerShareFragmentRefresh();
         }
 
         internal static async Task<(string? storedPrivKey, string? storedPubKey)> LoadKeys(string remoteHostname)
@@ -476,6 +516,7 @@ namespace MWP.BackEnd.Network
                         {
                             NetworkManager.Common.CanSend = CanSend.Test;
                             NetworkManager.Common.CurrentSsid = ssid;
+                            StateHandler.TriggerShareFragmentRefresh();
                         }
                         else if (NetworkManager.Common.CanSend == CanSend.Rejected)
                         {
@@ -497,6 +538,7 @@ namespace MWP.BackEnd.Network
             NetworkManager.Common.CanSend = CanSend.Rejected;
             NetworkManager.Common.MyIp = null;
             NetworkManager.Common.CurrentSsid = string.Empty;
+            StateHandler.TriggerShareFragmentRefresh();
         }
 
         private static bool ValidateIPv4(string ipString)

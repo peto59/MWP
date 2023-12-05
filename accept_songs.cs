@@ -22,7 +22,7 @@ using Java.Util.Functions;
 using Android.Views;
 using Android.Content;
 
-namespace MWP
+namespace Ass_Pain
 {
     public static class accept_songs
     {

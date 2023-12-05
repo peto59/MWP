@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml.Serialization;
-using Android.Media.Browse;
 using Android.Support.V4.Media;
 using MWP.BackEnd;
 using Newtonsoft.Json;

@@ -5,9 +5,11 @@ using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Android.Content.Res;
 using Android.Graphics;
 using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using Orientation = Android.Widget.Orientation;
 
 
 namespace MWP
@@ -21,6 +23,7 @@ namespace MWP
         private RelativeLayout mainLayout;
         private const int ActionScrollViewHeight = 20;
         private readonly float scale;
+        private AssetManager? assets;
         
         private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
         
@@ -48,9 +51,10 @@ namespace MWP
         /// Constructor for SongsFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (e.g. "this")</param>
-        public PlaylistFragment(Context ctx)
+        public PlaylistFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
+            this.assets = assets;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
         }
 
@@ -90,7 +94,7 @@ namespace MWP
                     inPlaylistButtonMargins, inPlaylistNameMargins, inPlaylistCardMargins,
                     17,
                     i, 
-                    context, songButtons, UIRenderFunctions.SongType.playlistSong, inPlaylistLnMain
+                    context, songButtons, UIRenderFunctions.SongType.playlistSong, assets, ParentFragmentManager, inPlaylistLnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, playlistSongs[i], 150, 100, 

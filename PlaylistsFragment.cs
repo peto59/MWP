@@ -4,9 +4,11 @@ using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Android.Content.Res;
 using Android.Graphics;
 using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using Orientation = Android.Widget.Orientation;
 
 
 namespace MWP
@@ -44,10 +46,11 @@ namespace MWP
         /// Constructor for SongsFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (e.g. "this")</param>
-        public PlaylistsFragment(Context ctx)
+        /// <param name="assets"></param>
+        public PlaylistsFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
-            playlistFragment = new PlaylistFragment(ctx);
+            playlistFragment = new PlaylistFragment(ctx, assets);
         }
 
 
@@ -80,7 +83,7 @@ namespace MWP
 
                 LinearLayout lnIn = new LinearLayout(context);
                 lnIn.Orientation = Orientation.Vertical;
-                lnIn.SetBackgroundResource(Resource.Drawable.rounded);
+                lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
                 LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MatchParent,

@@ -257,17 +257,17 @@ namespace MWP
 			{
 				position = mediaPlayer.CurrentPosition;
 				state = PlaybackStateCode.Playing;
-				side_player.SetStopButton(MainActivity.stateHandler.view);
-				MainActivity.stateHandler.cts.Cancel();
-				MainActivity.stateHandler.cts = new CancellationTokenSource();
-				side_player.StartMovingProgress(MainActivity.stateHandler.cts.Token, MainActivity.stateHandler.view);
+				SidePlayer.SetStopButton(MainActivity.stateHandler.view);
+				MainActivity.stateHandler.SongProgressCts.Cancel();
+				MainActivity.stateHandler.SongProgressCts = new CancellationTokenSource();
+				SidePlayer.StartMovingProgress(MainActivity.stateHandler.SongProgressCts.Token, MainActivity.stateHandler.view);
 			}
 			else if (IsPaused)
 			{
 				state = PlaybackStateCode.Paused;
 				position = mediaPlayer?.CurrentPosition ?? 0;
-				side_player.SetPlayButton(MainActivity.stateHandler.view);
-				MainActivity.stateHandler.cts.Cancel();
+				SidePlayer.SetPlayButton(MainActivity.stateHandler.view);
+				MainActivity.stateHandler.SongProgressCts.Cancel();
 			}
 			else if (isSkippingToNext)
 			{
@@ -303,7 +303,7 @@ namespace MWP
 				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
-			if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
+			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.stateHandler.view, Assets);
 			notificationService.Notify();
 		}
 
@@ -564,7 +564,7 @@ namespace MWP
 		{
 			QueueObject.IsShuffled = newShuffleState;
 			UpdatePlaybackState();
-			if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
+			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.stateHandler.view, Assets);
 		}
 
 		///<summary>
@@ -574,7 +574,7 @@ namespace MWP
 		{
 			QueueObject.ToggleLoop(state);
             UpdatePlaybackState();
-            if (Assets != null) side_player.populate_side_bar(MainActivity.stateHandler.view, Assets);
+            if (Assets != null) SidePlayer.populate_side_bar(MainActivity.stateHandler.view, Assets);
 #if DEBUG
             MyConsole.WriteLine("TOGGLE LOOP");
 #endif
@@ -737,7 +737,6 @@ namespace MWP
 		/// <inheritdoc />
 		public override IBinder OnBind(Intent? intent)
 		{
-			//TODO: publish interface?
 			Binder = new MediaServiceBinder(this);
 			return Binder;
 		}

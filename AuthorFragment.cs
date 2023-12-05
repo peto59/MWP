@@ -5,9 +5,11 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using Android.Content.Res;
 using Android.Graphics;
 using Android.Util;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using Orientation = Android.Widget.Orientation;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -25,6 +27,7 @@ namespace MWP
         private readonly Context context;
         private RelativeLayout mainLayout;
         private Artist artist;
+        private AssetManager? assets;
 
         private Dictionary<LinearLayout, object> albumButtons = new Dictionary<LinearLayout, object>();
         private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
@@ -35,11 +38,13 @@ namespace MWP
         /// Constructor for AuthorFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (insert "this")</param>
-        public AuthorFragment(Context ctx)
+        /// <param name="assets"></param>
+        public AuthorFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
+            this.assets = assets;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
-            albumFragment = new AlbumFragment(ctx);
+            albumFragment = new AlbumFragment(ctx, this.assets);
         }
 
         /// <summary>
@@ -61,7 +66,10 @@ namespace MWP
             {
                 artist = retreivedSongs[0];
             }
-            Console.WriteLine("FOUNDED SEARCHED ARTIST NAME IN FRAGMENT: " + artist.Title);
+#if DEBUG
+            
+            MyConsole.WriteLine("FOUNDED SEARCHED ARTIST NAME IN FRAGMENT: " + artist.Title);
+#endif
             
             RenderAlbumsSongs();
 
@@ -106,7 +114,7 @@ namespace MWP
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                    i, context, songButtons, UIRenderFunctions.SongType.albumSong, lnMain
+                    i, context, songButtons, UIRenderFunctions.SongType.albumSong, assets, ParentFragmentManager, lnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, artist.Albums.Select("Uncategorized")[0].Songs[i],  150, 100,
@@ -163,7 +171,7 @@ namespace MWP
                 {
                     
                     LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                        t, scale, cardMargins, 15, index, context, albumButtons, ParentFragmentManager, albumFragment);
+                        t, scale, cardMargins, 15, index, context, albumButtons, ParentFragmentManager, assets, albumFragment);
                     UIRenderFunctions.SetTilesImage(
                         lnIn, t, 150, 100,
                         buttonMargins, 17,

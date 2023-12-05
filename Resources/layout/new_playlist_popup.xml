@@ -3,7 +3,7 @@
     android:orientation="vertical"  
     android:layout_width="match_parent"  
     android:layout_height="270dp" 
-    android:background="@drawable/rounded"
+    android:background="@drawable/rounded_primaryColor"
     >  
     <TextView  
         android:id="@+id/AddPlaylist_title"  
@@ -26,7 +26,7 @@
         android:layout_marginTop="20dp"
         android:hint="Name for the playlist" 
         android:backgroundTint="#3e5871"
-        android:background="@drawable/rounded"
+        android:background="@drawable/rounded_primaryColor"
     />  
     <LinearLayout 
             android:layout_width="match_parent" 

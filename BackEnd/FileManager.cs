@@ -763,6 +763,10 @@ namespace MWP.BackEnd
         {
             try
             {
+                
+#if DEBUG
+                MyConsole.WriteLine(ssid);
+#endif
                 string json = File.ReadAllText($"{_privatePath}/trusted_SSIDs.json");
                 List<string> ssids = JsonConvert.DeserializeObject<List<string>>(json) ?? new List<string>();
                 ssids.Add(ssid);

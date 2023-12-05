@@ -5,13 +5,19 @@ using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
 using System.Linq;
+using Android.Content.Res;
 using Android.Graphics;
+using Android.Graphics.Drawables;
 using Android.OS;
 using AndroidX.Fragment.App;
 using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
+using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Orientation = Android.Widget.Orientation;
+#if DEBUG
+using MWP.Helpers;
+#endif
 
 namespace MWP
 {
@@ -34,7 +40,10 @@ namespace MWP
         public static object FragmentPositionObject;
         
         
-        private static void AreYouSure(object sender, EventArgs e, Song song, AlertDialog di, LinearLayout linFromDelete, LinearLayout linForDelete, Context context)
+        private static void AreYouSure(
+            object sender, EventArgs e, Song song, AlertDialog? di, 
+            LinearLayout linFromDelete, LinearLayout linForDelete, 
+            Context context, SongsFragment songsFragmentContext)
         {
             LayoutInflater ifl = LayoutInflater.From(context);
             View view = ifl?.Inflate(Resource.Layout.are_you_sure_popup, null);
@@ -60,12 +69,13 @@ namespace MWP
                     song.Delete();
                     dialog?.Hide();
                     di.Hide();
+                    songsFragmentContext.InvalidateCache();
 
                     linFromDelete.RemoveView(linForDelete);
                     Toast.MakeText(context, $"{song.Title} has been deleted", ToastLength.Short)?.Show();
                 };
 
-            Button no = view?.FindViewById<Button>(Resource.Id.you_are_not_sure);
+            Button? no = view?.FindViewById<Button>(Resource.Id.you_are_not_sure);
             if (BlendMode.Multiply != null)
                 no?.Background?.SetColorFilter(
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
@@ -129,7 +139,7 @@ namespace MWP
             }
             
             
-            Button submit = view?.FindViewById<Button>(Resource.Id.submit_plas);
+            Button? submit = view?.FindViewById<Button>(Resource.Id.submit_plas);
             if (BlendMode.Multiply != null)
                 submit?.Background?.SetColorFilter(
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
@@ -178,75 +188,101 @@ namespace MWP
             
         }
 
-        private static void ShowPopupSongEdit(MusicBaseClass path, LinearLayout linFromDelete, LinearLayout linForDelete, Context context, float scale)
+        private static void ShowPopupSongEdit(
+            MusicBaseClass path, LinearLayout linFromDelete, LinearLayout linForDelete, Context context, float scale, 
+            AssetManager? assets, FragmentManager manager, SongsFragment SongsFragmentContext = null
+        )
         {
-            LayoutInflater ifl = LayoutInflater.From(context);
+            LayoutInflater? ifl = LayoutInflater.From(context);
             var view = ifl?.Inflate(path is Song ? Resource.Layout.edit_song_popup : Resource.Layout.edit_album_popup, null);
 
             AlertDialog.Builder alert = new AlertDialog.Builder(context);
             alert.SetView(view);
+            
+            Typeface? font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
+            if (context.Resources is { DisplayMetrics: not null }) scale = context.Resources.DisplayMetrics.Density;
 
-            AlertDialog dialog = alert.Create();
-
-            /*
-             * popup buttons start
-             */
+            AlertDialog? dialog = alert.Create();
+            
             if (path is Song song)
             {
-                Button addToPla = view?.FindViewById<Button>(Resource.Id.add_to_pla);
-                if (BlendMode.Multiply != null)
-                    addToPla?.Background?.SetColorFilter(
-                        new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                    );
-                addToPla?.SetTextColor(Color.Black);
+                TextView? addToPla = view?.FindViewById<TextView>(Resource.Id.add_to_pla);
                 if (addToPla != null)
-                    addToPla.Click += (_, _) =>
-                    {
-                        dialog?.Hide();
-                        ListPlaylistsPopup(song, context, scale);
-                    };
-
-                Button addToQu = view?.FindViewById<Button>(Resource.Id.add_to_qu);
-                Button delete = view?.FindViewById<Button>(Resource.Id.delete);
-                if (BlendMode.Multiply != null)
                 {
-                    addToQu?.Background?.SetColorFilter(
-                        new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                    );
-                    addToQu?.SetTextColor(Color.Black);
-                    delete?.Background?.SetColorFilter(
-                        new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                    );
+                    addToPla.SetTextColor(Color.White);
+                    addToPla.Typeface = font;
+                    if (BlendMode.Multiply != null)
+                        addToPla?.Background?.SetColorFilter(
+                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                        );
+                    if (addToPla != null)
+                        addToPla.Click += (_, _) =>
+                        {
+                            dialog?.Hide();
+                            ListPlaylistsPopup(song, context, scale);
+                        };
                 }
 
-                delete?.SetTextColor(Color.Black);
+                
+                
+                
+                TextView? addToQu = view?.FindViewById<TextView>(Resource.Id.add_to_qu);
+                TextView? delete = view?.FindViewById<TextView>(Resource.Id.delete);
+                TextView? edit = view?.FindViewById<TextView>(Resource.Id.editSong_tags);
+                if (addToQu != null && delete != null && edit != null)
+                {
+                    addToQu.Typeface = font;
+                    delete.Typeface = font;
+                    edit.Typeface = font;
+                    
+                    if (BlendMode.Multiply != null)
+                    {
+                        addToQu?.Background?.SetColorFilter(
+                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                        );
+                        delete?.Background?.SetColorFilter(
+                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                        );
+                        edit?.Background?.SetColorFilter(
+                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                        );
+                    }
 
-                // handle clicked
-                if (addToQu != null)
-                    addToQu.Click += (_, _) =>
-                    {
-                        MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song);
-                        dialog?.Hide();
-                    };
-                if (delete != null)
-                    delete.Click += (o, args) =>
-                    {
-                        AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context);
-                    };
+                    if (addToQu != null)
+                        addToQu.Click += (_, _) =>
+                        {
+                            MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song);
+                            dialog?.Hide();
+                        };
+
+                    if (delete != null)
+                        delete.Click += (o, args) =>
+                        {
+                            AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context, SongsFragmentContext);
+                        };
+
+                    if (edit != null)
+                        edit.Click += (_, _) =>
+                        {
+                            dialog?.Hide();
+
+                            
+                            TagManagerFragment tagFrag = new TagManagerFragment(context, assets, path);
+                            var fragmentTransaction = manager.BeginTransaction();
+                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, tagFrag);
+                            fragmentTransaction.AddToBackStack(null);
+                            fragmentTransaction.Commit();
+                        };
+                }
             }
-
             
-            /*
-             * popup buttons end
-             */
-
-            
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
             dialog?.Show();
         }
 
 
         /// <summary>
-        /// 
+        /// Horizontal order of elements within single element in list of songs or albums (only songs, bcs only albums have vertical alignment of cover and title)
         /// </summary>
         /// <param name="musics"></param>
         /// <param name="scale"></param>
@@ -260,18 +296,19 @@ namespace MWP
         /// <param name="context"></param>
         /// <param name="songButtons"></param>
         /// <param name="songType"></param>
+        /// <param name="assets"></param>
         /// <param name="linForDelete"></param>
         /// <returns></returns>
         public static LinearLayout PopulateHorizontal(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize, int index,
-            Context context, Dictionary<LinearLayout, int> songButtons, SongType songType,
-            LinearLayout linForDelete = null
+            Context context, Dictionary<LinearLayout, int> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
+            LinearLayout linForDelete = null, SongsFragment SongsfragmentContext = null 
         )
         {
             //リネアルレーアート作る
             LinearLayout lnIn = new LinearLayout(context);
             lnIn.Orientation = Orientation.Horizontal;
-            lnIn.SetBackgroundResource(Resource.Drawable.rounded);
+            lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
             LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
@@ -288,7 +325,9 @@ namespace MWP
                 {
                     if (pr.Key == pressedButton)
                     {
-                        Console.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
+#if DEBUG
+                        MyConsole.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
+#endif
                         switch (songType)
                         {
                             case SongType.allSong:
@@ -306,19 +345,18 @@ namespace MWP
             };
             lnIn.LongClick += (_, _) =>
             {
-                ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale);
+                ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
             };
 
             songButtons.Add(lnIn, index);
             
-
             lnIn.SetHorizontalGravity(GravityFlags.Center);
             return lnIn;
         }
 
 
         /// <summary>
-        /// 
+        /// Vertical order of elements within single element in list of songs or albums (only albums, bcs only albums have vertical alignment of cover and title) 
         /// </summary>
         /// <param name="musics"></param>
         /// <param name="scale"></param>
@@ -328,20 +366,23 @@ namespace MWP
         /// <param name="context"></param>
         /// <param name="albumButtons"></param>
         /// <param name="manager"></param>
+        /// <param name="assets"></param>
         /// <param name="linForDelete"></param>
         /// <param name="albumFragment"></param>
         /// <param name="authorFragment"></param>
         /// <returns></returns>
         public static LinearLayout PopulateVertical(
             MusicBaseClass musics, float scale, int[] cardMargins, int nameSize, int index,
-            Context context, Dictionary<LinearLayout, object> albumButtons, FragmentManager manager, AlbumFragment albumFragment = null, AuthorFragment authorFragment = null,
-            LinearLayout linForDelete = null
+            Context context, Dictionary<LinearLayout, object> albumButtons, 
+            FragmentManager manager, AssetManager? assets,
+            AlbumFragment albumFragment = null, AuthorFragment authorFragment = null,
+            LinearLayout linForDelete = null, SongsFragment SongsfragmentContext = null 
         )
         {
             //リネアルレーアート作る
             LinearLayout lnIn = new LinearLayout(context);
             lnIn.Orientation = Orientation.Vertical;
-            lnIn.SetBackgroundResource(Resource.Drawable.rounded);
+            lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
             LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
@@ -363,17 +404,15 @@ namespace MWP
                         {
                             // ((AllSongsFragment)activity).ReplaceFragments(AllSongsFragment.FragmentType.AlbumFrag, album1.Title);
                             // AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AlbumFrag, album1.Title);
-                            var fragmentTransaction = manager.BeginTransaction();
+                            FragmentTransaction fragmentTransaction = manager.BeginTransaction();
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", album1.Title);
-
-                            if (albumFragment != null)
-                            {
-                                albumFragment.Arguments = bundle;
-                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumFragment);
-                                fragmentTransaction.AddToBackStack(null);
-                                fragmentTransaction.Commit();
-                            }
+                            
+                            albumFragment.Arguments = bundle;
+                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumFragment);
+                            fragmentTransaction.AddToBackStack(null);
+                            fragmentTransaction.Commit();
+                        
                             break;
                         }
                     }
@@ -383,7 +422,7 @@ namespace MWP
                 
                 lnIn.LongClick += (_, _) =>
                 {
-                    ShowPopupSongEdit(album, linForDelete, lnIn, context, scale);
+                    ShowPopupSongEdit(album, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
                 };
                 
 
@@ -401,17 +440,16 @@ namespace MWP
                         {
                             // ((AllSongsFragment)activity).ReplaceFragments(AllSongsFragment.FragmentType.AuthorFrag, artist1.Title);
                             // AllSongsFragment.GetInstance().ReplaceFragments(AllSongsFragment.FragmentType.AuthorFrag, artist1.Title);
-                            var fragmentTransaction = manager.BeginTransaction();
+                            FragmentTransaction fragmentTransaction = manager.BeginTransaction();
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", artist1.Title);
 
-                            if (authorFragment != null)
-                            {
-                                authorFragment.Arguments = bundle;
-                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, authorFragment);
-                                fragmentTransaction.AddToBackStack(null);
-                                fragmentTransaction.Commit();
-                            }
+                            
+                            authorFragment.Arguments = bundle;
+                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, authorFragment);
+                            fragmentTransaction.AddToBackStack(null);
+                            fragmentTransaction.Commit();
+                            
                             break;
                         }
                     }
@@ -420,7 +458,7 @@ namespace MWP
                 
                 lnIn.LongClick += (_, _) =>
                 {
-                    ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale);
+                    ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
                 };
                 
 
@@ -438,7 +476,7 @@ namespace MWP
         
         
         /// <summary>
-        /// 
+        /// Function used for applying an image to a view based on the source, which can be either album cover or song cover. 
         /// </summary>
         /// <param name="parent"></param>
         /// <param name="obj"></param>
@@ -458,7 +496,7 @@ namespace MWP
             ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
             mori.LayoutParameters = ll;
 
-            if (!(obj is Album || obj is Artist || obj is Song))
+            if (obj is not (Album or Artist or Song))
             {
                 return;
             }
@@ -466,6 +504,8 @@ namespace MWP
             mori.SetImageBitmap(
                 obj.Image
             );
+            
+            
             
 
             parent.AddView(mori);

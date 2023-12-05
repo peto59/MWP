@@ -8,15 +8,17 @@ using Android.Widget;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
-using Android.Net;
 using Android.Text;
 using AndroidX.AppCompat.Widget;
+using AndroidX.Core.Text;
 using MWP.BackEnd;
 using MWP.BackEnd.Network;
 using TagLib.Tiff.Arw;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
-
+#if DEBUG
+using MWP.Helpers;
+#endif
 namespace MWP
 {
     /// <inheritdoc />
@@ -30,6 +32,10 @@ namespace MWP
         private View? view;
         private AssetManager assets;
 
+        private List<string> trustedSsids;
+        private LinearLayout? trustedNetworkList;
+        private LinearLayout? availableHostsList;
+        
         private enum ShareActionType
         {
             TrustedNetworkAdd,
@@ -45,8 +51,10 @@ namespace MWP
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.share_fragment_main);
             
             RenderUi();
-            
-            Console.WriteLine(NetworkManager.GetAllHosts());
+
+#if DEBUG
+            MyConsole.WriteLine(NetworkManager.GetAllHosts().ToString());
+#endif
             
             return view;
         }
@@ -59,6 +67,7 @@ namespace MWP
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             this.assets = assets;
+            StateHandler.OnShareFragmentRefresh += RefreshFragment;
         }
 
 
@@ -98,9 +107,13 @@ namespace MWP
              * zamknutie moznosti pridania novej doveryhodnej siete v pripade ak aktualne siet nie je doveryhodna
              * ak je doveryhodna, pridanie noveho click eventu pre tlacidlo a odomknutie moznosti pridania soveryhodnej siete
              */
+#if DEBUG
+            MyConsole.WriteLine(NetworkManager.Common.CurrentSsid);
+#endif
+            
             if (NetworkManager.Common.CurrentSsid == string.Empty     || 
                 NetworkManager.Common.CurrentSsid == "<unknown ssid>" || 
-                !FileManager.IsTrustedSsid(NetworkManager.Common.CurrentSsid)
+                FileManager.IsTrustedSsid(NetworkManager.Common.CurrentSsid)
                 )
             {
                 /*
@@ -129,8 +142,8 @@ namespace MWP
             /*
              * Vykreslenie policok pre doveryhodne siete vhodne na pripojenie
              */
-            List<string> trustedSsids = FileManager.GetTrustedSsids();
-            LinearLayout? trustedNetworkList = view?.FindViewById<LinearLayout>(Resource.Id.trusted_network_list);
+            trustedSsids = FileManager.GetTrustedSsids();
+            trustedNetworkList = view?.FindViewById<LinearLayout>(Resource.Id.trusted_network_list);
             for (int i = 0; i < trustedSsids.Count; i++)
                 trustedNetworkList?.AddView(TrustedNetworkTile(trustedSsids[i]));
 
@@ -139,7 +152,7 @@ namespace MWP
              * Vykreslenie policok pre moznych hostitelov na spojenie
              */ 
             List<(string hostname, DateTime? lastSeen, bool state)> allHosts = NetworkManager.GetAllHosts();
-            LinearLayout? availableHostsList = view?.FindViewById<LinearLayout>(Resource.Id.available_hosts_list);
+            availableHostsList = view?.FindViewById<LinearLayout>(Resource.Id.available_hosts_list);
             foreach (var (hostname, lastSeen, state) in allHosts)
                 availableHostsList?.AddView(AvailableHostsTile(hostname, lastSeen, state));
             
@@ -208,8 +221,8 @@ namespace MWP
             string timeAwayString = "";
             if (lastSeen != null)
             {
-                var today = DateTime.Now;
-                var diffOfDates = today - lastSeen;
+                DateTime today = DateTime.Now;
+                TimeSpan? diffOfDates = today - lastSeen;
 
                 if (diffOfDates?.Days != 0) timeAwayString += diffOfDates?.Days + "d ";
                 if (diffOfDates?.Hours != 0) timeAwayString += diffOfDates?.Hours + "h ";
@@ -275,7 +288,7 @@ namespace MWP
             else
             {
                 crossButton.SetPadding(
-                    (int)(padding * scale + 0.5f), 
+                    (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f),
                     (int)(padding * scale + 0.5f));
@@ -363,7 +376,7 @@ namespace MWP
         }
 
         
-        private void AreYouSure(ShareActionType actionType, string ssid = null)
+        private void AreYouSure(ShareActionType actionType, string? ssid = null)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? popupView = ifl?.Inflate(Resource.Layout.share_are_you_sure, null);
@@ -385,56 +398,71 @@ namespace MWP
                 case ShareActionType.TrustedNetworkAdd:
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will add <font color='#fa6648'>{NetworkManager.Common.CurrentSsid}" +
-                        $"</font> to trusted networks list, proceed ?"
+                        $"</font> to trusted networks list, proceed ?",
+                        HtmlCompat.FromHtmlModeLegacy
                     ), TextView.BufferType.Spannable);
 
                     if (yes != null)
                     {
+                        if (!trustedSsids.Contains(NetworkManager.Common.CurrentSsid))
+                        {
+                            dialog?.Cancel();
+                        }
+
                         yes.Click += (_, _) =>
                         {
+                            NetworkManagerCommon.TestNetwork();
                             FileManager.AddTrustedSsid(NetworkManager.Common.CurrentSsid);
+                            
+                            dialog?.Dismiss();
                             RefreshFragment();
-                            dialog?.Cancel();
                         };
                     }
+                        
+                  
                     break;
                 case ShareActionType.TrustedNetworkDelete:
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will blocklist <font color='#fa6648'>{ssid}" +
-                        $"</font> from trusted networks list, proceed ?"
+                        $"</font> from trusted networks list, proceed ?",
+                        HtmlCompat.FromHtmlModeLegacy
                     ), TextView.BufferType.Spannable);
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        FileManager.DeleteTrustedSsid(ssid);
-                        RefreshFragment();
+                        NetworkManagerCommon.TestNetwork();
+                        if (ssid != null) FileManager.DeleteTrustedSsid(ssid);
                         dialog?.Cancel();
+                        RefreshFragment();
                     };
                     break;
                 case ShareActionType.AvailableHostAdd:
                     title?.SetText( Html.FromHtml(
-                        $"By performing this action, you will add <font color='#fa6648'>{ssid}" +
-                        $"</font> to trusted hosts list, proceed ?"
+                        $"By performing this action, you will allow <font color='#fa6648'>{ssid}" +
+                        $"</font> to send and receive songs to and from you. Receiving and sending songs to and from devices you don't own is both dangerous" +
+                        $" and <font color='#fa6648'>illegal</font>. Proceed?",
+                        HtmlCompat.FromHtmlModeLegacy
                     ), TextView.BufferType.Spannable);
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        FileManager.AddTrustedSyncTarget(ssid);
-                        RefreshFragment();
+                        if (ssid != null) FileManager.AddTrustedSyncTarget(ssid);
                         dialog?.Cancel();
+                        RefreshFragment();
                     };
                     break;
                 case ShareActionType.AvailableHostDelete:
                     title?.SetText( Html.FromHtml(
                         $"By performing this action, you will blocklist <font color='#fa6648'>{ssid}" +
-                        $"</font> from trusted hosts list, proceed ?"
+                        $"</font> from trusted hosts list. Proceed ?",
+                        HtmlCompat.FromHtmlModeLegacy
                     ), TextView.BufferType.Spannable);
 
                     if (yes != null) yes.Click += (_, _) =>
                     {
-                        FileManager.DeleteTrustedSyncTarget(ssid);
-                        RefreshFragment();
+                        if (ssid != null) FileManager.DeleteTrustedSyncTarget(ssid);
                         dialog?.Cancel();
+                        RefreshFragment();
                     };
                     break;
             }
@@ -449,11 +477,38 @@ namespace MWP
         
         private void RefreshFragment()
         {
-            Fragment frg = ParentFragmentManager.FindFragmentByTag("shareFragTag");
-            var ft = ParentFragmentManager.BeginTransaction();
-            ft.Detach(frg);
-            ft.Attach(frg);
-            ft.Commit();
+            try
+            { 
+                /*
+                    Fragment? frg = ChildFragmentManager.FindFragmentByTag("shareFragTag");
+                    var ft = ParentFragmentManager.BeginTransaction();
+                    if (frg != null)
+                    {
+                        ft.Detach(frg);
+                        ft.Attach(frg);
+                    }
+
+                    ft.Commit();
+                */
+                if (IsAdded)
+                {
+                    Activity?.RunOnUiThread(() =>
+                    {
+                        view?.FindViewById<RelativeLayout>(Resource.Id.share_fragment_main)?.Invalidate();
+                        availableHostsList?.RemoveAllViews();
+                        trustedNetworkList?.RemoveAllViews();
+                        trustedSsids.Clear();
+                        RenderUi();
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+            }
+          
         }
 
 
@@ -484,8 +539,8 @@ namespace MWP
             if (confirm != null)
                 confirm.Click += delegate
                 {
-                    if (Int32.TryParse(input?.Text, out var res))
-                        if (res >= 1024 && res <= 65535)
+                    if (int.TryParse(input?.Text, out int res))
+                        if (res is >= 1024 and <= 65535)
                             SettingsManager.WanPort = res;
                         else
                             Toast.MakeText(context,
