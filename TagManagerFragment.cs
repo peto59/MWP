@@ -11,10 +11,12 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using MWP.BackEnd;
-using MWP.Helpers;
 using Google.Android.Material.FloatingActionButton;
 using Java.IO;
 using Fragment = AndroidX.Fragment.App.Fragment;
+#if DEBUG
+using MWP.Helpers;
+#endif
 
 namespace MWP
 {
