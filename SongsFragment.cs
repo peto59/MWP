@@ -36,7 +36,7 @@ namespace MWP
         private LinearLayout allSongsLnMain;
         private AssetManager? assets;
 
-        private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
+        private Dictionary<LinearLayout, Guid> songButtons = new Dictionary<LinearLayout, Guid>();
         private List<Tuple<LinearLayout, int>> lazyBuffer;
         
         long delay = 1000; 
@@ -266,7 +266,7 @@ namespace MWP
                     songs[i], scale,
                     150, 100,
                     allSongsButtonMargins, allSongsNameMargins, allSongsCardMargins,
-                    17, i, context, songButtons, UIRenderFunctions.SongType.allSong, assets, ParentFragmentManager, 
+                    17,  context, songButtons, UIRenderFunctions.SongType.allSong, assets, ParentFragmentManager, 
                     allSongsLnMain, this
                 );
                 

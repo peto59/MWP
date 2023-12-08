@@ -13,6 +13,7 @@ namespace MWP
     }
     public abstract class MusicBaseClass
     {
+        public readonly Guid Id = Guid.NewGuid();
         public abstract string Title { get; }
         public Bitmap Image => GetImage() ?? placeholder ?? throw new InvalidOperationException();
         public abstract Bitmap? GetImage(bool shouldFallBack = true);

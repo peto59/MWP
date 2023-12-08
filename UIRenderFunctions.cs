@@ -300,8 +300,8 @@ namespace MWP
         /// <param name="linForDelete"></param>
         /// <returns></returns>
         public static LinearLayout PopulateHorizontal(
-            MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize, int index,
-            Context context, Dictionary<LinearLayout, int> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
+            MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize,
+            Context context, Dictionary<LinearLayout, Guid> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
             LinearLayout linForDelete = null, SongsFragment SongsfragmentContext = null 
         )
         {
@@ -321,25 +321,22 @@ namespace MWP
             lnIn.Click += (sender, _) =>
             {
                 LinearLayout pressedButton = (LinearLayout)sender;
-                foreach (KeyValuePair<LinearLayout, int> pr in songButtons)
+                foreach (KeyValuePair<LinearLayout, Guid> pr in songButtons.Where(pr => pr.Key == pressedButton))
                 {
-                    if (pr.Key == pressedButton)
-                    {
 #if DEBUG
-                        MyConsole.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
+                    MyConsole.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
 #endif
-                        switch (songType)
-                        {
-                            case SongType.allSong:
-                                MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.stateHandler.Songs, pr.Value);
-                                break;
-                            case SongType.albumSong:
-                                MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((Album)FragmentPositionObject, pr.Value);
-                                break;
-                            case SongType.playlistSong:
-                                MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((List<Song>)FragmentPositionObject, pr.Value);
-                                break;
-                        }
+                    switch (songType)
+                    {
+                        case SongType.allSong:
+                            MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.stateHandler.Songs, pr.Value);
+                            break;
+                        case SongType.albumSong:
+                            MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((Album)FragmentPositionObject, pr.Value);
+                            break;
+                        case SongType.playlistSong:
+                            MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((List<Song>)FragmentPositionObject, pr.Value);
+                            break;
                     }
                 }
             };
@@ -348,7 +345,7 @@ namespace MWP
                 ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
             };
 
-            songButtons.Add(lnIn, index);
+            songButtons.Add(lnIn, musics.Id);
             
             lnIn.SetHorizontalGravity(GravityFlags.Center);
             return lnIn;

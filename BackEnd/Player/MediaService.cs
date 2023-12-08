@@ -357,7 +357,7 @@ namespace MWP
 			{
 				try
 				{
-					GenerateQueue(MainActivity.stateHandler.Songs, 0, false);
+					GenerateQueue(MainActivity.stateHandler.Songs, null, false);
 				}
 				catch (Exception e)
 				{
@@ -490,28 +490,28 @@ namespace MWP
             mediaPlayer.SeekTo(millis);
 		}
 
-		public void GenerateQueue(Song source, int ind = 0, bool play = true)
+		public void GenerateQueue(Song source, bool play = true)
 		{
-			GenerateQueue(new List<Song> { source }, ind, play);
+			GenerateQueue(new List<Song> { source }, null, play);
 		}
 		
-		public void GenerateQueue(IEnumerable<Song> source, int ind = 0, bool play = true)
+		public void GenerateQueue(IEnumerable<Song> source, Guid? id = null, bool play = true)
 		{
-			QueueObject.GenerateQueue(source, ind);
+			QueueObject.GenerateQueue(source, id);
 			if (play)
 			{
 				Play(true);
 			}
 		}
 		
-		public void GenerateQueue(MusicBaseContainer source, int ind = 0, bool play = true)
+		public void GenerateQueue(MusicBaseContainer source, Guid? id = null, bool play = true)
 		{
-			GenerateQueue(source.Songs, ind, play);
+			GenerateQueue(source.Songs, id, play);
 		}
-		public void GenerateQueue(IEnumerable<MusicBaseContainer> source, int ind = 0, bool play = true)
+		public void GenerateQueue(IEnumerable<MusicBaseContainer> source, Guid? id = null, bool play = true)
 		{
 			IEnumerable<Song> songs = source.SelectMany(s => s.Songs);
-			GenerateQueue(songs, ind, play);
+			GenerateQueue(songs, id, play);
 		}
 
 		///<summary>
