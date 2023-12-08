@@ -29,7 +29,7 @@ namespace MWP
         private Album album;
         private AssetManager? assets;
         
-        private Dictionary<LinearLayout, int> SongButtons = new Dictionary<LinearLayout, int>();
+        private Dictionary<LinearLayout, Guid> SongButtons = new Dictionary<LinearLayout, Guid>();
 
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace MWP
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                    i, context, SongButtons, UIRenderFunctions.SongType.albumSong, assets, ParentFragmentManager, lnMain
+                     context, SongButtons, UIRenderFunctions.SongType.albumSong, assets, ParentFragmentManager, lnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, album.Songs[i],  150, 100,

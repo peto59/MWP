@@ -527,3 +527,10 @@ obj/
 /Properties/.AndroidManifest.xml.bck
 /Resources/Resource.designer.cs
 Resource.designer.cs
+Resources/Resource.designer.cs
+# ignore Xamarin.Android Resource.Designer.cs files
+**/*.Droid/**/[Rr]esource.[Dd]esigner.cs
+**/*.Android/**/[Rr]esource.[Dd]esigner.cs
+**/Android/**/[Rr]esource.[Dd]esigner.cs
+**/Droid/**/[Rr]esource.[Dd]esigner.cs
+**/[Rr]esource.[Dd]esigner.cs

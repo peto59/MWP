@@ -25,7 +25,7 @@ namespace MWP
         private readonly float scale;
         private AssetManager? assets;
         
-        private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
+        private Dictionary<LinearLayout, Guid> songButtons = new Dictionary<LinearLayout, Guid>();
         
             
         /// <summary>
@@ -93,7 +93,6 @@ namespace MWP
                     150, 100,
                     inPlaylistButtonMargins, inPlaylistNameMargins, inPlaylistCardMargins,
                     17,
-                    i, 
                     context, songButtons, UIRenderFunctions.SongType.playlistSong, assets, ParentFragmentManager, inPlaylistLnMain
                 );
                 UIRenderFunctions.SetTilesImage(
