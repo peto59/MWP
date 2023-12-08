@@ -30,7 +30,7 @@ namespace MWP
         private AssetManager? assets;
 
         private Dictionary<LinearLayout, object> albumButtons = new Dictionary<LinearLayout, object>();
-        private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
+        private Dictionary<LinearLayout, Guid> songButtons = new Dictionary<LinearLayout, Guid>();
 
         private AlbumFragment albumFragment;
 
@@ -114,7 +114,7 @@ namespace MWP
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                    i, context, songButtons, UIRenderFunctions.SongType.albumSong, assets, ParentFragmentManager, lnMain
+                    context, songButtons, UIRenderFunctions.SongType.albumSong, assets, ParentFragmentManager, lnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, artist.Albums.Select("Uncategorized")[0].Songs[i],  150, 100,

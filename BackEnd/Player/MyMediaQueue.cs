@@ -90,10 +90,10 @@ namespace MWP.BackEnd.Player
         
         
         //----------------------Functions------------------
-        public void GenerateQueue(IEnumerable<Song> source, int ind = 0)
+        public void GenerateQueue(IEnumerable<Song> source, Guid? id)
         {
             _queue = source.ToList();
-            Index = ind;
+            Index = id != null ? _queue.FindIndex(s => s.Id.Equals(id)) : 0;
             if (IsShuffled)
             {
                 Shuffle();
@@ -102,10 +102,11 @@ namespace MWP.BackEnd.Player
 
         public void AppendToQueue(IEnumerable<Song> addition)
         {
-            _queue.AddRange(addition);
+            IEnumerable<Song> collection = addition.ToList();
+            _queue.AddRange(collection);
             if (IsShuffled)
             {
-                _originalQueue.AddRange(addition);
+                _originalQueue.AddRange(collection);
             }
         }
         
