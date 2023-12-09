@@ -161,6 +161,7 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\albums.xml" />
+    <AndroidResource Include="Resources\drawable\artists.xml" />
     <AndroidResource Include="Resources\drawable\back.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -335,7 +336,6 @@
   <ItemGroup>
     <AndroidAsset Include="Assets\sulphur.ttf" />
     <AndroidAsset Include="Assets\WixMadeforText.ttf" />
-    <AndroidAsset Include="Resources\drawable\mori.jpg" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\music_placeholder.png" />

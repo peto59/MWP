@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using Android.Graphics;
 using System.IO;
 using System.Linq;
-using System.Xml.Serialization;
-using Android.App;
-using Android.Media.Browse;
 using Android.Support.V4.Media;
+using Android.Support.V4.Media.Session;
 using MWP.BackEnd;
-using Newtonsoft.Json;
 using File = TagLib.File;
 #if DEBUG
 using MWP.Helpers;
@@ -154,14 +151,20 @@ namespace MWP
 
             return placeholder;
         }
-        public Song(List<Artist> artists, List<Album> albums, string title)
+        public Song(List<Artist>? artists, List<Album>? albums, string title, bool redundant = false)
         {
-            Artists = artists.Distinct().ToList();
-            Albums = albums.Distinct().ToList();
+            if (artists != null)
+            {
+                Artists = artists.Distinct().ToList();
+            }
+            if (albums != null)
+            {
+                Albums = albums.Distinct().ToList();
+            }
             Title = title;
             Initialized = false;
         }
-        public Song(List<Artist> artists, string title, DateTime dateCreated, string path, Album album = null)
+        public Song(List<Artist> artists, string title, DateTime dateCreated, string path, Album? album = null)
         {
             Artists = artists.Distinct().ToList();
             if (album != null)
@@ -172,7 +175,7 @@ namespace MWP
             DateCreated = dateCreated;
             Path = path;
         }
-        public Song(Artist artist, string title, DateTime dateCreated, string path, Album album = null)
+        public Song(Artist artist, string title, DateTime dateCreated, string path, Album? album = null)
         {
             Artists = new List<Artist> {artist};
             if (album != null)
@@ -184,7 +187,7 @@ namespace MWP
             Path = path;
         }
         
-        public Song(List<Artist> artists, string title, DateTime dateCreated, string path, List<Album> albums, bool initialized = true)
+        public Song(List<Artist>? artists, string title, DateTime dateCreated, string path, List<Album>? albums, bool initialized = true)
         {
             Artists = artists.Distinct().ToList();
             Albums = albums.Distinct().ToList();
@@ -235,6 +238,13 @@ namespace MWP
             MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagPlayable);
             return item;
         }
+        
+        public MediaSessionCompat.QueueItem? ToQueueItem(long id)
+        {
+            if (Description == null) return null;
+            MediaSessionCompat.QueueItem item = new MediaSessionCompat.QueueItem(Description, id);
+            return item;
+        }
 
         protected override MediaDescriptionCompat? GetDescription()
         {
@@ -244,10 +254,20 @@ namespace MWP
         protected override MediaDescriptionCompat.Builder? GetBuilder()
         {
             return new MediaDescriptionCompat.Builder()
-                .SetMediaId($"{(byte)MediaType.Song}{Title}")?
+                .SetMediaId($"{(byte)MediaType.Song}{IdString}")?
                 .SetTitle(Title)?
                 .SetSubtitle(Artist.Title)?
                 .SetIconBitmap(Image);
+        }
+
+        public static Song FromId(Guid id)
+        {
+            return MainActivity.stateHandler.Songs.Find(s => s.Id.Equals(id));
+        }
+        
+        public static Song FromId(string id)
+        {
+            return MainActivity.stateHandler.Songs.Find(s => s.IdString.Equals(id));
         }
 
         /// <inheritdoc />

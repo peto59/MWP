@@ -17,8 +17,9 @@ namespace MWP
         }
 
         /// <inheritdoc />
-        public override void WriteJson(JsonWriter writer, Song song, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, Song? song, JsonSerializer serializer)
         {
+            if (song == null) return;
             JObject jObject;
             if (includePrivateInfo)
             {
@@ -43,37 +44,48 @@ namespace MWP
                     { "Albums", JArray.FromObject(song.XmlAlbums, serializer) }
                 };
             }
-        
             jObject.WriteTo(writer);
         }
 
         /// <inheritdoc />
-        public override Song ReadJson(JsonReader reader, Type objectType, Song existingValue, bool hasExistingValue, JsonSerializer serializer)
+        public override Song ReadJson(JsonReader reader, Type objectType, Song? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             JObject jObject = JObject.Load(reader);
             Song song;
-            List<Artist> artists = jObject["Artists"]?.ToObject<List<Artist>>(serializer);
-            List<Album> albums = jObject["Albums"]?.ToObject<List<Album>>(serializer);
-            if ((bool)jObject["PrivateInfo"] && jObject["DateCreated"] != null)
+            List<Artist>? artists = jObject["Artists"]?.ToObject<List<Artist>>(serializer);
+            List<Album>? albums = jObject["Albums"]?.ToObject<List<Album>>(serializer);
+            if ((bool)(jObject["PrivateInfo"] ?? false) && jObject["DateCreated"] != null)
             {
-                song = new Song(
-                    artists,
-                    (string)jObject["Title"],
-                    jObject["DateCreated"].ToObject<DateTime>(serializer),
-                    (string)jObject["Path"],
-                    albums,
-                    (bool)jObject["Initialized"]
-                );
+                string? title = (string?)jObject["Title"];
+                DateTime? date = jObject["DateCreated"]?.ToObject<DateTime>(serializer);
+                string? path = (string?)jObject["Path"];
+                if (title != null && date != null && path != null)
+                {
+                    song = new Song(
+                        artists,
+                        title,
+                        (DateTime)date,
+                        path,
+                        albums,
+                        (bool)(jObject["Initialized"] ?? false)
+                    );
+                    return song;
+                }
             }
             else
             {
-                song = new Song(
-                    artists,
-                    albums,
-                    (string)jObject["Title"]
-                );
+                string? title = (string?)jObject["Title"];
+                if (title != null)
+                {
+                    song = new Song(
+                        artists,
+                        albums,
+                        title
+                    );
+                    return song;
+                }
             }
-            return song;
+            return new Song(null, null, "a", false);
         }
     }
 }

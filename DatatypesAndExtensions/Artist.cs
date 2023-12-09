@@ -226,9 +226,19 @@ namespace MWP
         protected override MediaDescriptionCompat.Builder? GetBuilder()
         {
             return new MediaDescriptionCompat.Builder()
-                .SetMediaId($"{(byte)MediaType.Artist}{Title}")?
+                .SetMediaId($"{(byte)MediaType.Artist}{IdString}")?
                 .SetTitle(Title)?
                 .SetIconBitmap(Image);
+        }
+        
+        public static Artist FromId(Guid id)
+        {
+            return MainActivity.stateHandler.Artists.Find(a => a.Id.Equals(id));
+        }
+        
+        public static Artist FromId(string id)
+        {
+            return MainActivity.stateHandler.Artists.Find(a => a.IdString.Equals(id));
         }
 
         /// <inheritdoc />

@@ -76,7 +76,9 @@ namespace MWP
     {
         Song = 0,
         Album = 1,
-        Artist = 2
+        Artist = 2,
+        ThisPlayAll = 3,
+        ThisShufflePlay = 4
     }
     
 }
