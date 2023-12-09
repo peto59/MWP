@@ -87,13 +87,13 @@ namespace MWP
             int[] nameMargins = { 50, 50, 50, 50 };
             int[] cardMargins = { 30, 50, 0, 0 };
 
-            for (int i = 0; i < MainActivity.stateHandler.Albums.Count; i++)
+            for (int i = 0; i < MainActivity.StateHandler.Albums.Count; i++)
             {
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    MainActivity.stateHandler.Albums[i], scale, cardMargins, 15, i, context, albumButtons, 
+                    MainActivity.StateHandler.Albums[i], scale, cardMargins, 15, i, context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 UIRenderFunctions.SetTilesImage(
-                    lnIn, MainActivity.stateHandler.Albums[i], 150, 100,
+                    lnIn, MainActivity.StateHandler.Albums[i], 150, 100,
                     buttonMargins, 17,
                     nameMargins, scale, context
                 );
@@ -121,13 +121,13 @@ namespace MWP
             int[] cardMargins = { 20, 50, 0, 0 };
 
 
-            for (int i = 0; i < MainActivity.stateHandler.Artists.Count; i++)
+            for (int i = 0; i < MainActivity.StateHandler.Artists.Count; i++)
             {
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    MainActivity.stateHandler.Artists[i], scale, cardMargins, 15, i, context, albumButtons, 
+                    MainActivity.StateHandler.Artists[i], scale, cardMargins, 15, i, context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 UIRenderFunctions.SetTilesImage(
-                    lnIn, MainActivity.stateHandler.Artists[i], 150, 100,
+                    lnIn, MainActivity.StateHandler.Artists[i], 150, 100,
                     buttonMargins, 17,
                     nameMargins, scale, context
                 );
@@ -145,7 +145,7 @@ namespace MWP
             ScrollView authorScroll = new ScrollView(context);
             ScrollView albumScroll = new ScrollView(context);
             
-            DisplayMetrics displayMetrics = Resources.DisplayMetrics;
+            DisplayMetrics? displayMetrics = Resources.DisplayMetrics;
             if (displayMetrics != null)
             {
                 int displayWidth = displayMetrics.WidthPixels;

@@ -1,19 +1,19 @@
-﻿using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
+using MWP.BackEnd;
 
 namespace MWP
 {
-    internal static class Extensions
+    /// <summary>
+    /// Extensions to various custom objects
+    /// </summary>
+    public static class Extensions
     {
+        /// <summary>
+        /// Shuffles list
+        /// </summary>
+        /// <param name="list">list to be shuffled</param>
+        /// <typeparam name="T">type</typeparam>
         public static void Shuffle<T>(this IList<T> list)
         {
             //TODO: figure out where one of the elements disappears to;
@@ -26,6 +26,13 @@ namespace MWP
             }
         }
 
+        /// <summary>
+        /// Removes and returns element at <paramref name="index"/>
+        /// </summary>
+        /// <param name="list">List to be modified</param>
+        /// <param name="index">Index of removal</param>
+        /// <typeparam name="T">type</typeparam>
+        /// <returns>removed <typeparamref name="T"/></returns>
         public static T Pop<T>(this IList<T> list, int index = 0)
         {
             T value = list[index];
@@ -84,7 +91,7 @@ namespace MWP
         ///</summary>
         public static bool Contains(this string source, string toCheck, StringComparison comp)
         {
-            return source?.IndexOf(toCheck, comp) >= 0;
+            return source.IndexOf(toCheck, comp) >= 0;
         }
     }
 }

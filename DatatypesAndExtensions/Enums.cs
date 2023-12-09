@@ -1,6 +1,6 @@
 using System;
 
-namespace MWP
+namespace MWP.DatatypesAndExtensions
 {
     internal enum SongSelectionDialogActions
     {
@@ -72,12 +72,30 @@ namespace MWP
         Rejected
     }
 
+    /// <summary>
+    /// Media types for <see cref="MWP.BackEnd.Player.MyMediaBrowserService"/>
+    /// </summary>
     public enum MediaType : byte
     {
+        /// <summary>
+        /// Song
+        /// </summary>
         Song = 0,
+        /// <summary>
+        /// Album
+        /// </summary>
         Album = 1,
+        /// <summary>
+        /// Artist
+        /// </summary>
         Artist = 2,
+        /// <summary>
+        /// Play all <see cref="MWP.Song"/>s in this object
+        /// </summary>
         ThisPlayAll = 3,
+        /// <summary>
+        /// Play all <see cref="MWP.Song"/>s in this object on shuffle
+        /// </summary>
         ThisShufflePlay = 4
     }
     

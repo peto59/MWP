@@ -93,7 +93,7 @@ namespace MWP
                     150, 100,
                     inPlaylistButtonMargins, inPlaylistNameMargins, inPlaylistCardMargins,
                     17,
-                    context, songButtons, UIRenderFunctions.SongType.playlistSong, assets, ParentFragmentManager, inPlaylistLnMain
+                    context, songButtons, UIRenderFunctions.SongType.PlaylistSong, assets, ParentFragmentManager, inPlaylistLnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, playlistSongs[i], 150, 100, 

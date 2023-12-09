@@ -4,51 +4,46 @@ using Android.OS;
 using MWP.Helpers;
 #endif
 
-namespace MWP
+namespace MWP.BackEnd.Player
 {
+    /// <summary>
+    /// Connector to <see cref="MediaService"/>
+    /// </summary>
     public class MediaServiceConnection : Java.Lang.Object, IServiceConnection
     {
+        /// <summary>
+        /// Binder to <see cref="MediaService"/>
+        /// </summary>
         public MediaServiceBinder? Binder { get; private set; }
+        /// <summary>
+        /// Whether service is currently connected to <see cref="Binder"/>
+        /// </summary>
         public bool Connected { get; private set; }
 
+        /// <inheritdoc />
         public void OnServiceConnected(ComponentName? name, IBinder? binder)
         {
             // Cast the IBinder to your binder class and obtain a reference to the service instance
             MediaServiceBinder? tempBinder = (MediaServiceBinder?)binder;
-            if (tempBinder != null)
-            {
-                Binder = tempBinder;
+            if (tempBinder == null) return;
+            Binder = tempBinder;
 #if DEBUG
-                MyConsole.WriteLine("OnServiceConnected");
+            MyConsole.WriteLine("OnServiceConnected");
 #endif
-
-                // You can now use the service instance to interact with your foreground service
-                if (Binder?.Service != null)
-                {
-                    Connected = true;
+            
+            if (Binder?.Service == null) return;
+            Connected = true;
 #if DEBUG
-                    MyConsole.WriteLine("Service connected");
+            MyConsole.WriteLine("Service connected");
 #endif
-                    // Call methods or access properties of the service instance
-
-                    //serviceInstance.Play();
-                }
-                
-            }
         }
 
+        /// <inheritdoc />
         public void OnServiceDisconnected(ComponentName? name)
         {
             Connected = false;
             Binder = null;
         }
-
-        /*public void Dispose()
-        {
-            Connected = false;
-            Binder?.Dispose();
-            Binder = null;
-        }*/
 
         /// <inheritdoc />
         protected override void Dispose(bool disposing)

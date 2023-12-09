@@ -3,20 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Android.App;
-using Android.Content;
 using Android.OS;
 using Android.Runtime;
 using Android.Support.V4.Media;
-using Android.Support.V4.Media.Session;
 using AndroidX.Media;
 using AndroidX.Media.Utils;
-using MWP.BackEnd;
+using MWP.DatatypesAndExtensions;
 #if DEBUG
 using MWP.Helpers;
 #endif
 
-namespace MWP
+namespace MWP.BackEnd.Player
 {
+    /// <inheritdoc />
     [Service(Exported = true)]
     [IntentFilter(new[] { "android.media.browse.MediaBrowserService" })]
     public class MyMediaBrowserService : MediaBrowserServiceCompat
@@ -26,7 +25,13 @@ namespace MWP
         private const string MY_ALBUMS_ROOT_ID = "albums_root_id";
         private const string MY_SONGS_ROOT_ID = "songs_root_id";
         private const string MY_PLAYLISTS_ROOT_ID = "playlists_root_id";
+        /// <summary>
+        /// Media Id to play all songs in <see cref="StateHandler"/>
+        /// </summary>
         public static readonly string MySongsPlayAll = $"{MY_SONGS_ROOT_ID}_all";
+        /// <summary>
+        /// Media Id to play all songs in <see cref="StateHandler"/> on shuffle
+        /// </summary>
         public static readonly string MySongsShuffle = $"{MY_SONGS_ROOT_ID}_shuffle";
         //private static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
         
@@ -52,10 +57,11 @@ namespace MWP
                         .SetTitle("Playlists")?
                         .SetIconBitmap(MusicBaseClassStatic.PlaylistsImage)?
                         .Build();
-      
+
+        /// <inheritdoc />
         public override void OnCreate() {
             base.OnCreate();
-            //TODO: actually dies when main activity isnt running
+            //TODO: actually dies when main activity isn't running
             while (!MainActivity.ServiceConnection.Connected)
             {
             #if DEBUG
@@ -70,7 +76,7 @@ namespace MWP
                 MyConsole.WriteLine("Empty binder");
 #endif
 
-            if (MainActivity.stateHandler.Songs.Count == 0)
+            if (MainActivity.StateHandler.Songs.Count == 0)
             {
                 LoadFiles();
             }
@@ -78,26 +84,26 @@ namespace MWP
 
         private static void LoadFiles()
         {
-            if (MainActivity.stateHandler.Songs.Count == 0)
+            if (MainActivity.StateHandler.Songs.Count == 0)
             {
 #if DEBUG
                 MyConsole.WriteLine("Generating list");
 #endif
                 new Thread(() => {
                     FileManager.DiscoverFiles(true);
-                    if (MainActivity.stateHandler.Songs.Count < FileManager.GetSongsCount())
+                    if (MainActivity.StateHandler.Songs.Count < FileManager.GetSongsCount())
                     {
-                        MainActivity.stateHandler.Songs = new List<Song>();
-                        MainActivity.stateHandler.Artists = new List<Artist>();
-                        MainActivity.stateHandler.Albums = new List<Album>();
+                        MainActivity.StateHandler.Songs = new List<Song>();
+                        MainActivity.StateHandler.Artists = new List<Artist>();
+                        MainActivity.StateHandler.Albums = new List<Album>();
                     
-                        MainActivity.stateHandler.Artists.Add(new Artist("No Artist", "Default"));
+                        MainActivity.StateHandler.Artists.Add(new Artist("No Artist", "Default"));
                         FileManager.GenerateList(FileManager.MusicFolder);
                     }
 
-                    if (MainActivity.stateHandler.Songs.Count != 0)
+                    if (MainActivity.StateHandler.Songs.Count != 0)
                     {
-                        MainActivity.stateHandler.Songs = MainActivity.stateHandler.Songs.Order(SongOrderType.ByDate);
+                        MainActivity.StateHandler.Songs = MainActivity.StateHandler.Songs.Order(SongOrderType.ByDate);
                     }
                 }).Start();
             }
@@ -108,17 +114,19 @@ namespace MWP
             bool returnVal = true; //TODO: back to false
             returnVal |= clientUid == Process.SystemUid;
 #if DEBUG
-            MyConsole.WriteLine($"returnval: {returnVal}");
+            MyConsole.WriteLine($"return val: {returnVal}");
 #endif
             return returnVal;
             //TODO: add logic
         }
 
+        /// <inheritdoc />
         public override void OnCustomAction(string action, Bundle? extras, Result result)
         {
             base.OnCustomAction(action, extras, result);
         }
 
+        /// <inheritdoc />
         public override BrowserRoot? OnGetRoot(string clientPackageName, int clientUid, Bundle? rootHints)
         {
             if (!ValidateClient(clientPackageName, clientUid))
@@ -138,7 +146,8 @@ namespace MWP
             return new BrowserRoot(MY_MEDIA_ROOT_ID, extras);
 
         }
-        
+
+        /// <inheritdoc />
         public override void OnLoadChildren(string parentId, Result result)
         {
             /*if (MainActivity.stateHandler.Songs.Count == 0)
@@ -205,13 +214,13 @@ namespace MWP
                         mediaItems.Add(item);
                     }
                     
-                    mediaItems.AddRange(MainActivity.stateHandler.Songs.Select(song => song.ToMediaItem()));
+                    mediaItems.AddRange(MainActivity.StateHandler.Songs.Select(song => song.ToMediaItem()));
                     break;
                 case MY_ARTISTS_ROOT_ID:
-                    mediaItems.AddRange(MainActivity.stateHandler.Artists.Select(artist => artist.ToMediaItem()));
+                    mediaItems.AddRange(MainActivity.StateHandler.Artists.Select(artist => artist.ToMediaItem()));
                     break;
                 case MY_ALBUMS_ROOT_ID:
-                    mediaItems.AddRange(MainActivity.stateHandler.Albums.Select(album => album.ToMediaItem()));
+                    mediaItems.AddRange(MainActivity.StateHandler.Albums.Select(album => album.ToMediaItem()));
                     break;
                 case MY_PLAYLISTS_ROOT_ID:
                     //TODO: add playlists
@@ -306,11 +315,13 @@ namespace MWP
 
         }
 
+        /// <inheritdoc />
         public override void OnLoadItem(string? itemId, Result result)
         {
             base.OnLoadItem(itemId, result);
         }
 
+        /// <inheritdoc />
         public override void OnSearch(string query, Bundle? extras, Result result)
         {
             base.OnSearch(query, extras, result);

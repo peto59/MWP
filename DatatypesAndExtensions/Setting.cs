@@ -1,5 +1,6 @@
 using Xamarin.Essentials;
-namespace MWP
+
+namespace MWP.DatatypesAndExtensions
 {
     internal abstract class Setting<T>
     {

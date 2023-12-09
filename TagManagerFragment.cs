@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Android.Animation;
 using Android.App;
@@ -12,8 +13,8 @@ using Android.Views;
 using Android.Widget;
 using MWP.BackEnd;
 using Google.Android.Material.FloatingActionButton;
-using Java.IO;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using IOException = Java.IO.IOException;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -64,16 +65,16 @@ namespace MWP
     
 
         /// <inheritdoc />
-        public override View? OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
             View? view = inflater.Inflate(Resource.Layout.tag_manager_fragment, container, false);
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.tag_manager_main);
 
-            ((MainActivity)Activity).Title = "Tag Manager";
-            
+            if (Activity != null) ((MainActivity)Activity).Title = "Tag Manager";
+
             /*
-             * changing fonts 
+             * changing fonts
              */
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_album_label);
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_aual_label);
@@ -111,10 +112,10 @@ namespace MWP
             songCover?.SetImageBitmap(song?.Image);
             try
             {
-                var stream = assets?.Open("music_placeholder.png");  
-                var imgBitmap = BitmapFactory.DecodeStream(stream);  
+                Stream? stream = assets?.Open("music_placeholder.png");  
+                Bitmap? imgBitmap = BitmapFactory.DecodeStream(stream);  
             }
-            catch (IOException e)
+            catch (IOException)
             {
                 return view;
             }

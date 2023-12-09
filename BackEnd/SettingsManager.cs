@@ -1,6 +1,7 @@
-﻿using Xamarin.Essentials;
+﻿using MWP.DatatypesAndExtensions;
+using Xamarin.Essentials;
 
-namespace MWP
+namespace MWP.BackEnd
 {
     internal static class SettingsManager
     {
@@ -14,17 +15,17 @@ namespace MWP
 
         private static void RegisterSettings()
         {
-            shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
-            canUseNetwork = new IntSetting(ShareName, "canUseNetwork", (int)CanUseNetworkState.None);
-            defaultDownloadAction = new IntSetting(ShareName, "defaultDownloadAction", (int)DownloadActions.DownloadOnly);
-            checkUpdates = new IntSetting(ShareName, "checkUpdates", (int)AutoUpdate.NoState);
+            _shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
+            _canUseNetwork = new IntSetting(ShareName, "canUseNetwork", (int)CanUseNetworkState.None);
+            _defaultDownloadAction = new IntSetting(ShareName, "defaultDownloadAction", (int)DownloadActions.DownloadOnly);
+            _checkUpdates = new IntSetting(ShareName, "checkUpdates", (int)AutoUpdate.NoState);
         }
 
-        private static Setting<bool> shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
+        private static Setting<bool> _shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
         public static bool ShouldUseChromaprintAtDownload
         {
-            get => shouldUseChromaprintAtDownload.Value;
-            set => shouldUseChromaprintAtDownload.Value = value;
+            get => _shouldUseChromaprintAtDownload.Value;
+            set => _shouldUseChromaprintAtDownload.Value = value;
         }
 
         /*private static Setting<bool> shouldUseChromaprintAtDiscover = new BoolSetting(ShareName, "ShouldUseChromaprintAtDiscover", false);
@@ -34,28 +35,28 @@ namespace MWP
             set => shouldUseChromaprintAtDiscover.Value = value;
         }*/
         
-        private static Setting<int> canUseNetwork = new IntSetting(ShareName, "canUseNetwork", (int)CanUseNetworkState.None);
+        private static Setting<int> _canUseNetwork = new IntSetting(ShareName, "canUseNetwork", (int)CanUseNetworkState.None);
         public static CanUseNetworkState CanUseNetwork
         {
-            get => (CanUseNetworkState)canUseNetwork.Value;
-            set => canUseNetwork.Value = (int)value;
+            get => (CanUseNetworkState)_canUseNetwork.Value;
+            set => _canUseNetwork.Value = (int)value;
         }
         
         //TODO: set to false
-        private static Setting<bool> canUseWan = new BoolSetting(ShareName, "canUseWan", true);
+        private static Setting<bool> _canUseWan = new BoolSetting(ShareName, "canUseWan", true);
         public static bool CanUseWan
         {
-            get => canUseWan.Value;
-            set => canUseWan.Value = value;
+            get => _canUseWan.Value;
+            set => _canUseWan.Value = value;
         }
         
-        private static Setting<int> wanPort = new IntSetting(ShareName, "wanPort", 8010);
+        private static Setting<int> _wanPort = new IntSetting(ShareName, "wanPort", 8010);
         public static int WanPort
         {
-            get => wanPort.Value;
+            get => _wanPort.Value;
             set
             {
-                wanPort.Value = value switch
+                _wanPort.Value = value switch
                 {
                     < 1024 => 1024,
                     > 65535 => 65535,
@@ -65,18 +66,18 @@ namespace MWP
         }
 
         //TODO: you don't use default download action, remove?
-        private static Setting<int> defaultDownloadAction = new IntSetting(ShareName, "defaultDownloadAction", (int)DownloadActions.DownloadOnly);
+        private static Setting<int> _defaultDownloadAction = new IntSetting(ShareName, "defaultDownloadAction", (int)DownloadActions.DownloadOnly);
         public static DownloadActions DefaultDownloadAction
         {
-            get => (DownloadActions)defaultDownloadAction.Value;
-            set => defaultDownloadAction.Value = (int)value;
+            get => (DownloadActions)_defaultDownloadAction.Value;
+            set => _defaultDownloadAction.Value = (int)value;
         }
         
-        private static Setting<int> checkUpdates = new IntSetting(ShareName, "checkUpdates", (int)AutoUpdate.NoState);
+        private static Setting<int> _checkUpdates = new IntSetting(ShareName, "checkUpdates", (int)AutoUpdate.NoState);
         public static AutoUpdate CheckUpdates
         {
-            get => (AutoUpdate)checkUpdates.Value;
-            set => checkUpdates.Value = (int)value;
+            get => (AutoUpdate)_checkUpdates.Value;
+            set => _checkUpdates.Value = (int)value;
         }
     }
 }

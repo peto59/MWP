@@ -1,23 +1,11 @@
-﻿using Android.App;
-using Android.Content;
-using Android.Media.Session;
+﻿using System;
 using Android.OS;
-using Android.Runtime;
-using Android.Systems;
-using Android.Views;
-using Android.Widget;
-using Java.Util;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Contexts;
-using System.Text;
-using AndroidApp = Android.App.Application;
+using MWP.DatatypesAndExtensions;
 #if DEBUG
 using MWP.Helpers;
 #endif
 
-namespace MWP
+namespace MWP.BackEnd.Player
 {
     internal class MediaSessionCallback : Android.Support.V4.Media.Session.MediaSessionCompat.Callback
     {
@@ -83,11 +71,11 @@ namespace MWP
                 case MediaType.Song:
                     if (mediaId == MyMediaBrowserService.MySongsPlayAll)
                     {
-                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Songs);
+                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.StateHandler.Songs);
                     }
                     else if (mediaId == MyMediaBrowserService.MySongsShuffle)
                     {
-                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Songs, null, false);
+                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.StateHandler.Songs, null, false);
                         MainActivity.ServiceConnection.Binder?.Service.Shuffle(true);
                         MainActivity.ServiceConnection.Binder?.Service.Play();
                     }
