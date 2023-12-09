@@ -1,21 +1,8 @@
-﻿using Android.App;
-using Android.Content;
-using Android.Media;
-using Android.Media.Session;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-using AndroidX.AppCompat.App;
-using Java.Security;
+﻿using AndroidX.AppCompat.App;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
-using MWP.BackEnd.Player;
-using static Android.Renderscripts.Sampler;
 
 namespace MWP
 {

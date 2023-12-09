@@ -203,8 +203,8 @@ namespace MWP
         public override MediaBrowserCompat.MediaItem? ToMediaItem()
         {
             if (Description == null) return null;
-            int flags = MediaBrowserCompat.MediaItem.FlagBrowsable | MediaBrowserCompat.MediaItem.FlagPlayable;
-            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, flags);
+            //int flags = MediaBrowserCompat.MediaItem.FlagBrowsable | MediaBrowserCompat.MediaItem.FlagPlayable;
+            MediaBrowserCompat.MediaItem item = new MediaBrowserCompat.MediaItem(Description, MediaBrowserCompat.MediaItem.FlagBrowsable);
             return item;
         }
 
@@ -216,10 +216,20 @@ namespace MWP
         protected override MediaDescriptionCompat.Builder? GetBuilder()
         {
             return new MediaDescriptionCompat.Builder()
-                .SetMediaId($"{(byte)MediaType.Album}{Title}")?
+                .SetMediaId($"{(byte)MediaType.Album}{IdString}")?
                 .SetTitle(Title)?
                 .SetSubtitle(Artist.Title)?
                 .SetIconBitmap(Image);
+        }
+        
+        public static Album FromId(Guid id)
+        {
+            return MainActivity.stateHandler.Albums.Find(a => a.Id.Equals(id));
+        }
+        
+        public static Album FromId(string id)
+        {
+            return MainActivity.stateHandler.Albums.Find(a => a.IdString.Equals(id));
         }
 
         /// <inheritdoc />

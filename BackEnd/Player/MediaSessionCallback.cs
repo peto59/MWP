@@ -19,7 +19,7 @@ using MWP.Helpers;
 
 namespace MWP
 {
-    class MediaSessionCallback : Android.Support.V4.Media.Session.MediaSessionCompat.Callback
+    internal class MediaSessionCallback : Android.Support.V4.Media.Session.MediaSessionCompat.Callback
     {
         public override void OnPlay()
         {
@@ -36,7 +36,13 @@ namespace MWP
 #if DEBUG
             MyConsole.WriteLine("OnSkipToQueueItem");
 #endif
-            //OnSkipToQueueItemImpl(id);
+            if (id != MainActivity.ServiceConnection.Binder?.Service.QueueObject.Index)
+            {
+                if (MainActivity.ServiceConnection.Binder?.Service.QueueObject.SetIndex(id) ?? false)
+                {
+                    MainActivity.ServiceConnection.Binder?.Service.Play(true);
+                }
+            }
             base.OnSkipToQueueItem(id);
         }
 
@@ -75,14 +81,49 @@ namespace MWP
             switch (mediaType)
             {
                 case MediaType.Song:
-                    MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Songs.Search(mediaId));
+                    if (mediaId == MyMediaBrowserService.MySongsPlayAll)
+                    {
+                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Songs);
+                    }
+                    else if (mediaId == MyMediaBrowserService.MySongsShuffle)
+                    {
+                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Songs, null, false);
+                        MainActivity.ServiceConnection.Binder?.Service.Shuffle(true);
+                        MainActivity.ServiceConnection.Binder?.Service.Play();
+                    }
+                    else
+                    {
+                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(Song.FromId(mediaId));
+                    }
+                    break;
+                case MediaType.ThisPlayAll:
+                    MediaType mediaTypePlayAll = (MediaType)(mediaId[0] - '0');
+                    mediaId = mediaId[1..];
+                    if (mediaTypePlayAll == MediaType.Album)
+                    {
+                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(Album.FromId(mediaId));
+                    }else if (mediaTypePlayAll == MediaType.Artist)
+                    {
+                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(Artist.FromId(mediaId));
+                    }
+                    break;
+                case MediaType.ThisShufflePlay:
+                    MediaType mediaTypeShuffle = (MediaType)(mediaId[0] - '0');
+                    mediaId = mediaId[1..];
+                    if (mediaTypeShuffle == MediaType.Album)
+                    {
+                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(Album.FromId(mediaId), null, false);
+                        MainActivity.ServiceConnection.Binder?.Service.Shuffle(true);
+                        MainActivity.ServiceConnection.Binder?.Service.Play();
+                    }else if (mediaTypeShuffle == MediaType.Artist)
+                    {
+                        MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(Artist.FromId(mediaId), null, false);
+                        MainActivity.ServiceConnection.Binder?.Service.Shuffle(true);
+                        MainActivity.ServiceConnection.Binder?.Service.Play();
+                    }
                     break;
                 case MediaType.Album:
-                    MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Albums.Search(mediaId));
-                    break;
                 case MediaType.Artist:
-                    MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Artists.Search(mediaId));
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -129,7 +170,7 @@ namespace MWP
             base.OnSkipToPrevious();
         }
 
-        public override void OnCustomAction(string action, Bundle extras)
+        public override void OnCustomAction(string? action, Bundle? extras)
         {
 #if DEBUG
             MyConsole.WriteLine("OnCustomAction");
@@ -159,7 +200,7 @@ namespace MWP
             base.OnCustomAction(action, extras);
         }
 
-        public override void OnPlayFromSearch(string query, Bundle extras)
+        public override void OnPlayFromSearch(string? query, Bundle? extras)
         {
 #if DEBUG
             MyConsole.WriteLine("OnPlayFromSearch");

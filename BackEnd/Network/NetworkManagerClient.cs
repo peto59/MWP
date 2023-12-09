@@ -340,7 +340,7 @@ namespace MWP.BackEnd.Network
                     case CommandsEnum.ArtistImageRequest:
                         if (data != null)
                         {
-                            string artistName = Encoding.UTF8.GetString(data);
+                            string? artistName = Encoding.UTF8.GetString(data);
                             List<Artist> artists = MainActivity.stateHandler.Artists.Search(artistName);
                             foreach (Artist artist in artists.Where(artist => artist.ImgPath != "Default"))
                             {
@@ -353,7 +353,7 @@ namespace MWP.BackEnd.Network
                     case CommandsEnum.AlbumImageRequest:
                         if (data != null)
                         {
-                            string albumName = Encoding.UTF8.GetString(data);
+                            string? albumName = Encoding.UTF8.GetString(data);
                             List<Album> albums = MainActivity.stateHandler.Albums.Search(albumName);
                             foreach (Album album in albums.Where(album => album.ImgPath != "Default"))
                             {

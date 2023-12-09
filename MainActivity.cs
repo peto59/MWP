@@ -61,7 +61,7 @@ namespace MWP
         {
             get
             {
-                if (!_serviceConnection.Connected)
+                if (_serviceConnection is { Connected: false })
                 {
 #if DEBUG
                     MyConsole.WriteLine($"Session not connected");
@@ -565,7 +565,7 @@ namespace MWP
 
         public void StartMusicService()
         {
-            Intent serviceIntent = new Intent(this, typeof(MediaService));
+            Intent serviceIntent = new Intent(Application.Context, typeof(MediaService));
             
             //StartForegroundService(serviceIntent);
             if (!BindService(serviceIntent, _serviceConnection, Bind.AutoCreate))

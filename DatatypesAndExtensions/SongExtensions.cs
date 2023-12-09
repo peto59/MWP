@@ -40,12 +40,12 @@ namespace MWP
             return string.IsNullOrEmpty(query) ? songs : songs.Where(song => song.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase));
         }
         
-        public static List<Artist> Search( [NotNull] this List<Artist> artists, string query)
+        public static List<Artist> Search( [NotNull] this List<Artist> artists, string? query)
         {
             return string.IsNullOrEmpty(query) ? artists : artists.Where(artist => artist.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();
         }
         
-        public static List<Album> Search( [NotNull] this List<Album> albums, string query)
+        public static List<Album> Search( [NotNull] this List<Album> albums, string? query)
         {
             return string.IsNullOrEmpty(query) ? albums : albums.Where(album  => album.Title.Contains(query, StringComparison.InvariantCultureIgnoreCase)).ToList();
         }

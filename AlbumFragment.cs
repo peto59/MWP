@@ -25,7 +25,7 @@ namespace MWP
     {
         private readonly float scale;
         private readonly Context context;
-        private RelativeLayout mainLayout;
+        private RelativeLayout? mainLayout;
         private Album album;
         private AssetManager? assets;
         
@@ -50,13 +50,13 @@ namespace MWP
         /// <param name="container"></param>
         /// <param name="savedInstanceState"></param>
         /// <returns></returns>
-        public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
-            View view = inflater.Inflate(Resource.Layout.album_fragment, container, false);
+            View? view = inflater.Inflate(Resource.Layout.album_fragment, container, false);
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.album_fragment_main);
 
-            string title = Arguments.GetString("title");
+            string? title = Arguments?.GetString("title");
             List<Album> retreivedSongs = MainActivity.stateHandler.Albums.Search(title);
             if (retreivedSongs.Count > 0)
             {

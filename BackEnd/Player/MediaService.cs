@@ -48,7 +48,9 @@ namespace MWP
 		private AudioManager? audioManager;
 		private AudioFocusRequestClass? audioFocusRequest;
 		private readonly Local_notification_service notificationService = new Local_notification_service();
-		public readonly MyMediaQueue QueueObject = new MyMediaQueue();
+
+		public MyMediaQueue QueueObject => queueObject ??= new MyMediaQueue(Session);
+		private MyMediaQueue? queueObject = null;
 		public long Actions { get; private set; }
 		private bool isFocusGranted;
 		private bool isUsed;
@@ -139,7 +141,7 @@ namespace MWP
 			{
 				if (Application.Context.Assets != null)
 				{
-					metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, MusicBaseClassStatic.placeholder);	
+					metadataBuilder.PutBitmap(MediaMetadataCompat.MetadataKeyArt, MusicBaseClassStatic.Placeholder);	
 				}
 			}
 			
@@ -300,6 +302,7 @@ namespace MWP
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
 				stateBuilder.AddCustomAction("shuffle", "shuffle", QueueObject.IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
+				stateBuilder.SetActiveQueueItemId(QueueObject.Index);
 				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
@@ -383,8 +386,6 @@ namespace MWP
 			{
 				if (session.SessionToken != null) notificationService.song_control_notification(session.SessionToken);
 				StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
-				//android:foregroundServiceType="mediaPlayback"
-				//StartForeground(notificationService.NotificationId, notificationService.Notification);
 			}
 			if (mediaPlayer == null)
 			{
@@ -397,27 +398,20 @@ namespace MWP
                 MyConsole.WriteLine($"SERVICE INDEX {QueueObject.Index}");
                 MyConsole.WriteLine($"SERVICE QUEUE {QueueObject.QueueCount}");
 #endif
-
-
-                // if (!File.Exists(Queue[Index].Path))
-                // {
-                // 	NextSong();
-                // 	return;
-                // }
                 mediaPlayer.SetDataSource(QueueObject.Current.Path);
 				mediaPlayer.Prepare();
 			}
 			mediaPlayer!.Start();
 
-			if (!IsPaused)
+			if (!IsPaused || reset)
 			{
 				UpdateMetadata();
 			}
 			else
 			{
-				IsPaused = false;
 				UpdatePlaybackState();
 			}
+			IsPaused = false;
 
 			isSkippingToNext = false;
 			isSkippingToPrevious = false;

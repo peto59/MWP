@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
+using Android.Support.V4.Media.Session;
 
 namespace MWP.BackEnd.Player
 {
@@ -17,8 +18,14 @@ namespace MWP.BackEnd.Player
         //private bool loopSingle = false;
         private bool _isShuffled = false;
         private int _index = 0;
+
+        private MediaSessionCompat session;
         //-----------------------Private helpers--------------------
-        
+
+        public MyMediaQueue(MediaSessionCompat ses)
+        {
+            session = ses;
+        }
         
         //-------------------Public interfaces------------
         public bool IsShuffled
@@ -90,6 +97,13 @@ namespace MWP.BackEnd.Player
         
         
         //----------------------Functions------------------
+        private void SessionEnqueue()
+        {
+            long i = 0;
+            List<MediaSessionCompat.QueueItem?> tempQueue = _queue.Select(s => s.ToQueueItem(i++)).ToList();
+            List<MediaSessionCompat.QueueItem> queue = tempQueue.Where(q => q != null).ToList()!;
+            session.SetQueue(queue);
+        }
         public void GenerateQueue(IEnumerable<Song> source, Guid? id)
         {
             _queue = source.ToList();
@@ -98,6 +112,7 @@ namespace MWP.BackEnd.Player
             {
                 Shuffle();
             }
+            SessionEnqueue();
         }
 
         public void AppendToQueue(IEnumerable<Song> addition)
@@ -108,6 +123,7 @@ namespace MWP.BackEnd.Player
             {
                 _originalQueue.AddRange(collection);
             }
+            SessionEnqueue();
         }
         
         public void PrependToQueue(List<Song> addition)
@@ -130,6 +146,7 @@ namespace MWP.BackEnd.Player
                 tmp.AddRange(_queue.Skip(Index + 1));
                 _queue = tmp;
             }
+            SessionEnqueue();
         }
         
         private void Shuffle()
@@ -144,6 +161,7 @@ namespace MWP.BackEnd.Player
             _queue = _queue.Prepend(tmp).ToList();
             
             shuffling.Set();
+            SessionEnqueue();
         }
 
         private void UnShuffle()
@@ -156,6 +174,18 @@ namespace MWP.BackEnd.Player
             _originalQueue = new List<Song>();
             
             shuffling.Set();
+            SessionEnqueue();
+        }
+        
+        public bool SetIndex(long id)
+        {
+            if (id >= QueueCount)
+            {
+                return false;
+            }
+
+            Index = (int)id;
+            return true;
         }
         
         public bool IncrementIndex()
