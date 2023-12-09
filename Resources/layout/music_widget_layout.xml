@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/widgetBackground"
+              android:layout_height="150dp"
+              android:layout_width="match_parent"
+              android:layout_margin="20dp"
+              android:orientation="vertical"
+              android:background="#FFFFFF"
+              android:gravity="center"
+>
+    <Button 
+            android:layout_width="wrap_content" 
+            android:layout_height="wrap_content"
+            android:text="Button"
+            android:textSize="25dp"
+            android:id="@+id/widgetButton"
+    />
+    <TextView 
+            android:layout_width="wrap_content" 
+            android:layout_height="wrap_content"
+            android:id="@+id/widgetText"
+            android:text="placeholder text"
+            android:textSize="25dp"
+            android:textColor="#000000"
+    />
+        
+</LinearLayout>
