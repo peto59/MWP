@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Android.Support.V4.Media.Session;
 
 namespace MWP.BackEnd.Player
@@ -21,7 +22,7 @@ namespace MWP.BackEnd.Player
         //private bool loopSingle = false;
         private bool isShuffled;
         private int index;
-
+        private CancellationTokenSource cancellationToken = new CancellationTokenSource();
         private readonly MediaSessionCompat session;
         //-----------------------Private helpers--------------------
 
@@ -141,10 +142,12 @@ namespace MWP.BackEnd.Player
         //----------------------Functions------------------
         private void SessionEnqueue()
         {
-            long i = 0;
-            List<MediaSessionCompat.QueueItem?> tempQueue = queue.Select(s => s.ToQueueItem(i++)).ToList();
-            List<MediaSessionCompat.QueueItem> queueLocal = tempQueue.Where(q => q != null).ToList()!;
-            session.SetQueue(queueLocal);
+            new Task(() => {
+                long i = 0;
+                List<MediaSessionCompat.QueueItem?> tempQueue = queue.Select(s => s.ToQueueItem(i++)).ToList();
+                List<MediaSessionCompat.QueueItem> queueLocal = tempQueue.Where(q => q != null).ToList()!;
+                session.SetQueue(queueLocal);
+            }, cancellationToken.Token).Start();
         }
         /// <summary>
         /// Clears current <see cref="Queue"/> and generates new <see cref="Queue"/>
@@ -153,12 +156,14 @@ namespace MWP.BackEnd.Player
         /// <param name="id">id of songs object to be played for <see cref="Index"/> lookup purposes</param>
         public void GenerateQueue(IEnumerable<Song> source, Guid? id)
         {
+            cancellationToken.Cancel();
             queue = source.ToList();
             Index = id != null ? queue.FindIndex(s => s.Id.Equals(id)) : 0;
             if (IsShuffled)
             {
                 Shuffle();
             }
+            cancellationToken = new CancellationTokenSource();
             SessionEnqueue();
         }
 

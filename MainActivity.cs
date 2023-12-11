@@ -535,17 +535,22 @@ namespace MWP
             
             new Thread(() => {
                 FileManager.DiscoverFiles(StateHandler.Songs.Count == 0);
+                bool order = false;
                 if (StateHandler.Songs.Count < FileManager.GetSongsCount())
                 {
+#if DEBUG
+                    MyConsole.WriteLine("Generating new songs");
+#endif
                     StateHandler.Songs = new List<Song>();
                     StateHandler.Artists = new List<Artist>();
                     StateHandler.Albums = new List<Album>();
                     
                     StateHandler.Artists.Add(new Artist("No Artist", "Default"));
                     FileManager.GenerateList(FileManager.MusicFolder);
+                    order = true;
                 }
 
-                if (StateHandler.Songs.Count != 0)
+                if (StateHandler.Songs.Count != 0 && order)
                 {
                     StateHandler.Songs = StateHandler.Songs.Order(SongOrderType.ByDate);
                 }
@@ -576,9 +581,6 @@ namespace MWP
 
 
             }).Start();
-
-
-            StartMediaService();
         }
 
         /// <summary>
@@ -587,9 +589,7 @@ namespace MWP
         public void StartMediaService()
         {
             Intent serviceIntent = new Intent(Application.Context, typeof(MediaService));
-            
-            //StartForegroundService(serviceIntent);
-            if (!BindService(serviceIntent, ServiceConnectionPrivate, Bind.AutoCreate))
+            if (!BindService(serviceIntent, ServiceConnectionPrivate, Bind.Important | Bind.AutoCreate))
             {
 #if DEBUG
                 MyConsole.WriteLine("Cannot connect to MediaService");

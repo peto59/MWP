@@ -1,3 +1,4 @@
+using Android.Content;
 using Android.OS;
 
 namespace MWP.BackEnd.Player
@@ -16,12 +17,18 @@ namespace MWP.BackEnd.Player
         public MediaServiceBinder(MediaService service)
         {
             Service = service;
-        }   
-        
+        }
+
+        public void Dispose(IServiceConnection conn)
+        {
+            Service.UnbindService(conn);
+            Service.Dispose();
+            Dispose(true);
+        }
+
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            Service.Dispose();
             base.Dispose(disposing);
         }
     }

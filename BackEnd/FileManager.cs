@@ -121,9 +121,6 @@ namespace MWP.BackEnd
             {
                 try
                 {
-#if DEBUG
-                    MyConsole.WriteLine($"Processing: {file}");
-#endif
                     AddSong(file, _musicFolder != null && !file.Contains(_musicFolder), generateStateHandlerEntry || (_musicFolder != null && !file.Contains(_musicFolder)));
                     
                 }

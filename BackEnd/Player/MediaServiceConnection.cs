@@ -46,10 +46,17 @@ namespace MWP.BackEnd.Player
         }
 
         /// <inheritdoc />
+        public new void Dispose()
+        {
+            Dispose(true);
+            base.Dispose();
+        }
+
+        /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
             Connected = false;
-            Binder?.Dispose();
+            Binder?.Dispose(this);
             //Binder = null;
             base.Dispose(disposing);
         }
