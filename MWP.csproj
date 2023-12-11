@@ -138,12 +138,13 @@
     <Compile Include="BackEnd\FileManager.cs" />
     <Compile Include="Helpers\HelloWebViewClient.cs" />
     <Compile Include="MainActivity.cs" />
+    <Compile Include="MusicWidget.cs" />
     <Compile Include="PlaylistFragment.cs" />
     <Compile Include="PlaylistsFragment.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShareFragment.cs" />
-    <Compile Include="side_player.cs" />
+    <Compile Include="SidePlayer.cs" />
     <Compile Include="DatatypesAndExtensions\Song.cs" />
     <Compile Include="DatatypesAndExtensions\SongExtensions.cs" />
     <Compile Include="BackEnd\StateHandler.cs" />
@@ -161,6 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\albums.xml" />
+    <AndroidResource Include="Resources\drawable\artists.xml" />
     <AndroidResource Include="Resources\drawable\back.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -238,6 +240,7 @@
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\download_notification_single.xml" />
+    <AndroidResource Include="Resources\layout\music_widget_layout.xml" />
     <AndroidResource Include="Resources\layout\nav_header_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
@@ -286,6 +289,7 @@
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
     <AndroidResource Include="Resources\xml\automotive_app_desc.xml" />
+    <AndroidResource Include="Resources\xml\musicwidget_provider.xml" />
     <AndroidResource Include="Resources\xml\provider_paths.xml" />
   </ItemGroup>
   <ItemGroup>
@@ -326,8 +330,10 @@
     <PackageReference Include="Xamarin.AndroidX.Migration">
       <Version>1.0.10</Version>
     </PackageReference>
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.10.0.2" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
+    <PackageReference Include="Xamarin.Google.Android.Material">
+      <Version>1.10.0.2</Version>
+    </PackageReference>
     <PackageReference Include="YoutubeExplode">
       <Version>6.3.4</Version>
     </PackageReference>
@@ -335,7 +341,6 @@
   <ItemGroup>
     <AndroidAsset Include="Assets\sulphur.ttf" />
     <AndroidAsset Include="Assets\WixMadeforText.ttf" />
-    <AndroidAsset Include="Resources\drawable\mori.jpg" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\music_placeholder.png" />

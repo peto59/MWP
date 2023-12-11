@@ -9,9 +9,7 @@ using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.OS;
-using AndroidX.Fragment.App;
 using MWP.BackEnd;
-using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Orientation = Android.Widget.Orientation;
@@ -27,9 +25,9 @@ namespace MWP
 
         public enum SongType
         {
-            albumSong,
-            allSong,
-            playlistSong
+            AlbumSong,
+            AllSong,
+            PlaylistSong
         }
 
         /// <summary>
@@ -45,18 +43,18 @@ namespace MWP
             LinearLayout linFromDelete, LinearLayout linForDelete, 
             Context context, SongsFragment songsFragmentContext)
         {
-            LayoutInflater ifl = LayoutInflater.From(context);
-            View view = ifl?.Inflate(Resource.Layout.are_you_sure_popup, null);
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? view = ifl?.Inflate(Resource.Layout.are_you_sure_popup, null);
             AlertDialog.Builder alert = new AlertDialog.Builder(context);
             alert.SetView(view);
 
-            AlertDialog dialog = alert.Create();
+            AlertDialog? dialog = alert.Create();
 
-            TextView txt = view?.FindViewById<TextView>(Resource.Id.are_you_sure_text);
+            TextView? txt = view?.FindViewById<TextView>(Resource.Id.are_you_sure_text);
             txt?.SetTextColor(Color.White);
             if (txt != null) txt.Text = "Deleting: " + song.Title;
 
-            Button yes = view?.FindViewById<Button>(Resource.Id.yes_daddy);
+            Button? yes = view?.FindViewById<Button>(Resource.Id.yes_daddy);
             if (BlendMode.Multiply != null)
                 yes?.Background?.SetColorFilter(
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
@@ -68,7 +66,7 @@ namespace MWP
                 {
                     song.Delete();
                     dialog?.Hide();
-                    di.Hide();
+                    di?.Hide();
                     songsFragmentContext.InvalidateCache();
 
                     linFromDelete.RemoveView(linForDelete);
@@ -83,21 +81,21 @@ namespace MWP
             no?.SetTextColor(Color.Black);
 
             if (no != null)
-                no.Click += (_, _) => { di.Hide(); };
+                no.Click += (_, _) => { di?.Hide(); };
 
-            if (dialog != null) dialog.Show();
+            dialog?.Show();
         }
 
         private static void ListPlaylistsPopup(Song song, Context context, float scale)
         {
-            LayoutInflater ifl = LayoutInflater.From(context);
-            View view = ifl?.Inflate(Resource.Layout.list_plas_popup, null);
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? view = ifl?.Inflate(Resource.Layout.list_plas_popup, null);
             AlertDialog.Builder alert = new AlertDialog.Builder(context);
             alert.SetView(view);
 
-            AlertDialog dialog = alert.Create();
+            AlertDialog? dialog = alert.Create();
 
-            LinearLayout ln = view?.FindViewById<LinearLayout>(Resource.Id.playlists_list_la);
+            LinearLayout? ln = view?.FindViewById<LinearLayout>(Resource.Id.playlists_list_la);
 
             List<string> playlists = FileManager.GetPlaylist();
             foreach (string p in playlists)
@@ -171,7 +169,7 @@ namespace MWP
                     _selectedPlaylists.Clear();
                 };
 
-            Button cancel = view?.FindViewById<Button>(Resource.Id.cancel_plas);
+            Button? cancel = view?.FindViewById<Button>(Resource.Id.cancel_plas);
             if (BlendMode.Multiply != null)
                 cancel?.Background?.SetColorFilter(
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
@@ -190,11 +188,11 @@ namespace MWP
 
         private static void ShowPopupSongEdit(
             MusicBaseClass path, LinearLayout linFromDelete, LinearLayout linForDelete, Context context, float scale, 
-            AssetManager? assets, FragmentManager manager, SongsFragment SongsFragmentContext = null
+            AssetManager? assets, FragmentManager manager, SongsFragment? songsFragmentContext = null
         )
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
-            var view = ifl?.Inflate(path is Song ? Resource.Layout.edit_song_popup : Resource.Layout.edit_album_popup, null);
+            View? view = ifl?.Inflate(path is Song ? Resource.Layout.edit_song_popup : Resource.Layout.edit_album_popup, null);
 
             AlertDialog.Builder alert = new AlertDialog.Builder(context);
             alert.SetView(view);
@@ -258,7 +256,9 @@ namespace MWP
                     if (delete != null)
                         delete.Click += (o, args) =>
                         {
-                            AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context, SongsFragmentContext);
+                            if (songsFragmentContext != null)
+                                AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context,
+                                    songsFragmentContext);
                         };
 
                     if (edit != null)
@@ -268,7 +268,7 @@ namespace MWP
 
                             
                             TagManagerFragment tagFrag = new TagManagerFragment(context, assets, path);
-                            var fragmentTransaction = manager.BeginTransaction();
+                            FragmentTransaction fragmentTransaction = manager.BeginTransaction();
                             fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, tagFrag);
                             fragmentTransaction.AddToBackStack(null);
                             fragmentTransaction.Commit();
@@ -302,7 +302,7 @@ namespace MWP
         public static LinearLayout PopulateHorizontal(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize,
             Context context, Dictionary<LinearLayout, Guid> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
-            LinearLayout linForDelete = null, SongsFragment SongsfragmentContext = null 
+            LinearLayout? linForDelete = null, SongsFragment? songsfragmentContext = null 
         )
         {
             //リネアルレーアート作る
@@ -328,13 +328,13 @@ namespace MWP
 #endif
                     switch (songType)
                     {
-                        case SongType.allSong:
-                            MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.stateHandler.Songs, pr.Value);
+                        case SongType.AllSong:
+                            MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.StateHandler.Songs, pr.Value);
                             break;
-                        case SongType.albumSong:
+                        case SongType.AlbumSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((Album)FragmentPositionObject, pr.Value);
                             break;
-                        case SongType.playlistSong:
+                        case SongType.PlaylistSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((List<Song>)FragmentPositionObject, pr.Value);
                             break;
                     }
@@ -342,7 +342,9 @@ namespace MWP
             };
             lnIn.LongClick += (_, _) =>
             {
-                ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
+                if (linForDelete != null)
+                    ShowPopupSongEdit(musics, linForDelete, lnIn, context, scale, assets, manager,
+                        songsfragmentContext);
             };
 
             songButtons.Add(lnIn, musics.Id);
@@ -372,8 +374,8 @@ namespace MWP
             MusicBaseClass musics, float scale, int[] cardMargins, int nameSize, int index,
             Context context, Dictionary<LinearLayout, object> albumButtons, 
             FragmentManager manager, AssetManager? assets,
-            AlbumFragment albumFragment = null, AuthorFragment authorFragment = null,
-            LinearLayout linForDelete = null, SongsFragment SongsfragmentContext = null 
+            AlbumFragment? albumFragment = null, AuthorFragment? authorFragment = null,
+            LinearLayout? linForDelete = null, SongsFragment? songsfragmentContext = null 
         )
         {
             //リネアルレーアート作る
@@ -404,9 +406,13 @@ namespace MWP
                             FragmentTransaction fragmentTransaction = manager.BeginTransaction();
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", album1.Title);
-                            
-                            albumFragment.Arguments = bundle;
-                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumFragment);
+
+                            if (albumFragment != null)
+                            {
+                                albumFragment.Arguments = bundle;
+                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, albumFragment);
+                            }
+
                             fragmentTransaction.AddToBackStack(null);
                             fragmentTransaction.Commit();
                         
@@ -419,7 +425,9 @@ namespace MWP
                 
                 lnIn.LongClick += (_, _) =>
                 {
-                    ShowPopupSongEdit(album, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
+                    if (linForDelete != null)
+                        ShowPopupSongEdit(album, linForDelete, lnIn, context, scale, assets, manager,
+                            songsfragmentContext);
                 };
                 
 
@@ -441,9 +449,13 @@ namespace MWP
                             Bundle bundle = new Bundle();
                             bundle.PutString("title", artist1.Title);
 
-                            
-                            authorFragment.Arguments = bundle;
-                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, authorFragment);
+
+                            if (authorFragment != null)
+                            {
+                                authorFragment.Arguments = bundle;
+                                fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, authorFragment);
+                            }
+
                             fragmentTransaction.AddToBackStack(null);
                             fragmentTransaction.Commit();
                             
@@ -455,7 +467,9 @@ namespace MWP
                 
                 lnIn.LongClick += (_, _) =>
                 {
-                    ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale, assets, manager, SongsfragmentContext);
+                    if (linForDelete != null)
+                        ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale, assets, manager,
+                            songsfragmentContext);
                 };
                 
 

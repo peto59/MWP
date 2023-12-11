@@ -19,7 +19,7 @@ namespace MWP
     public class PlaylistsFragment : Fragment
     {
         private readonly Context context;
-        private RelativeLayout mainLayout;
+        private RelativeLayout? mainLayout;
 
 
         private PlaylistFragment playlistFragment; 
@@ -31,9 +31,9 @@ namespace MWP
         /// <param name="container"></param>
         /// <param name="savedInstanceState"></param>
         /// <returns></returns>
-        public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
-            View view = inflater.Inflate(Resource.Layout.playlists_fragment, container, false);
+            View? view = inflater.Inflate(Resource.Layout.playlists_fragment, container, false);
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.playlists_fragment_main);
 

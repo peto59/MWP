@@ -25,7 +25,7 @@ namespace MWP
     {
         private readonly float scale;
         private readonly Context context;
-        private RelativeLayout mainLayout;
+        private RelativeLayout? mainLayout;
         private Artist artist;
         private AssetManager? assets;
 
@@ -54,14 +54,14 @@ namespace MWP
         /// <param name="container"></param>
         /// <param name="savedInstanceState"></param>
         /// <returns></returns>
-        public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
-            View view = inflater.Inflate(Resource.Layout.author_fragment, container, false);
+            View? view = inflater.Inflate(Resource.Layout.author_fragment, container, false);
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.author_fragment_main);
 
-            string title = Arguments.GetString("title");
-            List<Artist> retreivedSongs = MainActivity.stateHandler.Artists.Search(title);
+            string? title = Arguments?.GetString("title");
+            List<Artist> retreivedSongs = MainActivity.StateHandler.Artists.Search(title);
             if (retreivedSongs.Count > 0)
             {
                 artist = retreivedSongs[0];
@@ -114,7 +114,7 @@ namespace MWP
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                    context, songButtons, UIRenderFunctions.SongType.albumSong, assets, ParentFragmentManager, lnMain
+                    context, songButtons, UIRenderFunctions.SongType.AlbumSong, assets, ParentFragmentManager, lnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, artist.Albums.Select("Uncategorized")[0].Songs[i],  150, 100,

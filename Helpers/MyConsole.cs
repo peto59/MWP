@@ -29,7 +29,7 @@ namespace MWP.Helpers
                 file = Path.GetFileName(file);
                 Console.WriteLine("[{0}][{1}]: {2}", file, line, message);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // ignored
             }
@@ -58,7 +58,7 @@ namespace MWP.Helpers
                 file = Path.GetFileName(file);
                 Console.WriteLine("[{0}][{1}]: {2}", file, line, message);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // ignored
             }

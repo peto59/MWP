@@ -1,13 +1,10 @@
 ﻿using System;
-using Android.Content;
 using Android.Views;
 using AndroidX.AppCompat.App;
-using System.Collections.Generic;
 using Android.Widget;
 using Android.Graphics;
 using Android.Content.Res;
 using System.Threading;
-using Java.Util;
 using MWP.BackEnd.Player;
 #if DEBUG
 using MWP.Helpers;
@@ -51,7 +48,7 @@ namespace MWP
 					);
 					_playImage.LayoutParameters = playImageParams;
 
-					if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
+					if (MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)
 						_playImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("pause.png")));
 					else
 						_playImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("play.png")));
@@ -121,15 +118,15 @@ namespace MWP
 							 (int)(20 * scale + 0.5f)
 							);
 							lastImage.LayoutParameters = lastImageParams;
-							switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? Enums.LoopState.None)
+							switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? LoopState.None)
 							{
-								case Enums.LoopState.None:
+								case LoopState.None:
 									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
 									break;
-								case Enums.LoopState.All:
+								case LoopState.All:
 									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
 									break;
-								case Enums.LoopState.Single:
+								case LoopState.Single:
 									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
 									break;
 							}
@@ -149,7 +146,7 @@ namespace MWP
 		private static void pause_play(object sender, EventArgs e, AppCompatActivity context)
 		{
 			if (!MainActivity.ServiceConnection.Connected) return;
-			if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
+			if (MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)
 			{
 				MainActivity.ServiceConnection.Binder?.Service.Pause();
 			}
@@ -254,19 +251,19 @@ namespace MWP
 					repeat.Click += delegate
 					{
 						ImageView? repeatImg = (ImageView?)repeat.GetChildAt(0);
-						switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? Enums.LoopState.None)
+						switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? LoopState.None)
 						{
-							case Enums.LoopState.None:
+							case LoopState.None:
 								repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
-								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.All);
+								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(LoopState.All);
 								break;
-							case Enums.LoopState.All:
+							case LoopState.All:
 								repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
-								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.Single);
+								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(LoopState.Single);
 								break;
-							case Enums.LoopState.Single:
+							case LoopState.Single:
 								repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
-								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.None);
+								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(LoopState.None);
 								break;
 						}
 
@@ -326,22 +323,22 @@ namespace MWP
             {
 	            progTime.Click += delegate
 	            {
-		            MainActivity.stateHandler.ProgTimeState = !MainActivity.stateHandler.ProgTimeState;
+		            MainActivity.StateHandler.ProgTimeState = !MainActivity.StateHandler.ProgTimeState;
 	            };
 
-	            if (!(MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)) return;
+	            if (!(MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)) return;
 	            TextView? constTime = context.FindViewById<TextView>(Resource.Id.end_time);
 	            SeekBar? sek = context.FindViewById<SeekBar>(Resource.Id.seek);
 	            if (constTime != null)
-		            constTime.Text = converts_millis_to_seconds_and_minutes(MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0);
+		            constTime.Text = converts_millis_to_seconds_and_minutes(MainActivity.ServiceConnection.Binder?.Service.Duration ?? 0);
 	            if (sek != null)
 	            {
-		            sek.Max = (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) / 1000;
-		            sek.SetProgress((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.CurrentPosition ?? 0) / 1000, true);
-		            if (MainActivity.stateHandler.ProgTimeState)
+		            sek.Max = (MainActivity.ServiceConnection.Binder?.Service.Duration ?? 0) / 1000;
+		            sek.SetProgress((MainActivity.ServiceConnection.Binder?.Service.CurrentPosition ?? 0) / 1000, true);
+		            if (MainActivity.StateHandler.ProgTimeState)
 		            {
 			            progTime.Text = "-" +
-			                            converts_millis_to_seconds_and_minutes((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) - sek.Progress * 1000);
+			                            converts_millis_to_seconds_and_minutes((MainActivity.ServiceConnection.Binder?.Service.Duration ?? 0) - sek.Progress * 1000);
 		            }
 		            else
 		            {
@@ -355,7 +352,7 @@ namespace MWP
 		            };
 	            }
 
-	            StartMovingProgress(MainActivity.stateHandler.SongProgressCts.Token, context);
+	            StartMovingProgress(MainActivity.StateHandler.SongProgressCts.Token, context);
             }
 		}
 
@@ -365,14 +362,14 @@ namespace MWP
             TextView? progTime = context.FindViewById<TextView>(Resource.Id.progress_time);
             _ = Interval.SetIntervalAsync(() =>
 			{
-                sek?.SetProgress((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.CurrentPosition ?? 0) / 1000, true);
-                if (MainActivity.stateHandler.ProgTimeState)
+                sek?.SetProgress((MainActivity.ServiceConnection.Binder?.Service.CurrentPosition ?? 0) / 1000, true);
+                if (MainActivity.StateHandler.ProgTimeState)
                 {
 	                if (progTime == null) return;
 	                if (sek != null)
 		                progTime.Text = "-" +
 		                                converts_millis_to_seconds_and_minutes(
-			                                (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) - (sek.Progress * 1000));
+			                                (MainActivity.ServiceConnection.Binder?.Service.Duration ?? 0) - (sek.Progress * 1000));
                 }
 				else
                 {

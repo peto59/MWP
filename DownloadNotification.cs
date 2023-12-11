@@ -1,8 +1,10 @@
 using System;
 using Android.App;
+using Android.Content;
 using Android.OS;
 using Android.Widget;
 using AndroidX.Core.App;
+using MWP.BackEnd;
 //using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
 
@@ -77,14 +79,14 @@ namespace MWP
                 Description = CHANNEL_DESCRIPTION
             };
 
-            NotificationManager manager = (NotificationManager)AndroidApp.Context.GetSystemService(AndroidApp.NotificationService);
-            manager.CreateNotificationChannel(channel);
+            NotificationManager? managerLocal = (NotificationManager?)AndroidApp.Context.GetSystemService(Context.NotificationService);
+            managerLocal?.CreateNotificationChannel(channel);
         }
 
-        private int RANDOM_ID()
+        private static int RANDOM_ID()
         {
             int randomId = StateHandler.Rng.Next(10000);
-            while (MainActivity.stateHandler.NotificationIDs.Contains(randomId))
+            while (MainActivity.StateHandler.NotificationIDs.Contains(randomId))
             {
                 randomId = StateHandler.Rng.Next(10000);
             }
@@ -99,9 +101,9 @@ namespace MWP
          */
         private void stage1_song(Progress<double> progress, string title)
         {
-            this.currentSongTitle = title;
+            currentSongTitle = title;
 
-            progress.ProgressChanged += delegate(object sender, double d)
+            progress.ProgressChanged += delegate(object _, double d)
             {
                 notificationBuilder
                     .SetSmallIcon(
@@ -118,9 +120,9 @@ namespace MWP
         }
         private void stage1_playlist(Progress<double> progress, string title, int? poradieVPlayliste = null)
         {
-            if (poradieVPlayliste != null) this.currentSongTitles[(int)poradieVPlayliste] = title;
-            if (poradieVPlayliste != null) this.playlistNotifIDS[(int)poradieVPlayliste] = RANDOM_ID();
-            progress.ProgressChanged += delegate(object sender, double d)
+            if (poradieVPlayliste != null) currentSongTitles[(int)poradieVPlayliste] = title;
+            if (poradieVPlayliste != null) playlistNotifIDS[(int)poradieVPlayliste] = RANDOM_ID();
+            progress.ProgressChanged += delegate(object _, double d)
             {
                 if (poradieVPlayliste != null)
                 {
@@ -273,19 +275,19 @@ namespace MWP
         /// <summary>
         /// stage 2 of song downloading, progress bar, but with percentage
         /// </summary>
-        /// <param name="precentage"></param>
+        /// <param name="percentage"></param>
         /// <param name="poradieVPlayliste"></param>
-        public void Stage2(int precentage, int? poradieVPlayliste = null)
+        public void Stage2(int percentage, int? poradieVPlayliste = null)
         {
             if (!isSingle)
             {
                 if(poradieVPlayliste == null)
                     return;
-                stage2_playlist(precentage, poradieVPlayliste);
+                stage2_playlist(percentage, poradieVPlayliste);
             }
             else
             {
-                stage2_song(precentage);
+                stage2_song(percentage);
             }
         }
         /// <summary>
@@ -306,7 +308,7 @@ namespace MWP
             }
         }
         /// <summary>
-        /// stage 4 is final message for user to notify him about song download completition
+        /// stage 4 is final message for user to notify him about song download completion
         /// </summary>
         /// <param name="success"></param>
         /// <param name="message"></param>

@@ -2,17 +2,18 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MWP.DatatypesAndExtensions;
 
 namespace MWP.BackEnd
 {
     internal class TagManager : IDisposable
     {
-        private TagLib.File? _tfile;
-        private bool _changed;
+        private TagLib.File? tfile;
 
-        public bool Changed => _changed;
-        private Song? _song;
-        private SongSave _saveFlags = SongSave.None;
+        public bool Changed { get; private set; }
+
+        private Song? song;
+        private SongSave saveFlags = SongSave.None;
 
         public string OriginalTitle
         {
@@ -36,33 +37,33 @@ namespace MWP.BackEnd
 
         public TagManager(Song song)
         {
-            _tfile = TagLib.File.Create(song.Path);
-            _song = song;
-            OriginalTitle = _tfile?.Tag.Title ?? _song?.Title ?? "No Title";
-            OriginalArtists = _tfile?.Tag.Performers ??
-                              _song?.Artists.Select(a => a.Title).ToArray() ?? new[] { "No Artist" };
-            OriginalAlbum = _tfile?.Tag.Album ?? _song?.Album.Title ?? "No Album";
+            tfile = TagLib.File.Create(song.Path);
+            this.song = song;
+            OriginalTitle = tfile?.Tag.Title ?? this.song?.Title ?? "No Title";
+            OriginalArtists = tfile?.Tag.Performers ??
+                              this.song?.Artists.Select(a => a.Title).ToArray() ?? new[] { "No Artist" };
+            OriginalAlbum = tfile?.Tag.Album ?? this.song?.Album.Title ?? "No Album";
         }
 
         public string Title
         {
-            get => _tfile?.Tag.Title ?? _song?.Title ?? "No Title";
+            get => tfile?.Tag.Title ?? song?.Title ?? "No Title";
             set
             {
-                if (_tfile == null) return;
+                if (tfile == null) return;
                 if (value == OriginalTitle || string.IsNullOrEmpty(value)) return;
-                _tfile.Tag.Title = value;
-                _changed = true;
-                _saveFlags |= SongSave.Title;
+                tfile.Tag.Title = value;
+                Changed = true;
+                saveFlags |= SongSave.Title;
             }
         }
 
         public string Artist
         {
-            get => _tfile?.Tag.Performers.FirstOrDefault() ?? _tfile?.Tag.Performers[0] ?? _song?.Artist.Title ?? "No Artist";
+            get => tfile?.Tag.Performers.FirstOrDefault() ?? tfile?.Tag.Performers[0] ?? song?.Artist.Title ?? "No Artist";
             set
             {
-                if (_tfile == null) return;
+                if (tfile == null) return;
                 string[] artists = value.Split(';');
                 Artists = artists;
             }
@@ -70,23 +71,23 @@ namespace MWP.BackEnd
 
         public string[] Artists
         {
-            get => _tfile?.Tag.Performers ?? _song?.Artists.Select(a => a.Title).ToArray() ?? new []{"No Artist"};
+            get => tfile?.Tag.Performers ?? song?.Artists.Select(a => a.Title).ToArray() ?? new []{"No Artist"};
             set
             {
-                if (_tfile == null) return;
+                if (tfile == null) return;
                 if (value.SequenceEqual(OriginalArtists) || value.Length <= 0) return;
-                _tfile.Tag.Performers = value;
-                _changed = true;
-                _saveFlags |= SongSave.Artist;
+                tfile.Tag.Performers = value;
+                Changed = true;
+                saveFlags |= SongSave.Artist;
             }
         }
         
         public string Album
         {
-            get => _tfile?.Tag.Album ?? _song?.Album.Title ?? "No Album";
+            get => tfile?.Tag.Album ?? song?.Album.Title ?? "No Album";
             set
             {
-                if (_tfile == null) return;
+                if (tfile == null) return;
                 if (value == OriginalAlbum) return;
                 if (value == "No Album" || string.IsNullOrEmpty(value))
                 {
@@ -94,60 +95,60 @@ namespace MWP.BackEnd
                 }
                 else
                 {
-                    _tfile.Tag.Album = value;
+                    tfile.Tag.Album = value;
                 }
-                _changed = true;
-                _saveFlags |= SongSave.Album;
-                _saveFlags &= ~SongSave.NoAlbum;
+                Changed = true;
+                saveFlags |= SongSave.Album;
+                saveFlags &= ~SongSave.NoAlbum;
             }
         }
 
         public void NoAlbum()
         {
-            if (_tfile == null) return;
-            if (string.IsNullOrEmpty(_tfile.Tag.Album))
+            if (tfile == null) return;
+            if (string.IsNullOrEmpty(tfile.Tag.Album))
                 return;
-            _tfile.Tag.Album = null;
-            _changed = true;
-            _saveFlags |= SongSave.NoAlbum;
-            _saveFlags &= ~SongSave.Album;
+            tfile.Tag.Album = null;
+            Changed = true;
+            saveFlags |= SongSave.NoAlbum;
+            saveFlags &= ~SongSave.Album;
         }
 
         public void Save()
         {
-            if (!_changed)
+            if (!Changed)
             {   
                 return;
             }
 
-            _changed = false;
-            bool  movingFlag = _saveFlags.HasFlag(SongSave.Title) || _saveFlags.HasFlag(SongSave.Artist) ||
-                                    _saveFlags.HasFlag(SongSave.Album) || _saveFlags.HasFlag(SongSave.NoAlbum);
+            Changed = false;
+            bool  movingFlag = saveFlags.HasFlag(SongSave.Title) || saveFlags.HasFlag(SongSave.Artist) ||
+                                    saveFlags.HasFlag(SongSave.Album) || saveFlags.HasFlag(SongSave.NoAlbum);
             
-            _tfile?.Save();
+            tfile?.Save();
 
             string path = FileManager.MusicFolder;
 
             if (movingFlag)
             {
-                _song?.Nuke();
+                song?.Nuke();
             }
 
-            if (_saveFlags.HasFlag(SongSave.Artist) && _tfile != null)
+            if (saveFlags.HasFlag(SongSave.Artist) && tfile != null)
             {
                 
-                path = $"{path}/{FileManager.Sanitize(FileManager.GetAlias(_tfile.Tag.Performers.FirstOrDefault() ?? _tfile.Tag.Performers[0]))}";
+                path = $"{path}/{FileManager.Sanitize(FileManager.GetAlias(tfile.Tag.Performers.FirstOrDefault() ?? tfile.Tag.Performers[0]))}";
             }
-            else if(_song != null)
+            else if(song != null)
             {
-                path = $"{path}/{FileManager.Sanitize(_song.Artists[0].Title)}";
+                path = $"{path}/{FileManager.Sanitize(song.Artists[0].Title)}";
             }
 
-            if (_saveFlags.HasFlag(SongSave.Album) && _tfile != null)
+            if (saveFlags.HasFlag(SongSave.Album) && tfile != null)
             {
-                if (string.IsNullOrEmpty(_tfile.Tag.Album))
+                if (string.IsNullOrEmpty(tfile.Tag.Album))
                 {
-                    path = $"{path}/{FileManager.Sanitize(_tfile.Tag.Album)}";
+                    path = $"{path}/{FileManager.Sanitize(tfile.Tag.Album)}";
                 }
             }
             /*else if (!_saveFlags.HasFlag(SongSave.NoAlbum) && _song is { Albums: { Count: > 0 } })
@@ -157,26 +158,26 @@ namespace MWP.BackEnd
 
 
             Song? s = null;
-            if (_tfile != null)
+            if (tfile != null)
             {
-                path = $"{path}/{FileManager.Sanitize(_tfile.Tag.Title)}";
-                if (_saveFlags.HasFlag(SongSave.Title))
+                path = $"{path}/{FileManager.Sanitize(tfile.Tag.Title)}";
+                if (saveFlags.HasFlag(SongSave.Title))
                 {
                 
-                    if(_song != null)
-                        s = new Song(_song, _tfile.Tag.Title, path);
+                    if(song != null)
+                        s = new Song(song, tfile.Tag.Title, path);
 
-                }else if (_song != null)
+                }else if (song != null)
                 {
-                    s = new Song(_song, _song.Title, path);
+                    s = new Song(song, song.Title, path);
                 }
             }
 
             Album? a = null;
-            if (_saveFlags.HasFlag(SongSave.Album) && _tfile != null && s != null)
+            if (saveFlags.HasFlag(SongSave.Album) && tfile != null && s != null)
             {
                 //restore albums
-                List<Album> inListAlbum = MainActivity.stateHandler.Albums.Select(_tfile.Tag.Album);
+                List<Album> inListAlbum = MainActivity.StateHandler.Albums.Select(tfile.Tag.Album);
                 if (inListAlbum.Count > 0)
                 {
                     a = inListAlbum[0];
@@ -184,26 +185,26 @@ namespace MWP.BackEnd
                 }
                 else
                 {
-                    a = new Album(_tfile.Tag.Album, MWP.Album.GetImagePath(_tfile.Tag.Album, FileManager.Sanitize(FileManager.GetAlias(_tfile.Tag.Performers.FirstOrDefault() ?? _tfile.Tag.Performers[0]))));
+                    a = new Album(tfile.Tag.Album, MWP.Album.GetImagePath(tfile.Tag.Album, FileManager.Sanitize(FileManager.GetAlias(tfile.Tag.Performers.FirstOrDefault() ?? tfile.Tag.Performers[0]))));
                     a.AddSong(ref s);
-                    MainActivity.stateHandler.Albums.Add(a);
+                    MainActivity.StateHandler.Albums.Add(a);
                 }
                 s.AddAlbum(ref a);
             }
             
-            if (_saveFlags.HasFlag(SongSave.Artist) && _tfile != null && a != null && s != null)
+            if (saveFlags.HasFlag(SongSave.Artist) && tfile != null && a != null && s != null)
             {
                 //restore artists
-                foreach (string performer in _tfile.Tag.Performers)
+                foreach (string performer in tfile.Tag.Performers)
                 {
                     Artist art;
                     string alias = FileManager.GetAlias(performer);
-                    List<Artist> inList = MainActivity.stateHandler.Artists.Select(alias);
+                    List<Artist> inList = MainActivity.StateHandler.Artists.Select(alias);
                     if (inList.Count > 0)
                     {
                         art = inList[0];
                         art.AddSong(ref s);
-                        if (_saveFlags.HasFlag(SongSave.Album))
+                        if (saveFlags.HasFlag(SongSave.Album))
                         {
                             a.AddArtist(ref art);
                             if (art.Albums.Select(a.Title).Count == 0)
@@ -216,31 +217,31 @@ namespace MWP.BackEnd
                     {
                         art = new Artist(alias, MWP.Artist.GetImagePath(FileManager.Sanitize(alias)));
                         art.AddSong(ref s);
-                        if (_saveFlags.HasFlag(SongSave.Album))
+                        if (saveFlags.HasFlag(SongSave.Album))
                         {
                             a.AddArtist(ref art);
                             art.AddAlbum(ref a);
                         }
-                        MainActivity.stateHandler.Artists.Add(art);
+                        MainActivity.StateHandler.Artists.Add(art);
                     }
                     s.AddArtist(ref art);
                 }
             }
             
-            if (movingFlag && _song != null && s != null)
+            if (movingFlag && song != null && s != null)
             {
-                List<Song> inList = MainActivity.stateHandler.Songs.Select(s.Title);
+                List<Song> inList = MainActivity.StateHandler.Songs.Select(s.Title);
                 if (inList.Count == 0)
                 {
-                    MainActivity.stateHandler.Songs.Add(s);
+                    MainActivity.StateHandler.Songs.Add(s);
                 }
-                File.Move(_song.Path, path);
-                _song.Artists.ForEach(o => o.AddSong(ref s));
-                _song.Albums.ForEach(o => o.AddSong(ref s));
-                _song = s;
+                File.Move(song.Path, path);
+                song.Artists.ForEach(o => o.AddSong(ref s));
+                song.Albums.ForEach(o => o.AddSong(ref s));
+                song = s;
             }
 
-            _saveFlags = SongSave.None;
+            saveFlags = SongSave.None;
         }
 
         public void Dispose()
@@ -256,17 +257,17 @@ namespace MWP.BackEnd
                 //Save();
                 
                 // Dispose of managed resources
-                if (_tfile != null)
+                if (tfile != null)
                 {
-                    _tfile.Dispose();
-                    _tfile = null;
+                    tfile.Dispose();
+                    tfile = null;
                 }
             }
 
             // Dispose of unmanaged resources (if any)
 
             // Set fields to null (optional)
-            _song = null;
+            song = null;
         }
 
         

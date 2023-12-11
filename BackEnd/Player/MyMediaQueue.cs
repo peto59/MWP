@@ -3,31 +3,48 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
+using Android.Support.V4.Media.Session;
 
 namespace MWP.BackEnd.Player
 {
+    /// <summary>
+    /// Custom media queue for internal tracking of queue
+    /// </summary>
     public class MyMediaQueue
     {
         //-----------------------Private helpers--------------------
-        private List<Song> _queue = new List<Song>();
-        private List<Song> _originalQueue = new List<Song>();
-        private static Song defaultSong = new Song("No Name", new DateTime(), "Default", false);
+        private List<Song> queue = new List<Song>();
+        private List<Song> originalQueue = new List<Song>();
+        private static readonly Song DefaultSong = new Song("No Name", new DateTime(), "Default", false);
         private readonly AutoResetEvent shuffling = new AutoResetEvent(true);
         //private bool loopAll = false;
         //private bool loopSingle = false;
-        private bool _isShuffled = false;
-        private int _index = 0;
+        private bool isShuffled;
+        private int index;
+
+        private readonly MediaSessionCompat session;
         //-----------------------Private helpers--------------------
-        
+
+        /// <summary>
+        /// Creates new queue object
+        /// </summary>
+        /// <param name="ses">Session to which send changes</param>
+        public MyMediaQueue(MediaSessionCompat ses)
+        {
+            session = ses;
+        }
         
         //-------------------Public interfaces------------
+        /// <summary>
+        /// Whether current is shuffled or not
+        /// </summary>
         public bool IsShuffled
         {
-            get => _isShuffled;
+            get => isShuffled;
             set
             {
-                if (value == _isShuffled) return;
-                _isShuffled = value;
+                if (value == isShuffled) return;
+                isShuffled = value;
                 if (value)
                     Shuffle(); 
                 else
@@ -35,53 +52,85 @@ namespace MWP.BackEnd.Player
             }
         }
 
-        public Enums.LoopState LoopState { get; private set; } = Enums.LoopState.None;
-        public IReadOnlyList<Song> Queue => _queue.AsReadOnly();
-        public int QueueCount => _queue.Count;
+        /// <summary>
+        /// Current loop state
+        /// </summary>
+        public LoopState LoopState { get; private set; } = LoopState.None;
+        /// <summary>
+        /// Current queue
+        /// </summary>
+        public IReadOnlyList<Song> Queue => queue.AsReadOnly();
+        /// <summary>
+        /// Length of current queue
+        /// </summary>
+        public int QueueCount => queue.Count;
+        /// <summary>
+        /// Whether skipping to next is possible
+        /// </summary>
         public bool HasNext => Index < QueueCount - 1;
-        public bool ShowNext => HasNext || LoopState == Enums.LoopState.All;
+        /// <summary>
+        /// Whether to show button to skip to next song
+        /// </summary>
+        public bool ShowNext => HasNext || LoopState == LoopState.All;
+        /// <summary>
+        /// Whether previous to next is possible
+        /// </summary>
         public bool HasPrevious => Index > 0;
-        public bool ShowPrevious => HasPrevious || LoopState == Enums.LoopState.All;
+        /// <summary>
+        /// Whether to show button to skip to previous song
+        /// </summary>
+        public bool ShowPrevious => HasPrevious || LoopState == LoopState.All;
 
+        /// <summary>
+        /// Currently playing index
+        /// </summary>
         public int Index
         {
-            get => _index;
+            get => index;
             private set
             {
-                if (value < 0 && LoopState == Enums.LoopState.All)
+                switch (value)
                 {
-                    _index = QueueCount - 1;
-                }
-                else if (value < 0)
-                {
-                    _index = 0;
-                }
-                else if (value >= QueueCount && LoopState == Enums.LoopState.All)
-                {
-                    _index = 0;
-                }
-                else if (value >= QueueCount)
-                {
-                    return;
-                }
-                else
-                {
-                    _index = value;
+                    case < 0 when LoopState == LoopState.All:
+                        index = QueueCount - 1;
+                        break;
+                    case < 0:
+                        index = 0;
+                        break;
+                    default:
+                    {
+                        if (value >= QueueCount && LoopState == LoopState.All)
+                        {
+                            index = 0;
+                        }
+                        else if (value >= QueueCount)
+                        {
+                        }
+                        else
+                        {
+                            index = value;
+                        }
+
+                        break;
+                    }
                 }
             }
         }
 
+        /// <summary>
+        /// Currently playing <see cref="Song"/>
+        /// </summary>
         public Song Current
         {
             get
             {
                 try
                 {
-                    return Queue[Index] ?? defaultSong;
+                    return Queue[Index] ?? DefaultSong;
                 }
                 catch
                 {
-                    return defaultSong;
+                    return DefaultSong;
                 }
             }
         }
@@ -90,34 +139,56 @@ namespace MWP.BackEnd.Player
         
         
         //----------------------Functions------------------
+        private void SessionEnqueue()
+        {
+            long i = 0;
+            List<MediaSessionCompat.QueueItem?> tempQueue = queue.Select(s => s.ToQueueItem(i++)).ToList();
+            List<MediaSessionCompat.QueueItem> queueLocal = tempQueue.Where(q => q != null).ToList()!;
+            session.SetQueue(queueLocal);
+        }
+        /// <summary>
+        /// Clears current <see cref="Queue"/> and generates new <see cref="Queue"/>
+        /// </summary>
+        /// <param name="source">Content of new <see cref="Queue"/></param>
+        /// <param name="id">id of songs object to be played for <see cref="Index"/> lookup purposes</param>
         public void GenerateQueue(IEnumerable<Song> source, Guid? id)
         {
-            _queue = source.ToList();
-            Index = id != null ? _queue.FindIndex(s => s.Id.Equals(id)) : 0;
+            queue = source.ToList();
+            Index = id != null ? queue.FindIndex(s => s.Id.Equals(id)) : 0;
             if (IsShuffled)
             {
                 Shuffle();
             }
+            SessionEnqueue();
         }
 
+        /// <summary>
+        /// Adds <paramref name="addition"/> to end of <see cref="Queue"/>
+        /// </summary>
+        /// <param name="addition">Content to add to end of <see cref="Queue"/></param>
         public void AppendToQueue(IEnumerable<Song> addition)
         {
             IEnumerable<Song> collection = addition.ToList();
-            _queue.AddRange(collection);
+            queue.AddRange(collection);
             if (IsShuffled)
             {
-                _originalQueue.AddRange(collection);
+                originalQueue.AddRange(collection);
             }
+            SessionEnqueue();
         }
         
+        /// <summary>
+        /// Adds <paramref name="addition"/> to start of <see cref="Queue"/>
+        /// </summary>
+        /// <param name="addition">Content to add to start of <see cref="Queue"/></param>
         public void PrependToQueue(List<Song> addition)
         {
             ReadOnlyCollection<Song> readOnlyCollection = addition.AsReadOnly();
             if (IsShuffled)
             {
                 List<Song> tmp = new List<Song>(readOnlyCollection);
-                tmp.AddRange(_originalQueue);
-                _originalQueue = tmp;
+                tmp.AddRange(originalQueue);
+                originalQueue = tmp;
             }
             if(!HasNext)
             {
@@ -125,11 +196,12 @@ namespace MWP.BackEnd.Player
             }
             else
             {
-                List<Song> tmp = _queue.GetRange(0, Index+1);
+                List<Song> tmp = queue.GetRange(0, Index+1);
                 tmp.AddRange(addition);
-                tmp.AddRange(_queue.Skip(Index + 1));
-                _queue = tmp;
+                tmp.AddRange(queue.Skip(Index + 1));
+                queue = tmp;
             }
+            SessionEnqueue();
         }
         
         private void Shuffle()
@@ -137,30 +209,52 @@ namespace MWP.BackEnd.Player
             shuffling.WaitOne();
             if(QueueCount == 0) { return; }
 
-            _originalQueue = _queue.ToList();
-            Song tmp = _queue.Pop(Index);
+            originalQueue = queue.ToList();
+            Song tmp = queue.Pop(Index);
             Index = 0;
-            _queue.Shuffle();
-            _queue = _queue.Prepend(tmp).ToList();
+            queue.Shuffle();
+            queue = queue.Prepend(tmp).ToList();
             
             shuffling.Set();
+            SessionEnqueue();
         }
 
         private void UnShuffle()
         {
             shuffling.WaitOne();
-            if (_originalQueue.Count <= 0) return;
+            if (originalQueue.Count <= 0) return;
             
-            Index = _originalQueue.IndexOf(Current);
-            _queue = _originalQueue.ToList();
-            _originalQueue = new List<Song>();
+            Index = originalQueue.IndexOf(Current);
+            queue = originalQueue.ToList();
+            originalQueue = new List<Song>();
             
             shuffling.Set();
+            SessionEnqueue();
         }
         
+        /// <summary>
+        /// Sets <see cref="Index"/> to <paramref name="id"/> if possible
+        /// </summary>
+        /// <param name="id">New <see cref="Index"/></param>
+        /// <returns>true if jumping to new index is possible, false otherwise</returns>
+        public bool SetIndex(long id)
+        {
+            if (id >= QueueCount)
+            {
+                return false;
+            }
+
+            Index = (int)id;
+            return true;
+        }
+        
+        /// <summary>
+        /// Increments <see cref="Index"/> by one
+        /// </summary>
+        /// <returns>true if incrementing <see cref="Index"/> is possible, false otherwise</returns>
         public bool IncrementIndex()
         {
-            if (Index + 1 >= QueueCount && LoopState != Enums.LoopState.All)
+            if (Index + 1 >= QueueCount && LoopState != LoopState.All)
             {
                 return false;
             }
@@ -169,15 +263,22 @@ namespace MWP.BackEnd.Player
             return true;
         }
 
+        /// <summary>
+        /// Decrements <see cref="Index"/> by one, guards against decrementing below 0
+        /// </summary>
         public void DecrementIndex()
         {
             Index--;
         }
 
+        /// <summary>
+        /// Sets new loop state
+        /// </summary>
+        /// <param name="state">new loop state as int representing index of new loop state in <see cref="LoopState"/></param>
         public void ToggleLoop(int state)
         {
             state %= 3;
-            LoopState = (Enums.LoopState)state;
+            LoopState = (LoopState)state;
         }
         //------------------------Functions------------------------
     }
