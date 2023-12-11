@@ -5,7 +5,7 @@
               android:layout_width="match_parent"
               android:layout_margin="20dp"
               android:orientation="vertical"
-              android:background="#FFFFFF"
+              android:background="@drawable/widget_rounded"
               android:gravity="center"
 >
     <Button 
