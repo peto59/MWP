@@ -85,9 +85,9 @@ namespace MWP.BackEnd
         /// </summary>
         public static void DiscoverFiles(bool generateStateHandlerEntry = false)
         {
-            MainActivity.stateHandler.FileListGenerationEvent.WaitOne();
+            MainActivity.StateHandler.FileListGenerationEvent.WaitOne();
             if (Root != null) DiscoverFiles(Root, generateStateHandlerEntry);
-            MainActivity.stateHandler.FileListGenerationEvent.Set();
+            MainActivity.StateHandler.FileListGenerationEvent.Set();
         }
 
         private static void DiscoverFiles(string path, bool generateStateHandlerEntry)
@@ -121,9 +121,6 @@ namespace MWP.BackEnd
             {
                 try
                 {
-#if DEBUG
-                    MyConsole.WriteLine($"Processing: {file}");
-#endif
                     AddSong(file, _musicFolder != null && !file.Contains(_musicFolder), generateStateHandlerEntry || (_musicFolder != null && !file.Contains(_musicFolder)));
                     
                 }
@@ -145,7 +142,7 @@ namespace MWP.BackEnd
 
             if (first)
             {
-                MainActivity.stateHandler.FileListGenerationEvent.WaitOne();
+                MainActivity.StateHandler.FileListGenerationEvent.WaitOne();
             }
             foreach (string dir in Directory.EnumerateDirectories(path))
             {
@@ -159,7 +156,7 @@ namespace MWP.BackEnd
 
             if (first)
             {
-                MainActivity.stateHandler.FileListGenerationEvent.Set();
+                MainActivity.StateHandler.FileListGenerationEvent.Set();
             }
         }
         
@@ -434,7 +431,7 @@ namespace MWP.BackEnd
             List<Song> x = new List<Song>();
             foreach (string song in playlist1)
             {
-                List<Song> y = MainActivity.stateHandler.Songs.Where(a => a.Path == song).ToList();
+                List<Song> y = MainActivity.StateHandler.Songs.Where(a => a.Path == song).ToList();
                 if (y.Any())
                 {
                     x.AddRange(y);
@@ -454,7 +451,7 @@ namespace MWP.BackEnd
             SongJsonConverter customConverter = new SongJsonConverter(true);
             Dictionary<string, List<Song>> hosts =
                 JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
-            hosts.Add(host, MainActivity.stateHandler.Songs);
+            hosts.Add(host, MainActivity.StateHandler.Songs);
             File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(hosts, customConverter));
         }
         
@@ -510,7 +507,7 @@ namespace MWP.BackEnd
             foreach (string artist in artists)
             {
                 Artist artistObj;
-                List<Artist> inArtistList = MainActivity.stateHandler.Artists.Select(GetAlias(artist));
+                List<Artist> inArtistList = MainActivity.StateHandler.Artists.Select(GetAlias(artist));
                 if (inArtistList.Any())
                 {
                     artistObj = inArtistList[0];
@@ -524,7 +521,7 @@ namespace MWP.BackEnd
                         artistObj = new Artist(artistAlias, $"{_musicFolder}/{artistPath}/cover.png");
                     else
                         artistObj = new Artist(artistAlias, "Default");
-                    MainActivity.stateHandler.Artists.Add(artistObj);
+                    MainActivity.StateHandler.Artists.Add(artistObj);
                 }
                 artistList.Add(artistObj);
             }
@@ -532,14 +529,14 @@ namespace MWP.BackEnd
             Song song = new Song(artistList, title, File.GetCreationTime(path), path);
             artistList.ForEach(art => art.AddSong(ref song));
             //TODO: prepend
-            MainActivity.stateHandler.Songs.Add(song);
+            MainActivity.StateHandler.Songs.Add(song);
 
             Album albumObj = new Album(string.Empty, string.Empty, false, false);
             if (!string.IsNullOrEmpty(album))
             {
                 if (album != null)
                 {
-                    List<Album> inAlbumList = MainActivity.stateHandler.Albums.Select(album);
+                    List<Album> inAlbumList = MainActivity.StateHandler.Albums.Select(album);
                     if (inAlbumList.Any())
                     {
                         albumObj = inAlbumList[0];
@@ -556,7 +553,7 @@ namespace MWP.BackEnd
                             albumObj = new Album(album, song, artistList, $"{_musicFolder}/{artistPath}/{albumPath}/cover.png");
                         else
                             albumObj = new Album(album, song, artistList, "Default");
-                        MainActivity.stateHandler.Albums.Add(albumObj);
+                        MainActivity.StateHandler.Albums.Add(albumObj);
                     }
                 }
 
@@ -594,7 +591,6 @@ namespace MWP.BackEnd
             string[] artists = (tfile.Tag.Performers.Any() ? tfile.Tag.Performers : tfile.Tag.AlbumArtists.Any() ? tfile.Tag.AlbumArtists : new []{ "No Artist" }).Distinct().ToArray();
 
             string album = tfile.Tag.Album;
-            tfile.Dispose();
             if (isNew)
             {
                 string output = $"{_musicFolder}/{Sanitize(GetAlias(artists[0]))}";
@@ -683,7 +679,6 @@ namespace MWP.BackEnd
                 }
             }
             tfile.Save();
-            tfile.Dispose();
             Directory.CreateDirectory(output);
             output = $"{output}/{Sanitize(title)}.mp3";
             try
@@ -696,11 +691,11 @@ namespace MWP.BackEnd
 #if DEBUG
                 MyConsole.WriteLine("Video already exists");
 #endif
-                Snackbar.Make(view, $"Exists: {title}", Snackbar.LengthLong).Show();
+                Snackbar.Make(view, $"Exists: {title}", BaseTransientBottomBar.LengthLong).Show();
                 return;
             }
             File.Delete(path);
-            Snackbar.Make(view, $"Success: {title}", Snackbar.LengthLong).Show();
+            Snackbar.Make(view, $"Success: {title}", BaseTransientBottomBar.LengthLong).Show();
 
             AddSong(path, title, artists, album);
         }

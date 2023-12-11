@@ -7,39 +7,33 @@ using Android.Views;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.DrawerLayout.Widget;
-using Google.Android.Material.FloatingActionButton;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.Content.PM;
 using Android.Graphics;
 using Android.Media;
-using System.Text;
 using Android.Provider;
-using Android.Text;
 using Android.Views.InputMethods;
 using Android.Widget;
-using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using MWP.BackEnd.Network;
 using MWP.BackEnd;
 using MWP.BackEnd.Player;
+using MWP.DatatypesAndExtensions;
 using Octokit;
 using Xamarin.Essentials;
-using Activity = Android.App.Activity;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
 using Application = Android.App.Application;
-using Encoding = System.Text.Encoding;
-using FileMode = System.IO.FileMode;
 using FileProvider = AndroidX.Core.Content.FileProvider;
-using Stream = System.IO.Stream;
+using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
+using Uri = Android.Net.Uri;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -51,24 +45,32 @@ namespace MWP
     //[IntentFilter(new[] { Intent.ActionSend }, Categories = new[] { Intent.CategoryDefault }, DataMimeType = "text/plain")]
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
-        // public static Slovenska_prostituka player = new Slovenska_prostituka();
-        public static APIThrottler throttler = new APIThrottler();
-        private static MyBroadcastReceiver _receiver;
-        private static MyMediaBroadcastReceiver _mediaReceiver;
-        public static StateHandler stateHandler = new StateHandler();
-        private static readonly MediaServiceConnection _serviceConnection = new MediaServiceConnection();
+        /// <summary>
+        /// Instance of API Throttler
+        /// </summary>
+        public static readonly APIThrottler Throttler = new APIThrottler();
+        private static MyBroadcastReceiver? _receiver;
+        private static MyMediaBroadcastReceiver? _mediaReceiver;
+        /// <summary>
+        /// Instance of State Handler
+        /// </summary>
+        public static readonly StateHandler StateHandler = new StateHandler();
+        private static readonly MediaServiceConnection ServiceConnectionPrivate = new MediaServiceConnection();
+        /// <summary>
+        /// Instance of Service Connection
+        /// </summary>
         public static MediaServiceConnection ServiceConnection
         {
             get
             {
-                if (_serviceConnection is { Connected: false })
+                if (ServiceConnectionPrivate is { Connected: false })
                 {
 #if DEBUG
                     MyConsole.WriteLine($"Session not connected");
 #endif
-                    stateHandler.mainActivity.StartMusicService();
+                    StateHandler.mainActivity.StartMediaService();
                 }
-                return _serviceConnection;
+                return ServiceConnectionPrivate;
             }
         }
         private const int ActionInstallPermissionRequestCode = 10356;
@@ -92,13 +94,13 @@ namespace MWP
         private DrawerLayout? drawer;
 
         /// <inheritdoc />
-        protected override void OnCreate(Bundle savedInstanceState)
+        protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
 #if DEBUG
             MyConsole.WriteLine("Creating MainActivity");
 #endif
-            stateHandler.mainActivity = this;
+            StateHandler.mainActivity = this;
             // Finish();   
             Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
@@ -109,7 +111,7 @@ namespace MWP
 
             drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
             
-            string action = Intent?.GetStringExtra("action");
+            string? action = Intent?.GetStringExtra("action");
             if (action == "openDrawer")
                 drawer?.OpenDrawer(GravityCompat.Start);
 
@@ -118,21 +120,24 @@ namespace MWP
             drawer?.AddDrawerListener(toggle);
             toggle.SyncState();
 
-            NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
+            NavigationView? navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView?.SetNavigationItemSelectedListener(this);
-            
-            SidePlayer.populate_side_bar(this, Assets);
-            stateHandler.SetView(this);
+
+            if (Assets != null)
+            {
+                SidePlayer.populate_side_bar(this, Assets);
+            }
+            StateHandler.SetView(this);
             _receiver = new MyBroadcastReceiver();
             RegisterReceiver(_receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
             _mediaReceiver = new MyMediaBroadcastReceiver();
             IntentFilter intentFilter = new IntentFilter();
-            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionPlay);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionPause);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionShuffle);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionToggleLoop);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionNextSong);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.ActionPreviousSong);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.PLAY);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.PAUSE);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.SHUFFLE);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.TOGGLE_LOOP);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.NEXT_SONG);
+            intentFilter.AddAction(MyMediaBroadcastReceiver.PREVIOUS_SONG);
             RegisterReceiver(_mediaReceiver, intentFilter);
             
             VersionTracking.Track();
@@ -219,7 +224,10 @@ namespace MWP
              * Managing Frgamentation
              */
             youtubeFragment = new YoutubeFragment(this);
-            shareFragment = new ShareFragment(this, Assets);
+            if (Assets != null)
+            {
+                shareFragment = new ShareFragment(this, Assets);
+            }
             
             songsFragment = new SongsFragment(this, Assets);
             albumsFragment = new AlbumAuthorFragment(this, Assets);
@@ -249,7 +257,7 @@ namespace MWP
             if (albumsNavigationButton != null)
                 albumsNavigationButton.Click += (_, _) =>
                 {
-                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    FragmentTransaction fragmentTransaction = SupportFragmentManager.BeginTransaction();
                     if (!activeFragment)
                     {
                         fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, albumsFragment);
@@ -267,7 +275,7 @@ namespace MWP
             if (playlistsNavigationButton != null)
                 playlistsNavigationButton.Click += (_, _) =>
                 {
-                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    FragmentTransaction fragmentTransaction = SupportFragmentManager.BeginTransaction();
                     if (!activeFragment)
                     {
                         fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, playlistsFragment);
@@ -285,7 +293,7 @@ namespace MWP
             if (songsNavigationButton != null)
                 songsNavigationButton.Click += (_, _) =>
                 {
-                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    FragmentTransaction fragmentTransaction = SupportFragmentManager.BeginTransaction();
                     if (!activeFragment)
                     {
                         fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, songsFragment);
@@ -304,7 +312,7 @@ namespace MWP
             if (downloadNavigationButton != null)
                 downloadNavigationButton.Click += (_, _) =>
                 {
-                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    FragmentTransaction fragmentTransaction = SupportFragmentManager.BeginTransaction();
                     if (!activeFragment)
                     {
                         fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, youtubeFragment);
@@ -321,13 +329,17 @@ namespace MWP
             if (shareNavigationButton != null)
                 shareNavigationButton.Click += (_, _) =>
                 {
-                    var fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    FragmentTransaction fragmentTransaction = SupportFragmentManager.BeginTransaction();
                     if (!activeFragment)
                     {
-                        fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, shareFragment, "shareFragTag");
+                        if (shareFragment != null)
+                            fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, shareFragment,
+                                "shareFragTag");
                         activeFragment = true;
                     }
-                    else fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, shareFragment, "shareFragTag");
+                    else if (shareFragment != null)
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, shareFragment,
+                            "shareFragTag");
 
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
@@ -338,9 +350,9 @@ namespace MWP
 
 
         /// <inheritdoc />
-        public override bool DispatchTouchEvent(MotionEvent ev)
+        public override bool DispatchTouchEvent(MotionEvent? ev)
         {
-            if (ev.Action == MotionEventActions.Down)
+            if (ev is { Action: MotionEventActions.Down })
             {
                 View? v = CurrentFocus;
                 if (v is EditText)
@@ -350,8 +362,8 @@ namespace MWP
                     if (!outRect.Contains((int)ev.RawX, (int)ev.RawY))
                     {
                         v.ClearFocus();
-                        InputMethodManager imm = (InputMethodManager)GetSystemService(Context.InputMethodService);
-                        imm.HideSoftInputFromWindow(v.WindowToken, 0);
+                        InputMethodManager? imm = (InputMethodManager?)GetSystemService(InputMethodService);
+                        imm?.HideSoftInputFromWindow(v.WindowToken, 0);
                     }
                 }
             }
@@ -360,7 +372,7 @@ namespace MWP
         
 
         /// <inheritdoc />
-        protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
+        protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
         {
             base.OnActivityResult(requestCode, resultCode, data);
             if (requestCode != ActionInstallPermissionRequestCode) return;
@@ -374,7 +386,7 @@ namespace MWP
         [Obsolete("deprecated")]
         public override void OnBackPressed()
         {
-            if (drawer.IsDrawerOpen(GravityCompat.Start))
+            if (drawer != null && drawer.IsDrawerOpen(GravityCompat.Start))
             {
                 drawer.CloseDrawer(GravityCompat.Start);
             }
@@ -407,10 +419,9 @@ namespace MWP
             return id == Resource.Id.action_settings || base.OnOptionsItemSelected(item);
         }
 
+        /// <inheritdoc />
         public bool OnNavigationItemSelected(IMenuItem item)
         {
-            
-
             drawer?.CloseDrawer(GravityCompat.Start);
             return true;
         }
@@ -481,7 +492,9 @@ namespace MWP
                 _ => string.Empty
             };
 
-            Snackbar.Make(FindViewById<DrawerLayout>(Resource.Id.drawer_layout),  explanation, Snackbar.LengthIndefinite)
+            DrawerLayout? view = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
+            if (view != null)
+                Snackbar.Make(view, explanation, BaseTransientBottomBar.LengthIndefinite)
                     .SetAction("OK", _ =>
                     {
                         if (!Android.OS.Environment.IsExternalStorageManager)
@@ -490,16 +503,18 @@ namespace MWP
                             {
                                 Intent intent = new Intent();
                                 intent.SetAction(Settings.ActionManageAppAllFilesAccessPermission);
-                                Android.Net.Uri uri = Android.Net.Uri.FromParts("package", PackageName, null);
+                                Uri? uri = Uri.FromParts("package", PackageName, null);
                                 intent.SetData(uri);
                                 StartActivity(intent);
-                            }catch(Exception ex)
+                            }
+                            catch (Exception ex)
                             {
 #if DEBUG
                                 MyConsole.WriteLine(ex);
 #endif
                             }
                         }
+
                         RequestPermissions(permissionsLocation.ToArray(), ActionPermissionsRequestCode);
                     }).Show();
         }
@@ -519,24 +534,32 @@ namespace MWP
             }
             
             new Thread(() => {
-                FileManager.DiscoverFiles(stateHandler.Songs.Count == 0);
-                if (stateHandler.Songs.Count < FileManager.GetSongsCount())
+                FileManager.DiscoverFiles(StateHandler.Songs.Count == 0);
+                bool order = false;
+                if (StateHandler.Songs.Count < FileManager.GetSongsCount())
                 {
-                    stateHandler.Songs = new List<Song>();
-                    stateHandler.Artists = new List<Artist>();
-                    stateHandler.Albums = new List<Album>();
+#if DEBUG
+                    MyConsole.WriteLine("Generating new songs");
+#endif
+                    StateHandler.Songs = new List<Song>();
+                    StateHandler.Artists = new List<Artist>();
+                    StateHandler.Albums = new List<Album>();
                     
-                    stateHandler.Artists.Add(new Artist("No Artist", "Default"));
+                    StateHandler.Artists.Add(new Artist("No Artist", "Default"));
                     FileManager.GenerateList(FileManager.MusicFolder);
+                    order = true;
                 }
 
-                if (stateHandler.Songs.Count != 0)
+                if (StateHandler.Songs.Count != 0 && order)
                 {
-                    stateHandler.Songs = stateHandler.Songs.Order(SongOrderType.ByDate);
+                    StateHandler.Songs = StateHandler.Songs.Order(SongOrderType.ByDate);
                 }
-                RunOnUiThread(() => SidePlayer.populate_side_bar(this, Assets));
+                RunOnUiThread(() =>
+                {
+                    if (Assets != null) SidePlayer.populate_side_bar(this, Assets);
+                });
 #if DEBUG
-                MyConsole.WriteLine($"Songs count {stateHandler.Songs.Count}");       
+                MyConsole.WriteLine($"Songs count {StateHandler.Songs.Count}");       
 #endif
                 
                 //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
@@ -558,17 +581,15 @@ namespace MWP
 
 
             }).Start();
-
-
-            StartMusicService();
         }
 
-        public void StartMusicService()
+        /// <summary>
+        /// Starts <see cref="MediaService"/>
+        /// </summary>
+        public void StartMediaService()
         {
             Intent serviceIntent = new Intent(Application.Context, typeof(MediaService));
-            
-            //StartForegroundService(serviceIntent);
-            if (!BindService(serviceIntent, _serviceConnection, Bind.AutoCreate))
+            if (!BindService(serviceIntent, ServiceConnectionPrivate, Bind.Important | Bind.AutoCreate))
             {
 #if DEBUG
                 MyConsole.WriteLine("Cannot connect to MediaService");
@@ -596,7 +617,7 @@ namespace MWP
                 if (remoteVersion <= currentVersion) return;
             
             
-                AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
+                AlertDialog.Builder builder = new AlertDialog.Builder(StateHandler.view);
                 builder.SetTitle("New Update");
                 builder.SetMessage("Would you like to download this update?");
 
@@ -643,14 +664,14 @@ namespace MWP
                 {
                     RunOnUiThread(() =>
                     {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(stateHandler.view);
+                        AlertDialog.Builder builder = new AlertDialog.Builder(StateHandler.view);
                         builder.SetTitle("Permissions needed!");
                         builder.SetMessage("We need permission to install apps to update. Would you like to grant it now?");
 
                         builder.SetPositiveButton("Yes", (_, _) =>
                         {
                             // Request the permission
-                            Intent installPermissionIntent = new Intent(Settings.ActionManageUnknownAppSources, Android.Net.Uri.Parse("package:" + PackageName));
+                            Intent installPermissionIntent = new Intent(Settings.ActionManageUnknownAppSources, Uri.Parse("package:" + PackageName));
                             StartActivityForResult(installPermissionIntent, ActionInstallPermissionRequestCode);
                 
                         });
@@ -679,7 +700,7 @@ namespace MWP
         {
             string authority = $"{Application.Context.PackageName}.fileprovider";
             Java.IO.File apkFile = new Java.IO.File(path);
-            Android.Net.Uri apkUri = FileProvider.GetUriForFile(this, authority, apkFile);
+            Uri? apkUri = FileProvider.GetUriForFile(this, authority, apkFile);
             
             Intent installIntent = new Intent(Intent.ActionView);
             installIntent.SetDataAndType(apkUri, "application/vnd.android.package-archive");

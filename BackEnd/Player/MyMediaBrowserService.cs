@@ -3,20 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Android.App;
+using Android.Bluetooth;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
 using Android.Support.V4.Media;
-using Android.Support.V4.Media.Session;
 using AndroidX.Media;
 using AndroidX.Media.Utils;
-using MWP.BackEnd;
+using MWP.DatatypesAndExtensions;
 #if DEBUG
 using MWP.Helpers;
 #endif
 
-namespace MWP
+namespace MWP.BackEnd.Player
 {
+    /// <inheritdoc />
     [Service(Exported = true)]
     [IntentFilter(new[] { "android.media.browse.MediaBrowserService" })]
     public class MyMediaBrowserService : MediaBrowserServiceCompat
@@ -26,9 +27,16 @@ namespace MWP
         private const string MY_ALBUMS_ROOT_ID = "albums_root_id";
         private const string MY_SONGS_ROOT_ID = "songs_root_id";
         private const string MY_PLAYLISTS_ROOT_ID = "playlists_root_id";
+        /// <summary>
+        /// Media Id to play all songs in <see cref="StateHandler"/>
+        /// </summary>
         public static readonly string MySongsPlayAll = $"{MY_SONGS_ROOT_ID}_all";
+        /// <summary>
+        /// Media Id to play all songs in <see cref="StateHandler"/> on shuffle
+        /// </summary>
         public static readonly string MySongsShuffle = $"{MY_SONGS_ROOT_ID}_shuffle";
-        //private static readonly MediaServiceConnection ServiceConnection = new MediaServiceConnection();
+        private static MediaServiceConnection? _serviceConnection = new MediaServiceConnection();
+        internal static readonly AutoResetEvent MissingFilesWaiter = new AutoResetEvent(false);
         
         private static readonly MediaDescriptionCompat? MySongsRootDescription = new MediaDescriptionCompat.Builder()
                         .SetMediaId(MY_SONGS_ROOT_ID)?
@@ -52,55 +60,72 @@ namespace MWP
                         .SetTitle("Playlists")?
                         .SetIconBitmap(MusicBaseClassStatic.PlaylistsImage)?
                         .Build();
-      
+
+        /// <inheritdoc />
         public override void OnCreate() {
             base.OnCreate();
-            //TODO: actually dies when main activity isnt running
-            while (!MainActivity.ServiceConnection.Connected)
+            new Thread(() =>
             {
-            #if DEBUG
-                MyConsole.WriteLine("Waiting for service");
-            #endif
-                Thread.Sleep(25);
-            }
-            if (MainActivity.ServiceConnection.Binder != null) 
-                SessionToken = MainActivity.ServiceConnection.Binder.Service.Session.SessionToken;
+                Looper.Prepare();
+                Intent serviceIntent = new Intent(Application.Context, typeof(MediaService));
+                _serviceConnection ??= new MediaServiceConnection();
+                while (!_serviceConnection.Connected)
+                {
+            
+                    //StartForegroundService(serviceIntent);
+                    if (!BindService(serviceIntent, _serviceConnection, Bind.Important | Bind.AutoCreate))
+                    {
 #if DEBUG
-            else
-                MyConsole.WriteLine("Empty binder");
+                        MyConsole.WriteLine("Cannot connect to MediaService");
 #endif
-
-            if (MainActivity.stateHandler.Songs.Count == 0)
-            {
-                LoadFiles();
-            }
+                    }
+#if DEBUG
+                    MyConsole.WriteLine("Waiting for service");
+#endif
+                    Thread.Sleep(25);
+                }
+                if (_serviceConnection.Binder != null) 
+                    SessionToken = _serviceConnection.Binder.Service.Session.SessionToken;
+#if DEBUG
+                else
+                    MyConsole.WriteLine("Empty binder");
+#endif
+                if (MainActivity.StateHandler.Songs.Count == 0)
+                {
+                    LoadFiles();
+                }
+                else
+                {
+                    MissingFilesWaiter.Set();
+                }
+            }).Start();
         }
 
         private static void LoadFiles()
         {
-            if (MainActivity.stateHandler.Songs.Count == 0)
-            {
+            if (MainActivity.StateHandler.Songs.Count != 0) return;
 #if DEBUG
-                MyConsole.WriteLine("Generating list");
+            MyConsole.WriteLine("Generating list");
 #endif
-                new Thread(() => {
-                    FileManager.DiscoverFiles(true);
-                    if (MainActivity.stateHandler.Songs.Count < FileManager.GetSongsCount())
-                    {
-                        MainActivity.stateHandler.Songs = new List<Song>();
-                        MainActivity.stateHandler.Artists = new List<Artist>();
-                        MainActivity.stateHandler.Albums = new List<Album>();
+            new Thread(() => {
+            FileManager.DiscoverFiles(true);
+            if (MainActivity.StateHandler.Songs.Count < FileManager.GetSongsCount())
+            {
+                MainActivity.StateHandler.Songs = new List<Song>();
+                MainActivity.StateHandler.Artists = new List<Artist>();
+                MainActivity.StateHandler.Albums = new List<Album>();
                     
-                        MainActivity.stateHandler.Artists.Add(new Artist("No Artist", "Default"));
-                        FileManager.GenerateList(FileManager.MusicFolder);
-                    }
-
-                    if (MainActivity.stateHandler.Songs.Count != 0)
-                    {
-                        MainActivity.stateHandler.Songs = MainActivity.stateHandler.Songs.Order(SongOrderType.ByDate);
-                    }
-                }).Start();
+                MainActivity.StateHandler.Artists.Add(new Artist("No Artist", "Default"));
+                FileManager.GenerateList(FileManager.MusicFolder);
             }
+
+            if (MainActivity.StateHandler.Songs.Count != 0)
+            {
+                MainActivity.StateHandler.Songs = MainActivity.StateHandler.Songs.Order(SongOrderType.ByDate);
+            }
+
+            MissingFilesWaiter.Set();
+            }).Start();
         }
 
         private static bool ValidateClient(string clientPackageName, int clientUid)
@@ -108,17 +133,19 @@ namespace MWP
             bool returnVal = true; //TODO: back to false
             returnVal |= clientUid == Process.SystemUid;
 #if DEBUG
-            MyConsole.WriteLine($"returnval: {returnVal}");
+            MyConsole.WriteLine($"return val: {returnVal}");
 #endif
             return returnVal;
             //TODO: add logic
         }
 
+        /// <inheritdoc />
         public override void OnCustomAction(string action, Bundle? extras, Result result)
         {
             base.OnCustomAction(action, extras, result);
         }
 
+        /// <inheritdoc />
         public override BrowserRoot? OnGetRoot(string clientPackageName, int clientUid, Bundle? rootHints)
         {
             if (!ValidateClient(clientPackageName, clientUid))
@@ -138,13 +165,12 @@ namespace MWP
             return new BrowserRoot(MY_MEDIA_ROOT_ID, extras);
 
         }
-        
+
+        /// <inheritdoc />
         public override void OnLoadChildren(string parentId, Result result)
         {
-            /*if (MainActivity.stateHandler.Songs.Count == 0)
-            {
-                LoadFiles();
-            }*/
+            MissingFilesWaiter.WaitOne();
+            
 #if DEBUG
             MyConsole.WriteLine("OnLoadChildren");
 #endif
@@ -205,13 +231,13 @@ namespace MWP
                         mediaItems.Add(item);
                     }
                     
-                    mediaItems.AddRange(MainActivity.stateHandler.Songs.Select(song => song.ToMediaItem()));
+                    mediaItems.AddRange(MainActivity.StateHandler.Songs.Select(song => song.ToMediaItem()));
                     break;
                 case MY_ARTISTS_ROOT_ID:
-                    mediaItems.AddRange(MainActivity.stateHandler.Artists.Select(artist => artist.ToMediaItem()));
+                    mediaItems.AddRange(MainActivity.StateHandler.Artists.Select(artist => artist.ToMediaItem()));
                     break;
                 case MY_ALBUMS_ROOT_ID:
-                    mediaItems.AddRange(MainActivity.stateHandler.Albums.Select(album => album.ToMediaItem()));
+                    mediaItems.AddRange(MainActivity.StateHandler.Albums.Select(album => album.ToMediaItem()));
                     break;
                 case MY_PLAYLISTS_ROOT_ID:
                     //TODO: add playlists
@@ -301,16 +327,19 @@ namespace MWP
                     break;
                 }
             }
+
+            MissingFilesWaiter.Set();
             JavaList<MediaBrowserCompat.MediaItem?> javaMediaItems = new JavaList<MediaBrowserCompat.MediaItem?>(mediaItems);
             result.SendResult(javaMediaItems);
-
         }
 
+        /// <inheritdoc />
         public override void OnLoadItem(string? itemId, Result result)
         {
             base.OnLoadItem(itemId, result);
         }
 
+        /// <inheritdoc />
         public override void OnSearch(string query, Bundle? extras, Result result)
         {
             base.OnSearch(query, extras, result);
@@ -318,13 +347,14 @@ namespace MWP
 
         ~MyMediaBrowserService()
         {
-            //ServiceConnection.Dispose();
+            Dispose(true);
         }
 
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            //ServiceConnection.Dispose();
+            _serviceConnection?.Dispose();
+            _serviceConnection = null;
             base.Dispose(disposing);
         }
     }

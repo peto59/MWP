@@ -140,7 +140,7 @@ namespace MWP.BackEnd.Network
         {
             List<string> trusted = FileManager.GetTrustedSyncTargets();
             List<(string hostname, DateTime? lastSeen, bool state)> output = new List<(string hostname, DateTime? lastSeen, bool state)>();
-            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.stateHandler.AvailableHosts)
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.StateHandler.AvailableHosts)
             {
                 if (trusted.Contains(stateHandlerAvailableHost.hostname))
                 {
@@ -160,34 +160,34 @@ namespace MWP.BackEnd.Network
         {
             DateTime now = DateTime.Now;
             
-            List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.stateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
+            List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.StateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
             switch (currentAvailableHosts.Count)
             {
                 case > 1:
                 {
                     foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) currentAvailableHost in currentAvailableHosts)
                     {
-                        MainActivity.stateHandler.AvailableHosts.Remove(currentAvailableHost);
+                        MainActivity.StateHandler.AvailableHosts.Remove(currentAvailableHost);
                     }
-                    MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, hostname));
+                    MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, hostname));
                     break;
                 }
                 case 1:
                 {
-                    int index = MainActivity.stateHandler.AvailableHosts.IndexOf(currentAvailableHosts.First());
-                    MainActivity.stateHandler.AvailableHosts[index] = (targetIp, now, hostname);
+                    int index = MainActivity.StateHandler.AvailableHosts.IndexOf(currentAvailableHosts.First());
+                    MainActivity.StateHandler.AvailableHosts[index] = (targetIp, now, hostname);
                     break;
                 }
                 default:
-                    MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, hostname));
+                    MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, hostname));
                     break;
             }
             
             //remove stale hosts
-            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.stateHandler.AvailableHosts.Where(a =>
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.StateHandler.AvailableHosts.Where(a =>
                          a.lastSeen > now + RemoveInterval))
             {
-                MainActivity.stateHandler.AvailableHosts.Remove(removal);
+                MainActivity.StateHandler.AvailableHosts.Remove(removal);
             }
         }
     }

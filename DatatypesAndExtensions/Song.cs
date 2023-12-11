@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
-using Android.Graphics;
 using System.IO;
 using System.Linq;
+using Android.Graphics;
 using Android.Support.V4.Media;
 using Android.Support.V4.Media.Session;
 using MWP.BackEnd;
+using MWP.DatatypesAndExtensions;
 using File = TagLib.File;
 #if DEBUG
 using MWP.Helpers;
@@ -13,19 +14,52 @@ using MWP.Helpers;
 
 namespace MWP
 {
+    /// <summary>
+    /// Custom Song object
+    /// </summary>
     [Serializable]
     public class Song : MusicBaseClass
     {
+        /// <summary>
+        /// List of <see cref="MWP.Artist"/>s collaborating on this <see cref="MWP.Album"/>
+        /// </summary>
         public List<Artist> Artists { get; } = new List<Artist>();
+        /// <summary>
+        /// First or default <see cref="MWP.Artist"/>
+        /// </summary>
         public Artist Artist => Artists.Count > 0 ? Artists[0] : new Artist("No Artist", "Default", false);
+        /// <summary>
+        /// List of <see cref="MWP.Album"/>s this <see cref="MWP.Song"/> belongs to
+        /// </summary>
         public List<Album> Albums { get; } = new List<Album>();
+        /// <summary>
+        /// List of <see cref="MWP.Album"/>s this <see cref="MWP.Song"/> belongs to and are usable in serialization
+        /// </summary>
         public List<Album> XmlAlbums => Albums.Where(a => a.Title != "No Album").ToList();
+        /// <summary>
+        /// First or default <see cref="MWP.Album"/>
+        /// </summary>
         public Album Album => Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
+
+        /// <inheritdoc />
         public override string Title { get; }
+        /// <summary>
+        /// Timestamp when was this <see cref="MWP.Song"/> added to device
+        /// </summary>
         public DateTime DateCreated { get; }
+        /// <summary>
+        /// Path to <see cref="MWP.Song"/> on disk
+        /// </summary>
         public string Path { get; }
+        /// <summary>
+        /// Whether this instance is usable
+        /// </summary>
         public bool Initialized { get; private set; } = true;
 
+        /// <summary>
+        /// Adds <see cref="MWP.Artist"/>s from <paramref name="artists"/>
+        /// </summary>
+        /// <param name="artists">List of <see cref="MWP.Artist"/>s to be added</param>
         public void AddArtist(ref List<Artist> artists)
         {
             foreach (Artist artist in artists.Where(artist => !Artists.Contains(artist)))
@@ -33,12 +67,20 @@ namespace MWP
                 Artists.Add(artist);
             }
         }
+        /// <summary>
+        /// Adds <see cref="MWP.Artist"/> from <paramref name="artist"/>
+        /// </summary>
+        /// <param name="artist">artist to be added</param>
         public void AddArtist(ref Artist artist)
         {
             if(!Artists.Contains(artist))
                 Artists.Add(artist);
         }
         
+        /// <summary>
+        /// Adds <see cref="MWP.Album"/>s from <paramref name="albums"/>
+        /// </summary>
+        /// <param name="albums">List of <see cref="MWP.Album"/>s to be added</param>
         public void AddAlbum(ref List<Album> albums)
         {
             foreach (Album album in albums.Where(album => !Albums.Contains(album)))
@@ -46,27 +88,46 @@ namespace MWP
                 Albums.Add(album);
             }
         }
+        /// <summary>
+        /// Adds <see cref="MWP.Album"/> from <paramref name="album"/>
+        /// </summary>
+        /// <param name="album">Album to be added</param>
         public void AddAlbum(ref Album album)
         {
             if (!Albums.Contains(album))
                 Albums.Add(album);
         }
         
+        /// <summary>
+        /// Removes <see cref="MWP.Album"/> matching <paramref name="album"/>
+        /// </summary>
+        /// <param name="album"><see cref="MWP.Album"/> to be removed</param>
         public void RemoveAlbum(Album album)
         {
             Albums.Remove(album);
         }
-        
+        /// <summary>
+        /// Removes <see cref="MWP.Album"/>s matching <paramref name="albums"/>
+        /// </summary>
+        /// <param name="albums">List of <see cref="MWP.Album"/>s to be removed</param>
         public void RemoveAlbum(List<Album> albums)
         {
             albums.ForEach(RemoveAlbum);
         }
         
+        /// <summary>
+        /// Removes <see cref="MWP.Artist"/> matching <paramref name="artist"/>
+        /// </summary>
+        /// <param name="artist"><see cref="MWP.Artist"/> to be removed</param>
         public void RemoveArtist(Artist artist)
         {
             Artists.Remove(artist);
         }
         
+        /// <summary>
+        /// Removes <see cref="MWP.Artist"/>s matching <paramref name="artists"/>
+        /// </summary>
+        /// <param name="artists">List of <see cref="MWP.Artist"/>s to be removed</param>
         public void RemoveArtist(List<Artist> artists)
         {
             artists.ForEach(RemoveArtist);
@@ -97,16 +158,24 @@ namespace MWP
                 }
             });
             
-            MainActivity.stateHandler.Songs.Remove(this);
+            MainActivity.StateHandler.Songs.Remove(this);
             Initialized = false;
         }
 
+        /// <summary>
+        /// Deletes this <see cref="MWP.Song"/> from device
+        /// </summary>
         public void Delete()
         {
             Nuke();
             FileManager.Delete(Path);
         }
 
+        /// <summary>
+        /// Gets <see cref="MWP.Song"/>'s image
+        /// </summary>
+        /// <param name="shouldFallBack">Whether to look for image in <see cref="Albums"/> or <see cref="Artists"/></param>
+        /// <returns><see cref="MWP.Song"/>'s image</returns>
         public override Bitmap? GetImage(bool shouldFallBack = true)
         {
             Bitmap? image = null;
@@ -149,8 +218,10 @@ namespace MWP
                 }
             }
 
-            return placeholder;
+            return MusicBaseClassStatic.Placeholder;
         }
+
+        /// <inheritdoc />
         public Song(List<Artist>? artists, List<Album>? albums, string title, bool redundant = false)
         {
             if (artists != null)
@@ -162,8 +233,11 @@ namespace MWP
                 Albums = albums.Distinct().ToList();
             }
             Title = title;
+            Path = string.Empty;
             Initialized = false;
         }
+
+        /// <inheritdoc />
         public Song(List<Artist> artists, string title, DateTime dateCreated, string path, Album? album = null)
         {
             Artists = artists.Distinct().ToList();
@@ -175,6 +249,8 @@ namespace MWP
             DateCreated = dateCreated;
             Path = path;
         }
+
+        /// <inheritdoc />
         public Song(Artist artist, string title, DateTime dateCreated, string path, Album? album = null)
         {
             Artists = new List<Artist> {artist};
@@ -186,17 +262,19 @@ namespace MWP
             DateCreated = dateCreated;
             Path = path;
         }
-        
+
+        /// <inheritdoc />
         public Song(List<Artist>? artists, string title, DateTime dateCreated, string path, List<Album>? albums, bool initialized = true)
         {
-            Artists = artists.Distinct().ToList();
-            Albums = albums.Distinct().ToList();
+            if (artists != null) Artists = artists.Distinct().ToList();
+            if (albums != null) Albums = albums.Distinct().ToList();
             Title = title;
             DateCreated = dateCreated;
             Path = path;
             Initialized = initialized;
         }
-        
+
+        /// <inheritdoc />
         public Song(Artist artist, string title, DateTime dateCreated, string path, List<Album> albums)
         {
             Artists = new List<Artist> {artist};
@@ -205,7 +283,8 @@ namespace MWP
             DateCreated = dateCreated;
             Path = path;
         }
-        
+
+        /// <inheritdoc />
         public Song(string title, DateTime dateCreated, string path, bool initialized = true)
         {
             Title = title;
@@ -214,7 +293,8 @@ namespace MWP
             Initialized = initialized;
         }
 
-        public Song(Song song, string title)
+        /// <inheritdoc />
+        public Song(Song song, string title, string path)
         {
             Artists = song.Artists;
             Albums = song.Albums;
@@ -222,16 +302,8 @@ namespace MWP
             DateCreated = song.DateCreated;
             Path = song.Path;
         }
-        
-        public Song(Song song, string title, string path)
-        {
-            Artists = song.Artists;
-            Albums = song.Albums;
-            Title = title;
-            DateCreated = song.DateCreated;
-            Path = path;
-        }
 
+        /// <inheritdoc />
         public override MediaBrowserCompat.MediaItem? ToMediaItem()
         {
             if (Description == null) return null;
@@ -239,6 +311,11 @@ namespace MWP
             return item;
         }
         
+        /// <summary>
+        /// This <see cref="MWP.Song"/> as <see cref="MediaSessionCompat.QueueItem"/>
+        /// </summary>
+        /// <param name="id">id in <see cref="MediaSessionCompat.QueueItem"/></param>
+        /// <returns><see cref="MediaSessionCompat.QueueItem"/></returns>
         public MediaSessionCompat.QueueItem? ToQueueItem(long id)
         {
             if (Description == null) return null;
@@ -246,11 +323,13 @@ namespace MWP
             return item;
         }
 
+        /// <inheritdoc />
         protected override MediaDescriptionCompat? GetDescription()
         {
             return Builder?.Build();
         }
 
+        /// <inheritdoc />
         protected override MediaDescriptionCompat.Builder? GetBuilder()
         {
             return new MediaDescriptionCompat.Builder()
@@ -260,14 +339,24 @@ namespace MWP
                 .SetIconBitmap(Image);
         }
 
+        /// <summary>
+        /// Gets <see cref="MWP.Song"/> from <paramref name="id"/>
+        /// </summary>
+        /// <param name="id">Id of <see cref="MWP.Song"/> to return</param>
+        /// <returns><see cref="MWP.Song"/> matching <paramref name="id"/></returns>
         public static Song FromId(Guid id)
         {
-            return MainActivity.stateHandler.Songs.Find(s => s.Id.Equals(id));
+            return MainActivity.StateHandler.Songs.Find(s => s.Id.Equals(id));
         }
         
+        /// <summary>
+        /// Gets <see cref="MWP.Song"/> from <paramref name="id"/>
+        /// </summary>
+        /// <param name="id">Id of <see cref="MWP.Song"/> to return</param>
+        /// <returns><see cref="MWP.Song"/> matching <paramref name="id"/></returns>
         public static Song FromId(string id)
         {
-            return MainActivity.stateHandler.Songs.Find(s => s.IdString.Equals(id));
+            return MainActivity.StateHandler.Songs.Find(s => s.IdString.Equals(id));
         }
 
         /// <inheritdoc />
@@ -281,6 +370,11 @@ namespace MWP
             return Equals(Artists, other.Artists) && Equals(Albums, other.Albums) && Title == other.Title && DateCreated.Equals(other.DateCreated) && Path == other.Path;
         }
         
+        /// <summary>
+        /// Whether two <see cref="MWP.Artist"/>s are equal without chance of stack smashing occuring
+        /// </summary>
+        /// <param name="other">other <see cref="MWP.Artist"/></param>
+        /// <returns>true if albums match, false otherwise</returns>
         public bool ShallowEquals(Song other)
         {
             bool equals = Artists.Aggregate(true, (current1, thisArtist) => other.Artists.Aggregate(current1, (current, otherArtist) => current && thisArtist.Title == otherArtist.Title));

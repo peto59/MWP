@@ -20,6 +20,7 @@ using Socket = System.Net.Sockets.Socket;
 using SocketType = System.Net.Sockets.SocketType;
 using TransportType = Android.Net.TransportType;
 using Mono.Nat;
+using MWP.DatatypesAndExtensions;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -54,7 +55,7 @@ namespace MWP.BackEnd.Network
                 canSend = value;
             }
         }
-        private IPAddress myBroadcastIp;
+        private IPAddress? myBroadcastIp;
         internal const int BroadcastPort = 8008;
         private const int P2PPort = 8009;
         internal const int RsaDataSize = 256;
@@ -127,7 +128,7 @@ namespace MWP.BackEnd.Network
                 NetworkRequest? request = new NetworkRequest.Builder()
                     .AddTransportType(TransportType.Wifi)
                     ?.Build();
-                while (MainActivity.stateHandler.view == null)
+                while (MainActivity.StateHandler.view == null)
                 {
 #if DEBUG
                     MyConsole.WriteLine("Waiting for stateHandler.view");
@@ -135,7 +136,7 @@ namespace MWP.BackEnd.Network
                     Thread.Sleep(10);
                 }
                 ConnectivityManager? connectivityManager =
-                    (ConnectivityManager?)MainActivity.stateHandler.view.GetSystemService(
+                    (ConnectivityManager?)MainActivity.StateHandler.view.GetSystemService(
                         Context.ConnectivityService);
                 MyNetworkCallback myNetworkCallback = new MyNetworkCallback(NetworkCallbackFlags.IncludeLocationInfo);
                 if (request != null && connectivityManager != null) connectivityManager.RegisterNetworkCallback(request, myNetworkCallback);
@@ -248,7 +249,7 @@ namespace MWP.BackEnd.Network
             return false;
         }
 
-        private static IPAddress GetBroadCastIp(IPAddress host, IPAddress mask)
+        private static IPAddress? GetBroadCastIp(IPAddress host, IPAddress mask)
         {
             byte[] broadcastIpBytes = new byte[4];
             byte[] hostBytes = host.GetAddressBytes();
@@ -302,7 +303,7 @@ namespace MWP.BackEnd.Network
 #endif                
                                 
                                 DateTime now = DateTime.Now;
-                                MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, remoteHostname));
+                                MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, remoteHostname));
                                 processedAtLestOne = true;
                                 //TODO: add to available targets. Don't connect directly, check if sync is allowed.
                                 //TODO: doesn't work with one time sends....

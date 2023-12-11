@@ -6,8 +6,6 @@ using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
 using Android.Content.Res;
-using Android.Graphics;
-using Android.Util;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
@@ -57,7 +55,7 @@ namespace MWP
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.album_fragment_main);
 
             string? title = Arguments?.GetString("title");
-            List<Album> retreivedSongs = MainActivity.stateHandler.Albums.Search(title);
+            List<Album> retreivedSongs = MainActivity.StateHandler.Albums.Search(title);
             if (retreivedSongs.Count > 0)
             {
                 album = retreivedSongs[0];
@@ -107,7 +105,7 @@ namespace MWP
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                     context, SongButtons, UIRenderFunctions.SongType.albumSong, assets, ParentFragmentManager, lnMain
+                     context, SongButtons, UIRenderFunctions.SongType.AlbumSong, assets, ParentFragmentManager, lnMain
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, album.Songs[i],  150, 100,

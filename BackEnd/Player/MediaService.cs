@@ -1,33 +1,35 @@
-﻿using Android.App;
-using AndroidApp = Android.App.Application;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using Android.App;
 using Android.Content;
+using Android.Content.PM;
+using Android.Graphics;
 using Android.Media;
 using Android.Media.Session;
 using Android.OS;
 using Android.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.IO;
-using Android.Content.PM;
-using Android.Graphics;
-using Android.Support.V4.Media.Session;
 using Android.Support.V4.Media;
-using MWP.BackEnd.Player;
+using Android.Support.V4.Media.Session;
+using AndroidApp = Android.App.Application;
 #if DEBUG
 using MWP.Helpers;
 #endif
 
-namespace MWP
+namespace MWP.BackEnd.Player
 {
+	/// <summary>
+	/// Media service for playing songs
+	/// </summary>
 	[Service(ForegroundServiceType = ForegroundService.TypeMediaPlayback, Label = "@string/service_name")]
 	//TODO: https://developer.android.com/training/cars/media
 	public class MediaService : Service, AudioManager.IOnAudioFocusChangeListener
 	{
 		private MediaSessionCompat? session;
-		public IBinder Binder { get; private set; }
-		
+
+		private int boundServices = 0;
+
 		/// <summary>
 		/// handle for current media session
 		/// </summary>
@@ -43,23 +45,40 @@ namespace MWP
 				return session!;
 			}
 		}
-		
-		public MediaPlayer? mediaPlayer { get; private set; }
+
+
+		/// <summary>
+		/// Whether <see cref="mediaPlayer"/> is currently playing
+		/// </summary>
+		public bool IsPlaying => mediaPlayer?.IsPlaying ?? false;
+		/// <summary>
+		/// Duration of currently playing <see cref="Song"/>
+		/// </summary>
+		public int Duration => mediaPlayer?.Duration ?? 0;
+		/// <summary>
+		/// Current position of <see cref="mediaPlayer"/>
+		/// </summary>
+		public int CurrentPosition => mediaPlayer?.CurrentPosition ?? 0;
+		private MediaPlayer? mediaPlayer;
 		private AudioManager? audioManager;
 		private AudioFocusRequestClass? audioFocusRequest;
 		private readonly Local_notification_service notificationService = new Local_notification_service();
 
+		/// <summary>
+		/// Queue object taking care of queue
+		/// </summary>
 		public MyMediaQueue QueueObject => queueObject ??= new MyMediaQueue(Session);
-		private MyMediaQueue? queueObject = null;
-		public long Actions { get; private set; }
+		private MyMediaQueue? queueObject;
+		private long actions;
 		private bool isFocusGranted;
-		private bool isUsed;
 		private bool lostFocusDuringPlay;
-		public bool IsPaused { get; private set; }
+		private bool isPaused;
 		
 		private bool isSkippingToNext;
 		private bool isSkippingToPrevious;
 		private bool isBuffering = true;
+
+		/// <inheritdoc />
 		public override void OnDestroy()
 		{
 			CleanUp();
@@ -72,10 +91,6 @@ namespace MWP
 		private void InnitPlayer()
 		{
 			mediaPlayer = new MediaPlayer();
-			mediaPlayer.Prepared += delegate
-			{
-				isUsed = true;
-			};
 			mediaPlayer.Completion += delegate
 			{
 				NextSong(false);
@@ -88,8 +103,7 @@ namespace MWP
 			{
                 UpdatePlaybackState();
             };
-			MediaPlayer m = mediaPlayer;
-        }
+		}
 
 		///<summary>
 		///Creates new AudioManager
@@ -97,6 +111,17 @@ namespace MWP
 		private void InnitAudioManager()
 		{
 			if (ApplicationContext != null) audioManager = AudioManager.FromContext(ApplicationContext);
+		}
+
+		/// <inheritdoc />
+		public override void OnCreate()
+		{
+			base.OnCreate();
+			InnitPlayer();
+			InnitAudioManager();
+			InnitSession();
+			InnitFocusRequest();
+			InnitNotification();
 		}
 
 		///<summary>
@@ -109,8 +134,9 @@ namespace MWP
 				InnitPlayer();
 			}
 			session = new MediaSessionCompat(AndroidApp.Context, "MusicService");
-			session.SetCallback(new MediaSessionCallback());
 			session.SetFlags((int)(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls));
+			session.SetCallback(new MediaSessionCallback(new MediaServiceBinder(this)));
+			session.Active = true;
 			//session.SetSessionActivity()
 		}
 
@@ -120,7 +146,7 @@ namespace MWP
 		private void InnitFocusRequest()
 		{
 			audioFocusRequest = new AudioFocusRequestClass.Builder(AudioFocus.Gain)
-											   .SetAudioAttributes(new AudioAttributes.Builder().SetLegacyStreamType(Android.Media.Stream.Music)?.SetUsage(AudioUsageKind.Media)?.Build()!)
+											   .SetAudioAttributes(new AudioAttributes.Builder().SetLegacyStreamType(Stream.Music)?.SetUsage(AudioUsageKind.Media)?.Build()!)
 											   .SetOnAudioFocusChangeListener(this)
 											   .Build();
 		}
@@ -159,9 +185,9 @@ namespace MWP
 				stateBuilder.SetState((int)state, position, 1.0f);
 				int icon = QueueObject.LoopState switch
 				{
-					Enums.LoopState.All => Resource.Drawable.repeat,
-					Enums.LoopState.Single => Resource.Drawable.repeat_one,
-					Enums.LoopState.None => Resource.Drawable.no_repeat,
+					LoopState.All => Resource.Drawable.repeat,
+					LoopState.Single => Resource.Drawable.repeat_one,
+					LoopState.None => Resource.Drawable.no_repeat,
 					_ => Resource.Drawable.no_repeat
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
@@ -173,6 +199,7 @@ namespace MWP
 			StartForeground(notificationService.NotificationId, notificationService.Notification, ForegroundService.TypeMediaPlayback);
 		}
 
+		/// <inheritdoc />
 		public void OnAudioFocusChange([GeneratedEnum] AudioFocus focusChange)
 		{
 			switch (focusChange)
@@ -200,22 +227,25 @@ namespace MWP
 				case AudioFocus.LossTransientCanDuck:
 					mediaPlayer?.SetVolume(0.25f, 0.25f);
 					break;
+				case AudioFocus.GainTransient:
+				case AudioFocus.GainTransientExclusive:
+				case AudioFocus.GainTransientMayDuck:
+				case AudioFocus.None:
+				default:
+					//ignored
+					break;
 			}
 		}
 
 		/// <inheritdoc />
 		public override StartCommandResult OnStartCommand(Intent? intent, StartCommandFlags flags, int startId)
 		{
-			InnitPlayer();
-			InnitAudioManager();
-			InnitSession();
-			InnitFocusRequest();
-			InnitNotification();
 #if DEBUG
 			MyConsole.WriteLine("CREATING NEW SESSION");
 #endif
 			return StartCommandResult.Sticky;
 		}
+
 		private long GetAvailableActions()
 		{
 			if (mediaPlayer == null)
@@ -224,27 +254,27 @@ namespace MWP
 			}
 			if (mediaPlayer is { IsPlaying: true })
 			{
-				Actions = PlaybackState.ActionPause | PlaybackState.ActionStop;
+				actions = PlaybackState.ActionPause | PlaybackState.ActionStop;
 			}else{
-				Actions = PlaybackState.ActionPlay;
+				actions = PlaybackState.ActionPlay;
 			}
 			
 			if (QueueObject.QueueCount == 0)
 			{
-				return Actions;
+				return actions;
 			}
 			
-			Actions |= PlaybackState.ActionSeekTo;
+			actions |= PlaybackState.ActionSeekTo;
 			
 			if (QueueObject.HasPrevious)
 			{
-				Actions |= PlaybackState.ActionSkipToPrevious;
+				actions |= PlaybackState.ActionSkipToPrevious;
 			}
 			if (QueueObject.HasNext)
 			{
-				Actions |= PlaybackState.ActionSkipToNext;
+				actions |= PlaybackState.ActionSkipToNext;
 			}
-			return Actions;
+			return actions;
 		}
 
 		private void UpdatePlaybackState()
@@ -259,17 +289,17 @@ namespace MWP
 			{
 				position = mediaPlayer.CurrentPosition;
 				state = PlaybackStateCode.Playing;
-				SidePlayer.SetStopButton(MainActivity.stateHandler.view);
-				MainActivity.stateHandler.SongProgressCts.Cancel();
-				MainActivity.stateHandler.SongProgressCts = new CancellationTokenSource();
-				SidePlayer.StartMovingProgress(MainActivity.stateHandler.SongProgressCts.Token, MainActivity.stateHandler.view);
+				MainActivity.StateHandler.SongProgressCts.Cancel();
+				MainActivity.StateHandler.SongProgressCts = new CancellationTokenSource();
+				SidePlayer.SetStopButton();
+				SidePlayer.StartMovingProgress(MainActivity.StateHandler.SongProgressCts.Token, MainActivity.StateHandler.view);
 			}
-			else if (IsPaused)
+			else if (isPaused)
 			{
 				state = PlaybackStateCode.Paused;
 				position = mediaPlayer?.CurrentPosition ?? 0;
-				SidePlayer.SetPlayButton(MainActivity.stateHandler.view);
-				MainActivity.stateHandler.SongProgressCts.Cancel();
+				SidePlayer.SetPlayButton();
+				MainActivity.StateHandler.SongProgressCts.Cancel();
 			}
 			else if (isSkippingToNext)
 			{
@@ -295,9 +325,9 @@ namespace MWP
 				stateBuilder.SetState((int)state, position, 1.0f);
 				int icon = QueueObject.LoopState switch
 				{
-					Enums.LoopState.All => Resource.Drawable.repeat,
-					Enums.LoopState.Single => Resource.Drawable.repeat_one,
-					Enums.LoopState.None => Resource.Drawable.no_repeat,
+					LoopState.All => Resource.Drawable.repeat,
+					LoopState.Single => Resource.Drawable.repeat_one,
+					LoopState.None => Resource.Drawable.no_repeat,
 					_ => Resource.Drawable.no_repeat
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
@@ -306,7 +336,7 @@ namespace MWP
 				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
-			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.stateHandler.view, Assets);
+			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.StateHandler.view, Assets);
 			notificationService.Notify();
 		}
 
@@ -360,7 +390,7 @@ namespace MWP
 			{
 				try
 				{
-					GenerateQueue(MainActivity.stateHandler.Songs, null, false);
+					GenerateQueue(MainActivity.StateHandler.Songs, null, false);
 				}
 				catch (Exception e)
 				{
@@ -391,19 +421,23 @@ namespace MWP
 			{
 				InnitPlayer();
 			}
-			if (!IsPaused || reset)
+			if (!isPaused || reset)
 			{
 				mediaPlayer!.Reset();
 #if DEBUG
                 MyConsole.WriteLine($"SERVICE INDEX {QueueObject.Index}");
                 MyConsole.WriteLine($"SERVICE QUEUE {QueueObject.QueueCount}");
 #endif
-                mediaPlayer.SetDataSource(QueueObject.Current.Path);
+				if (!System.IO.File.Exists(QueueObject.Current.Path))
+				{
+					return;
+				}
+				mediaPlayer.SetDataSource(QueueObject.Current.Path);
 				mediaPlayer.Prepare();
 			}
 			mediaPlayer!.Start();
 
-			if (!IsPaused || reset)
+			if (!isPaused || reset)
 			{
 				UpdateMetadata();
 			}
@@ -411,7 +445,7 @@ namespace MWP
 			{
 				UpdatePlaybackState();
 			}
-			IsPaused = false;
+			isPaused = false;
 
 			isSkippingToNext = false;
 			isSkippingToPrevious = false;
@@ -423,7 +457,7 @@ namespace MWP
 		public void Pause()
 		{
 			mediaPlayer?.Pause();
-			IsPaused = true;
+			isPaused = true;
 			UpdatePlaybackState();
 		}
 
@@ -439,14 +473,14 @@ namespace MWP
 		}
 
 		///<summary>
-		///Plays next song in queue
+		///Plays next song in <see cref="MyMediaQueue.Queue"/>
 		///</summary>
 		public void NextSong(bool user = true)
 		{
 			if (mediaPlayer == null) return;
 			isSkippingToNext = true;
-			IsPaused = false;
-			if (!user && QueueObject.LoopState == Enums.LoopState.Single)
+			isPaused = false;
+			if (!user && QueueObject.LoopState == LoopState.Single)
 			{
 				Play();
 			}
@@ -458,7 +492,7 @@ namespace MWP
 		}
 
 		///<summary>
-		///Plays previous song in queue
+		///Plays previous song in <see cref="MyMediaQueue.Queue"/>
 		///</summary>
 		public void PreviousSong()
 		{
@@ -469,26 +503,37 @@ namespace MWP
 				return;
 			}
 			isSkippingToPrevious = true;
-			IsPaused = false;
+			isPaused = false;
 			QueueObject.DecrementIndex();
             Play();
 			isSkippingToPrevious = false;
 		}
 
+		/// <summary>
+		/// Seeks to <paramref name="millis"/>
+		/// </summary>
+		/// <param name="millis">Position to seek to in milliseconds</param>
 		public void SeekTo(int millis)
 		{
-#if DEBUG
-            MyConsole.WriteLine("SEEEEEKING");
-#endif
-
-            mediaPlayer.SeekTo(millis);
+            mediaPlayer?.SeekTo(millis);
 		}
 
+		/// <summary>
+		/// Generates new <see cref="MyMediaQueue.Queue"/> in <see cref="queueObject"/>
+		/// </summary>
+		/// <param name="source">Content of new <see cref="MyMediaQueue.Queue"/></param>
+		/// <param name="play">Whether to start playback</param>
 		public void GenerateQueue(Song source, bool play = true)
 		{
 			GenerateQueue(new List<Song> { source }, null, play);
 		}
-		
+
+		/// <summary>
+		/// Generates new <see cref="MyMediaQueue.Queue"/> in <see cref="queueObject"/>
+		/// </summary>
+		/// <param name="source">Content of new <see cref="MyMediaQueue.Queue"/></param>
+		/// <param name="id">id of songs object to be played for <see cref="MyMediaQueue.Index"/> lookup purposes</param>
+		/// <param name="play">Whether to start playback</param>
 		public void GenerateQueue(IEnumerable<Song> source, Guid? id = null, bool play = true)
 		{
 			QueueObject.GenerateQueue(source, id);
@@ -498,10 +543,23 @@ namespace MWP
 			}
 		}
 		
+		/// <summary>
+		/// Generates new <see cref="MyMediaQueue.Queue"/> in <see cref="queueObject"/>
+		/// </summary>
+		/// <param name="source">Content of new <see cref="MyMediaQueue.Queue"/></param>
+		/// <param name="id">id of songs object to be played for <see cref="MyMediaQueue.Index"/> lookup purposes</param>
+		/// <param name="play">Whether to start playback</param>
 		public void GenerateQueue(MusicBaseContainer source, Guid? id = null, bool play = true)
 		{
 			GenerateQueue(source.Songs, id, play);
 		}
+		
+		/// <summary>
+		/// Generates new <see cref="MyMediaQueue.Queue"/> in <see cref="queueObject"/>
+		/// </summary>
+		/// <param name="source">Content of new <see cref="MyMediaQueue.Queue"/></param>
+		/// <param name="id">id of songs object to be played for <see cref="MyMediaQueue.Index"/> lookup purposes</param>
+		/// <param name="play">Whether to start playback</param>
 		public void GenerateQueue(IEnumerable<MusicBaseContainer> source, Guid? id = null, bool play = true)
 		{
 			IEnumerable<Song> songs = source.SelectMany(s => s.Songs);
@@ -509,7 +567,7 @@ namespace MWP
 		}
 
 		///<summary>
-		///Adds single track or entire album/author to the end of queue from <paramref name="addition"/> path
+		///Adds single <see cref="Song"/> to the end of <see cref="MyMediaQueue.Queue"/> from <paramref name="addition"/>
 		///</summary>
 		public void AddToQueue(Song addition)
 		{
@@ -517,20 +575,23 @@ namespace MWP
 		}
 
 		///<summary>
-		///Adds list of songs to the end of queue from <paramref name="addition"/>
+		///Adds <see cref="IEnumerable{T}"/> of <see cref="Song"/> to the end of <see cref="MyMediaQueue.Queue"/> from <paramref name="addition"/>
 		///</summary>
-		public void AddToQueue(List<Song> addition)
+		public void AddToQueue(IEnumerable<Song> addition)
 		{
 			QueueObject.AppendToQueue(addition);
 		}
 
+		///<summary>
+		///Adds <see cref="IEnumerable{T}"/> of <see cref="Song"/> to the end of <see cref="MyMediaQueue.Queue"/> from <paramref name="obj"/>
+		///</summary>
 		public void AddToQueue(MusicBaseContainer obj)
 		{
 			AddToQueue(obj.Songs);
 		}
 
 		///<summary>
-		///Prepends song or entire album/author to queue
+		///Prepends <see cref="Song"/> to <see cref="MyMediaQueue.Queue"/>
 		///</summary>
 		public void PlayNext(Song addition)
 		{
@@ -539,26 +600,30 @@ namespace MWP
 		}
 
 		///<summary>
-		///Adds song list as first to queue
+		///Adds <see cref="IEnumerable{T}"/> of <see cref="Song"/> to start of <see cref="MyMediaQueue.Queue"/>
 		///</summary>
 		public void PlayNext(List<Song> addition)
 		{
 			QueueObject.PrependToQueue(addition);
         }
 
+		/// <summary>
+		/// Adds <see cref="IEnumerable{T}"/> of <see cref="Song"/> to start of <see cref="MyMediaQueue.Queue"/> from <paramref name="addition"/>
+		/// </summary>
+		/// <param name="addition">Content to be added</param>
 		public void PlayNext(MusicBaseContainer addition)
 		{
 			PlayNext(addition.Songs);
 		}
 
 		///<summary>
-		///Shuffles or unshuffles queue and updates shuffling for all new queues based on <paramref name="newShuffleState"/> state
+		///Shuffles or unshuffles <see cref="MyMediaQueue.Queue"/> and updates shuffling for all new <see cref="MyMediaQueue.Queue"/>s based on <paramref name="newShuffleState"/> state
 		///</summary>
 		public void Shuffle(bool newShuffleState)
 		{
 			QueueObject.IsShuffled = newShuffleState;
 			UpdatePlaybackState();
-			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.stateHandler.view, Assets);
+			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.StateHandler.view, Assets);
 		}
 
 		///<summary>
@@ -568,16 +633,16 @@ namespace MWP
 		{
 			QueueObject.ToggleLoop(state);
             UpdatePlaybackState();
-            if (Assets != null) SidePlayer.populate_side_bar(MainActivity.stateHandler.view, Assets);
+            if (Assets != null) SidePlayer.populate_side_bar(MainActivity.StateHandler.view, Assets);
 #if DEBUG
             MyConsole.WriteLine("TOGGLE LOOP");
 #endif
         }
 
 		///<summary>
-		///Cycles through loop states based on <paramref name="state"/> value
+		///Cycles through loop states based on <paramref name="loopState"/> value
 		///</summary>
-		public void ToggleLoop(Enums.LoopState loopState)
+		public void ToggleLoop(LoopState loopState)
 		{
 			ToggleLoop((int)loopState);
 		}
@@ -622,7 +687,7 @@ namespace MWP
 
 			if (audioManager == null) return false;
 #pragma warning disable CS0618 // Type or member is obsolete
-			AudioFocusRequest request2 = audioManager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
+			AudioFocusRequest request2 = audioManager.RequestAudioFocus(this, Stream.Music, AudioFocus.Gain);
 #pragma warning restore CS0618 // Type or member is obsolete
 			if (request2 != AudioFocusRequest.Granted)
 			{
@@ -720,9 +785,8 @@ namespace MWP
 			}
 
 			isFocusGranted = false;
-			isUsed = false;
 			lostFocusDuringPlay = false;
-			IsPaused = false;
+			isPaused = false;
 			isSkippingToNext = false;
 			isSkippingToPrevious = false;
 			isBuffering = true;
@@ -731,14 +795,31 @@ namespace MWP
 		/// <inheritdoc />
 		public override IBinder OnBind(Intent? intent)
 		{
-			Binder = new MediaServiceBinder(this);
-			return Binder;
+#if DEBUG
+			MyConsole.WriteLine("I'm being bound");
+#endif
+			boundServices++;
+			return new MediaServiceBinder(this);
 		}
 
+		/// <inheritdoc />
+		public override bool OnUnbind(Intent? intent)
+		{
+			boundServices--;
+			return false;
+		}
+
+		/// <inheritdoc />
 		protected override void Dispose(bool disposing)
 		{
+			if (boundServices > 0)
+			{
+#if DEBUG
+				MyConsole.WriteLine($"Not disposing still, have {boundServices} binds");
+#endif
+				return;
+			}
 			CleanUp();
-			base.Dispose(disposing);
 		}
 
 		/*public void Dispose()
