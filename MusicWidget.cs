@@ -2,8 +2,10 @@ using System;
 using Android.App;
 using Android.Appwidget;
 using Android.Content;
+using Android.OS;
 using Android.Widget;
 using Java.Lang;
+using MWP.Helpers;
 
 namespace MWP
 {
@@ -38,6 +40,7 @@ namespace MWP
         private void SetTextViewText(RemoteViews widgetView)
         {
             widgetView.SetTextViewText(Resource.Id.widgetText, "HelloFromWidget");
+            
         }
         
         private void RegisterClicks(Context context, int[]? widgetIds, RemoteViews widgetView)
@@ -47,14 +50,19 @@ namespace MWP
             intent.PutExtra(AppWidgetManager.ExtraAppwidgetIds, widgetIds);
             
             // handle button click
-            widgetView.SetOnClickPendingIntent(Resource.Id.widgetButton, GetPendingSelfIntent(context, WIDGET_BUTTON_TAG));
+            // widgetView.SetOnClickPendingIntent(Resource.Id.widgetButton, GetPendingSelfIntent(context, WIDGET_BUTTON_TAG));
         }
 
         private PendingIntent? GetPendingSelfIntent(Context context, string action)
         {
             var intent = new Intent(context, typeof(MusicWidget));
             intent.SetAction(action);
-            return PendingIntent.GetBroadcast(context, 0, intent, 0);
+            
+            var pendingIntentFlags = (Build.VERSION.SdkInt >= BuildVersionCodes.S)
+                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Mutable
+                : PendingIntentFlags.UpdateCurrent;
+            
+            return PendingIntent.GetBroadcast(context, 0, intent, pendingIntentFlags);
         }
 
 
@@ -66,6 +74,9 @@ namespace MWP
             if (WIDGET_BUTTON_TAG.Equals(intent?.Action))
             {
                 Toast.MakeText(context, "Hello from button", ToastLength.Long)?.Show();
+                #if DEBUG
+                MyConsole.WriteLine("Widget button clicked");
+                #endif
             }
             
             

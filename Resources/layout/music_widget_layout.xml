@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:id="@+id/widgetBackground"
-              android:layout_height="150dp"
-              android:layout_width="match_parent"
+              android:layout_height="100dp"
+              android:layout_width="330dp"
               android:layout_margin="20dp"
-              android:orientation="vertical"
+              android:orientation="horizontal"
               android:background="@drawable/widget_rounded"
-              android:gravity="center"
+              android:gravity="left"
 >
-    <Button 
-            android:layout_width="wrap_content" 
-            android:layout_height="wrap_content"
-            android:text="Button"
-            android:textSize="25dp"
-            android:id="@+id/widgetButton"
+   
+   
+    <ImageView android:layout_width="100dp" android:layout_height="match_parent"
+               android:src="@drawable/side_nav_bar"
+               android:background="@drawable/rounded_button_left"
+               android:clipToOutline="true"
     />
+
+    
+
     <TextView 
             android:layout_width="wrap_content" 
             android:layout_height="wrap_content"
