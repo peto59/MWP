@@ -279,65 +279,59 @@ namespace MWP.BackEnd.Network
             {
                 case CanSend.Allowed:
                 {
-                    IPEndPoint destinationEndpoint = new IPEndPoint(myBroadcastIp, BroadcastPort);
-
-                    int retries = 0;
-                    const int maxRetries = 3;
-
-                    IPEndPoint iep = new IPEndPoint(IPAddress.Any, BroadcastPort);
-                    bool processedAtLestOne = false;
-                    do
+                    if (myBroadcastIp != null)
                     {
-                        Sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
-                        retries++;
-                        try
+                        IPEndPoint destinationEndpoint = new IPEndPoint(myBroadcastIp, BroadcastPort);
+
+                        int retries = 0;
+                        const int maxRetries = 3;
+
+                        IPEndPoint iep = new IPEndPoint(IPAddress.Any, BroadcastPort);
+                        bool processedAtLestOne = false;
+                        do
                         {
-                            while (true)
+                            Sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
+                            retries++;
+                            try
                             {
-                                EndPoint groupEp = iep;
-                                Sock.ReceiveFrom(Buffer, ref groupEp);
-                                IPAddress targetIp = ((IPEndPoint)groupEp).Address;
-                                string remoteHostname = Encoding.UTF8.GetString(Buffer).TrimEnd('\0');
+                                while (true)
+                                {
+                                    EndPoint groupEp = iep;
+                                    Sock.ReceiveFrom(Buffer, ref groupEp);
+                                    IPAddress targetIp = ((IPEndPoint)groupEp).Address;
+                                    string remoteHostname = Encoding.UTF8.GetString(Buffer).TrimEnd('\0');
 #if DEBUG
-                                MyConsole.WriteLine($"found remote: {remoteHostname}, {targetIp}");       
+                                    MyConsole.WriteLine($"found remote: {remoteHostname}, {targetIp}");       
 #endif                
+                                    AddAvailableHost(targetIp, remoteHostname);
+                                    processedAtLestOne = true;
+                                    //TODO: add to available targets. Don't connect directly, check if sync is allowed.
+                                    //TODO: doesn't work with one time sends....
+                                    if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                 
-                                DateTime now = DateTime.Now;
-                                MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, remoteHostname));
-                                processedAtLestOne = true;
-                                //TODO: add to available targets. Don't connect directly, check if sync is allowed.
-                                //TODO: doesn't work with one time sends....
-                                //TODO: here
-                                if (!FileManager.IsTrustedSyncTarget(remoteHostname))
-                                {
-                                    FileManager.AddTrustedSyncTarget(remoteHostname);
-                                    //Thread.Sleep(100);
-                                }
-                                if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
-                                
-                                Connected.Add(targetIp);
-                                new Thread(() =>
-                                {
-                                    if (!P2PDecide(targetIp, songsToSend))
+                                    Connected.Add(targetIp);
+                                    new Thread(() =>
                                     {
-                                        Connected.Remove(targetIp);
-                                    }
-                                }).Start();
+                                        if (!P2PDecide(targetIp, songsToSend))
+                                        {
+                                            Connected.Remove(targetIp);
+                                        }
+                                    }).Start();
+                                }
                             }
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-                    } while (retries < maxRetries && !processedAtLestOne);
+                            catch
+                            {
+                                // ignored
+                            }
+                        } while (retries < maxRetries && !processedAtLestOne);
 
 #if DEBUG
-                    if (retries == maxRetries)
-                    {
-                        MyConsole.WriteLine("No reply");
+                        if (retries == maxRetries)
+                        {
+                            MyConsole.WriteLine("No reply");
+                        }
                     }
 #endif
-                    
                     break;
                 }
                 case CanSend.Test:
@@ -422,7 +416,7 @@ namespace MWP.BackEnd.Network
                 NetworkManager.Common.GetWifiSsid();
             }
             
-            if (!FileManager.IsTrustedSyncTarget(NetworkManager.Common.CurrentSsid))
+            if (!FileManager.IsTrustedSsid(NetworkManager.Common.CurrentSsid))
             {
                 NetworkManager.Common.CanSend = CanSend.Rejected;
                 return;
@@ -482,6 +476,43 @@ namespace MWP.BackEnd.Network
                 throw new Exception("You're fucked, boy. Go buy something else than Nokia 3310");
             }
             return (storedPrivKey, storedPubKey);
+        }
+        
+        internal static void AddAvailableHost(IPAddress targetIp, string hostname)
+        {
+            DateTime now = DateTime.Now;
+            
+            List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.StateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
+            switch (currentAvailableHosts.Count)
+            {
+                case > 1:
+                {
+                    foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) currentAvailableHost in currentAvailableHosts)
+                    {
+                        MainActivity.StateHandler.AvailableHosts.Remove(currentAvailableHost);
+                    }
+                    MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, hostname));
+                    break;
+                }
+                case 1:
+                {
+                    int index = MainActivity.StateHandler.AvailableHosts.IndexOf(currentAvailableHosts.First());
+                    MainActivity.StateHandler.AvailableHosts[index] = (targetIp, now, hostname);
+                    break;
+                }
+                default:
+                    MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, hostname));
+                    break;
+            }
+            
+            //remove stale hosts
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.StateHandler.AvailableHosts.Where(a =>
+                         a.lastSeen > now + NetworkManager.RemoveInterval))
+            {
+                MainActivity.StateHandler.AvailableHosts.Remove(removal);
+            }
+            
+            StateHandler.TriggerShareFragmentRefresh();
         }
     }
 

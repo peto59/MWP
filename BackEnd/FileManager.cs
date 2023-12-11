@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Android.App;
 using Android.Views;
 using Google.Android.Material.Snackbar;
@@ -657,19 +658,11 @@ namespace MWP.BackEnd
                 tfile.Tag.MusicBrainzTrackId = recordingId;
             }
             
-            //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
             if (!string.IsNullOrEmpty(acoustIdTrackId))
             {
-                Tag custom = (Tag) tfile.GetTag(TagTypes.Id3v2);
-                PrivateFrame p = PrivateFrame.Get(custom, "AcoustIDTrackID", true);
-                p.PrivateData = System.Text.Encoding.UTF8.GetBytes(acoustIdTrackId);
+                tfile.writePrivateFrame("AcoustIDTrackID", acoustIdTrackId);
             }
             
-            //reading private frame
-            // File f = File.Create("<YourMP3.mp3>");
-            // TagLib.Id3v2.Tag t = (TagLib.Id3v2.Tag)f.GetTag(TagTypes.Id3v2);
-            // PrivateFrame p = PrivateFrame.Get(t, "CustomKey", false); // This is important. Note that the third parameter is false.
-            // string data = Encoding.UTF8.GetString(p.PrivateData.Data);
             
             string output = $"{_musicFolder}/{Sanitize(GetAlias(artists[0]))}";
             if (!string.IsNullOrEmpty(album))

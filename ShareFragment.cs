@@ -153,7 +153,7 @@ namespace MWP
              */ 
             List<(string hostname, DateTime? lastSeen, bool state)> allHosts = NetworkManager.GetAllHosts();
             availableHostsList = view?.FindViewById<LinearLayout>(Resource.Id.available_hosts_list);
-            foreach (var (hostname, lastSeen, state) in allHosts)
+            foreach ((string hostname, DateTime? lastSeen, bool state) in allHosts)
                 availableHostsList?.AddView(AvailableHostsTile(hostname, lastSeen, state));
             
             
@@ -278,7 +278,7 @@ namespace MWP
             crossButton.TextSize = 15;
             crossButton.Typeface = font;
 
-            if (state)
+            if (!state)
             {
                 Drawable? icon = context.GetDrawable(Resource.Drawable.plus);
                 crossButton.SetBackgroundResource(Resource.Drawable.rounded_button_green);
@@ -411,8 +411,8 @@ namespace MWP
 
                         yes.Click += (_, _) =>
                         {
-                            NetworkManagerCommon.TestNetwork();
                             FileManager.AddTrustedSsid(NetworkManager.Common.CurrentSsid);
+                            NetworkManagerCommon.TestNetwork();
                             
                             dialog?.Dismiss();
                             RefreshFragment();

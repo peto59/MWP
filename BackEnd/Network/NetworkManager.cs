@@ -27,7 +27,7 @@ namespace MWP.BackEnd.Network
         //TODO: move to settings
         private const int numberOfMissedBroadcastsToRemoveHost = 3;
 
-        private static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
+        internal static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
 
         /// <summary>
         /// Starts listening for broadcasts, sending broadcasts and managing connections. Entry point for NetworkManager.
@@ -94,7 +94,7 @@ namespace MWP.BackEnd.Network
 #endif
                                     sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), groupEp);
                                     
-                                    AddAvailableHost(targetIp, remoteHostname);
+                                    NetworkManagerCommon.AddAvailableHost(targetIp, remoteHostname);
                                     
 
                                     //TODO: add to available targets. Don't connect directly, check if sync is allowed.
@@ -154,41 +154,6 @@ namespace MWP.BackEnd.Network
             }
             output.AddRange(trusted.Select(s => ((string hostname, DateTime? lastSeen, bool state))(s, null, true)));
             return output;
-        }
-
-        private static void AddAvailableHost(IPAddress targetIp, string hostname)
-        {
-            DateTime now = DateTime.Now;
-            
-            List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.StateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
-            switch (currentAvailableHosts.Count)
-            {
-                case > 1:
-                {
-                    foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) currentAvailableHost in currentAvailableHosts)
-                    {
-                        MainActivity.StateHandler.AvailableHosts.Remove(currentAvailableHost);
-                    }
-                    MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, hostname));
-                    break;
-                }
-                case 1:
-                {
-                    int index = MainActivity.StateHandler.AvailableHosts.IndexOf(currentAvailableHosts.First());
-                    MainActivity.StateHandler.AvailableHosts[index] = (targetIp, now, hostname);
-                    break;
-                }
-                default:
-                    MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, hostname));
-                    break;
-            }
-            
-            //remove stale hosts
-            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.StateHandler.AvailableHosts.Where(a =>
-                         a.lastSeen > now + RemoveInterval))
-            {
-                MainActivity.StateHandler.AvailableHosts.Remove(removal);
-            }
         }
     }
 }
