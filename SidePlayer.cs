@@ -5,6 +5,7 @@ using Android.Widget;
 using Android.Graphics;
 using Android.Content.Res;
 using System.Threading;
+using Android.App;
 using MWP.BackEnd.Player;
 #if DEBUG
 using MWP.Helpers;
@@ -143,7 +144,7 @@ namespace MWP
 			return cube;
 		}
 
-		private static void pause_play(object sender, EventArgs e, AppCompatActivity context)
+		private static void pause_play()
 		{
 			if (!MainActivity.ServiceConnection.Connected) return;
 			if (MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)
@@ -156,21 +157,21 @@ namespace MWP
 			}
 		}
 
-		public static void SetPlayButton(AppCompatActivity context)
+		public static void SetPlayButton()
 		{
-			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("play.png")));
+			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(Application.Context.Assets?.Open("play.png")));
 		}
 
-		public static void SetStopButton(AppCompatActivity context)
+		public static void SetStopButton()
 		{
-			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("pause.png")));
+			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(Application.Context.Assets?.Open("pause.png")));
 		}
 
 	  
-		public static void populate_side_bar(AppCompatActivity context, AssetManager assets)
+		public static void populate_side_bar(AppCompatActivity? context, AssetManager assets)
 		{
 			// basic  vars
-			if (context.Resources is { DisplayMetrics: not null })
+			if (context?.Resources is { DisplayMetrics: not null })
 			{
 				float scale = context.Resources.DisplayMetrics.Density;
 				Typeface? font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
@@ -279,7 +280,7 @@ namespace MWP
 					//_playerButtons.Add(last, "last");
 
 					LinearLayout playPause = cube_creator("big", scale, context);
-					playPause.Click += (sender, e) => { pause_play(sender, e, context);  };
+					playPause.Click += (sender, e) => { pause_play();  };
 					//_playerButtons.Add(playPause, "play_pause");
 
 					LinearLayout next = cube_creator("small", scale, context, "right");
@@ -318,7 +319,7 @@ namespace MWP
 
 			// progress song
 
-            TextView? progTime = context.FindViewById<TextView>(Resource.Id.progress_time);
+            TextView? progTime = context?.FindViewById<TextView>(Resource.Id.progress_time);
             if (progTime != null)
             {
 	            progTime.Click += delegate
@@ -327,8 +328,8 @@ namespace MWP
 	            };
 
 	            if (!(MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)) return;
-	            TextView? constTime = context.FindViewById<TextView>(Resource.Id.end_time);
-	            SeekBar? sek = context.FindViewById<SeekBar>(Resource.Id.seek);
+	            TextView? constTime = context?.FindViewById<TextView>(Resource.Id.end_time);
+	            SeekBar? sek = context?.FindViewById<SeekBar>(Resource.Id.seek);
 	            if (constTime != null)
 		            constTime.Text = converts_millis_to_seconds_and_minutes(MainActivity.ServiceConnection.Binder?.Service.Duration ?? 0);
 	            if (sek != null)
@@ -356,10 +357,10 @@ namespace MWP
             }
 		}
 
-		public static void StartMovingProgress(CancellationToken token, AppCompatActivity context)
+		public static void StartMovingProgress(CancellationToken token, AppCompatActivity? context)
 		{
-            SeekBar? sek = context.FindViewById<SeekBar>(Resource.Id.seek);
-            TextView? progTime = context.FindViewById<TextView>(Resource.Id.progress_time);
+            SeekBar? sek = context?.FindViewById<SeekBar>(Resource.Id.seek);
+            TextView? progTime = context?.FindViewById<TextView>(Resource.Id.progress_time);
             _ = Interval.SetIntervalAsync(() =>
 			{
                 sek?.SetProgress((MainActivity.ServiceConnection.Binder?.Service.CurrentPosition ?? 0) / 1000, true);

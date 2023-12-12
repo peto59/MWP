@@ -8,6 +8,7 @@ using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.App;
 using System;
+using System.Drawing;
 using System.IO;
 using System.Runtime.Remoting.Contexts;
 using MWP.BackEnd.Player;
@@ -61,7 +62,7 @@ namespace MWP
                 notificationBuilder.AddAction(
                     
                     MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2, "shuffle",
-                      PendingIntent.GetService(
+                      PendingIntent.GetBroadcast(
                           AndroidApp.Context, Convert.ToInt32(MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false),
                           new Intent(MyMediaBroadcastReceiver.SHUFFLE, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                           .PutExtra("shuffle", !MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false), PendingIntentFlags.Mutable
@@ -71,7 +72,7 @@ namespace MWP
                 if(MainActivity.ServiceConnection.Binder?.Service?.QueueObject.ShowPrevious ?? false){
                     notificationBuilder.AddAction(
                         Resource.Drawable.previous, "Previous",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.PREVIOUS_SONG, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetBroadcast(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.PREVIOUS_SONG, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
 
@@ -79,21 +80,20 @@ namespace MWP
                 {
                     notificationBuilder.AddAction(
                         Resource.Drawable.pause_fill1_wght200_grad200_opsz48, "pause",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.PAUSE, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetBroadcast(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.PAUSE, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
                 else
                 {
                     notificationBuilder.AddAction(
                         Resource.Drawable.play, "play",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.PLAY, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetBroadcast(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.PLAY, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
-                
                 if(MainActivity.ServiceConnection.Binder?.Service?.QueueObject.ShowNext ?? false){
                     notificationBuilder.AddAction(
                         Resource.Drawable.next, "next",
-                        PendingIntent.GetService(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.NEXT_SONG, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
+                        PendingIntent.GetBroadcast(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.NEXT_SONG, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable)
                     );
                 }
 
@@ -106,7 +106,7 @@ namespace MWP
 #endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.no_repeat, "no_repeat",
-                            PendingIntent.GetService(
+                            PendingIntent.GetBroadcast(
                                 AndroidApp.Context, (int)loopState,
                                 new Intent(MyMediaBroadcastReceiver.TOGGLE_LOOP, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                                     .PutExtra("loopState", 1), PendingIntentFlags.Mutable
@@ -119,7 +119,7 @@ namespace MWP
 #endif
                         notificationBuilder.AddAction(
                             Resource.Drawable.repeat, "repeat",
-                            PendingIntent.GetService(
+                            PendingIntent.GetBroadcast(
                                 AndroidApp.Context, (int)loopState,
                                 new Intent(MyMediaBroadcastReceiver.TOGGLE_LOOP, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                                     .PutExtra("loopState", 2), PendingIntentFlags.Mutable
@@ -129,10 +129,10 @@ namespace MWP
                     case LoopState.Single:
 #if DEBUG
                         MyConsole.WriteLine("repeat_one >>>>>>>>");
-#endif
+#endif  
                         notificationBuilder.AddAction(
                             Resource.Drawable.repeat_one, "repeat_one",
-                            PendingIntent.GetService(
+                            PendingIntent.GetBroadcast(
                                 AndroidApp.Context, (int)loopState,
                                 new Intent(MyMediaBroadcastReceiver.TOGGLE_LOOP, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
                                     .PutExtra("loopState", 0), PendingIntentFlags.Mutable

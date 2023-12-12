@@ -27,8 +27,9 @@ namespace MWP.BackEnd.Player
 	public class MediaService : Service, AudioManager.IOnAudioFocusChangeListener
 	{
 		private MediaSessionCompat? session;
-		private IBinder? Binder { get; set; }
-		
+
+		private int boundServices = 0;
+
 		/// <summary>
 		/// handle for current media session
 		/// </summary>
@@ -112,6 +113,17 @@ namespace MWP.BackEnd.Player
 			if (ApplicationContext != null) audioManager = AudioManager.FromContext(ApplicationContext);
 		}
 
+		/// <inheritdoc />
+		public override void OnCreate()
+		{
+			base.OnCreate();
+			InnitPlayer();
+			InnitAudioManager();
+			InnitSession();
+			InnitFocusRequest();
+			InnitNotification();
+		}
+
 		///<summary>
 		///Creates new MediaSession
 		///</summary>
@@ -122,8 +134,9 @@ namespace MWP.BackEnd.Player
 				InnitPlayer();
 			}
 			session = new MediaSessionCompat(AndroidApp.Context, "MusicService");
-			session.SetCallback(new MediaSessionCallback());
 			session.SetFlags((int)(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls));
+			session.SetCallback(new MediaSessionCallback(new MediaServiceBinder(this)));
+			session.Active = true;
 			//session.SetSessionActivity()
 		}
 
@@ -227,16 +240,12 @@ namespace MWP.BackEnd.Player
 		/// <inheritdoc />
 		public override StartCommandResult OnStartCommand(Intent? intent, StartCommandFlags flags, int startId)
 		{
-			InnitPlayer();
-			InnitAudioManager();
-			InnitSession();
-			InnitFocusRequest();
-			InnitNotification();
 #if DEBUG
 			MyConsole.WriteLine("CREATING NEW SESSION");
 #endif
 			return StartCommandResult.Sticky;
 		}
+
 		private long GetAvailableActions()
 		{
 			if (mediaPlayer == null)
@@ -280,16 +289,16 @@ namespace MWP.BackEnd.Player
 			{
 				position = mediaPlayer.CurrentPosition;
 				state = PlaybackStateCode.Playing;
-				SidePlayer.SetStopButton(MainActivity.StateHandler.view);
 				MainActivity.StateHandler.SongProgressCts.Cancel();
 				MainActivity.StateHandler.SongProgressCts = new CancellationTokenSource();
+				SidePlayer.SetStopButton();
 				SidePlayer.StartMovingProgress(MainActivity.StateHandler.SongProgressCts.Token, MainActivity.StateHandler.view);
 			}
 			else if (isPaused)
 			{
 				state = PlaybackStateCode.Paused;
 				position = mediaPlayer?.CurrentPosition ?? 0;
-				SidePlayer.SetPlayButton(MainActivity.StateHandler.view);
+				SidePlayer.SetPlayButton();
 				MainActivity.StateHandler.SongProgressCts.Cancel();
 			}
 			else if (isSkippingToNext)
@@ -419,7 +428,11 @@ namespace MWP.BackEnd.Player
                 MyConsole.WriteLine($"SERVICE INDEX {QueueObject.Index}");
                 MyConsole.WriteLine($"SERVICE QUEUE {QueueObject.QueueCount}");
 #endif
-                mediaPlayer.SetDataSource(QueueObject.Current.Path);
+				if (!System.IO.File.Exists(QueueObject.Current.Path))
+				{
+					return;
+				}
+				mediaPlayer.SetDataSource(QueueObject.Current.Path);
 				mediaPlayer.Prepare();
 			}
 			mediaPlayer!.Start();
@@ -780,17 +793,33 @@ namespace MWP.BackEnd.Player
 		}
 
 		/// <inheritdoc />
-		public override IBinder? OnBind(Intent? intent)
+		public override IBinder OnBind(Intent? intent)
 		{
-			Binder = new MediaServiceBinder(this);
-			return Binder;
+#if DEBUG
+			MyConsole.WriteLine("I'm being bound");
+#endif
+			boundServices++;
+			return new MediaServiceBinder(this);
+		}
+
+		/// <inheritdoc />
+		public override bool OnUnbind(Intent? intent)
+		{
+			boundServices--;
+			return false;
 		}
 
 		/// <inheritdoc />
 		protected override void Dispose(bool disposing)
 		{
+			if (boundServices > 0)
+			{
+#if DEBUG
+				MyConsole.WriteLine($"Not disposing still, have {boundServices} binds");
+#endif
+				return;
+			}
 			CleanUp();
-			base.Dispose(disposing);
 		}
 
 		/*public void Dispose()

@@ -26,7 +26,7 @@ namespace MWP.BackEnd
         /// <summary>
         /// Current view
         /// </summary>
-        public AppCompatActivity view;
+        public AppCompatActivity? view;
         /// <summary>
         /// Main Activity instance
         /// </summary>
