@@ -5,7 +5,9 @@ using Android.Content;
 using Android.OS;
 using Android.Widget;
 using Java.Lang;
+#if DEBUG
 using MWP.Helpers;
+#endif
 
 namespace MWP
 {
