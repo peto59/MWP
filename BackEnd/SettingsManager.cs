@@ -16,6 +16,7 @@ namespace MWP.BackEnd
         private static void RegisterSettings()
         {
             _shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
+            _shouldUseChromaprintAtDiscover = new BoolSetting(ShareName, "ShouldUseChromaprintAtDiscover", true);
             _canUseNetwork = new IntSetting(ShareName, "canUseNetwork", (int)CanUseNetworkState.None);
             _defaultDownloadAction = new IntSetting(ShareName, "defaultDownloadAction", (int)DownloadActions.DownloadOnly);
             _checkUpdates = new IntSetting(ShareName, "checkUpdates", (int)AutoUpdate.NoState);
@@ -28,12 +29,13 @@ namespace MWP.BackEnd
             set => _shouldUseChromaprintAtDownload.Value = value;
         }
 
-        /*private static Setting<bool> shouldUseChromaprintAtDiscover = new BoolSetting(ShareName, "ShouldUseChromaprintAtDiscover", false);
+        private static Setting<bool> _shouldUseChromaprintAtDiscover = new BoolSetting(ShareName, "ShouldUseChromaprintAtDiscover", true);
         public static bool ShouldUseChromaprintAtDiscover
         {
-            get => shouldUseChromaprintAtDiscover.Value;
-            set => shouldUseChromaprintAtDiscover.Value = value;
-        }*/
+            get => _shouldUseChromaprintAtDiscover.Value;
+            set => _shouldUseChromaprintAtDiscover.Value = value;
+        }
+        
         
         private static Setting<int> _canUseNetwork = new IntSetting(ShareName, "canUseNetwork", (int)CanUseNetworkState.None);
         public static CanUseNetworkState CanUseNetwork

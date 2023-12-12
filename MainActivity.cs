@@ -523,6 +523,7 @@ namespace MWP
         {
             FileManager.Innit();
             
+            
             if (SettingsManager.CheckUpdates == AutoUpdate.Requested)
             {
                 CheckUpdates();

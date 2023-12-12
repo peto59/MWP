@@ -189,7 +189,7 @@ namespace MWP
         /// <param name="imgUrl"></param>
         /// <param name="forw"></param>
         /// <param name="back"></param>
-        public static void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, byte[] imgArr, string originalAuthor, string originalTitle, bool forw, bool back)
+        private static void SongSelectionDialog(string songNameIn, string songArtistIn, string songAlbumIn, byte[] imgArr, string originalAuthor, string originalTitle, bool forw, bool back)
         {
     
             _bottomDialog = new BottomSheetDialog(MainActivity.StateHandler.view);

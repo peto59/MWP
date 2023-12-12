@@ -141,7 +141,15 @@ namespace MWP.BackEnd
         ///<summary>
         ///Creates virtual song topology in MainActivity.StateHandler
         ///</summary>
-        public static void GenerateList(string path, bool first = true)
+        public static void GenerateList(string path)
+        {
+            GenerateList(path, true);
+        }
+
+        ///<summary>
+        ///Creates virtual song topology in MainActivity.StateHandler
+        ///</summary>
+        private static void GenerateList(string path, bool first)
         {
 
             if (first)
@@ -585,6 +593,10 @@ namespace MWP.BackEnd
                     tfile.Save();
                 }
             }
+            else if(SettingsManager.ShouldUseChromaprintAtDiscover)
+            {
+                title = "";
+            }
             else
             {
                 title = Path.GetFileName(path).Replace(".mp3", "");
@@ -592,7 +604,26 @@ namespace MWP.BackEnd
                 tfile.Save();
             }
 
-            string[] artists = (tfile.Tag.Performers.Any() ? tfile.Tag.Performers : tfile.Tag.AlbumArtists.Any() ? tfile.Tag.AlbumArtists : new []{ "No Artist" }).Distinct().ToArray();
+            string[] artists;
+            if (tfile.Tag.Performers.Any())
+            {
+                artists = tfile.Tag.Performers;
+            }
+            else if (tfile.Tag.AlbumArtists.Any())
+            {
+                artists = tfile.Tag.AlbumArtists;
+            }
+            else if (SettingsManager.ShouldUseChromaprintAtDiscover)
+            {
+                artists = new[] { "No Artist" };
+            }
+            else
+            {
+                artists = new[] { "No Artist" };
+            }
+            artists = artists.Distinct().ToArray();
+
+
 
             string album = tfile.Tag.Album;
             if (isNew)
@@ -621,6 +652,10 @@ namespace MWP.BackEnd
             }
 
 
+            MainActivity.StateHandler.view.RunOnUiThread(() =>
+            {
+                YoutubeFragment.UpdateSsDialog(title, artists[0], album, tfile.Tag.Pictures[0].Data.Data, string.Empty, string.Empty, true, true);
+            });
             if (generateStateHandlerEntry)
             {
                 AddSong(path, title, artists, album);
