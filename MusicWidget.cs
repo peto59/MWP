@@ -74,9 +74,9 @@ namespace MWP
             if (WIDGET_BUTTON_TAG.Equals(intent?.Action))
             {
                 Toast.MakeText(context, "Hello from button", ToastLength.Long)?.Show();
-                #if DEBUG
+#if DEBUG
                 MyConsole.WriteLine("Widget button clicked");
-                #endif
+#endif
             }
             
             
