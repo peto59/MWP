@@ -8,25 +8,30 @@
               android:orientation="horizontal"
               android:background="@drawable/widget_rounded"
               android:gravity="left"
+              android:theme="@style/WidgetTheme"
 >
-   
-   
-    <ImageView android:layout_width="100dp" android:layout_height="match_parent"
-               android:src="@drawable/side_nav_bar"
-               android:background="@drawable/rounded_button_left"
-               android:clipToOutline="true"
-    />
 
+
+ 
+    <ImageView android:layout_width="100dp" android:layout_height="match_parent"
+               android:id="@+id/widgetImage"
+            
+    />
+    <!-- android:clipToOutline="true" -->
+    
     <LinearLayout 
             android:layout_width="wrap_content" 
             android:layout_height="match_parent"
             android:orientation="vertical"
+      
     >
+        
         <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/widgetText"
-                android:text="いきものこり・ぼくら"
+                android:id="@+id/widgetSongTitle"
+                android:singleLine="true"
+                android:text="Hello world"
                 android:textSize="17dp"
                 android:layout_marginLeft="10dp"
                 android:layout_marginTop="10dp"
@@ -35,12 +40,64 @@
         <TextView 
                 android:layout_width="wrap_content" 
                 android:layout_height="wrap_content"
-                android:text="Ichiko Aoba"
+                android:id="@+id/widgetSongArtist"
+                android:text="mr. prgr"
                 android:textSize="12dp"
                 android:layout_marginTop="2dp"
                 android:layout_marginLeft="10dp"
                 android:textColor="#BEBEBE"
+                android:singleLine="true"
         />
+        
+        
+        <LinearLayout 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="5dp"
+        >
+            <TextView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:background="@drawable/shuffle2"
+                    android:backgroundTint="#ffffff"
+                    android:layout_marginRight="10dp"
+                    android:id="@+id/widgetShuffleButton"
+            />
+            <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/previous"
+                    android:backgroundTint="#ffffff"
+                    android:id="@+id/widgetPreviousButton"
+            />
+            <TextView 
+                    android:layout_width="40dp" 
+                    android:layout_height="40dp"
+                    android:backgroundTint="#ffffff"
+                    android:background="@drawable/play"
+                    android:id="@+id/widgetPlayButton"
+            />
+            <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/next"
+                    android:backgroundTint="#ffffff"
+                    android:id="@+id/widgetNextButton"
+            />
+            <TextView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:background="@drawable/no_repeat"
+                    android:backgroundTint="#ffffff"
+                    android:layout_marginLeft="10dp"
+                    android:id="@+id/widgetRepeatButton"
+            />
+            
+        </LinearLayout>
+        
     </LinearLayout>
  
    

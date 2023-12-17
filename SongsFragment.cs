@@ -51,6 +51,8 @@ namespace MWP
             this.assets = assets;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
+
+          
         }
         
         

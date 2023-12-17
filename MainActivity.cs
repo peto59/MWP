@@ -346,6 +346,11 @@ namespace MWP
                     drawer?.CloseDrawer(GravityCompat.Start);
                     Title = "Share";
                 };
+            
+            /*
+             * Initialize Widget Service 
+             */
+            WidgetServiceHandler.Init(this);
         }
 
 

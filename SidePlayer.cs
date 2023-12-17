@@ -6,6 +6,9 @@ using Android.Graphics;
 using Android.Content.Res;
 using System.Threading;
 using Android.App;
+using Android.Appwidget;
+using Android.Content;
+using Java.Lang;
 using MWP.BackEnd.Player;
 #if DEBUG
 using MWP.Helpers;
@@ -18,6 +21,8 @@ namespace MWP
 		//private static Dictionary<LinearLayout, string> _playerButtons = new Dictionary<LinearLayout, string>();
 
 		static ImageView? _playImage;
+
+	
 
 		private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, string sides = "idk")
 		{
@@ -155,6 +160,8 @@ namespace MWP
 			{
 				MainActivity.ServiceConnection.Binder?.Service.Play();
 			}
+			
+			// WidgetServiceHandler.UpdateWidgetViews();
 		}
 
 		public static void SetPlayButton()

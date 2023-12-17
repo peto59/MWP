@@ -292,6 +292,7 @@ namespace MWP.BackEnd.Player
 				MainActivity.StateHandler.SongProgressCts.Cancel();
 				MainActivity.StateHandler.SongProgressCts = new CancellationTokenSource();
 				SidePlayer.SetStopButton();
+				WidgetServiceHandler.SetPauseButton();
 				SidePlayer.StartMovingProgress(MainActivity.StateHandler.SongProgressCts.Token, MainActivity.StateHandler.view);
 			}
 			else if (isPaused)
@@ -299,6 +300,7 @@ namespace MWP.BackEnd.Player
 				state = PlaybackStateCode.Paused;
 				position = mediaPlayer?.CurrentPosition ?? 0;
 				SidePlayer.SetPlayButton();
+				WidgetServiceHandler.SetPlayButton();
 				MainActivity.StateHandler.SongProgressCts.Cancel();
 			}
 			else if (isSkippingToNext)
@@ -337,6 +339,7 @@ namespace MWP.BackEnd.Player
 			}
 
 			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.StateHandler.view, Assets);
+			WidgetServiceHandler.UpdateWidgetViews();
 			notificationService.Notify();
 		}
 

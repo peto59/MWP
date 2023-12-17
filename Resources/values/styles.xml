@@ -17,4 +17,15 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
 
+    <declare-styleable name="AppWidgetAttrs">
+        <attr name="appWidgetPadding" format="dimension" />
+        <attr name="appWidgetInnerRadius" format="dimension" />
+        <attr name="appWidgetRadius" format="dimension" />
+    </declare-styleable>
+    <style name="WidgetTheme" parent="Theme.Material3.DayNight">
+        <item name="appWidgetRadius">@dimen/rounded_corners</item>
+        <item name="appWidgetInnerRadius">@dimen/rounded_corners_inner</item>
+        <item name="appWidgetPadding">0dp</item>
+    </style>
+
 </resources>
