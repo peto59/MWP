@@ -88,11 +88,11 @@ namespace MWP.BackEnd.Player
                 case MediaType.Song:
                     if (mediaId == MyMediaBrowserService.MySongsPlayAll)
                     {
-                        binder.Service.GenerateQueue(MainActivity.StateHandler.Songs);
+                        binder.Service.GenerateQueue(StateHandler.Songs);
                     }
                     else if (mediaId == MyMediaBrowserService.MySongsShuffle)
                     {
-                        binder.Service.GenerateQueue(MainActivity.StateHandler.Songs, null, false);
+                        binder.Service.GenerateQueue(StateHandler.Songs, null, false);
                         binder.Service.Shuffle(true);
                         binder.Service.Play();
                     }

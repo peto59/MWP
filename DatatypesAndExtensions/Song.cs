@@ -158,7 +158,7 @@ namespace MWP
                 }
             });
             
-            MainActivity.StateHandler.Songs.Remove(this);
+            StateHandler.Songs.Remove(this);
             Initialized = false;
         }
 
@@ -346,7 +346,7 @@ namespace MWP
         /// <returns><see cref="MWP.Song"/> matching <paramref name="id"/></returns>
         public static Song FromId(Guid id)
         {
-            return MainActivity.StateHandler.Songs.Find(s => s.Id.Equals(id));
+            return StateHandler.Songs.Find(s => s.Id.Equals(id));
         }
         
         /// <summary>
@@ -356,7 +356,7 @@ namespace MWP
         /// <returns><see cref="MWP.Song"/> matching <paramref name="id"/></returns>
         public static Song FromId(string id)
         {
-            return MainActivity.StateHandler.Songs.Find(s => s.IdString.Equals(id));
+            return StateHandler.Songs.Find(s => s.IdString.Equals(id));
         }
 
         /// <inheritdoc />

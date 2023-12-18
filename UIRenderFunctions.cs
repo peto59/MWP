@@ -329,7 +329,7 @@ namespace MWP
                     switch (songType)
                     {
                         case SongType.AllSong:
-                            MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.StateHandler.Songs, pr.Value);
+                            MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(StateHandler.Songs, pr.Value);
                             break;
                         case SongType.AlbumSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((Album)FragmentPositionObject, pr.Value);

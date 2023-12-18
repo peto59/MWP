@@ -177,7 +177,7 @@ namespace MWP.BackEnd
             if (saveFlags.HasFlag(SongSave.Album) && tfile != null && s != null)
             {
                 //restore albums
-                List<Album> inListAlbum = MainActivity.StateHandler.Albums.Select(tfile.Tag.Album);
+                List<Album> inListAlbum = StateHandler.Albums.Select(tfile.Tag.Album);
                 if (inListAlbum.Count > 0)
                 {
                     a = inListAlbum[0];
@@ -187,7 +187,7 @@ namespace MWP.BackEnd
                 {
                     a = new Album(tfile.Tag.Album, MWP.Album.GetImagePath(tfile.Tag.Album, FileManager.Sanitize(FileManager.GetAlias(tfile.Tag.Performers.FirstOrDefault() ?? tfile.Tag.Performers[0]))));
                     a.AddSong(ref s);
-                    MainActivity.StateHandler.Albums.Add(a);
+                    StateHandler.Albums.Add(a);
                 }
                 s.AddAlbum(ref a);
             }
@@ -199,7 +199,7 @@ namespace MWP.BackEnd
                 {
                     Artist art;
                     string alias = FileManager.GetAlias(performer);
-                    List<Artist> inList = MainActivity.StateHandler.Artists.Select(alias);
+                    List<Artist> inList = StateHandler.Artists.Select(alias);
                     if (inList.Count > 0)
                     {
                         art = inList[0];
@@ -222,7 +222,7 @@ namespace MWP.BackEnd
                             a.AddArtist(ref art);
                             art.AddAlbum(ref a);
                         }
-                        MainActivity.StateHandler.Artists.Add(art);
+                        StateHandler.Artists.Add(art);
                     }
                     s.AddArtist(ref art);
                 }
@@ -230,10 +230,10 @@ namespace MWP.BackEnd
             
             if (movingFlag && song != null && s != null)
             {
-                List<Song> inList = MainActivity.StateHandler.Songs.Select(s.Title);
+                List<Song> inList = StateHandler.Songs.Select(s.Title);
                 if (inList.Count == 0)
                 {
-                    MainActivity.StateHandler.Songs.Add(s);
+                    StateHandler.Songs.Add(s);
                 }
                 File.Move(song.Path, path);
                 song.Artists.ForEach(o => o.AddSong(ref s));

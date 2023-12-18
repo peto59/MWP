@@ -49,8 +49,6 @@ namespace MWP
         /// Instance of API Throttler
         /// </summary>
         public static readonly APIThrottler Throttler = new APIThrottler();
-        private static MyBroadcastReceiver? _receiver;
-        private static MyMediaBroadcastReceiver? _mediaReceiver;
         /// <summary>
         /// Instance of State Handler
         /// </summary>
@@ -127,18 +125,10 @@ namespace MWP
             {
                 SidePlayer.populate_side_bar(this, Assets);
             }
+            
             StateHandler.SetView(this);
-            _receiver = new MyBroadcastReceiver();
-            RegisterReceiver(_receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
-            _mediaReceiver = new MyMediaBroadcastReceiver();
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.AddAction(MyMediaBroadcastReceiver.PLAY);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.PAUSE);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.SHUFFLE);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.TOGGLE_LOOP);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.NEXT_SONG);
-            intentFilter.AddAction(MyMediaBroadcastReceiver.PREVIOUS_SONG);
-            RegisterReceiver(_mediaReceiver, intentFilter);
+            
+            
             
             VersionTracking.Track();
             
@@ -411,13 +401,6 @@ namespace MWP
         }
 
         /// <inheritdoc />
-        protected override void OnDestroy()
-        {
-            UnregisterReceiver(_receiver);
-            base.OnDestroy();
-        }
-
-        /// <inheritdoc />
         public override bool OnOptionsItemSelected(IMenuItem item)
         {
             int id = item.ItemId;
@@ -535,57 +518,15 @@ namespace MWP
 
             if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
             {
-                //new Thread(NetworkManager.Listener).Start();
+                new Thread(NetworkManager.Listener).Start();
             }
             
-            new Thread(() => {
-                FileManager.DiscoverFiles(StateHandler.Songs.Count == 0);
-                bool order = false;
-                if (StateHandler.Songs.Count < FileManager.GetSongsCount())
-                {
-#if DEBUG
-                    MyConsole.WriteLine("Generating new songs");
-#endif
-                    StateHandler.Songs = new List<Song>();
-                    StateHandler.Artists = new List<Artist>();
-                    StateHandler.Albums = new List<Album>();
-                    
-                    StateHandler.Artists.Add(new Artist("No Artist", "Default"));
-                    FileManager.GenerateList(FileManager.MusicFolder);
-                    order = true;
-                }
-
-                if (StateHandler.Songs.Count != 0 && order)
-                {
-                    StateHandler.Songs = StateHandler.Songs.Order(SongOrderType.ByDate);
-                }
-                RunOnUiThread(() =>
-                {
-                    if (Assets != null) SidePlayer.populate_side_bar(this, Assets);
-                });
-#if DEBUG
-                MyConsole.WriteLine($"Songs count {StateHandler.Songs.Count}");       
-#endif
-                
-                //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
-                //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
-                //stateHandler.Songs = stateHandler.Songs.Distinct().ToList();
-
-                //serialization test
-                /*SongJsonConverter set = new SongJsonConverter(true);
-                string x = JsonConvert.SerializeObject(stateHandler.Songs, set);
-                Console.WriteLine($"length: {Encoding.UTF8.GetBytes(x).Length}");
-                Console.WriteLine($"data: {x}");
-
-                List<Song> y = JsonConvert.DeserializeObject<List<Song>>(x, set);
-                Console.WriteLine(stateHandler.Songs[0].ToString());
-                Console.WriteLine(y[0].ToString());
-                Console.WriteLine(stateHandler.Songs[1].ToString());
-                Console.WriteLine(y[1].ToString());
-                Console.WriteLine("end");*/
-
-
-            }).Start();
+            FileManager.LoadFiles(true);
+            
+            RunOnUiThread(() =>
+            {
+                if (Assets != null) SidePlayer.populate_side_bar(this, Assets);
+            });
         }
 
         /// <summary>

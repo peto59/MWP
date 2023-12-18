@@ -40,6 +40,11 @@ namespace MWP.BackEnd.Player
         ///</summary>
         public const string PAUSE = "ActionPause";
         
+        ///<summary>
+        ///Pauses playback
+        ///</summary>
+        public const string TOGGLE_PLAY = "ActionTogglePlay";
+        
 		
         ///<summary>
         ///Shuffles or unshuffles queue and updates shuffling for all new queues oposite to last state
@@ -82,6 +87,20 @@ namespace MWP.BackEnd.Player
                     break;
                 case PREVIOUS_SONG:
                     MainActivity.ServiceConnection.Binder?.Service.PreviousSong();
+                    break;
+                case TOGGLE_PLAY:
+                    //TODO: rework
+                    if (MainActivity.ServiceConnection.Connected)
+                    {
+                        if (MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)
+                        {
+                            MainActivity.ServiceConnection.Binder?.Service.Pause();
+                        }
+                        else
+                        {
+                            MainActivity.ServiceConnection.Binder?.Service.Play();
+                        }
+                    }
                     break;
             }
         }

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Util;
+using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
@@ -61,7 +62,7 @@ namespace MWP
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.author_fragment_main);
 
             string? title = Arguments?.GetString("title");
-            List<Artist> retreivedSongs = MainActivity.StateHandler.Artists.Search(title);
+            List<Artist> retreivedSongs = StateHandler.Artists.Search(title);
             if (retreivedSongs.Count > 0)
             {
                 artist = retreivedSongs[0];

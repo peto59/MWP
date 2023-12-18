@@ -137,7 +137,7 @@ namespace MWP
             {
                 album.RemoveArtist(this);
             });
-            MainActivity.StateHandler.Artists.Remove(this);
+            StateHandler.Artists.Remove(this);
             Initialized = false;
         }
 
@@ -309,7 +309,7 @@ namespace MWP
         /// <returns><see cref="MWP.Artist"/> matching <paramref name="id"/></returns>
         public static Artist FromId(Guid id)
         {
-            return MainActivity.StateHandler.Artists.Find(a => a.Id.Equals(id));
+            return StateHandler.Artists.Find(a => a.Id.Equals(id));
         }
         
         /// <summary>
@@ -319,7 +319,7 @@ namespace MWP
         /// <returns><see cref="MWP.Artist"/> matching <paramref name="id"/></returns>
         public static Artist FromId(string id)
         {
-            return MainActivity.StateHandler.Artists.Find(a => a.IdString.Equals(id));
+            return StateHandler.Artists.Find(a => a.IdString.Equals(id));
         }
 
         /// <inheritdoc />

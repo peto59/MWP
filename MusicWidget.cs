@@ -7,6 +7,8 @@ using Android.Content;
 using Android.OS;
 using Android.Widget;
 using Java.Lang;
+using MWP.BackEnd.Player;
+using AndroidApp = Android.App.Application;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -14,14 +16,9 @@ using MWP.Helpers;
 namespace MWP
 {
     /// <inheritdoc />
-    [BroadcastReceiver(Label = "Music Widget", Exported = false)]
-    [IntentFilter(new[] { "android.appwidget.action.APPWIDGET_UPDATE" })]
     [MetaData("android.appwidget.provider", Resource = "@xml/musicwidget_provider")]
     public class MusicWidget : AppWidgetProvider
     {
-        private static readonly string WIDGET_PLAY_TAG = "WIDGET_PLAY_CLICK";
-        private static readonly string WIDGET_PREVIOUS_TAG = "WIDGET_PEVIOUS_TAG";
-        private static readonly string WIDGET_NEXT_TAG = "WIDGET_NEXT_TAG";
 
         
         /// <inheritdoc />
@@ -69,56 +66,9 @@ namespace MWP
             intent.PutExtra(AppWidgetManager.ExtraAppwidgetIds, widgetIds);
             
             // handle button clicks
-            widgetView.SetOnClickPendingIntent(Resource.Id.widgetPlayButton, GetPendingSelfIntent(context, WIDGET_PLAY_TAG));
-            widgetView.SetOnClickPendingIntent(Resource.Id.widgetPreviousButton, GetPendingSelfIntent(context, WIDGET_PREVIOUS_TAG));
-            widgetView.SetOnClickPendingIntent(Resource.Id.widgetNextButton, GetPendingSelfIntent(context, WIDGET_NEXT_TAG));
+            widgetView.SetOnClickPendingIntent(Resource.Id.widgetPlayButton, PendingIntent.GetBroadcast(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.TOGGLE_PLAY, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable));
+            widgetView.SetOnClickPendingIntent(Resource.Id.widgetPreviousButton, PendingIntent.GetBroadcast(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.PREVIOUS_SONG, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable));
+            widgetView.SetOnClickPendingIntent(Resource.Id.widgetNextButton, PendingIntent.GetBroadcast(AndroidApp.Context, 0, new Intent(MyMediaBroadcastReceiver.NEXT_SONG, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver)), PendingIntentFlags.Mutable));
         }
-
-        private PendingIntent? GetPendingSelfIntent(Context context, string action)
-        {
-            var intent = new Intent(context, typeof(MusicWidget));
-            intent.SetAction(action);
-            
-            var pendingIntentFlags = (Build.VERSION.SdkInt >= BuildVersionCodes.S)
-                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Mutable
-                : PendingIntentFlags.UpdateCurrent;
-            
-            return PendingIntent.GetBroadcast(context, 0, intent, pendingIntentFlags);
-        }
-
-
-        /// <inheritdoc />
-        public override void OnReceive(Context? context, Intent? intent)
-        {
-            base.OnReceive(context, intent);
-
-            if (WIDGET_PLAY_TAG.Equals(intent?.Action))
-            {
-                if (MainActivity.ServiceConnection.Connected)
-                {
-                    if (MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)
-                    {
-                        MainActivity.ServiceConnection.Binder?.Service.Pause();
-                    }
-                    else
-                    {
-                        MainActivity.ServiceConnection.Binder?.Service.Play();
-                    }
-                }
-            }
-            else if (WIDGET_PREVIOUS_TAG.Equals(intent?.Action))
-            {
-                MainActivity.ServiceConnection.Binder?.Service.PreviousSong();
-            }
-            else if (WIDGET_NEXT_TAG.Equals(intent?.Action))
-            {
-                MainActivity.ServiceConnection.Binder?.Service.NextSong();
-            }
-
-            
-        }
-        
-        
-        
     }
 }

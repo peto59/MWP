@@ -142,27 +142,27 @@ namespace MWP
                 aZ.Click += delegate
                 {
                     allSongsLnMain.RemoveAllViews();
-                    RenderSongs(MainActivity.StateHandler.Songs.OrderAlphabetically());
+                    RenderSongs(StateHandler.Songs.OrderAlphabetically());
                 };
                 zA.Click += delegate
                 {
                     allSongsLnMain.RemoveAllViews();
-                    RenderSongs(MainActivity.StateHandler.Songs.OrderAlphabetically(true));
+                    RenderSongs(StateHandler.Songs.OrderAlphabetically(true));
                 };
                 newDate.Click += delegate
                 {
                     allSongsLnMain.RemoveAllViews();
-                    RenderSongs(MainActivity.StateHandler.Songs.OrderByDate());
+                    RenderSongs(StateHandler.Songs.OrderByDate());
                 };
                 oldDate.Click += delegate
                 {
                     allSongsLnMain.RemoveAllViews();
-                    RenderSongs(MainActivity.StateHandler.Songs.OrderByDate(true));
+                    RenderSongs(StateHandler.Songs.OrderByDate(true));
                 };
                 reset.Click += delegate
                 {
                     allSongsLnMain.RemoveAllViews();
-                    RenderSongs(MainActivity.StateHandler.Songs.OrderByDate());
+                    RenderSongs(StateHandler.Songs.OrderByDate());
                 };
             }
        
@@ -198,14 +198,14 @@ namespace MWP
                 if (searchInput.Text == "")
                 {
                     allSongsLnMain.RemoveAllViews();
-                    RenderSongs(MainActivity.StateHandler.Songs);
+                    RenderSongs(StateHandler.Songs);
                 }
                 
                 searchInput.TextChanged += (object sender, Android.Text.TextChangedEventArgs e) =>
                 {
                     handler.RemoveCallbacks(() =>
                     {
-                        if (view != null) inputFinishChecker(MainActivity.StateHandler.Songs, view, context);
+                        if (view != null) inputFinishChecker(StateHandler.Songs, view, context);
                     });
 
                     if (e.Text != null && e.Text.Any())
@@ -215,7 +215,7 @@ namespace MWP
                             {
                                 if (view != null)
                                     inputFinishChecker(
-                                        MainActivity.StateHandler.Songs.Search(e.Text.ToString()).ToList(),
+                                        StateHandler.Songs.Search(e.Text.ToString()).ToList(),
                                         view,
                                         context
                                     );
@@ -227,7 +227,7 @@ namespace MWP
                         lastTextEdit = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                         handler.PostDelayed(() =>
                         {
-                            if (view != null) inputFinishChecker(MainActivity.StateHandler.Songs, view, context);
+                            if (view != null) inputFinishChecker(StateHandler.Songs, view, context);
                         }, delay);
                     }
                 };
@@ -244,7 +244,7 @@ namespace MWP
                         if (searchInput.Text == null) return;
                         if (view != null)
                             inputFinishChecker(
-                                MainActivity.StateHandler.Songs.Search(searchInput.Text).ToList(),
+                                StateHandler.Songs.Search(searchInput.Text).ToList(),
                                 view, context
                             );
                     };
@@ -365,7 +365,7 @@ namespace MWP
         {
             songButtons.Clear();
             allSongsLnMain.RemoveAllViews();
-            RenderSongs(MainActivity.StateHandler.Songs);
+            RenderSongs(StateHandler.Songs);
         }
         
         

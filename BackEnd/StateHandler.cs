@@ -65,6 +65,8 @@ namespace MWP.BackEnd
         {
             OnShareFragmentRefresh.Invoke();
         }
+        
+        public static readonly ManualResetEvent MissingFilesWaiter = new ManualResetEvent(false);
         //---------------------------------------------------------
         
         /// <summary>
@@ -78,15 +80,15 @@ namespace MWP.BackEnd
         /// <summary>
         /// All <see cref="MWP.Song"/>s
         /// </summary>
-        public List<Song> Songs = new List<Song>();
+        public static List<Song> Songs = new List<Song>();
         /// <summary>
         /// All <see cref="MWP.Artist"/>s
         /// </summary>
-        public List<Artist> Artists = new List<Artist>();
+        public static List<Artist> Artists = new List<Artist>();
         /// <summary>
         /// All <see cref="MWP.Album"/>s
         /// </summary>
-        public List<Album> Albums = new List<Album>();
+        public static List<Album> Albums = new List<Album>();
 
         ///<summary>
         ///Sets view to current screen's view

@@ -36,7 +36,6 @@ namespace MWP.BackEnd.Player
         /// </summary>
         public static readonly string MySongsShuffle = $"{MY_SONGS_ROOT_ID}_shuffle";
         private static MediaServiceConnection? _serviceConnection = new MediaServiceConnection();
-        internal static readonly AutoResetEvent MissingFilesWaiter = new AutoResetEvent(false);
         
         private static readonly MediaDescriptionCompat? MySongsRootDescription = new MediaDescriptionCompat.Builder()
                         .SetMediaId(MY_SONGS_ROOT_ID)?
@@ -90,42 +89,8 @@ namespace MWP.BackEnd.Player
                 else
                     MyConsole.WriteLine("Empty binder");
 #endif
-                if (MainActivity.StateHandler.Songs.Count == 0)
-                {
-                    LoadFiles();
-                }
-                else
-                {
-                    MissingFilesWaiter.Set();
-                }
             }).Start();
-        }
-
-        private static void LoadFiles()
-        {
-            if (MainActivity.StateHandler.Songs.Count != 0) return;
-#if DEBUG
-            MyConsole.WriteLine("Generating list");
-#endif
-            new Thread(() => {
-            FileManager.DiscoverFiles(true);
-            if (MainActivity.StateHandler.Songs.Count < FileManager.GetSongsCount())
-            {
-                MainActivity.StateHandler.Songs = new List<Song>();
-                MainActivity.StateHandler.Artists = new List<Artist>();
-                MainActivity.StateHandler.Albums = new List<Album>();
-                    
-                MainActivity.StateHandler.Artists.Add(new Artist("No Artist", "Default"));
-                FileManager.GenerateList(FileManager.MusicFolder);
-            }
-
-            if (MainActivity.StateHandler.Songs.Count != 0)
-            {
-                MainActivity.StateHandler.Songs = MainActivity.StateHandler.Songs.Order(SongOrderType.ByDate);
-            }
-
-            MissingFilesWaiter.Set();
-            }).Start();
+            FileManager.LoadFiles();
         }
 
         private static bool ValidateClient(string clientPackageName, int clientUid)
@@ -169,7 +134,7 @@ namespace MWP.BackEnd.Player
         /// <inheritdoc />
         public override void OnLoadChildren(string parentId, Result result)
         {
-            MissingFilesWaiter.WaitOne();
+            StateHandler.MissingFilesWaiter.WaitOne();
             
 #if DEBUG
             MyConsole.WriteLine("OnLoadChildren");
@@ -231,13 +196,13 @@ namespace MWP.BackEnd.Player
                         mediaItems.Add(item);
                     }
                     
-                    mediaItems.AddRange(MainActivity.StateHandler.Songs.Select(song => song.ToMediaItem()));
+                    mediaItems.AddRange(StateHandler.Songs.Select(song => song.ToMediaItem()));
                     break;
                 case MY_ARTISTS_ROOT_ID:
-                    mediaItems.AddRange(MainActivity.StateHandler.Artists.Select(artist => artist.ToMediaItem()));
+                    mediaItems.AddRange(StateHandler.Artists.Select(artist => artist.ToMediaItem()));
                     break;
                 case MY_ALBUMS_ROOT_ID:
-                    mediaItems.AddRange(MainActivity.StateHandler.Albums.Select(album => album.ToMediaItem()));
+                    mediaItems.AddRange(StateHandler.Albums.Select(album => album.ToMediaItem()));
                     break;
                 case MY_PLAYLISTS_ROOT_ID:
                     //TODO: add playlists
@@ -327,8 +292,6 @@ namespace MWP.BackEnd.Player
                     break;
                 }
             }
-
-            MissingFilesWaiter.Set();
             JavaList<MediaBrowserCompat.MediaItem?> javaMediaItems = new JavaList<MediaBrowserCompat.MediaItem?>(mediaItems);
             result.SendResult(javaMediaItems);
         }
