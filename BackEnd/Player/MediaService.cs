@@ -356,7 +356,6 @@ namespace MWP.BackEnd.Player
 			}
 
 			if (Assets != null) SidePlayer.populate_side_bar(MainActivity.StateHandler.view, Assets);
-			WidgetServiceHandler.UpdateWidgetViews();
 			notificationService.Notify();
 		}
 
@@ -397,6 +396,7 @@ namespace MWP.BackEnd.Player
 			session?.SetMetadata(metadataBuilder.Build());
 
 			UpdatePlaybackState();
+			WidgetServiceHandler.UpdateWidgetViews();
 		}
 
 

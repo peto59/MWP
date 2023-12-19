@@ -4,6 +4,7 @@ using Android.Content;
 using Android.Graphics;
 using Android.Widget;
 using Java.Lang;
+using MWP.BackEnd.Player;
 using Math = Java.Lang.Math;
 
 
@@ -91,6 +92,33 @@ namespace MWP.Helpers
             appWidgetManager?.UpdateAppWidget(thisWidget, remoteViews);
         }
 
+        public static void SetShuffleButton()
+        {
+            remoteViews?.SetInt(Resource.Id.widgetShuffleButton, "setBackgroundResource",
+                MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false 
+                ? Resource.Drawable.shuffle2
+                : Resource.Drawable.no_shuffle2
+            );
+        }
+
+        public static void SetRepeatButton(LoopState state)
+        {
+            switch (state)
+            {
+                case LoopState.None:
+                    remoteViews?.SetInt(Resource.Id.widgetRepeatButton, "setBackgroundResource",
+                        Resource.Drawable.no_repeat);
+                    break;
+                case LoopState.All:
+                    remoteViews?.SetInt(Resource.Id.widgetRepeatButton, "setBackgroundResource",
+                        Resource.Drawable.repeat);
+                    break;
+                case LoopState.Single:
+                    remoteViews?.SetInt(Resource.Id.widgetRepeatButton, "setBackgroundResource",
+                        Resource.Drawable.repeat_one);
+                    break;
+            }
+        }
 
         public static void UpdateWidgetViews()
         {
