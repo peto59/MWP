@@ -63,8 +63,6 @@ namespace MWP.BackEnd.Player
 		private AudioManager? audioManager;
 		private AudioFocusRequestClass? audioFocusRequest;
 		private readonly Local_notification_service notificationService = new Local_notification_service();
-		private static MyMediaBroadcastReceiver? _mediaReceiver = new MyMediaBroadcastReceiver();
-		private static MyBroadcastReceiver? _receiver = new MyBroadcastReceiver();
 
 		/// <summary>
 		/// Queue object taking care of queue
@@ -119,26 +117,11 @@ namespace MWP.BackEnd.Player
 		public override void OnCreate()
 		{
 			base.OnCreate();
-			RegisterReceivers();
 			InnitPlayer();
 			InnitAudioManager();
 			InnitSession();
 			InnitFocusRequest();
 			InnitNotification();
-		}
-
-		private void RegisterReceivers()
-		{
-			IntentFilter intentFilter = new IntentFilter();
-			intentFilter.AddAction(MyMediaBroadcastReceiver.PLAY);
-			intentFilter.AddAction(MyMediaBroadcastReceiver.PAUSE);
-			intentFilter.AddAction(MyMediaBroadcastReceiver.SHUFFLE);
-			intentFilter.AddAction(MyMediaBroadcastReceiver.TOGGLE_LOOP);
-			intentFilter.AddAction(MyMediaBroadcastReceiver.NEXT_SONG);
-			intentFilter.AddAction(MyMediaBroadcastReceiver.PREVIOUS_SONG);
-			RegisterReceiver(_mediaReceiver, intentFilter);
-			
-			RegisterReceiver(_receiver, new IntentFilter(AudioManager.ActionAudioBecomingNoisy));
 		}
 
 		///<summary>
@@ -410,7 +393,7 @@ namespace MWP.BackEnd.Player
 			{
 				try
 				{
-					GenerateQueue(StateHandler.Songs, null, false);
+					GenerateQueue(MainActivity.StateHandler.Songs, null, false);
 				}
 				catch (Exception e)
 				{
@@ -804,20 +787,12 @@ namespace MWP.BackEnd.Player
 				audioFocusRequest = null;
 			}
 
-			UnregisterReceivers();
-
 			isFocusGranted = false;
 			lostFocusDuringPlay = false;
 			isPaused = false;
 			isSkippingToNext = false;
 			isSkippingToPrevious = false;
 			isBuffering = true;
-		}
-
-		private void UnregisterReceivers()
-		{
-			UnregisterReceiver(_mediaReceiver);
-			UnregisterReceiver(_receiver);
 		}
 
 		/// <inheritdoc />
@@ -842,7 +817,6 @@ namespace MWP.BackEnd.Player
 		{
 			if (boundServices > 0)
 			{
-				//TODO: rework
 #if DEBUG
 				MyConsole.WriteLine($"Not disposing still, have {boundServices} binds");
 #endif

@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using Android.App;
 using Android.Views;
 using Google.Android.Material.Snackbar;
-using MWP.DatatypesAndExtensions;
 using Newtonsoft.Json;
 using TagLib;
 using TagLib.Id3v2;
@@ -79,67 +77,6 @@ namespace MWP.BackEnd
 #if DEBUG
                 MyConsole.WriteLine($"Deleting {file}");
 #endif
-            }
-        }
-
-        public static void LoadFiles(bool blocking = false, bool force = false)
-        {
-            if (StateHandler.Songs.Count != 0 && !force)
-            {
-                StateHandler.MissingFilesWaiter.Set();
-                return;
-            }
-#if DEBUG
-            MyConsole.WriteLine("Generating list");
-#endif
-            new Thread(() => {
-                DiscoverFiles(StateHandler.Songs.Count == 0);
-                bool order = false;
-                if (StateHandler.Songs.Count < GetSongsCount())
-                {
-#if DEBUG
-                    MyConsole.WriteLine("Generating new songs");
-#endif
-                    StateHandler.Songs = new List<Song>();
-                    StateHandler.Artists = new List<Artist>();
-                    StateHandler.Albums = new List<Album>();
-                    
-                    StateHandler.Artists.Add(new Artist("No Artist", "Default"));
-                    GenerateList(MusicFolder);
-                    order = true;
-                }
-
-                if (StateHandler.Songs.Count != 0 && order)
-                {
-                    StateHandler.Songs = StateHandler.Songs.Order(SongOrderType.ByDate);
-                }
-
-#if DEBUG
-                MyConsole.WriteLine($"Songs count {StateHandler.Songs.Count}");       
-#endif
-                
-                //stateHandler.Artists = stateHandler.Artists.Distinct().ToList();
-                //stateHandler.Albums = stateHandler.Albums.Distinct().ToList();
-                //stateHandler.Songs = stateHandler.Songs.Distinct().ToList();
-
-                //serialization test
-                /*SongJsonConverter set = new SongJsonConverter(true);
-                string x = JsonConvert.SerializeObject(stateHandler.Songs, set);
-                Console.WriteLine($"length: {Encoding.UTF8.GetBytes(x).Length}");
-                Console.WriteLine($"data: {x}");
-
-                List<Song> y = JsonConvert.DeserializeObject<List<Song>>(x, set);
-                Console.WriteLine(stateHandler.Songs[0].ToString());
-                Console.WriteLine(y[0].ToString());
-                Console.WriteLine(stateHandler.Songs[1].ToString());
-                Console.WriteLine(y[1].ToString());
-                Console.WriteLine("end");*/
-
-                StateHandler.MissingFilesWaiter.Set();
-            }).Start();
-            if (blocking)
-            {
-                StateHandler.MissingFilesWaiter.WaitOne();
             }
         }
         
@@ -494,7 +431,7 @@ namespace MWP.BackEnd
             List<Song> x = new List<Song>();
             foreach (string song in playlist1)
             {
-                List<Song> y = StateHandler.Songs.Where(a => a.Path == song).ToList();
+                List<Song> y = MainActivity.StateHandler.Songs.Where(a => a.Path == song).ToList();
                 if (y.Any())
                 {
                     x.AddRange(y);
@@ -514,7 +451,7 @@ namespace MWP.BackEnd
             SongJsonConverter customConverter = new SongJsonConverter(true);
             Dictionary<string, List<Song>> hosts =
                 JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
-            hosts.Add(host, StateHandler.Songs);
+            hosts.Add(host, MainActivity.StateHandler.Songs);
             File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(hosts, customConverter));
         }
         
@@ -570,7 +507,7 @@ namespace MWP.BackEnd
             foreach (string artist in artists)
             {
                 Artist artistObj;
-                List<Artist> inArtistList = StateHandler.Artists.Select(GetAlias(artist));
+                List<Artist> inArtistList = MainActivity.StateHandler.Artists.Select(GetAlias(artist));
                 if (inArtistList.Any())
                 {
                     artistObj = inArtistList[0];
@@ -584,7 +521,7 @@ namespace MWP.BackEnd
                         artistObj = new Artist(artistAlias, $"{_musicFolder}/{artistPath}/cover.png");
                     else
                         artistObj = new Artist(artistAlias, "Default");
-                    StateHandler.Artists.Add(artistObj);
+                    MainActivity.StateHandler.Artists.Add(artistObj);
                 }
                 artistList.Add(artistObj);
             }
@@ -592,14 +529,14 @@ namespace MWP.BackEnd
             Song song = new Song(artistList, title, File.GetCreationTime(path), path);
             artistList.ForEach(art => art.AddSong(ref song));
             //TODO: prepend
-            StateHandler.Songs.Add(song);
+            MainActivity.StateHandler.Songs.Add(song);
 
             Album albumObj = new Album(string.Empty, string.Empty, false, false);
             if (!string.IsNullOrEmpty(album))
             {
                 if (album != null)
                 {
-                    List<Album> inAlbumList = StateHandler.Albums.Select(album);
+                    List<Album> inAlbumList = MainActivity.StateHandler.Albums.Select(album);
                     if (inAlbumList.Any())
                     {
                         albumObj = inAlbumList[0];
@@ -616,7 +553,7 @@ namespace MWP.BackEnd
                             albumObj = new Album(album, song, artistList, $"{_musicFolder}/{artistPath}/{albumPath}/cover.png");
                         else
                             albumObj = new Album(album, song, artistList, "Default");
-                        StateHandler.Albums.Add(albumObj);
+                        MainActivity.StateHandler.Albums.Add(albumObj);
                     }
                 }
 

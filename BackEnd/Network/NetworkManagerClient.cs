@@ -341,7 +341,7 @@ namespace MWP.BackEnd.Network
                         if (data != null)
                         {
                             string? artistName = Encoding.UTF8.GetString(data);
-                            List<Artist> artists = StateHandler.Artists.Search(artistName);
+                            List<Artist> artists = MainActivity.StateHandler.Artists.Search(artistName);
                             foreach (Artist artist in artists.Where(artist => artist.ImgPath != "Default"))
                             {
                                 networkStream.WriteFile(artist.ImgPath, ref encryptor, ref aes, CommandsArr.ArtistImageSend, Encoding.UTF8.GetBytes(artists[0].Title));
@@ -354,7 +354,7 @@ namespace MWP.BackEnd.Network
                         if (data != null)
                         {
                             string? albumName = Encoding.UTF8.GetString(data);
-                            List<Album> albums = StateHandler.Albums.Search(albumName);
+                            List<Album> albums = MainActivity.StateHandler.Albums.Search(albumName);
                             foreach (Album album in albums.Where(album => album.ImgPath != "Default"))
                             {
                                 networkStream.WriteFile(album.ImgPath, ref encryptor, ref aes, CommandsArr.AlbumImageSend, Encoding.UTF8.GetBytes(albums[0].Title));

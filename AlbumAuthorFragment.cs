@@ -8,7 +8,6 @@ using Android.Content.Res;
 using Android.Graphics;
 using Android.Text.Style;
 using Android.Util;
-using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 
@@ -88,13 +87,13 @@ namespace MWP
             int[] nameMargins = { 50, 50, 50, 50 };
             int[] cardMargins = { 30, 50, 0, 0 };
 
-            for (int i = 0; i < StateHandler.Albums.Count; i++)
+            for (int i = 0; i < MainActivity.StateHandler.Albums.Count; i++)
             {
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    StateHandler.Albums[i], scale, cardMargins, 15, i, context, albumButtons, 
+                    MainActivity.StateHandler.Albums[i], scale, cardMargins, 15, i, context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 UIRenderFunctions.SetTilesImage(
-                    lnIn, StateHandler.Albums[i], 150, 100,
+                    lnIn, MainActivity.StateHandler.Albums[i], 150, 100,
                     buttonMargins, 17,
                     nameMargins, scale, context
                 );
@@ -122,13 +121,13 @@ namespace MWP
             int[] cardMargins = { 20, 50, 0, 0 };
 
 
-            for (int i = 0; i < StateHandler.Artists.Count; i++)
+            for (int i = 0; i < MainActivity.StateHandler.Artists.Count; i++)
             {
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    StateHandler.Artists[i], scale, cardMargins, 15, i, context, albumButtons, 
+                    MainActivity.StateHandler.Artists[i], scale, cardMargins, 15, i, context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 UIRenderFunctions.SetTilesImage(
-                    lnIn, StateHandler.Artists[i], 150, 100,
+                    lnIn, MainActivity.StateHandler.Artists[i], 150, 100,
                     buttonMargins, 17,
                     nameMargins, scale, context
                 );

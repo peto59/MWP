@@ -136,7 +136,7 @@ namespace MWP
         {
             Songs.ForEach(song => song.RemoveAlbum(this));
             Artists.ForEach(artist => artist.RemoveAlbum(this));
-            StateHandler.Albums.Remove(this);
+            MainActivity.StateHandler.Albums.Remove(this);
             Initialized = false;
         }
         
@@ -303,7 +303,7 @@ namespace MWP
         /// <returns><see cref="MWP.Album"/> matching <paramref name="id"/></returns>
         public static Album FromId(Guid id)
         {
-            return StateHandler.Albums.Find(a => a.Id.Equals(id));
+            return MainActivity.StateHandler.Albums.Find(a => a.Id.Equals(id));
         }
         
         /// <summary>
@@ -313,7 +313,7 @@ namespace MWP
         /// <returns><see cref="MWP.Album"/> matching <paramref name="id"/></returns>
         public static Album FromId(string id)
         {
-            return StateHandler.Albums.Find(a => a.IdString.Equals(id));
+            return MainActivity.StateHandler.Albums.Find(a => a.IdString.Equals(id));
         }
 
         /// <inheritdoc />

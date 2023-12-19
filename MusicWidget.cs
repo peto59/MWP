@@ -16,6 +16,8 @@ using MWP.Helpers;
 namespace MWP
 {
     /// <inheritdoc />
+    [BroadcastReceiver(Label = "Music Widget", Exported = false)]
+    [IntentFilter(new[] { "android.appwidget.action.APPWIDGET_UPDATE" })]
     [MetaData("android.appwidget.provider", Resource = "@xml/musicwidget_provider")]
     public class MusicWidget : AppWidgetProvider
     {
@@ -27,7 +29,7 @@ namespace MWP
 
         private static readonly string WIDGET_REPEAT_TAG = "WIDGET_REPEAT_TAG";
 
-
+        
         /// <inheritdoc />
         public override void OnUpdate(Context? context, AppWidgetManager? manager, int[]? widgetIds)
         {
@@ -148,5 +150,52 @@ namespace MWP
 
 
         }
+
+        private PendingIntent? GetPendingSelfIntent(Context context, string action)
+        {
+            var intent = new Intent(context, typeof(MusicWidget));
+            intent.SetAction(action);
+            
+            var pendingIntentFlags = (Build.VERSION.SdkInt >= BuildVersionCodes.S)
+                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Mutable
+                : PendingIntentFlags.UpdateCurrent;
+            
+            return PendingIntent.GetBroadcast(context, 0, intent, pendingIntentFlags);
+        }
+
+
+        /// <inheritdoc />
+        public override void OnReceive(Context? context, Intent? intent)
+        {
+            base.OnReceive(context, intent);
+
+            if (WIDGET_PLAY_TAG.Equals(intent?.Action))
+            {
+                if (MainActivity.ServiceConnection.Connected)
+                {
+                    if (MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)
+                    {
+                        MainActivity.ServiceConnection.Binder?.Service.Pause();
+                    }
+                    else
+                    {
+                        MainActivity.ServiceConnection.Binder?.Service.Play();
+                    }
+                }
+            }
+            else if (WIDGET_PREVIOUS_TAG.Equals(intent?.Action))
+            {
+                MainActivity.ServiceConnection.Binder?.Service.PreviousSong();
+            }
+            else if (WIDGET_NEXT_TAG.Equals(intent?.Action))
+            {
+                MainActivity.ServiceConnection.Binder?.Service.NextSong();
+            }
+
+            
+        }
+        
+        
+        
     }
 }
