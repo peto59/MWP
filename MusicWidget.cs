@@ -29,7 +29,7 @@ namespace MWP
 
         private static readonly string WIDGET_REPEAT_TAG = "WIDGET_REPEAT_TAG";
 
-        
+
         /// <inheritdoc />
         public override void OnUpdate(Context? context, AppWidgetManager? manager, int[]? widgetIds)
         {
@@ -55,10 +55,7 @@ namespace MWP
                     MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Image ?? new Song("No Name", new DateTime(), "Default").Image, 
                     120
                 )
-                
             );
-            
-            
             return widgetView;
         }
 
@@ -70,9 +67,7 @@ namespace MWP
         
         private void RegisterClicks(Context context, int[]? widgetIds, RemoteViews widgetView)
         {
-            var intent = new Intent(context, typeof(MusicWidget));
-            intent.SetAction(AppWidgetManager.ActionAppwidgetUpdate);
-            intent.PutExtra(AppWidgetManager.ExtraAppwidgetIds, widgetIds);
+
             
             // handle button clicks
             widgetView.SetOnClickPendingIntent(Resource.Id.widgetShuffleButton, GetPendingSelfIntent(context, WIDGET_SHUFFLE_TAG));
@@ -150,8 +145,5 @@ namespace MWP
 
 
         }
-        
-        
-        
     }
 }
