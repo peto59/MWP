@@ -29,6 +29,13 @@ namespace MWP
 
         private static readonly string WIDGET_REPEAT_TAG = "WIDGET_REPEAT_TAG";
 
+
+        private static PendingIntent? _shuffleIntent;
+        private static PendingIntent? _previousIntent;
+        private static PendingIntent? _playIntent;
+        private static PendingIntent? _nextIntent;
+        private static PendingIntent? _repeatIntent;
+
         
         /// <inheritdoc />
         public override void OnUpdate(Context? context, AppWidgetManager? manager, int[]? widgetIds)
@@ -75,13 +82,26 @@ namespace MWP
             intent.PutExtra(AppWidgetManager.ExtraAppwidgetIds, widgetIds);
             
             // handle button clicks
-            widgetView.SetOnClickPendingIntent(Resource.Id.widgetShuffleButton, GetPendingSelfIntent(context, WIDGET_SHUFFLE_TAG));
+            _shuffleIntent = GetPendingSelfIntent(context, WIDGET_SHUFFLE_TAG);
+            _previousIntent = GetPendingSelfIntent(context, WIDGET_PREVIOUS_TAG);
+            _playIntent = GetPendingSelfIntent(context, WIDGET_PLAY_TAG);
+            _nextIntent = GetPendingSelfIntent(context, WIDGET_NEXT_TAG);
+            _repeatIntent = GetPendingSelfIntent(context, WIDGET_REPEAT_TAG);
             
-            widgetView.SetOnClickPendingIntent(Resource.Id.widgetPreviousButton, GetPendingSelfIntent(context, WIDGET_PREVIOUS_TAG));
-            widgetView.SetOnClickPendingIntent(Resource.Id.widgetPlayButton, GetPendingSelfIntent(context, WIDGET_PLAY_TAG));
-            widgetView.SetOnClickPendingIntent(Resource.Id.widgetNextButton, GetPendingSelfIntent(context, WIDGET_NEXT_TAG));
             
-            widgetView.SetOnClickPendingIntent(Resource.Id.widgetRepeatButton, GetPendingSelfIntent(context, WIDGET_REPEAT_TAG));
+            widgetView.SetOnClickPendingIntent(Resource.Id.widgetShuffleButton, _shuffleIntent);
+            widgetView.SetOnClickPendingIntent(Resource.Id.widgetPreviousButton, _previousIntent);
+            widgetView.SetOnClickPendingIntent(Resource.Id.widgetPlayButton, _playIntent);
+            widgetView.SetOnClickPendingIntent(Resource.Id.widgetNextButton, _nextIntent);
+            widgetView.SetOnClickPendingIntent(Resource.Id.widgetRepeatButton, _repeatIntent);
+            
+            
+            /*
+             * register music widget click for opening application on widget layout click
+             */
+            Intent mainAcitivtyIntent = new Intent(context, typeof(MainActivity));
+            PendingIntent? pendingIntent = PendingIntent.GetActivity(context, 0, mainAcitivtyIntent, 0);
+            widgetView.SetOnClickPendingIntent(Resource.Id.widgetBackground, pendingIntent);
         }
 
         private PendingIntent? GetPendingSelfIntent(Context context, string action)
@@ -150,5 +170,11 @@ namespace MWP
 
 
         }
+
+        public static void DisablePendingIntents()
+        {
+            _shuffleIntent?.Cancel();
+        }
+        
     }
 }

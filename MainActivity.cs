@@ -713,6 +713,7 @@ namespace MWP
             installIntent.AddFlags(ActivityFlags.NewTask);
             StartActivity(installIntent);
         }
+        
     }
 }
 
