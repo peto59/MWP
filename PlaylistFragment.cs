@@ -97,8 +97,7 @@ namespace MWP
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, playlistSongs[i], 150, 100, 
-                    inPlaylistButtonMargins, 17, 
-                    inPlaylistNameMargins, 
+                    inPlaylistButtonMargins, 
                     scale, context
                 );
                 inPlaylistLnMain.AddView(lnIn);

@@ -109,8 +109,7 @@ namespace MWP
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, album.Songs[i],  150, 100,
-                    buttonMargins, 17,
-                    nameMargins, scale, context
+                    buttonMargins, scale, context
                 );
                 lnMain.AddView(lnIn);
             }

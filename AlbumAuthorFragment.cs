@@ -94,8 +94,7 @@ namespace MWP
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 UIRenderFunctions.SetTilesImage(
                     lnIn, MainActivity.StateHandler.Albums[i], 150, 100,
-                    buttonMargins, 17,
-                    nameMargins, scale, context
+                    buttonMargins, scale, context
                 );
                 
                 lin.AddView(lnIn);
@@ -128,8 +127,7 @@ namespace MWP
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 UIRenderFunctions.SetTilesImage(
                     lnIn, MainActivity.StateHandler.Artists[i], 150, 100,
-                    buttonMargins, 17,
-                    nameMargins, scale, context
+                    buttonMargins, scale, context
                 );
                 //全部加える
                 lin.AddView(lnIn);

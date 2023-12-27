@@ -10,6 +10,7 @@ using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.OS;
 using MWP.BackEnd;
+using Xamarin.Essentials;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Orientation = Android.Widget.Orientation;
@@ -349,7 +350,29 @@ namespace MWP
 
             songButtons.Add(lnIn, musics.Id);
             
+            
+            /*
+             * Set Song Information
+             */
+            TextView name = new TextView(context);
+            name.Text = musics.Title;
+            name.TextSize = nameSize;
+            name.SetTextColor(Color.White);
+            name.TextAlignment = TextAlignment.Center;
+            name.SetForegroundGravity(GravityFlags.Center);
+
+            LinearLayout.LayoutParams lnNameParams = new LinearLayout.LayoutParams(
+                (int)(130 * scale + 0.5f),
+                ViewGroup.LayoutParams.WrapContent
+            );
+            lnNameParams.SetMargins(nameMargins[0], nameMargins[1], nameMargins[2], nameMargins[3]);
+
+            name.LayoutParameters = lnNameParams;
+
+            lnIn.SetGravity(GravityFlags.Center);
             lnIn.SetHorizontalGravity(GravityFlags.Center);
+            lnIn.AddView(name);
+            
             return lnIn;
         }
 
@@ -498,7 +521,7 @@ namespace MWP
         /// <param name="nameMargins"></param>
         /// <param name="scale"></param>
         /// <param name="context"></param>
-        public static void SetTilesImage(LinearLayout parent, MusicBaseClass obj, int ww, int hh, int[] btnMargins, int nameSize, int[] nameMargins, float scale, Context context)
+        public static void SetTilesImage(LinearLayout parent, MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
         {
             ImageView mori = new ImageView(context);
             LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
@@ -516,32 +539,53 @@ namespace MWP
                 obj.Image
             );
             
-            
-            
-
             parent.AddView(mori);
 
-            //アルブムの名前
-            TextView name = new TextView(context);
-            name.Text = obj.Title;
-            name.TextSize = nameSize;
-            name.SetTextColor(Color.White);
-            name.TextAlignment = TextAlignment.Center;
-            name.SetForegroundGravity(GravityFlags.Center);
-
-            LinearLayout.LayoutParams lnNameParams = new LinearLayout.LayoutParams(
-                (int)(130 * scale + 0.5f),
-                ViewGroup.LayoutParams.WrapContent
+        }
+        
+        
+        public static ImageView GetTileImage(MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
+        {
+            ImageView songImage = new ImageView(context);
+            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
+                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
             );
-            lnNameParams.SetMargins(nameMargins[0], nameMargins[1], nameMargins[2], nameMargins[3]);
+            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
+            songImage.LayoutParameters = ll;
 
-            name.LayoutParameters = lnNameParams;
+            if (obj is not (Album or Artist or Song))
+            {
+                return new ImageView(context);
+            }
 
-            parent.SetGravity(GravityFlags.Center);
-            parent.SetHorizontalGravity(GravityFlags.Center);
-            parent.AddView(name);
-            
+            songImage.SetImageBitmap(
+                obj.Image
+            );
 
+            return songImage;
+
+        }
+        
+        
+        /// <summary>
+        /// Funkcia sluziacia na zistinie stavu elementu na obrazovke
+        /// Ak element existuje ale je mimo obrazovky funkcia vrati false.
+        /// Ak element existuje a je na obrazovke a uzivatel ho moze vidiet, vrati true.
+        /// Funkcia ako prve zisti ci je element bol vytvoreny a exsituje, nasledne si vytvorim Rect objekt ktory bude sluzit na ulozenie dimenzii a pozicie elementu.
+        /// Nasledne pomocou funkcie GetGlobalVisibleRect, ktora je dostupna z objektu View, zistim X, Y poziciu elementu
+        /// a nakoniec si vytvorim dalsi Rect ktory ma dimenzie obrazovky a spravim prienik tychto dvoch stvrocov
+        /// </summary>
+        /// <param name="view">Element ktory chcem vyskusat ci je alebo nie je na obrazovke</param>
+        /// <returns></returns>
+        public static bool IsVisible(View? view) {
+            if (view == null || !view.IsShown) {
+                return false;
+            }
+            Rect actualPosition = new Rect();
+            view.GetGlobalVisibleRect(actualPosition);
+            Rect screen = new Rect(0, 0,
+                (int)DeviceDisplay.MainDisplayInfo.Width, (int)DeviceDisplay.MainDisplayInfo.Height);
+            return actualPosition.Intersect(screen);
         }
     }
 }

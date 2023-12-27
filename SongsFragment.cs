@@ -37,7 +37,7 @@ namespace MWP
         private AssetManager? assets;
 
         private Dictionary<LinearLayout, Guid> songButtons = new Dictionary<LinearLayout, Guid>();
-        private List<Tuple<LinearLayout, int>> lazyBuffer;
+        private List<LinearLayout> lazyBuffer;
         
         long delay = 1000; 
         long lastTextEdit = 0;
@@ -250,8 +250,7 @@ namespace MWP
                     };
             }
         }
-
-
+        
 
         private void RenderSongs(List<Song> songs)
         {
@@ -260,7 +259,9 @@ namespace MWP
             int[] allSongsCardMargins = { 0, 50, 0, 0 };
 
 
-            lazyBuffer = new List<Tuple<LinearLayout, int>>();
+            lazyBuffer = new List<LinearLayout>();
+            List<ImageView> songImages = new List<ImageView>();
+            
             
             for (int i = 0; i < songs.Count; i++)
             {
@@ -271,41 +272,21 @@ namespace MWP
                     17,  context, songButtons, UIRenderFunctions.SongType.AllSong, assets, ParentFragmentManager, 
                     allSongsLnMain, this
                 );
+                /*UIRenderFunctions.SetTilesImage(
+                    lnIn, songs[i], 150, 100, allSongsButtonMargins, 15, allSongsNameMargins,
+                    scale, context); */
                 
-                lazyBuffer.Add(new Tuple<LinearLayout, int>(lnIn, i));
-
+                lazyBuffer.Add(lnIn);
+                songImages.Add(UIRenderFunctions.GetTileImage(
+                    songs[i], 150, 100, allSongsButtonMargins,
+                    scale, context));
+                allSongsLnMain.AddView(lnIn);
+                
             }
-
-            for (int i = 0; i < Math.Min(5, lazyBuffer.Count); i++)
-            {
-                UIRenderFunctions.SetTilesImage(
-                    lazyBuffer[i].Item1, songs[lazyBuffer[i].Item2],150, 100, allSongsButtonMargins, 15, allSongsNameMargins,
-                    scale, context);
-                allSongsLnMain.AddView(lazyBuffer[i].Item1);
-            }
-           
-            lazyBuffer.RemoveRange(0, Math.Min(5, lazyBuffer.Count));
-
-            allSongsScroll.ScrollChange += (sender, e) =>
-            {
-                View? view = allSongsLnMain.GetChildAt(allSongsLnMain.ChildCount - 1);
-                int topDetect = allSongsScroll.ScrollY;
-                if (view == null) return;
-                int bottomDetect = view.Bottom - (allSongsScroll.Height + allSongsScroll.ScrollY);
-
-                if (bottomDetect != 0 || lazyBuffer.Count == 0) return;
-                for (int i = 0; i < Math.Min(5, lazyBuffer.Count); i++)
-                {
-                    UIRenderFunctions.SetTilesImage(
-                        lazyBuffer[i].Item1, songs[lazyBuffer[i].Item2],150, 100, allSongsButtonMargins, 15, allSongsNameMargins,
-                        scale, context);
-                    allSongsLnMain.AddView(lazyBuffer[i].Item1);
-                }
-
-                lazyBuffer.RemoveRange(0, Math.Min(5, lazyBuffer.Count));
-            };
             
             
+
+
         } 
         
         
@@ -364,6 +345,7 @@ namespace MWP
         public void InvalidateCache()
         {
             songButtons.Clear();
+            lazyBuffer.Clear();
             allSongsLnMain.RemoveAllViews();
             RenderSongs(MainActivity.StateHandler.Songs);
         }

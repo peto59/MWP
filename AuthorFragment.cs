@@ -118,8 +118,7 @@ namespace MWP
                 );
                 UIRenderFunctions.SetTilesImage(
                     lnIn, artist.Albums.Select("Uncategorized")[0].Songs[i],  150, 100,
-                    buttonMargins, 17,
-                    nameMargins, scale, context
+                    buttonMargins, scale, context
                 );
                 
                 
@@ -174,8 +173,7 @@ namespace MWP
                         t, scale, cardMargins, 15, index, context, albumButtons, ParentFragmentManager, assets, albumFragment);
                     UIRenderFunctions.SetTilesImage(
                         lnIn, t, 150, 100,
-                        buttonMargins, 17,
-                        nameMargins, scale, context
+                        buttonMargins, scale, context
                     );
                    
                     lin.AddView(lnIn);
