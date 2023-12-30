@@ -318,7 +318,23 @@ namespace MWP
             lnInParams.SetMargins(cardMargins[0], cardMargins[1], cardMargins[2], cardMargins[3]);
             lnIn.LayoutParameters = lnInParams;
             
-          
+            /*
+             * Create ImageView for song image
+             */
+            ImageView mori = new ImageView(context);
+            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
+                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
+            );
+            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
+            mori.LayoutParameters = ll;
+            
+            
+            lnIn.AddView(mori);
+            
+            
+            /*
+             * Handle events on song tile
+             */
             lnIn.Click += (sender, _) =>
             {
                 LinearLayout pressedButton = (LinearLayout)sender;
@@ -382,7 +398,9 @@ namespace MWP
         /// </summary>
         /// <param name="musics"></param>
         /// <param name="scale"></param>
+        /// <param name="btnMargins"></param>
         /// <param name="cardMargins"></param>
+        /// <param name="nameMargins"></param>
         /// <param name="nameSize"></param>
         /// <param name="index"></param>
         /// <param name="context"></param>
@@ -392,13 +410,16 @@ namespace MWP
         /// <param name="linForDelete"></param>
         /// <param name="albumFragment"></param>
         /// <param name="authorFragment"></param>
+        /// <param name="ww"></param>
+        /// <param name="hh"></param>
+        /// <param name="songsFragmentContext"></param>
         /// <returns></returns>
         public static LinearLayout PopulateVertical(
-            MusicBaseClass musics, float scale, int[] cardMargins, int nameSize, int index,
+            MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] cardMargins, int[] nameMargins, int nameSize, int index,
             Context context, Dictionary<LinearLayout, object> albumButtons, 
             FragmentManager manager, AssetManager? assets,
             AlbumFragment? albumFragment = null, AuthorFragment? authorFragment = null,
-            LinearLayout? linForDelete = null, SongsFragment? songsfragmentContext = null 
+            LinearLayout? linForDelete = null, SongsFragment? songsFragmentContext = null 
         )
         {
             //リネアルレーアート作る
@@ -412,6 +433,19 @@ namespace MWP
             );
             lnInParams.SetMargins(cardMargins[0], cardMargins[1], cardMargins[2], cardMargins[3]);
             lnIn.LayoutParameters = lnInParams;
+            
+            /*
+             * Creating imageView for later to load album/artist thumbnail image
+             */
+            ImageView mori = new ImageView(context);
+            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
+                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
+            );
+            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
+            mori.LayoutParameters = ll;
+            
+            
+            lnIn.AddView(mori);
 
 
             // ボッタン作って
@@ -450,7 +484,7 @@ namespace MWP
                 {
                     if (linForDelete != null)
                         ShowPopupSongEdit(album, linForDelete, lnIn, context, scale, assets, manager,
-                            songsfragmentContext);
+                            songsFragmentContext);
                 };
                 
 
@@ -492,14 +526,33 @@ namespace MWP
                 {
                     if (linForDelete != null)
                         ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale, assets, manager,
-                            songsfragmentContext);
+                            songsFragmentContext);
                 };
                 
 
                 albumButtons.Add(lnIn, artist);
             }
+            
+            //アルブムの名前
+            TextView name = new TextView(context);
+            name.Text = musics.Title;
+            name.TextSize = nameSize;
+            name.SetTextColor(Color.White);
+            name.TextAlignment = TextAlignment.Center;
+            name.SetForegroundGravity(GravityFlags.Center);
 
+            LinearLayout.LayoutParams lnNameParams = new LinearLayout.LayoutParams(
+                (int)(130 * scale + 0.5f),
+                ViewGroup.LayoutParams.WrapContent
+            );
+            lnNameParams.SetMargins(nameMargins[0], nameMargins[1], nameMargins[2], nameMargins[3]);
+
+            name.LayoutParameters = lnNameParams;
+
+            lnIn.SetGravity(GravityFlags.Center);
             lnIn.SetHorizontalGravity(GravityFlags.Center);
+            lnIn.AddView(name);
+            
             return lnIn;
         }
         

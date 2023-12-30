@@ -170,12 +170,10 @@ namespace MWP
                 {
                     
                     LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                        t, scale, cardMargins, 15, index, context, albumButtons, ParentFragmentManager, assets, albumFragment);
-                    UIRenderFunctions.SetTilesImage(
-                        lnIn, t, 150, 100,
-                        buttonMargins, scale, context
-                    );
-                   
+                        t, scale, 
+                        150, 100, buttonMargins, cardMargins, nameMargins, 15, index, 
+                        context, albumButtons, ParentFragmentManager, assets, albumFragment);
+                  
                     lin.AddView(lnIn);
                     index++;
                 }

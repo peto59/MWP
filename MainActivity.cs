@@ -220,6 +220,8 @@ namespace MWP
             //new Thread(() => { Thread.Sleep(1500); Downloader.SearchAPI(); }).Start();
 
             
+          
+            
             /*
              * Managing Frgamentation
              */
@@ -308,7 +310,7 @@ namespace MWP
                     Title = "Songs";
                 };
             
-
+            
             if (downloadNavigationButton != null)
                 downloadNavigationButton.Click += (_, _) =>
                 {

@@ -90,12 +90,10 @@ namespace MWP
             for (int i = 0; i < MainActivity.StateHandler.Albums.Count; i++)
             {
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    MainActivity.StateHandler.Albums[i], scale, cardMargins, 15, i, context, albumButtons, 
+                    MainActivity.StateHandler.Albums[i], 
+                    scale, 150, 100, buttonMargins,cardMargins, nameMargins, 15, i, 
+                    context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
-                UIRenderFunctions.SetTilesImage(
-                    lnIn, MainActivity.StateHandler.Albums[i], 150, 100,
-                    buttonMargins, scale, context
-                );
                 
                 lin.AddView(lnIn);
             }
@@ -123,15 +121,9 @@ namespace MWP
             for (int i = 0; i < MainActivity.StateHandler.Artists.Count; i++)
             {
                 LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    MainActivity.StateHandler.Artists[i], scale, cardMargins, 15, i, context, albumButtons, 
+                    MainActivity.StateHandler.Artists[i], scale, 150, 100, buttonMargins ,cardMargins, nameMargins, 15, i, context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
-                UIRenderFunctions.SetTilesImage(
-                    lnIn, MainActivity.StateHandler.Artists[i], 150, 100,
-                    buttonMargins, scale, context
-                );
-                //全部加える
                 lin.AddView(lnIn);
-
             } 
 
             return lin;
