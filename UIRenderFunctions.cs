@@ -735,7 +735,33 @@ namespace MWP
             }
             
         }
-        
-        
+
+
+        /// <summary>
+        /// Funkcia sluziaca na najdenie takzvanych "dier" v zozname ci uz albumov, zoznamov alebo pesniciek a nasledne ich vyplnenie.
+        /// Funkcia najde prazdne policka a prideli im nacitany obrazok. Diery vznikaju z dovodu asynnchronneho nacitavania obrazkov pri ktorom sa obrazky nenacitavaju po poradi ale
+        /// na pozadi a to naraz, moze dojst k tomu, ze uzivatelske rozhranie je pomalsie nacitane ako pesnicky na slabsich zariadeniach a tak su tieto diery vyplnene na konci nacitavania obrazkov.
+        ///
+        /// Pomocou foreach-u prechadzam cez vsetky policka, v kazdom policku najdem prislusny ImageView v ktorom skontrolujem, ci obrazok tam je alebo nie. Pokial nie je zavolam
+        /// funkciy UIRenderFunctions.LoadSongImageFromBuffer pre nacitanie prislusneho obrazka pre prislusne policko.
+        /// </summary>
+        /// <param name="context">kontext hlavnej aktivity</param>
+        /// <param name="tiles">List Elementov uzivatelskeho rozhrania (Songs, Albums, Authors) v podobe slovnika v paroch (string, LinearLayout)</param>
+        /// <param name="images">List Obrazkov pre elementy uzivatelskeho rozhrania v podobe slovnika v paroch (string, Bitmap)</param>
+        /// <param name="assets">staticke subory, assety</param>
+        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout> tiles, ObservableDictionary<string, Bitmap> images, AssetManager? assets)
+        {
+            
+            ((Activity)context).RunOnUiThread(() =>
+            {
+                foreach (var tile in tiles)
+                {
+                    ImageView? vv = (ImageView)tile.Value.GetChildAt(0);
+                    if (vv?.Drawable == null)
+                        LoadSongImageFromBuffer(tile.Value, images, assets);
+                }
+            });
+        }
+
     }
 }

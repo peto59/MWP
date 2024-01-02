@@ -5,7 +5,11 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Android.Content.Res;
+using Android.Graphics;
+using Java.Util;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
@@ -29,6 +33,9 @@ namespace MWP
         
         private Dictionary<LinearLayout, Guid> SongButtons = new Dictionary<LinearLayout, Guid>();
 
+        private Dictionary<string, LinearLayout> songTilesBuffer;
+        private ObservableDictionary<string, Bitmap> songImagesBuffer;
+
 
         /// <summary>
         /// Constructor for AlbumFragment.cs
@@ -39,6 +46,9 @@ namespace MWP
             context = ctx;
             this.assets = assets;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
+
+            songTilesBuffer = new Dictionary<string, LinearLayout>();
+            songImagesBuffer = new ObservableDictionary<string, Bitmap>();
         }
 
         /// <summary>
@@ -61,18 +71,47 @@ namespace MWP
                 album = retreivedSongs[0];
                 UIRenderFunctions.FragmentPositionObject = album;
             }
-#if DEBUG
-            MyConsole.WriteLine("FOUNDED SEARCHED ALBUM NAME IN FRAGMENT: " + album.Title);
-#endif
+
+
+            songImagesBuffer.ValueChanged += delegate
+            {
+                ((Activity)context).RunOnUiThread(() =>
+                {
+                    string last = songImagesBuffer.Items.Keys.Last();
+                    LinearLayout child = songTilesBuffer?[last] ?? new LinearLayout(context);
+                    if (assets != null)
+                        UIRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
+                });
+            };
             
             RenderSongs();
 
             return view;
         }
 
+        
+        /// <inheritdoc />
+        public override void OnViewCreated(View view, Bundle? savedInstanceState)
+        {
+            base.OnViewCreated(view, savedInstanceState);
+
+            Task.Run(async () =>
+            {
+                await UIRenderFunctions.LoadSongImages(album.Songs, songImagesBuffer,
+                    UIRenderFunctions.LoadImageType.SONG);
+                
+                UIRenderFunctions.FillImageHoles(context, songTilesBuffer, songImagesBuffer, assets);
+            });
+           
+        }
+        
+        
+        
 
         private void RenderSongs()
         {
+            songTilesBuffer = new Dictionary<string, LinearLayout>();
+            
             ScrollView songsScroll = new ScrollView(context);
             RelativeLayout.LayoutParams songsScrollParams = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
@@ -107,11 +146,10 @@ namespace MWP
                     17,
                      context, SongButtons, UIRenderFunctions.SongType.AlbumSong, assets, ParentFragmentManager, lnMain
                 );
-                UIRenderFunctions.SetTilesImage(
-                    lnIn, album.Songs[i],  150, 100,
-                    buttonMargins, scale, context
-                );
-                lnMain.AddView(lnIn);
+                if (songTilesBuffer.TryAdd(album.Songs[i].Title, lnIn)) 
+                    lnMain.AddView(lnIn);
+                    
+                    
             }
 
            

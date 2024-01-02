@@ -79,10 +79,10 @@ namespace MWP
             
             albumImagesBuffer.ValueChanged += delegate
             {
-                ((Activity)context).RunOnUiThread(() => {
+                ((Activity)context).RunOnUiThread(() => 
+                {
                     string last = albumImagesBuffer.lastValueAdded;
                     LinearLayout child = albumTilesBuffer?[last] ?? new LinearLayout(context);
-                    MyConsole.WriteLine($"{((TextView)child.GetChildAt(1)).Text}");
                     if (assets != null)
                         UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
                 });
@@ -90,10 +90,10 @@ namespace MWP
             
             authorImagesBuffer.ValueChanged += delegate
             {
-                ((Activity)context).RunOnUiThread(() => {
+                ((Activity)context).RunOnUiThread(() => 
+                {
                     string last = authorImagesBuffer.lastValueAdded;
                     LinearLayout child = authorTilesBuffer?[last] ?? new LinearLayout(context);
-                    MyConsole.WriteLine($"{((TextView)child.GetChildAt(1)).Text}");
                     if (assets != null)
                         UIRenderFunctions.LoadSongImageFromBuffer(child, authorImagesBuffer, assets);
                 });
