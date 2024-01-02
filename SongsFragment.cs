@@ -75,10 +75,10 @@ namespace MWP
                 {
                     ((Activity)context).RunOnUiThread(() => {
                         string last = _lazyImageBuffer.Items.Keys.Last();
-                        MyConsole.WriteLine($"Last added item {last}");
 
                         LinearLayout child = _lazyBuffer?[last] ?? new LinearLayout(context);
-                        LoadSongImageFromBuffer(child);
+                        if (_assets != null)
+                            UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
                     });
                 };
             
@@ -136,18 +136,7 @@ namespace MWP
              */ 
             Task.Run(async () =>
             {
-                List<Song> songs = MainActivity.StateHandler.Songs;
-                await LoadSongImages(songs);
-                
-                /*
-                ((Activity)context).RunOnUiThread(() =>
-                {
-                    for (int i = 0; i < songs.Count; i++)
-                    {
-                        LinearLayout? child = _lazyBuffer?[songs[i].Title];
-                        if (child != null) LoadSongImageFromBuffer(child);
-                    }
-                }); */
+                await UIRenderFunctions.LoadSongImages(MainActivity.StateHandler.Songs, _lazyImageBuffer, UIRenderFunctions.LoadImageType.SONG);
             });
             
             return view;
@@ -285,33 +274,7 @@ namespace MWP
                     };
             }
         }
-
-
-        private async Task LoadSongImages(List<Song> songs)
-        {
-            for (int i = 0; i < songs.Count; i++)
-            {
-                if (!_lazyImageBuffer.Items.ContainsKey(songs[i].Title)) 
-                    _lazyImageBuffer.AddItem(songs[i].Title, songs[i].Image);
-            }
-        }
-
-        private static void LoadSongImageFromBuffer(LinearLayout child)
-        {
-            ImageView currentImage = (ImageView)child?.GetChildAt(0)!;
-            TextView? currentTitle = (TextView)child?.GetChildAt(1)!;
-            if (currentTitle.Text != null && _lazyImageBuffer.Items.ContainsKey(currentTitle.Text))
-            {
-                MyConsole.WriteLine($"{_lazyImageBuffer.Items?[currentTitle.Text]} <<>> {currentTitle.Text}");
-                if (((BitmapDrawable)currentImage?.Drawable!)?.Bitmap != _lazyImageBuffer.Items?[currentTitle.Text]) 
-                    currentImage?.SetImageBitmap(_lazyImageBuffer.Items?[currentTitle.Text]);
-            }
-            else
-            {
-                currentImage?.SetImageDrawable(Drawable.CreateFromStream(_assets?.Open("music_placeholder.png"), null));
-            }
-            
-        }
+        
         
         private async void RenderSongs(List<Song> songs)
         {
@@ -342,12 +305,12 @@ namespace MWP
 
             decimal percentage = ((decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count) * 100;
             MyConsole.WriteLine($"Percentage of Loaded Songs {_lazyImageBuffer.Items.Count} / {_lazyBuffer.Count} = {(decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count}");
-            if (percentage > 90)
+            if (percentage > 80)
             {
                 for (int i = 0; i < songs.Count; i++)
                 {
                     LinearLayout? child = _lazyBuffer[songs[i].Title];
-                    LoadSongImageFromBuffer(child);
+                    if (_assets != null) UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
                 }
             }
           
@@ -377,7 +340,7 @@ namespace MWP
                                LinearLayout? child = tup.Value;
                                if (UIRenderFunctions.IsVisible(child))
                                { 
-                                   LoadSongImageFromBuffer(child);
+                                   UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
                                }
                            }
 

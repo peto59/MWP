@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Android.Widget;
 
 namespace MWP.Helpers
 {
@@ -7,7 +8,13 @@ namespace MWP.Helpers
     public class ObservableDictionary<TKey,TValue> : Dictionary<TKey,TValue>
     {
         public Dictionary<TKey,TValue> Items = new Dictionary<TKey,TValue>();
-        public ObservableDictionary():base(){}
+        public TKey lastValueAdded;
+        
+        
+        public ObservableDictionary() : base()
+        {
+            
+        }
         ObservableDictionary(int capacity) : base(capacity) { }
         //
         // Do all your implementations here...
@@ -17,6 +24,7 @@ namespace MWP.Helpers
 
         public void OnValueChanged(Object sender,EventArgs e, TKey key, TValue value)
         {
+            lastValueAdded = key;
             EventHandler handler = ValueChanged;
             handler(this, EventArgs.Empty);
         }

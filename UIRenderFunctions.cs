@@ -5,10 +5,13 @@ using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.OS;
+using Java.Util;
+using Kotlin.IO;
 using MWP.BackEnd;
 using Xamarin.Essentials;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
@@ -640,5 +643,99 @@ namespace MWP
                 (int)DeviceDisplay.MainDisplayInfo.Width, (int)DeviceDisplay.MainDisplayInfo.Height);
             return actualPosition.Intersect(screen);
         }
+
+
+        public enum LoadImageType
+        {
+            ALBUM,
+            AUTHOR,
+            SONG
+        }
+
+        /// <summary>
+        /// Funkcia sluziaca na asynchronne nacitanie Bitmap obrazkov. Sluzi hlavne na prenesenie nacitavani obrazkov z hlavneho UI vlakna
+        /// na vlakno vytvorene na pozadi, Je to z dovodu uvolnenia UI vlakna pre rychlejsie a responzivnejsie uizivatelske rozrhanie.
+        /// Funkcia je typu Task coz hovori o tom ze mozme na danu funkciu pouzit await pri jej volani.
+        /// 
+        /// Funkcia prijma list pesniciek cez ktory sa precyklime pomocou for-loopu a pre kazdy pesnicku nacitame obrazok z backend-u
+        /// a nasladne sa ulozi do slovnika spolu s klucom ako nazov pesnicku pre rychle vyhladavanie obrazok pre pesnicky v uzivatelskom rohrani.
+        /// </summary>
+        /// <param name="objects">List generickeho typu, nasledne kovertovany na zaklade UIRenderFunctions.LoadImageType</param>
+        /// <param name="buffer">slovnik do ktoreho ulozime nacitane obrazky ako hodnotu a priradime kluc s nazvom pesnicky</param>
+        /// <param name="type">Typ dat ktore prijmame ako list. Takze albumy/autorov/pesnicky. Pre koho chcem nacitavat obrazky</param>
+        public static async Task LoadSongImages<T>(List<T> objects, ObservableDictionary<string, Bitmap>? buffer, LoadImageType type)
+        {
+            switch (type)
+            {
+                case LoadImageType.ALBUM:
+                    List<Album> al = objects.ConvertAll(TtoAlbum);
+                    for (int i = 0; i < al.Count; i++)
+                    {
+                        if (buffer != null && !buffer.Items.ContainsKey(al[i].Title)) 
+                            buffer.AddItem(al[i].Title, al[i].Image);
+                    }
+                    break;
+                case LoadImageType.SONG:
+                    List<Song> sg = objects.ConvertAll(TtoSong);
+                    for (int i = 0; i < sg.Count; i++)
+                    {
+                        if (buffer != null && !buffer.Items.ContainsKey(sg[i].Title)) 
+                            buffer.AddItem(sg[i].Title, sg[i].Image);
+                    }
+                    break;
+                case LoadImageType.AUTHOR:
+                    List<Artist> au = objects.ConvertAll(TtoArtist);
+                    for (int i = 0; i < au.Count; i++)
+                    {
+                        if (buffer != null && !buffer.Items.ContainsKey(au[i].Title)) 
+                            buffer.AddItem(au[i].Title, au[i].Image);
+                    }
+                    break;
+            }
+            
+            
+            
+        }
+
+        private static Album TtoAlbum<T>(T a)
+        {
+            return (Album)Convert.ChangeType(a, typeof(Album));
+        }
+        private static Song TtoSong<T>(T a)
+        {
+            return (Song)Convert.ChangeType(a, typeof(Song));
+        }
+        private static Artist TtoArtist<T>(T a)
+        {
+            return (Artist)Convert.ChangeType(a, typeof(Artist));
+        }
+        
+
+        /// <summary>
+        /// Funkcia sluziaca na nastavenie obrazka jedneho policka uzivatelskeho rozhrania. Funkcia prijme jeden element typu LinearLayout ktory obsahuje ImageView a TextView.
+        /// Do ImageView vlozime nacitany obrazok ktory ziskame zo slovnika s obrazkami a vyhladame ho v tomto slovniku na zaklade textu ktory sa nachadza v LinearLayout-e.
+        /// Pokial obrazok nemoze byt najdeny, nacitame miesto toho staticky *.png z assetov.
+        /// </summary>
+        /// <param name="child">Dieta typu LinearLayout (musi obsahovat TextView a ImageView) z listu policok pesniciek/albumov/artistov</param>
+        /// <param name="images">Slovnik s obrazkami</param>
+        /// <param name="assets">Assety projektu</param>
+        public static void LoadSongImageFromBuffer(LinearLayout child, ObservableDictionary<string, Bitmap>? images, AssetManager? assets)
+        {
+            ImageView currentImage = (ImageView)child?.GetChildAt(0)!;
+            TextView? currentTitle = (TextView)child?.GetChildAt(1)!;
+            if (currentTitle.Text != null && images.Items.ContainsKey(currentTitle.Text))
+            {
+                // MyConsole.WriteLine($"{images.Items?[currentTitle.Text]} <<>> {currentTitle.Text}");
+                if (((BitmapDrawable)currentImage?.Drawable!)?.Bitmap != images.Items?[currentTitle.Text]) 
+                    currentImage?.SetImageBitmap(images.Items?[currentTitle.Text]);
+            }
+            else
+            {
+                currentImage?.SetImageDrawable(Drawable.CreateFromStream(assets?.Open("music_placeholder.png"), null));
+            }
+            
+        }
+        
+        
     }
 }
