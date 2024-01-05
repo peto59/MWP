@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Android.Graphics;
 using MWP.DatatypesAndExtensions;
 
 namespace MWP.BackEnd
@@ -79,6 +80,34 @@ namespace MWP.BackEnd
                 tfile.Tag.Performers = value;
                 Changed = true;
                 saveFlags |= SongSave.Artist;
+            }
+        }
+
+        public Bitmap Image
+        {
+            get
+            {
+                byte[]? dataData = tfile?.Tag.Pictures[0].Data.Data;
+                if (dataData != null)
+                {
+                    using MemoryStream ms = new MemoryStream(dataData);
+                    return BitmapFactory.DecodeStream(ms) ?? MusicBaseClassStatic.Placeholder;
+                }
+
+                return MusicBaseClassStatic.Placeholder;
+            }
+
+            set
+            {
+                if (tfile == null) return;
+                if (value.SameAs(Image)) return;
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    value.Compress(Bitmap.CompressFormat.Png, 0, stream);
+                    tfile.Tag.Pictures[0].Data = stream.ToArray();
+                }
+                Changed = true;
+                saveFlags |= SongSave.Image;
             }
         }
         
@@ -160,7 +189,7 @@ namespace MWP.BackEnd
             Song? s = null;
             if (tfile != null)
             {
-                path = $"{path}/{FileManager.Sanitize(tfile.Tag.Title)}";
+                path = $"{path}/{FileManager.Sanitize(tfile.Tag.Title)}.mp3";
                 if (saveFlags.HasFlag(SongSave.Title))
                 {
                 

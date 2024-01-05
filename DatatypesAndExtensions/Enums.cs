@@ -51,11 +51,12 @@ namespace MWP.DatatypesAndExtensions
     [Flags]
     internal enum SongSave
     {
-        None,
-        Title,
-        Artist,
-        Album,
-        NoAlbum
+        None = 0,
+        Title = 1,
+        Artist = 2,
+        Album = 4,
+        NoAlbum = 8,
+        Image = 16
     }
 
     internal enum AutoUpdate
