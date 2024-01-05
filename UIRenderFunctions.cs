@@ -344,9 +344,9 @@ namespace MWP
                 foreach (KeyValuePair<LinearLayout, Guid> pr in songButtons.Where(pr => pr.Key == pressedButton))
                 {
 #if DEBUG
-                    MyConsole.WriteLine("UI Render functions, line 282, testing pr value : " + pr.Value);
+                    MyConsole.WriteLine($"UI Render functions testing pr value : {pr.Value} ----- {((Song)musics).Path}");
 #endif
-                    switch (songType)
+                    switch (songType) 
                     {
                         case SongType.AllSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.StateHandler.Songs, pr.Value);

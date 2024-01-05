@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
+using Android.Graphics;
 using AndroidX.AppCompat.App;
 using MWP.DatatypesAndExtensions;
 #if DEBUG
@@ -64,6 +65,19 @@ namespace MWP.BackEnd
         public static void TriggerShareFragmentRefresh()
         {
             OnShareFragmentRefresh.Invoke();
+        }
+        
+        /// <summary>
+        /// Binder for all functions requiring Share Fragment Refresh event
+        /// </summary>
+        public static event Action<(string oldTitle, Song song)> OnTagManagerFragmentRefresh;
+        
+        /// <summary>
+        /// Share Fragment Refresh event invocation
+        /// </summary>
+        public static void TriggerTagManagerFragmentRefresh(string oldTitle, Song song)
+        {
+            OnTagManagerFragmentRefresh.Invoke((oldTitle, song));
         }
         //---------------------------------------------------------
         

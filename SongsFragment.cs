@@ -46,6 +46,10 @@ namespace MWP
         private readonly long delay = 500; 
         private long lastTextEdit = 0;
         private static Handler _handler = new Handler();
+
+        private int[] allSongsButtonMargins;
+        private int[] allSongsNameMargins;
+        private int[] allSongsCardMargins;
         
             
        /// <inheritdoc cref="context"/>
@@ -56,7 +60,16 @@ namespace MWP
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
 
+            allSongsButtonMargins = new []{ 50, 50, 50, 50 };
+            allSongsNameMargins = new []{ 50, 50, 50, 50 };
+            allSongsCardMargins = new []{ 0, 50, 0, 0 };
+            
             _lazyImageBuffer = new ObservableDictionary<string, Bitmap>();
+
+            StateHandler.OnTagManagerFragmentRefresh += tuple =>
+            {
+                UpdateSong(tuple.oldTitle, tuple.song);
+            };
         }
         
         
@@ -277,11 +290,6 @@ namespace MWP
         
         private async void RenderSongs(List<Song> songs)
         {
-            int[] allSongsButtonMargins = { 50, 50, 50, 50 };
-            int[] allSongsNameMargins = { 50, 50, 50, 50 };
-            int[] allSongsCardMargins = { 0, 50, 0, 0 };
-
-            
             _lazyBuffer = new Dictionary<string, LinearLayout>();
             
             
@@ -415,29 +423,53 @@ namespace MWP
             RenderSongs(MainActivity.StateHandler.Songs);
         }
 
-        public void UpdateSong(Bitmap image, string oldTitle)
+       
+        private void UpdateSong(string oldTitle, Song song)
         {
-            LinearLayout? view = _lazyBuffer?[oldTitle];
-            TextView? title = (TextView)view?.GetChildAt(1)!;
-            ImageView? cover = (ImageView)view?.GetChildAt(0)!;
-            cover.SetImageBitmap(image);
-        }
-        
-        public void UpdateSong(string newTitle, string oldTitle)
-        {
-            LinearLayout? view = _lazyBuffer?[oldTitle];
-            TextView? title = (TextView)view?.GetChildAt(1)!;
-            ImageView? cover = (ImageView)view?.GetChildAt(0)!;
-            title.Text = newTitle;
-        }
-        
-        public void UpdateSong(Bitmap image, string newTitle, string oldTitle)
-        {
-            LinearLayout? view = _lazyBuffer?[oldTitle];
-            TextView? title = (TextView)view?.GetChildAt(1)!;
-            ImageView? cover = (ImageView)view?.GetChildAt(0)!;
-            cover.SetImageBitmap(image);
-            title.Text = newTitle;
+          
+            for (int i = 0; i < _allSongsLnMain!.ChildCount; i++)
+            {
+                LinearLayout? ithChild = (LinearLayout)_allSongsLnMain.GetChildAt(i)!;
+                var childTitle = ((TextView)ithChild?.GetChildAt(1)!).Text;
+                if (childTitle != null && childTitle.Equals(oldTitle))
+                {
+#if DEBUG
+                    MyConsole.WriteLine($"old title {oldTitle}");
+                    MyConsole.WriteLine($"child title {childTitle}");
+                    MyConsole.WriteLine($"new title {song.Title}");
+                    MyConsole.WriteLine($"new song id {song.Id}");
+#endif
+                    
+                    _allSongsLnMain.RemoveView(ithChild);
+                    _lazyBuffer?.Remove(oldTitle);
+                    _lazyImageBuffer?.Items.Remove(oldTitle);
+                    songButtons.Remove(ithChild);
+                    // fea2db10-94ec-4fb3-8e32-f0d351d77d1b
+                    LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
+                        song, scale,
+                        150, 100,
+                        allSongsButtonMargins, allSongsNameMargins, allSongsCardMargins,
+                        17,  context, songButtons, UIRenderFunctions.SongType.AllSong, _assets, ParentFragmentManager, 
+                        _allSongsLnMain, this
+                    );
+                    ImageView? cover = (ImageView)lnIn?.GetChildAt(0)!;
+                    cover.SetImageBitmap(song.Image);
+                    _lazyImageBuffer?.Items.Add(song.Title, song.Image);
+                    
+                    if (_lazyBuffer != null && _lazyBuffer.TryAdd(song.Title, lnIn))
+                    {
+                        _allSongsLnMain?.AddView(lnIn);
+                    }
+                    
+                    // RenderSongs(MainActivity.StateHandler.Songs);
+
+                    return;
+
+                }
+            }
+            
+            
+            
         }
         
         

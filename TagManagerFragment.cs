@@ -47,7 +47,6 @@ namespace MWP
         private TextView? backButton;
 
         private TagManager tagManager;
-        
 
         
         /// <inheritdoc cref="context"/>
@@ -69,7 +68,9 @@ namespace MWP
         {
             try
             {
+                
                 var result = await FilePicker.PickAsync(options);
+                tagManager = new TagManager((Song)song);
                 if (result != null)
                 {
                     string text = $"File Name: {result.FileName}";

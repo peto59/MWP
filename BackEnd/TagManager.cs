@@ -102,7 +102,13 @@ namespace MWP.BackEnd
 
             set
             {
-                if (tfile == null) return;
+                if (tfile == null)
+                {
+#if DEBUG
+                    MyConsole.WriteLine($"Tfile is null");
+#endif
+                    return;
+                }
                 if (value.SameAs(Image))
                 {
 #if DEBUG
@@ -285,6 +291,10 @@ namespace MWP.BackEnd
                 song = s;
             }
 
+          
+            StateHandler.TriggerTagManagerFragmentRefresh(OriginalTitle, s);
+            
+           
             saveFlags = SongSave.None;
             #if DEBUG
             MyConsole.WriteLine("Save is saving ver save (TagManager)!");
@@ -299,6 +309,9 @@ namespace MWP.BackEnd
     
         protected virtual void Dispose(bool disposing)
         {
+#if DEBUG
+            MyConsole.WriteLine("Dispode in TagManager log");   
+#endif
             if (disposing)
             {
                 //Save();

@@ -433,6 +433,9 @@ namespace MWP.BackEnd.Player
 #endif
 				if (!System.IO.File.Exists(QueueObject.Current.Path))
 				{
+#if DEBUG
+					MyConsole.WriteLine($"Path doesent exist {QueueObject.Current.Path} {QueueObject.Current.Id}");				
+#endif
 					return;
 				}
 				mediaPlayer.SetDataSource(QueueObject.Current.Path);
