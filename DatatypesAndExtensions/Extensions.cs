@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using MWP.BackEnd;
+using TagLib;
+using TagLib.Id3v2;
+using Tag = TagLib.Id3v2.Tag;
 
 namespace MWP
 {
@@ -92,6 +96,37 @@ namespace MWP
         public static bool Contains(this string source, string toCheck, StringComparison comp)
         {
             return source.IndexOf(toCheck, comp) >= 0;
+        }
+
+        public static void writePrivateFrame(this File tfile, string tagName, string value)
+        {
+            //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
+            Tag custom = (Tag) tfile.GetTag(TagTypes.Id3v2);
+            PrivateFrame privateFrame = PrivateFrame.Get(custom, tagName, true);
+            privateFrame.PrivateData = Encoding.UTF8.GetBytes(value);
+        }
+        
+        public static void writePrivateFrame(this File tfile, string tagName, bool value)
+        {
+            //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
+            Tag custom = (Tag) tfile.GetTag(TagTypes.Id3v2);
+            PrivateFrame privateFrame = PrivateFrame.Get(custom, tagName, true);
+            privateFrame.PrivateData = Convert.ToByte(value);
+        }
+
+        public static string readPrivateFrame(this File tfile, string tagName, string defaultValue)
+        {
+            //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
+            Tag t = (Tag)tfile.GetTag(TagTypes.Id3v2);
+            PrivateFrame? privateFrame = PrivateFrame.Get(t, tagName, false);
+            return privateFrame != null ? Encoding.UTF8.GetString(privateFrame.PrivateData.Data) : defaultValue;
+        }
+        public static bool readPrivateFrame(this File tfile, string tagName, bool defaultValue)
+        {
+            //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
+            Tag t = (Tag)tfile.GetTag(TagTypes.Id3v2);
+            PrivateFrame? privateFrame = PrivateFrame.Get(t, tagName, false);
+            return privateFrame != null ? Convert.ToBoolean(privateFrame.PrivateData.Data) : defaultValue;
         }
     }
 }

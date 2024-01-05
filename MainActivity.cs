@@ -530,6 +530,7 @@ namespace MWP
         {
             FileManager.Innit();
             
+            
             if (SettingsManager.CheckUpdates == AutoUpdate.Requested)
             {
                 CheckUpdates();
@@ -537,7 +538,7 @@ namespace MWP
 
             if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
             {
-                //new Thread(NetworkManager.Listener).Start();
+                new Thread(NetworkManager.Listener).Start();
             }
             
             new Thread(() => {

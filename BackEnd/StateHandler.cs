@@ -57,14 +57,14 @@ namespace MWP.BackEnd
         /// <summary>
         /// Binder for all functions requiring Share Fragment Refresh event
         /// </summary>
-        public static event Action OnShareFragmentRefresh;
+        public static event Action? OnShareFragmentRefresh;
 
         /// <summary>
         /// Share Fragment Refresh event invocation
         /// </summary>
         public static void TriggerShareFragmentRefresh()
         {
-            OnShareFragmentRefresh.Invoke();
+            OnShareFragmentRefresh?.Invoke();
         }
         
         /// <summary>
