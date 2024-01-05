@@ -6,12 +6,16 @@ using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.Views.InputMethods;
+using Bumptech.Glide.Load.Resource.Bitmap;
 using Google.Android.Material.FloatingActionButton;
+using Java.Lang;
 using MWP.BackEnd;
+using Xamarin.Essentials;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
@@ -33,26 +37,27 @@ namespace MWP
         private RelativeLayout? mainLayout;
         private Typeface? font;
         private ScrollView allSongsScroll;
-        private LinearLayout allSongsLnMain;
-        private AssetManager? assets;
-
-        private Dictionary<LinearLayout, Guid> songButtons = new Dictionary<LinearLayout, Guid>();
-        private List<Tuple<LinearLayout, int>> lazyBuffer;
+        private static LinearLayout? _allSongsLnMain;
+        private static AssetManager? _assets;
         
-        long delay = 1000; 
-        long lastTextEdit = 0;
-        [Obsolete("Obsolete")] Handler handler = new Handler();
+        private Dictionary<LinearLayout, Guid> songButtons = new Dictionary<LinearLayout, Guid>();
+        private static Dictionary<string, LinearLayout>? _lazyBuffer;
+        private static ObservableDictionary<string, Bitmap>? _lazyImageBuffer;
+        
+        private readonly long delay = 500; 
+        private long lastTextEdit = 0;
+        private static Handler _handler = new Handler();
         
             
        /// <inheritdoc cref="context"/>
         public SongsFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
-            this.assets = assets;
+            _assets = assets;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
 
-          
+            _lazyImageBuffer = new ObservableDictionary<string, Bitmap>();
         }
         
         
@@ -64,7 +69,20 @@ namespace MWP
             View? view = inflater.Inflate(Resource.Layout.songs_fragment, container, false);
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.songs_fragment_main);
+
+            if (_lazyImageBuffer != null)
+                _lazyImageBuffer.ValueChanged += (_, _) =>
+                {
+                    ((Activity)context).RunOnUiThread(() => {
+                        string last = _lazyImageBuffer.Items.Keys.Last();
+
+                        LinearLayout child = _lazyBuffer?[last] ?? new LinearLayout(context);
+                        if (_assets != null)
+                            UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
+                    });
+                };
             
+
             /*
              * Handle creating base block views
              */
@@ -77,16 +95,16 @@ namespace MWP
             allSongsScroll.LayoutParameters = allSongsScrollParams;
 
 
-            allSongsLnMain = new LinearLayout(context);
-            allSongsLnMain.Orientation = Orientation.Vertical;
+            _allSongsLnMain = new LinearLayout(context);
+            _allSongsLnMain.Orientation = Orientation.Vertical;
             RelativeLayout.LayoutParams allSongsLnMainParams = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
                 ViewGroup.LayoutParams.MatchParent
             );
             allSongsLnMainParams.SetMargins(20, 20, 20, 20);
-            allSongsLnMain.LayoutParameters = allSongsLnMainParams;
+            _allSongsLnMain.LayoutParameters = allSongsLnMainParams;
             
-            allSongsScroll.AddView(allSongsLnMain);
+            allSongsScroll.AddView(_allSongsLnMain);
             mainLayout?.AddView(allSongsScroll);
             
             
@@ -112,6 +130,15 @@ namespace MWP
                 );
             if (createPlaylist != null) createPlaylist.Click += CreatePlaylistPopup;
 
+            
+            /*
+             * Load Song images
+             */ 
+            Task.Run(async () =>
+            {
+                await UIRenderFunctions.LoadSongImages(MainActivity.StateHandler.Songs, _lazyImageBuffer, UIRenderFunctions.LoadImageType.SONG);
+            });
+            
             return view;
         }
 
@@ -141,27 +168,27 @@ namespace MWP
                 
                 aZ.Click += delegate
                 {
-                    allSongsLnMain.RemoveAllViews();
+                    _allSongsLnMain?.RemoveAllViews();
                     RenderSongs(MainActivity.StateHandler.Songs.OrderAlphabetically());
                 };
                 zA.Click += delegate
                 {
-                    allSongsLnMain.RemoveAllViews();
+                    _allSongsLnMain?.RemoveAllViews();
                     RenderSongs(MainActivity.StateHandler.Songs.OrderAlphabetically(true));
                 };
                 newDate.Click += delegate
                 {
-                    allSongsLnMain.RemoveAllViews();
+                    _allSongsLnMain?.RemoveAllViews();
                     RenderSongs(MainActivity.StateHandler.Songs.OrderByDate());
                 };
                 oldDate.Click += delegate
                 {
-                    allSongsLnMain.RemoveAllViews();
+                    _allSongsLnMain?.RemoveAllViews();
                     RenderSongs(MainActivity.StateHandler.Songs.OrderByDate(true));
                 };
                 reset.Click += delegate
                 {
-                    allSongsLnMain.RemoveAllViews();
+                    _allSongsLnMain?.RemoveAllViews();
                     RenderSongs(MainActivity.StateHandler.Songs.OrderByDate());
                 };
             }
@@ -178,10 +205,7 @@ namespace MWP
             {   
                 if ((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) > (lastTextEdit + delay - 500))
                 {
-#if DEBUG
-                    MyConsole.WriteLine("Stopped Writing, USER STOPPED WRITING OM GOUUTYAYAYD, THAT SOI COOOL");
-#endif
-                    allSongsLnMain.RemoveAllViews();
+                    _allSongsLnMain?.RemoveAllViews();
                     RenderSongs(songs);
                 }
             };
@@ -197,13 +221,13 @@ namespace MWP
                 searchInput.Typeface = font;
                 if (searchInput.Text == "")
                 {
-                    allSongsLnMain.RemoveAllViews();
+                    _allSongsLnMain?.RemoveAllViews();
                     RenderSongs(MainActivity.StateHandler.Songs);
                 }
                 
                 searchInput.TextChanged += (object sender, Android.Text.TextChangedEventArgs e) =>
                 {
-                    handler.RemoveCallbacks(() =>
+                    _handler.RemoveCallbacks(() =>
                     {
                         if (view != null) inputFinishChecker(MainActivity.StateHandler.Songs, view, context);
                     });
@@ -211,7 +235,7 @@ namespace MWP
                     if (e.Text != null && e.Text.Any())
                     {
                         lastTextEdit = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                        handler.PostDelayed(() =>
+                        _handler.PostDelayed(() =>
                             {
                                 if (view != null)
                                     inputFinishChecker(
@@ -225,7 +249,7 @@ namespace MWP
                     else
                     {
                         lastTextEdit = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                        handler.PostDelayed(() =>
+                        _handler.PostDelayed(() =>
                         {
                             if (view != null) inputFinishChecker(MainActivity.StateHandler.Songs, view, context);
                         }, delay);
@@ -250,63 +274,84 @@ namespace MWP
                     };
             }
         }
-
-
-
-        private void RenderSongs(List<Song> songs)
+        
+        
+        private async void RenderSongs(List<Song> songs)
         {
             int[] allSongsButtonMargins = { 50, 50, 50, 50 };
             int[] allSongsNameMargins = { 50, 50, 50, 50 };
             int[] allSongsCardMargins = { 0, 50, 0, 0 };
 
-
-            lazyBuffer = new List<Tuple<LinearLayout, int>>();
+            
+            _lazyBuffer = new Dictionary<string, LinearLayout>();
+            
             
             for (int i = 0; i < songs.Count; i++)
             {
+                
                 LinearLayout lnIn = UIRenderFunctions.PopulateHorizontal(
                     songs[i], scale,
                     150, 100,
                     allSongsButtonMargins, allSongsNameMargins, allSongsCardMargins,
-                    17,  context, songButtons, UIRenderFunctions.SongType.AllSong, assets, ParentFragmentManager, 
-                    allSongsLnMain, this
+                    17,  context, songButtons, UIRenderFunctions.SongType.AllSong, _assets, ParentFragmentManager, 
+                    _allSongsLnMain, this
                 );
-                
-                lazyBuffer.Add(new Tuple<LinearLayout, int>(lnIn, i));
-
-            }
-
-            for (int i = 0; i < Math.Min(5, lazyBuffer.Count); i++)
-            {
-                UIRenderFunctions.SetTilesImage(
-                    lazyBuffer[i].Item1, songs[lazyBuffer[i].Item2],150, 100, allSongsButtonMargins, 15, allSongsNameMargins,
-                    scale, context);
-                allSongsLnMain.AddView(lazyBuffer[i].Item1);
-            }
-           
-            lazyBuffer.RemoveRange(0, Math.Min(5, lazyBuffer.Count));
-
-            allSongsScroll.ScrollChange += (sender, e) =>
-            {
-                View? view = allSongsLnMain.GetChildAt(allSongsLnMain.ChildCount - 1);
-                int topDetect = allSongsScroll.ScrollY;
-                if (view == null) return;
-                int bottomDetect = view.Bottom - (allSongsScroll.Height + allSongsScroll.ScrollY);
-
-                if (bottomDetect != 0 || lazyBuffer.Count == 0) return;
-                for (int i = 0; i < Math.Min(5, lazyBuffer.Count); i++)
+                if (_lazyBuffer.TryAdd(songs[i].Title, lnIn))
                 {
-                    UIRenderFunctions.SetTilesImage(
-                        lazyBuffer[i].Item1, songs[lazyBuffer[i].Item2],150, 100, allSongsButtonMargins, 15, allSongsNameMargins,
-                        scale, context);
-                    allSongsLnMain.AddView(lazyBuffer[i].Item1);
+                    _allSongsLnMain?.AddView(lnIn);
                 }
+                    
+            }
 
-                lazyBuffer.RemoveRange(0, Math.Min(5, lazyBuffer.Count));
-            };
+            decimal percentage = ((decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count) * 100;
+            MyConsole.WriteLine($"Percentage of Loaded Songs {_lazyImageBuffer.Items.Count} / {_lazyBuffer.Count} = {(decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count}");
+            if (percentage > 80)
+            {
+                for (int i = 0; i < songs.Count; i++)
+                {
+                    LinearLayout? child = _lazyBuffer[songs[i].Title];
+                    if (_assets != null) UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
+                }
+            }
+          
+            /*
+            var viewTreeObserver = _allSongsLnMain?.ViewTreeObserver;
+            if (viewTreeObserver is { IsAlive: true })
+            {
+                viewTreeObserver.AddOnScrollChangedListener(new MyScrollListener());
+            } */
             
             
         } 
+        
+        private class MyScrollListener : Java.Lang.Object, ViewTreeObserver.IOnScrollChangedListener
+        {
+            public void OnScrollChanged()
+            {
+                
+                _handler.RemoveCallbacksAndMessages(null);
+
+                _handler.PostDelayed(() =>
+                {
+                   if (_allSongsLnMain != null)
+                       if (_lazyBuffer != null)
+                           foreach (var tup in _lazyBuffer)
+                           {
+                               LinearLayout? child = tup.Value;
+                               if (UIRenderFunctions.IsVisible(child))
+                               { 
+                                   UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
+                               }
+                           }
+
+                }, 50);
+                
+            }
+            
+
+        }
+
+      
         
         
         
@@ -364,9 +409,11 @@ namespace MWP
         public void InvalidateCache()
         {
             songButtons.Clear();
-            allSongsLnMain.RemoveAllViews();
+            _lazyBuffer?.Clear();
+            _allSongsLnMain?.RemoveAllViews();
             RenderSongs(MainActivity.StateHandler.Songs);
         }
+        
         
         
         private void add_alias_popup(string authorN)
@@ -399,4 +446,6 @@ namespace MWP
             dialog?.Show();
         }
     }
+    
+    
 }

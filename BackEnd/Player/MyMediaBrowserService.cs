@@ -347,14 +347,14 @@ namespace MWP.BackEnd.Player
 
         ~MyMediaBrowserService()
         {
-            Dispose(true);
+            // Dispose(true);
         }
 
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            _serviceConnection?.Dispose();
-            _serviceConnection = null;
+            // _serviceConnection?.Dispose();
+            // _serviceConnection = null;
             base.Dispose(disposing);
         }
     }

@@ -127,6 +127,8 @@
     <Compile Include="Helpers\APIThrottler.cs" />
     <Compile Include="DatatypesAndExtensions\Artist.cs" />
     <Compile Include="DownloadNotification.cs" />
+    <Compile Include="Helpers\ObservableDictionary.cs" />
+    <Compile Include="Helpers\ObservableInteger.cs" />
     <Compile Include="Helpers\SongJsonConverter.cs" />
     <Compile Include="Helpers\MyConsole.cs" />
     <Compile Include="Helpers\Interval.cs" />

@@ -5,11 +5,15 @@ using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.OS;
+using Java.Util;
+using Kotlin.IO;
 using MWP.BackEnd;
+using Xamarin.Essentials;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 using Orientation = Android.Widget.Orientation;
@@ -317,7 +321,23 @@ namespace MWP
             lnInParams.SetMargins(cardMargins[0], cardMargins[1], cardMargins[2], cardMargins[3]);
             lnIn.LayoutParameters = lnInParams;
             
-          
+            /*
+             * Create ImageView for song image
+             */
+            ImageView mori = new ImageView(context);
+            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
+                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
+            );
+            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
+            mori.LayoutParameters = ll;
+            
+            
+            lnIn.AddView(mori);
+            
+            
+            /*
+             * Handle events on song tile
+             */
             lnIn.Click += (sender, _) =>
             {
                 LinearLayout pressedButton = (LinearLayout)sender;
@@ -349,7 +369,29 @@ namespace MWP
 
             songButtons.Add(lnIn, musics.Id);
             
+            
+            /*
+             * Set Song Information
+             */
+            TextView name = new TextView(context);
+            name.Text = musics.Title;
+            name.TextSize = nameSize;
+            name.SetTextColor(Color.White);
+            name.TextAlignment = TextAlignment.Center;
+            name.SetForegroundGravity(GravityFlags.Center);
+
+            LinearLayout.LayoutParams lnNameParams = new LinearLayout.LayoutParams(
+                (int)(130 * scale + 0.5f),
+                ViewGroup.LayoutParams.WrapContent
+            );
+            lnNameParams.SetMargins(nameMargins[0], nameMargins[1], nameMargins[2], nameMargins[3]);
+
+            name.LayoutParameters = lnNameParams;
+
+            lnIn.SetGravity(GravityFlags.Center);
             lnIn.SetHorizontalGravity(GravityFlags.Center);
+            lnIn.AddView(name);
+            
             return lnIn;
         }
 
@@ -359,7 +401,9 @@ namespace MWP
         /// </summary>
         /// <param name="musics"></param>
         /// <param name="scale"></param>
+        /// <param name="btnMargins"></param>
         /// <param name="cardMargins"></param>
+        /// <param name="nameMargins"></param>
         /// <param name="nameSize"></param>
         /// <param name="index"></param>
         /// <param name="context"></param>
@@ -369,13 +413,16 @@ namespace MWP
         /// <param name="linForDelete"></param>
         /// <param name="albumFragment"></param>
         /// <param name="authorFragment"></param>
+        /// <param name="ww"></param>
+        /// <param name="hh"></param>
+        /// <param name="songsFragmentContext"></param>
         /// <returns></returns>
         public static LinearLayout PopulateVertical(
-            MusicBaseClass musics, float scale, int[] cardMargins, int nameSize, int index,
+            MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] cardMargins, int[] nameMargins, int nameSize, int index,
             Context context, Dictionary<LinearLayout, object> albumButtons, 
             FragmentManager manager, AssetManager? assets,
             AlbumFragment? albumFragment = null, AuthorFragment? authorFragment = null,
-            LinearLayout? linForDelete = null, SongsFragment? songsfragmentContext = null 
+            LinearLayout? linForDelete = null, SongsFragment? songsFragmentContext = null 
         )
         {
             //リネアルレーアート作る
@@ -389,6 +436,19 @@ namespace MWP
             );
             lnInParams.SetMargins(cardMargins[0], cardMargins[1], cardMargins[2], cardMargins[3]);
             lnIn.LayoutParameters = lnInParams;
+            
+            /*
+             * Creating imageView for later to load album/artist thumbnail image
+             */
+            ImageView mori = new ImageView(context);
+            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
+                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
+            );
+            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
+            mori.LayoutParameters = ll;
+            
+            
+            lnIn.AddView(mori);
 
 
             // ボッタン作って
@@ -427,7 +487,7 @@ namespace MWP
                 {
                     if (linForDelete != null)
                         ShowPopupSongEdit(album, linForDelete, lnIn, context, scale, assets, manager,
-                            songsfragmentContext);
+                            songsFragmentContext);
                 };
                 
 
@@ -469,14 +529,33 @@ namespace MWP
                 {
                     if (linForDelete != null)
                         ShowPopupSongEdit(artist, linForDelete, lnIn, context, scale, assets, manager,
-                            songsfragmentContext);
+                            songsFragmentContext);
                 };
                 
 
                 albumButtons.Add(lnIn, artist);
             }
+            
+            //アルブムの名前
+            TextView name = new TextView(context);
+            name.Text = musics.Title;
+            name.TextSize = nameSize;
+            name.SetTextColor(Color.White);
+            name.TextAlignment = TextAlignment.Center;
+            name.SetForegroundGravity(GravityFlags.Center);
 
+            LinearLayout.LayoutParams lnNameParams = new LinearLayout.LayoutParams(
+                (int)(130 * scale + 0.5f),
+                ViewGroup.LayoutParams.WrapContent
+            );
+            lnNameParams.SetMargins(nameMargins[0], nameMargins[1], nameMargins[2], nameMargins[3]);
+
+            name.LayoutParameters = lnNameParams;
+
+            lnIn.SetGravity(GravityFlags.Center);
             lnIn.SetHorizontalGravity(GravityFlags.Center);
+            lnIn.AddView(name);
+            
             return lnIn;
         }
         
@@ -498,7 +577,7 @@ namespace MWP
         /// <param name="nameMargins"></param>
         /// <param name="scale"></param>
         /// <param name="context"></param>
-        public static void SetTilesImage(LinearLayout parent, MusicBaseClass obj, int ww, int hh, int[] btnMargins, int nameSize, int[] nameMargins, float scale, Context context)
+        public static void SetTilesImage(LinearLayout parent, MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
         {
             ImageView mori = new ImageView(context);
             LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
@@ -516,32 +595,173 @@ namespace MWP
                 obj.Image
             );
             
-            
-            
-
             parent.AddView(mori);
 
-            //アルブムの名前
-            TextView name = new TextView(context);
-            name.Text = obj.Title;
-            name.TextSize = nameSize;
-            name.SetTextColor(Color.White);
-            name.TextAlignment = TextAlignment.Center;
-            name.SetForegroundGravity(GravityFlags.Center);
-
-            LinearLayout.LayoutParams lnNameParams = new LinearLayout.LayoutParams(
-                (int)(130 * scale + 0.5f),
-                ViewGroup.LayoutParams.WrapContent
+        }
+        
+        
+        public static ImageView GetTileImage(MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
+        {
+            ImageView songImage = new ImageView(context);
+            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
+                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
             );
-            lnNameParams.SetMargins(nameMargins[0], nameMargins[1], nameMargins[2], nameMargins[3]);
+            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
+            songImage.LayoutParameters = ll;
 
-            name.LayoutParameters = lnNameParams;
+            if (obj is not (Album or Artist or Song))
+            {
+                return new ImageView(context);
+            }
 
-            parent.SetGravity(GravityFlags.Center);
-            parent.SetHorizontalGravity(GravityFlags.Center);
-            parent.AddView(name);
-            
+            songImage.SetImageBitmap(
+                obj.Image
+            );
+
+            return songImage;
 
         }
+        
+        
+        /// <summary>
+        /// Funkcia sluziacia na zistinie stavu elementu na obrazovke
+        /// Ak element existuje ale je mimo obrazovky funkcia vrati false.
+        /// Ak element existuje a je na obrazovke a uzivatel ho moze vidiet, vrati true.
+        /// Funkcia ako prve zisti ci je element bol vytvoreny a exsituje, nasledne si vytvorim Rect objekt ktory bude sluzit na ulozenie dimenzii a pozicie elementu.
+        /// Nasledne pomocou funkcie GetGlobalVisibleRect, ktora je dostupna z objektu View, zistim X, Y poziciu elementu
+        /// a nakoniec si vytvorim dalsi Rect ktory ma dimenzie obrazovky a spravim prienik tychto dvoch stvrocov
+        /// </summary>
+        /// <param name="view">Element ktory chcem vyskusat ci je alebo nie je na obrazovke</param>
+        /// <returns></returns>
+        public static bool IsVisible(View? view) {
+            if (view == null || !view.IsShown) {
+                return false;
+            }
+            Rect actualPosition = new Rect();
+            view.GetGlobalVisibleRect(actualPosition);
+            Rect screen = new Rect(0, 0,
+                (int)DeviceDisplay.MainDisplayInfo.Width, (int)DeviceDisplay.MainDisplayInfo.Height);
+            return actualPosition.Intersect(screen);
+        }
+
+
+        public enum LoadImageType
+        {
+            ALBUM,
+            AUTHOR,
+            SONG
+        }
+
+        /// <summary>
+        /// Funkcia sluziaca na asynchronne nacitanie Bitmap obrazkov. Sluzi hlavne na prenesenie nacitavani obrazkov z hlavneho UI vlakna
+        /// na vlakno vytvorene na pozadi, Je to z dovodu uvolnenia UI vlakna pre rychlejsie a responzivnejsie uizivatelske rozrhanie.
+        /// Funkcia je typu Task coz hovori o tom ze mozme na danu funkciu pouzit await pri jej volani.
+        /// 
+        /// Funkcia prijma list pesniciek cez ktory sa precyklime pomocou for-loopu a pre kazdy pesnicku nacitame obrazok z backend-u
+        /// a nasladne sa ulozi do slovnika spolu s klucom ako nazov pesnicku pre rychle vyhladavanie obrazok pre pesnicky v uzivatelskom rohrani.
+        /// </summary>
+        /// <param name="objects">List generickeho typu, nasledne kovertovany na zaklade UIRenderFunctions.LoadImageType</param>
+        /// <param name="buffer">slovnik do ktoreho ulozime nacitane obrazky ako hodnotu a priradime kluc s nazvom pesnicky</param>
+        /// <param name="type">Typ dat ktore prijmame ako list. Takze albumy/autorov/pesnicky. Pre koho chcem nacitavat obrazky</param>
+        public static async Task LoadSongImages<T>(List<T> objects, ObservableDictionary<string, Bitmap>? buffer, LoadImageType type)
+        {
+            switch (type)
+            {
+                case LoadImageType.ALBUM:
+                    List<Album> al = objects.ConvertAll(TtoAlbum);
+                    for (int i = 0; i < al.Count; i++)
+                    {
+                        if (buffer != null && !buffer.Items.ContainsKey(al[i].Title)) 
+                            buffer.AddItem(al[i].Title, al[i].Image);
+                    }
+                    break;
+                case LoadImageType.SONG:
+                    List<Song> sg = objects.ConvertAll(TtoSong);
+                    for (int i = 0; i < sg.Count; i++)
+                    {
+                        if (buffer != null && !buffer.Items.ContainsKey(sg[i].Title)) 
+                            buffer.AddItem(sg[i].Title, sg[i].Image);
+                    }
+                    break;
+                case LoadImageType.AUTHOR:
+                    List<Artist> au = objects.ConvertAll(TtoArtist);
+                    for (int i = 0; i < au.Count; i++)
+                    {
+                        if (buffer != null && !buffer.Items.ContainsKey(au[i].Title)) 
+                            buffer.AddItem(au[i].Title, au[i].Image);
+                    }
+                    break;
+            }
+            
+            
+            
+        }
+
+        private static Album TtoAlbum<T>(T a)
+        {
+            return (Album)Convert.ChangeType(a, typeof(Album));
+        }
+        private static Song TtoSong<T>(T a)
+        {
+            return (Song)Convert.ChangeType(a, typeof(Song));
+        }
+        private static Artist TtoArtist<T>(T a)
+        {
+            return (Artist)Convert.ChangeType(a, typeof(Artist));
+        }
+        
+
+        /// <summary>
+        /// Funkcia sluziaca na nastavenie obrazka jedneho policka uzivatelskeho rozhrania. Funkcia prijme jeden element typu LinearLayout ktory obsahuje ImageView a TextView.
+        /// Do ImageView vlozime nacitany obrazok ktory ziskame zo slovnika s obrazkami a vyhladame ho v tomto slovniku na zaklade textu ktory sa nachadza v LinearLayout-e.
+        /// Pokial obrazok nemoze byt najdeny, nacitame miesto toho staticky *.png z assetov.
+        /// </summary>
+        /// <param name="child">Dieta typu LinearLayout (musi obsahovat TextView a ImageView) z listu policok pesniciek/albumov/artistov</param>
+        /// <param name="images">Slovnik s obrazkami</param>
+        /// <param name="assets">Assety projektu</param>
+        public static void LoadSongImageFromBuffer(LinearLayout child, ObservableDictionary<string, Bitmap>? images, AssetManager? assets)
+        {
+            ImageView currentImage = (ImageView)child?.GetChildAt(0)!;
+            TextView? currentTitle = (TextView)child?.GetChildAt(1)!;
+            if (currentTitle.Text != null && images.Items.ContainsKey(currentTitle.Text))
+            {
+                // MyConsole.WriteLine($"{images.Items?[currentTitle.Text]} <<>> {currentTitle.Text}");
+                if (((BitmapDrawable)currentImage?.Drawable!)?.Bitmap != images.Items?[currentTitle.Text]) 
+                    currentImage?.SetImageBitmap(images.Items?[currentTitle.Text]);
+            }
+            else
+            {
+                currentImage?.SetImageDrawable(Drawable.CreateFromStream(assets?.Open("music_placeholder.png"), null));
+            }
+            
+        }
+
+
+        /// <summary>
+        /// Funkcia sluziaca na najdenie takzvanych "dier" v zozname ci uz albumov, zoznamov alebo pesniciek a nasledne ich vyplnenie.
+        /// Funkcia najde prazdne policka a prideli im nacitany obrazok. Diery vznikaju z dovodu asynnchronneho nacitavania obrazkov pri ktorom sa obrazky nenacitavaju po poradi ale
+        /// na pozadi a to naraz, moze dojst k tomu, ze uzivatelske rozhranie je pomalsie nacitane ako pesnicky na slabsich zariadeniach a tak su tieto diery vyplnene na konci nacitavania obrazkov.
+        ///
+        /// Pomocou foreach-u prechadzam cez vsetky policka, v kazdom policku najdem prislusny ImageView v ktorom skontrolujem, ci obrazok tam je alebo nie. Pokial nie je zavolam
+        /// funkciy UIRenderFunctions.LoadSongImageFromBuffer pre nacitanie prislusneho obrazka pre prislusne policko.
+        /// </summary>
+        /// <param name="context">kontext hlavnej aktivity</param>
+        /// <param name="tiles">List Elementov uzivatelskeho rozhrania (Songs, Albums, Authors) v podobe slovnika v paroch (string, LinearLayout)</param>
+        /// <param name="images">List Obrazkov pre elementy uzivatelskeho rozhrania v podobe slovnika v paroch (string, Bitmap)</param>
+        /// <param name="assets">staticke subory, assety</param>
+        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout> tiles, ObservableDictionary<string, Bitmap> images, AssetManager? assets)
+        {
+            
+            ((Activity)context).RunOnUiThread(() =>
+            {
+                foreach (var tile in tiles)
+                {
+                    ImageView? vv = (ImageView)tile.Value.GetChildAt(0);
+                    if (vv?.Drawable == null)
+                        LoadSongImageFromBuffer(tile.Value, images, assets);
+                }
+            });
+        }
+
     }
 }
