@@ -30,10 +30,10 @@ namespace MWP
         private RelativeLayout? mainLayout;
         private AssetManager? assets;
 
-        private Dictionary<LinearLayout, object> albumButtons = new Dictionary<LinearLayout, object>();
+        private Dictionary<LinearLayout?, object> albumButtons = new Dictionary<LinearLayout?, object>();
 
-        private Dictionary<string, LinearLayout> albumTilesBuffer;
-        private Dictionary<string, LinearLayout> authorTilesBuffer;
+        private Dictionary<string, LinearLayout?> albumTilesBuffer;
+        private Dictionary<string, LinearLayout?> authorTilesBuffer;
         private ObservableDictionary<string, Bitmap> albumImagesBuffer;
         private ObservableDictionary<string, Bitmap> authorImagesBuffer;
 
@@ -57,11 +57,11 @@ namespace MWP
             albumFragment = new AlbumFragment(context, this.assets);
             authorFragment = new AuthorFragment(context, this.assets);
 
-            albumTilesBuffer = new Dictionary<string, LinearLayout>();
+            albumTilesBuffer = new Dictionary<string, LinearLayout?>();
             albumImagesBuffer = new ObservableDictionary<string, Bitmap>();
 
             authorImagesBuffer = new ObservableDictionary<string, Bitmap>();
-            authorTilesBuffer = new Dictionary<string, LinearLayout>();
+            authorTilesBuffer = new Dictionary<string, LinearLayout?>();
 
             UIdone = new ObservableInteger();
             
@@ -82,7 +82,7 @@ namespace MWP
                 ((Activity)context).RunOnUiThread(() => 
                 {
                     string last = albumImagesBuffer.lastValueAdded;
-                    LinearLayout child = albumTilesBuffer?[last] ?? new LinearLayout(context);
+                    LinearLayout? child = albumTilesBuffer?[last] ?? new LinearLayout(context);
                     if (assets != null)
                         UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
                 });
@@ -93,7 +93,7 @@ namespace MWP
                 ((Activity)context).RunOnUiThread(() => 
                 {
                     string last = authorImagesBuffer.lastValueAdded;
-                    LinearLayout child = authorTilesBuffer?[last] ?? new LinearLayout(context);
+                    LinearLayout? child = authorTilesBuffer?[last] ?? new LinearLayout(context);
                     if (assets != null)
                         UIRenderFunctions.LoadSongImageFromBuffer(child, authorImagesBuffer, assets);
                 });
@@ -153,7 +153,7 @@ namespace MWP
 
         private LinearLayout AlbumTiles()
         {
-            albumTilesBuffer = new Dictionary<string, LinearLayout>();
+            albumTilesBuffer = new Dictionary<string, LinearLayout?>();
             
             LinearLayout lin = new LinearLayout(context);
             lin.Orientation = Orientation.Vertical;
@@ -171,7 +171,7 @@ namespace MWP
             var albums = MainActivity.StateHandler.Albums;
             for (int i = 0; i < albums.Count; i++)
             {
-                LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
+                LinearLayout? lnIn = UIRenderFunctions.PopulateVertical(
                     albums[i], 
                     scale, 150, 100, buttonMargins,cardMargins, nameMargins, 15, i, 
                     context, albumButtons, 
@@ -200,7 +200,7 @@ namespace MWP
 
         private LinearLayout AuthorTiles()
         {
-            authorTilesBuffer = new Dictionary<string, LinearLayout>();
+            authorTilesBuffer = new Dictionary<string, LinearLayout?>();
             
             LinearLayout lin = new LinearLayout(context);
             lin.Orientation = Orientation.Vertical;
@@ -217,7 +217,7 @@ namespace MWP
             List<Artist> artists = MainActivity.StateHandler.Artists;
             for (int i = 0; i < artists.Count; i++)
             {
-                LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
+                LinearLayout? lnIn = UIRenderFunctions.PopulateVertical(
                     MainActivity.StateHandler.Artists[i], scale, 150, 100, buttonMargins ,cardMargins, nameMargins, 15, i, context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 if (authorTilesBuffer.TryAdd(artists[i].Title, lnIn))

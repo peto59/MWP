@@ -31,9 +31,9 @@ namespace MWP
         private Album album;
         private AssetManager? assets;
         
-        private Dictionary<LinearLayout, Guid> SongButtons = new Dictionary<LinearLayout, Guid>();
+        private Dictionary<LinearLayout?, Guid> SongButtons = new Dictionary<LinearLayout?, Guid>();
 
-        private Dictionary<string, LinearLayout> songTilesBuffer;
+        private Dictionary<string, LinearLayout?> songTilesBuffer;
         private ObservableDictionary<string, Bitmap> songImagesBuffer;
 
 
@@ -47,7 +47,7 @@ namespace MWP
             this.assets = assets;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
 
-            songTilesBuffer = new Dictionary<string, LinearLayout>();
+            songTilesBuffer = new Dictionary<string, LinearLayout?>();
             songImagesBuffer = new ObservableDictionary<string, Bitmap>();
         }
 
@@ -78,7 +78,7 @@ namespace MWP
                 ((Activity)context).RunOnUiThread(() =>
                 {
                     string last = songImagesBuffer.Items.Keys.Last();
-                    LinearLayout child = songTilesBuffer?[last] ?? new LinearLayout(context);
+                    LinearLayout? child = songTilesBuffer?[last] ?? new LinearLayout(context);
                     if (assets != null)
                         UIRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
                 });
@@ -110,7 +110,7 @@ namespace MWP
 
         private void RenderSongs()
         {
-            songTilesBuffer = new Dictionary<string, LinearLayout>();
+            songTilesBuffer = new Dictionary<string, LinearLayout?>();
             
             ScrollView songsScroll = new ScrollView(context);
             RelativeLayout.LayoutParams songsScrollParams = new RelativeLayout.LayoutParams(
@@ -139,7 +139,7 @@ namespace MWP
             for (int i = 0; i < album.Songs.Count; i++)
             {
 
-                LinearLayout lnIn = UIRenderFunctions.PopulateHorizontal(
+                LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
                     album.Songs[i], scale,
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,

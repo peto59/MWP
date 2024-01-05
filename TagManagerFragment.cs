@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Android.Animation;
 using Android.App;
 using Android.Content;
@@ -13,6 +14,7 @@ using Android.Views;
 using Android.Widget;
 using MWP.BackEnd;
 using Google.Android.Material.FloatingActionButton;
+using Xamarin.Essentials;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using IOException = Java.IO.IOException;
 #if DEBUG
@@ -33,6 +35,7 @@ namespace MWP
         private MusicBaseClass? song;
 
         private ImageView? songCover;
+        private Bitmap? newImage;
         
         private EditText? titleIn;
         private EditText? albumIn;
@@ -51,6 +54,7 @@ namespace MWP
         public TagManagerFragment(Context context, AssetManager? assets, MusicBaseClass? song)
         {
             this.song = song;
+            this.newImage = null;
             this.context = context;
             this.assets = assets;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
@@ -59,6 +63,34 @@ namespace MWP
             if (song is not Song song1) return;
             
             tagManager = new TagManager(song1);
+        }
+        
+        async Task<FileResult?> PickAndShow(PickOptions options, ImageView view)
+        {
+            try
+            {
+                var result = await FilePicker.PickAsync(options);
+                if (result != null)
+                {
+                    string text = $"File Name: {result.FileName}";
+                    if (result.FileName.EndsWith("jpg", StringComparison.OrdinalIgnoreCase) ||
+                        result.FileName.EndsWith("png", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var stream = await result.OpenReadAsync();
+                        newImage = BitmapFactory.DecodeStream(stream);
+                        HandleSaveButtonAppearImage(view, newImage);
+                        view.SetImageBitmap(newImage);
+                    }
+                }
+        
+                return result;
+            }
+            catch (Exception ex)
+            {
+                // The user canceled or something went wrong
+            }
+    
+            return null;
         }
 
 
@@ -77,11 +109,11 @@ namespace MWP
              * changing fonts
              */
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_album_label);
-            SetGenericFont<TextView>(view, Resource.Id.tagmngr_aual_label);
+            // SetGenericFont<TextView>(view, Resource.Id.tagmngr_aual_label);
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_author_label);
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_title_label);
             
-            SetGenericFont<TextView>(view, Resource.Id.tagmngr_alau_field);
+            // SetGenericFont<TextView>(view, Resource.Id.tagmngr_alau_field);
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_album_field);
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_author_field);
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_title_field);
@@ -120,20 +152,38 @@ namespace MWP
                 return view;
             }
 
+            var customFileType =
+                new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    { DevicePlatform.Android, new[] { "image/jpeg", "image/png", } },
+                });
+            var options = new PickOptions
+            {
+                PickerTitle = "Please select a image",
+                FileTypes = customFileType,
+            };
             
+            if (songCover != null)
+                songCover.Click += async delegate
+                {
+                    var res = await PickAndShow(options, songCover);
+                    MyConsole.WriteLine($"Loading image result: {res?.FileName}");
+                };
+
+
             /*
              * Save Button
              */
             saveChanges = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.tag_manager_savebtn);
+            if (BlendMode.Multiply != null)
+                saveChanges?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
             if (saveChanges != null)
             {
                 saveChanges.Click += delegate { AreYouSureSave(); };
                 saveChanges.Visibility = ViewStates.Gone;
                 
-                if (BlendMode.Multiply != null)
-                    saveChanges?.Background?.SetColorFilter(
-                        new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                    );
 
             }
             
@@ -148,7 +198,7 @@ namespace MWP
             titleIn = view?.FindViewById<EditText>(Resource.Id.tagmngr_title_field);
             albumIn = view?.FindViewById<EditText>(Resource.Id.tagmngr_album_field);
             authorIn = view?.FindViewById<EditText>(Resource.Id.tagmngr_author_field);
-            alauIn = view?.FindViewById<EditText>(Resource.Id.tagmngr_alau_field);
+            // alauIn = view?.FindViewById<EditText>(Resource.Id.tagmngr_alau_field);
             
             if (view != null)
             {
@@ -194,6 +244,7 @@ namespace MWP
                         saveChanges.Visibility = ViewStates.Visible;
                     if (initial?.Equals(input.Text) == true && saveChanges != null)
                         saveChanges.Visibility = ViewStates.Gone;
+                    
                     switch (type)
                     {
                         case FieldTypes.Title:
@@ -214,9 +265,19 @@ namespace MWP
                             throw new ArgumentOutOfRangeException(nameof(type), type, null);
                     }
                 };
-                
         }
 
+        private void HandleSaveButtonAppearImage(ImageView view, Bitmap? newIm)
+        {
+            if (((BitmapDrawable)view.Drawable)?.Bitmap != newIm && saveChanges != null)
+                saveChanges.Visibility = ViewStates.Visible;
+            if (((BitmapDrawable)view.Drawable)?.Bitmap == newIm && saveChanges != null)
+                saveChanges.Visibility = ViewStates.Gone;
+            
+            if (newIm != null)
+                tagManager.Image = newIm;
+        }
+        
         private void SetGenericFont<T>(View? view, int id)
         {
             if (view?.FindViewById(id) is TextView label) label.Typeface = font;
@@ -225,6 +286,9 @@ namespace MWP
 
         private void SaveChanges()
         {
+#if DEBUG
+            MyConsole.WriteLine("Saving changes");
+#endif
             tagManager.Save();
             tagManager.Dispose();
         }

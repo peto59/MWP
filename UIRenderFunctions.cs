@@ -44,7 +44,7 @@ namespace MWP
         
         private static void AreYouSure(
             object sender, EventArgs e, Song song, AlertDialog? di, 
-            LinearLayout linFromDelete, LinearLayout linForDelete, 
+            LinearLayout linFromDelete, LinearLayout? linForDelete, 
             Context context, SongsFragment songsFragmentContext)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
@@ -191,7 +191,7 @@ namespace MWP
         }
 
         private static void ShowPopupSongEdit(
-            MusicBaseClass path, LinearLayout linFromDelete, LinearLayout linForDelete, Context context, float scale, 
+            MusicBaseClass path, LinearLayout linFromDelete, LinearLayout? linForDelete, Context context, float scale, 
             AssetManager? assets, FragmentManager manager, SongsFragment? songsFragmentContext = null
         )
         {
@@ -303,14 +303,14 @@ namespace MWP
         /// <param name="assets"></param>
         /// <param name="linForDelete"></param>
         /// <returns></returns>
-        public static LinearLayout PopulateHorizontal(
+        public static LinearLayout? PopulateHorizontal(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize,
-            Context context, Dictionary<LinearLayout, Guid> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
+            Context context, Dictionary<LinearLayout?, Guid> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
             LinearLayout? linForDelete = null, SongsFragment? songsfragmentContext = null 
         )
         {
             //リネアルレーアート作る
-            LinearLayout lnIn = new LinearLayout(context);
+            LinearLayout? lnIn = new LinearLayout(context);
             lnIn.Orientation = Orientation.Horizontal;
             lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
@@ -417,16 +417,16 @@ namespace MWP
         /// <param name="hh"></param>
         /// <param name="songsFragmentContext"></param>
         /// <returns></returns>
-        public static LinearLayout PopulateVertical(
+        public static LinearLayout? PopulateVertical(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] cardMargins, int[] nameMargins, int nameSize, int index,
-            Context context, Dictionary<LinearLayout, object> albumButtons, 
+            Context context, Dictionary<LinearLayout?, object> albumButtons, 
             FragmentManager manager, AssetManager? assets,
             AlbumFragment? albumFragment = null, AuthorFragment? authorFragment = null,
             LinearLayout? linForDelete = null, SongsFragment? songsFragmentContext = null 
         )
         {
             //リネアルレーアート作る
-            LinearLayout lnIn = new LinearLayout(context);
+            LinearLayout? lnIn = new LinearLayout(context);
             lnIn.Orientation = Orientation.Vertical;
             lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
@@ -457,7 +457,7 @@ namespace MWP
                 lnIn.Click += (sender, _) =>
                 {
                     LinearLayout pressedButton = (LinearLayout)sender;
-                    foreach(KeyValuePair<LinearLayout, object> pr in albumButtons)
+                    foreach(KeyValuePair<LinearLayout?, object> pr in albumButtons)
                     {
                         if (pr.Key == pressedButton && pr.Value is Album album1)
                         {
@@ -499,7 +499,7 @@ namespace MWP
                 {
                     LinearLayout pressedButton = (LinearLayout)sender;
 
-                    foreach (KeyValuePair<LinearLayout, object> pr in albumButtons)
+                    foreach (KeyValuePair<LinearLayout?, object> pr in albumButtons)
                     {
                         if (pr.Key == pressedButton && pr.Value is Artist artist1)
                         {
@@ -577,7 +577,7 @@ namespace MWP
         /// <param name="nameMargins"></param>
         /// <param name="scale"></param>
         /// <param name="context"></param>
-        public static void SetTilesImage(LinearLayout parent, MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
+        public static void SetTilesImage(LinearLayout? parent, MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
         {
             ImageView mori = new ImageView(context);
             LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
@@ -719,7 +719,7 @@ namespace MWP
         /// <param name="child">Dieta typu LinearLayout (musi obsahovat TextView a ImageView) z listu policok pesniciek/albumov/artistov</param>
         /// <param name="images">Slovnik s obrazkami</param>
         /// <param name="assets">Assety projektu</param>
-        public static void LoadSongImageFromBuffer(LinearLayout child, ObservableDictionary<string, Bitmap>? images, AssetManager? assets)
+        public static void LoadSongImageFromBuffer(LinearLayout? child, ObservableDictionary<string, Bitmap>? images, AssetManager? assets)
         {
             ImageView currentImage = (ImageView)child?.GetChildAt(0)!;
             TextView? currentTitle = (TextView)child?.GetChildAt(1)!;
@@ -749,7 +749,7 @@ namespace MWP
         /// <param name="tiles">List Elementov uzivatelskeho rozhrania (Songs, Albums, Authors) v podobe slovnika v paroch (string, LinearLayout)</param>
         /// <param name="images">List Obrazkov pre elementy uzivatelskeho rozhrania v podobe slovnika v paroch (string, Bitmap)</param>
         /// <param name="assets">staticke subory, assety</param>
-        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout> tiles, ObservableDictionary<string, Bitmap> images, AssetManager? assets)
+        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout?> tiles, ObservableDictionary<string, Bitmap> images, AssetManager? assets)
         {
             
             ((Activity)context).RunOnUiThread(() =>

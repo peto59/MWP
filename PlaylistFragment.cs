@@ -25,7 +25,7 @@ namespace MWP
         private readonly float scale;
         private AssetManager? assets;
         
-        private Dictionary<LinearLayout, Guid> songButtons = new Dictionary<LinearLayout, Guid>();
+        private Dictionary<LinearLayout?, Guid> songButtons = new Dictionary<LinearLayout?, Guid>();
         
             
         /// <summary>
@@ -88,7 +88,7 @@ namespace MWP
             
             for (int i = 0; i < playlistSongs.Count; i++)
             {
-                LinearLayout lnIn = UIRenderFunctions.PopulateHorizontal(
+                LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
                     playlistSongs[i], scale,
                     150, 100,
                     inPlaylistButtonMargins, inPlaylistNameMargins, inPlaylistCardMargins,

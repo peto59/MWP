@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Android.Graphics;
 using MWP.DatatypesAndExtensions;
+using MWP.Helpers;
 
 namespace MWP.BackEnd
 {
@@ -146,7 +147,10 @@ namespace MWP.BackEnd
         public void Save()
         {
             if (!Changed)
-            {   
+            {
+#if DEBUG
+                MyConsole.WriteLine("No Changes are being made!");       
+#endif
                 return;
             }
 
@@ -271,6 +275,9 @@ namespace MWP.BackEnd
             }
 
             saveFlags = SongSave.None;
+            #if DEBUG
+            MyConsole.WriteLine("Save is saving ver save (TagManager)!");
+            #endif
         }
 
         public void Dispose()

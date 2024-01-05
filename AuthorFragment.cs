@@ -32,13 +32,13 @@ namespace MWP
         private Artist artist;
         private AssetManager? assets;
 
-        private Dictionary<LinearLayout, object> albumButtons = new Dictionary<LinearLayout, object>();
-        private Dictionary<LinearLayout, Guid> songButtons = new Dictionary<LinearLayout, Guid>();
+        private Dictionary<LinearLayout?, object> albumButtons = new Dictionary<LinearLayout?, object>();
+        private Dictionary<LinearLayout?, Guid> songButtons = new Dictionary<LinearLayout?, Guid>();
 
         private ObservableDictionary<string, Bitmap> albumImagesBuffer;
         private ObservableDictionary<string, Bitmap> songImagesBuffer;
-        private Dictionary<string, LinearLayout> albumTilesBuffer;
-        private Dictionary<string, LinearLayout> songTilesBuffer;
+        private Dictionary<string, LinearLayout?> albumTilesBuffer;
+        private Dictionary<string, LinearLayout?> songTilesBuffer;
 
         private AlbumFragment albumFragment;
 
@@ -56,8 +56,8 @@ namespace MWP
             
             albumImagesBuffer = new ObservableDictionary<string, Bitmap>();
             songImagesBuffer = new ObservableDictionary<string, Bitmap>();
-            albumTilesBuffer = new Dictionary<string, LinearLayout>();
-            songTilesBuffer = new Dictionary<string, LinearLayout>();
+            albumTilesBuffer = new Dictionary<string, LinearLayout?>();
+            songTilesBuffer = new Dictionary<string, LinearLayout?>();
         }
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace MWP
                 {
                     string last = songImagesBuffer.Items.Keys.Last();
 
-                    LinearLayout child = songTilesBuffer?[last] ?? new LinearLayout(context);
+                    LinearLayout? child = songTilesBuffer?[last] ?? new LinearLayout(context);
                     if (assets != null)
                         UIRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
                 });
@@ -98,7 +98,7 @@ namespace MWP
                 {
                     string last = albumImagesBuffer.Items.Keys.Last();
 
-                    LinearLayout child = albumTilesBuffer?[last] ?? new LinearLayout(context);
+                    LinearLayout? child = albumTilesBuffer?[last] ?? new LinearLayout(context);
                     if (assets != null)
                         UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
                 });
@@ -140,7 +140,7 @@ namespace MWP
         private void UncategorizedSongsRender(bool visible)
         {
             UIRenderFunctions.FragmentPositionObject = artist.Albums.Select("Uncategorized")[0];
-            songTilesBuffer = new Dictionary<string, LinearLayout>();
+            songTilesBuffer = new Dictionary<string, LinearLayout?>();
             
             ScrollView songsScroll = new ScrollView(context);
             RelativeLayout.LayoutParams songsScrollParams = new RelativeLayout.LayoutParams(
@@ -169,7 +169,7 @@ namespace MWP
             for (int i = 0; i < uncategorized.Count; i++)
             {
                 
-                LinearLayout lnIn = UIRenderFunctions.PopulateHorizontal(
+                LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
                     uncategorized[i], scale,
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
@@ -187,7 +187,7 @@ namespace MWP
 
         private void RenderAlbumsSongs()
         {
-            albumTilesBuffer = new Dictionary<string, LinearLayout>();
+            albumTilesBuffer = new Dictionary<string, LinearLayout?>();
             
             HorizontalScrollView hr = new HorizontalScrollView(context);
             int hrHeight = (int)(240 * scale + 0.5f);;
@@ -217,7 +217,7 @@ namespace MWP
                 if (album.Showable && artist.Albums.Count > 1)
                 {
                     
-                    LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
+                    LinearLayout? lnIn = UIRenderFunctions.PopulateVertical(
                         album, scale, 
                         150, 100, buttonMargins, cardMargins, nameMargins, 15, index, 
                         context, albumButtons, ParentFragmentManager, assets, albumFragment);
