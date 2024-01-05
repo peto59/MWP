@@ -6,9 +6,11 @@ using Android.Widget;
 using Java.Lang;
 using MWP.BackEnd.Player;
 using Math = Java.Lang.Math;
+#if DEBUG
+using MWP.Helpers;
+#endif
 
-
-namespace MWP.Helpers
+namespace MWP
 {
     public static class WidgetServiceHandler
     {
