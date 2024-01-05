@@ -304,7 +304,9 @@ namespace MWP
             }
 
             decimal percentage = ((decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count) * 100;
+            #if DEBUG
             MyConsole.WriteLine($"Percentage of Loaded Songs {_lazyImageBuffer.Items.Count} / {_lazyBuffer.Count} = {(decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count}");
+            #endif
             if (percentage > 80)
             {
                 for (int i = 0; i < songs.Count; i++)
