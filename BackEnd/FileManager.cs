@@ -9,6 +9,7 @@ using Google.Android.Material.Snackbar;
 using Newtonsoft.Json;
 using TagLib;
 using TagLib.Id3v2;
+using Xamarin.Essentials;
 using File = System.IO.File;
 using Tag = TagLib.Id3v2.Tag;
 #if DEBUG
@@ -472,6 +473,8 @@ namespace MWP.BackEnd
                 JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             hosts.Remove(host);
             File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(hosts, customConverter));
+            SecureStorage.Remove($"{host}_privkey");
+            SecureStorage.Remove($"{host}_pubkey");
         }
 
         public static bool IsTrustedSyncTarget(string host)
@@ -649,10 +652,10 @@ namespace MWP.BackEnd
             }
 
 
-            MainActivity.StateHandler.view.RunOnUiThread(() =>
+            /*MainActivity.StateHandler.view.RunOnUiThread(() =>
             {
                 YoutubeFragment.UpdateSsDialog(title, artists[0], album, tfile.Tag.Pictures[0].Data.Data, string.Empty, string.Empty, true, true);
-            });
+            });*/
             if (generateStateHandlerEntry)
             {
                 AddSong(path, title, artists, album);

@@ -38,8 +38,8 @@ namespace MWP.BackEnd.Network
             NetworkManagerCommon.BroadcastTimer.Interval = BroadcastInterval;
             NetworkManagerCommon.BroadcastTimer.Elapsed += delegate { Common.SendBroadcast(); };
             NetworkManagerCommon.BroadcastTimer.AutoReset = true;
-
-            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
+            
+            if (Android.OS.Build.VERSION.SdkInt <= Android.OS.BuildVersionCodes.SV2) {
                 Connectivity.ConnectivityChanged += delegate(object _, ConnectivityChangedEventArgs args) { Common.OnWiFiChange(args); };
                 Common.GetWifiSsid();
                 if (Common.MyIp == null)
@@ -142,6 +142,10 @@ namespace MWP.BackEnd.Network
             List<(string hostname, DateTime? lastSeen, bool state)> output = new List<(string hostname, DateTime? lastSeen, bool state)>();
             foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.StateHandler.AvailableHosts)
             {
+                if (stateHandlerAvailableHost.hostname == "localhost")
+                {
+                    continue;
+                }
                 if (trusted.Contains(stateHandlerAvailableHost.hostname))
                 {
                     output.Add((stateHandlerAvailableHost.hostname, stateHandlerAvailableHost.lastSeen, true));

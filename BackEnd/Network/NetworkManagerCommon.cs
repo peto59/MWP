@@ -21,6 +21,7 @@ using SocketType = System.Net.Sockets.SocketType;
 using TransportType = Android.Net.TransportType;
 using Mono.Nat;
 using MWP.DatatypesAndExtensions;
+using SocketException = System.Net.Sockets.SocketException;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -120,7 +121,7 @@ namespace MWP.BackEnd.Network
                 };
                 NatUtility.StartDiscovery();
             }
-            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
+            if (Android.OS.Build.VERSION.SdkInt <= Android.OS.BuildVersionCodes.SV2) {
                 return;
             }
             try
@@ -161,60 +162,203 @@ namespace MWP.BackEnd.Network
             if (NetworkManager.Common.MyIp != null)
             {
                 Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                //TODO: add timeout
+                sock.ReceiveTimeout = 500;
                 IPEndPoint iep = new IPEndPoint(NetworkManager.Common.MyIp, P2PPort);
                 EndPoint endPoint = iep;
                 sock.Bind(endPoint);
                 iep = new IPEndPoint(ipAddress, P2PPort);
                 endPoint = iep;
                 byte[] buffer = new byte[4];
-                //TODO: this is stupid
-                Thread.Sleep(1000);
-                while (true)
+                byte cnt = 0;
+                Dictionary<byte, byte> remote = new Dictionary<byte, byte>();
+                Dictionary<byte, byte> local = new Dictionary<byte, byte>();
+                P2PState stateObject;
+                try
                 {
-                    int state = new Random().Next(0, 2);
-                    sock.SendTo(BitConverter.GetBytes(state), endPoint);
-#if DEBUG
-                    MyConsole.WriteLine($"sending {state} to {((IPEndPoint)endPoint).Address}");
-#endif
-                    int maxResponseCounter = 4;
-                    int response;
-                    do
+                    while (true)
                     {
-                        sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
+                        byte state = (byte)new Random().Next(0, 2);
+                        sock.SendTo(P2PState.Send(cnt, state), endPoint);
+                        local.TryAdd(cnt, state);
 #if DEBUG
-                        MyConsole.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
+                        MyConsole.WriteLine($"sending {state} at cnt {cnt} to {((IPEndPoint)endPoint).Address}");
 #endif
-                        response = BitConverter.ToInt32(buffer);
-                        maxResponseCounter--;
-#if DEBUG
-                        if (response is not (0 or 1))
+                        cnt++;
+                        byte maxResponseCounter = 4;
+                        byte? response = null;
+                        do
                         {
-                            MyConsole.WriteLine($"Got invalid state in P2PDecide: {response}");
-                        }
-#endif
-                    } while (response is not (0 or 1) && maxResponseCounter > 0);
+                            bool breakFlag = false;
+                            do
+                            {
+                                while (true)
+                                {
+                                    try
+                                    {
+                                        sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
+                                    }
+                                    catch (SocketException e)
+                                    {
+                                        cnt++;
+                                        state = (byte)new Random().Next(0, 2);
+                                        local.TryAdd(cnt, state);
+                                        sock.SendTo(P2PState.Send(cnt, state), endPoint);
+                                        continue;
+                                    }
 
-                    if (maxResponseCounter == 0)
-                    {
-                        sock.Dispose();
-                        return false;
-                    }
-
-                    if (state == response) continue;
-                    if (state == 0)
-                    {
-                        //server
+                                    break;
+                                }
+                                stateObject = new P2PState(buffer);
 #if DEBUG
-                        MyConsole.WriteLine("Server");
+                                MyConsole.WriteLine(
+                                    $"received {stateObject.Type} with {stateObject.State} at cnt {stateObject.Cnt} from {((IPEndPoint)endPoint).Address}");
 #endif
-                        if (NetworkManager.Common.MyIp == null) return false;
-                        (TcpListener server, int listenPort) = NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
-                        sock.SendTo(BitConverter.GetBytes(listenPort), endPoint);
+                                if (!stateObject.IsValid)
+                                {
+                                    maxResponseCounter--;
+                                    break;
+                                }
+
+                                if (stateObject.Type == P2PStateTypes.Port)
+                                {
+                                    breakFlag = true;
+                                    state = 1;
+                                    response = 0;
+                                    break;
+                                }
+
+                                if (stateObject.Type == P2PStateTypes.Request)
+                                {
+                                    if (local.TryGetValue(stateObject.Cnt, out state))
+                                    {
+                                        sock.SendTo(P2PState.Send(stateObject.Cnt, state), endPoint);
+                                    }
+                                    else
+                                    {
+                                        state = (byte)new Random().Next(0, 2);
+                                        local.TryAdd(stateObject.Cnt, state);
+                                        sock.SendTo(P2PState.Send(stateObject.Cnt, state), endPoint);
+                                    }
+                                }
+
+                                if (stateObject.Type == P2PStateTypes.State)
+                                {
+                                    remote.TryAdd(stateObject.Cnt, stateObject.State);
+                                    bool check = true;
+                                    foreach ((byte key, byte localVal) in local)
+                                    {
+                                        if (!remote.TryGetValue(key, out byte remoteVal))
+                                        {
+                                            sock.SendTo(P2PState.Request(key), endPoint);
+                                            check = false;
+                                        }
+
+                                        if (!check)
+                                        {
+                                            continue;
+                                        }
+
+                                        if (localVal == remoteVal)
+                                        {
+                                            continue;
+                                        }
+
+                                        response = remoteVal;
+                                        state = localVal;
+                                        breakFlag = true;
+                                        break;
+                                    }
+
+                                    if (breakFlag)
+                                    {
+                                        break;
+                                    }
+                                }
+                            } while (sock.Available >= 4);
+
+                            if (breakFlag)
+                            {
+                                break;
+                            }
+                        } while (maxResponseCounter > 0);
+
+                        if (maxResponseCounter == 0)
+                        {
+                            sock.Dispose();
+#if DEBUG
+                            MyConsole.WriteLine("Max Response Counter exceeded");
+#endif
+                            return false;
+                        }
+
+                        if (state == (response ?? state)) continue;
+                        if (state == 0)
+                        {
+                            //server
+#if DEBUG
+                            MyConsole.WriteLine("Server");
+#endif
+                            if (NetworkManager.Common.MyIp == null) return false;
+                            (TcpListener server, int listenPort) =
+                                NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
+                            sock.SendTo(BitConverter.GetBytes(listenPort), endPoint);
+                            try
+                            {
+                                NetworkManagerServer.Server(server, ipAddress, songsToSend, ref endPoint, ref sock,
+                                    local);
+                            }
+                            catch (Exception e)
+                            {
+#if DEBUG
+                                MyConsole.WriteLine(e);
+#endif
+                            }
+
+                            sock.Dispose();
+                            return true;
+                        }
+                        //client
+#if DEBUG
+                        MyConsole.WriteLine("Client");
+#endif
+                        while (stateObject.Type != P2PStateTypes.Port)
+                        {
+                            while (true)
+                            {
+                                try
+                                {
+                                    sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
+                                }
+                                catch (SocketException e)
+                                {
+                                    sock.SendTo(P2PState.Send(cnt, state), endPoint);
+                                    continue;
+                                }
+
+                                break;
+                            }
+
+                            stateObject = new P2PState(buffer);
+                            if (stateObject.Type == P2PStateTypes.Request)
+                            {
+                                if (local.TryGetValue(stateObject.Cnt, out state))
+                                {
+                                    sock.SendTo(P2PState.Send(stateObject.Cnt, state), endPoint);
+                                }
+                                else
+                                {
+                                    state = (byte)new Random().Next(0, 2);
+                                    local.TryAdd(stateObject.Cnt, state);
+                                    sock.SendTo(P2PState.Send(stateObject.Cnt, state), endPoint);
+                                }
+                            }
+                        }
+
+                        int sendPort = stateObject.Port;
                         try
                         {
                             sock.Dispose();
-                            NetworkManagerServer.Server(server, ipAddress, songsToSend);
+                            NetworkManagerClient.Client(((IPEndPoint)endPoint).Address, sendPort, songsToSend);
                         }
                         catch (Exception e)
                         {
@@ -222,34 +366,24 @@ namespace MWP.BackEnd.Network
                             MyConsole.WriteLine(e);
 #endif
                         }
+
                         sock.Dispose();
                         return true;
                     }
-                    //client
+                }
+                catch (Exception e)
+                {
 #if DEBUG
-                    MyConsole.WriteLine("Client");
+                    MyConsole.WriteLine(e);
+                    MyConsole.WriteLine("Returning false in P2PDecide");
 #endif
-                    sock.ReceiveFrom(buffer, ref endPoint);
-                    int sendPort = BitConverter.ToInt32(buffer);
-                    try
-                    {
-                        sock.Dispose();
-                        NetworkManagerClient.Client(((IPEndPoint)endPoint).Address, sendPort, songsToSend);
-                    }
-                    catch (Exception e)
-                    {
-#if DEBUG
-                        MyConsole.WriteLine(e);
-#endif
-                    }
-                    sock.Dispose();
-                    return true;
+                    return false;
                 }
             }
             return false;
         }
 
-        private static IPAddress? GetBroadCastIp(IPAddress host, IPAddress mask)
+        private static IPAddress GetBroadCastIp(IPAddress host, IPAddress mask)
         {
             byte[] broadcastIpBytes = new byte[4];
             byte[] hostBytes = host.GetAddressBytes();
