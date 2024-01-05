@@ -464,8 +464,8 @@ namespace MWP.BackEnd.Network
                         {
                             MyConsole.WriteLine("No reply");
                         }
-                    }
 #endif
+                    }
                     break;
                 }
                 case CanSend.Test:
