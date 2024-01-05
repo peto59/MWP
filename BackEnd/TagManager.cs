@@ -101,7 +101,13 @@ namespace MWP.BackEnd
             set
             {
                 if (tfile == null) return;
-                if (value.SameAs(Image)) return;
+                if (value.SameAs(Image))
+                {
+#if DEBUG
+                    MyConsole.WriteLine($"Image is same returning");
+#endif
+                    return;
+                }
                 using (MemoryStream stream = new MemoryStream())
                 {
                     value.Compress(Bitmap.CompressFormat.Png, 0, stream);
