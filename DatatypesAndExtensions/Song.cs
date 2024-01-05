@@ -300,7 +300,7 @@ namespace MWP
             Albums = song.Albums;
             Title = title;
             DateCreated = song.DateCreated;
-            Path = song.Path;
+            Path = path;
         }
 
         /// <inheritdoc />
