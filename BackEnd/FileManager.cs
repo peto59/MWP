@@ -505,6 +505,17 @@ namespace MWP.BackEnd
             return targets.TryGetValue(host, out List<Song> target) ? target : new List<Song>();
         }
         
+        public static void SetTrustedSyncTargetSongs(string host, List<Song> songs)
+        {
+            string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            if (targets.ContainsKey(host))
+            {
+                targets[host] = songs;
+            }
+        }
+        
         public static List<string> GetTrustedSyncTargets()
         {
             string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
