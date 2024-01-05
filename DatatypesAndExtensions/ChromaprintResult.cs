@@ -1,8 +1,11 @@
-namespace MWP
+namespace MWP.DatatypesAndExtensions
 {
+    /// <summary>
+    /// Class for deserialization of Chromaprint json result
+    /// </summary>
     public class ChromaprintResult
     {
-        public float duration;
-        public string fingerprint;
+        public float duration = 0;
+        public string fingerprint = string.Empty;
     }
 }

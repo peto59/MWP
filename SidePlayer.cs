@@ -1,13 +1,14 @@
 ﻿using System;
-using Android.Content;
 using Android.Views;
 using AndroidX.AppCompat.App;
-using System.Collections.Generic;
 using Android.Widget;
 using Android.Graphics;
 using Android.Content.Res;
 using System.Threading;
-using Java.Util;
+using Android.App;
+using Android.Appwidget;
+using Android.Content;
+using Java.Lang;
 using MWP.BackEnd.Player;
 #if DEBUG
 using MWP.Helpers;
@@ -20,6 +21,8 @@ namespace MWP
 		//private static Dictionary<LinearLayout, string> _playerButtons = new Dictionary<LinearLayout, string>();
 
 		static ImageView? _playImage;
+
+	
 
 		private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, string sides = "idk")
 		{
@@ -51,7 +54,7 @@ namespace MWP
 					);
 					_playImage.LayoutParameters = playImageParams;
 
-					if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
+					if (MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)
 						_playImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("pause.png")));
 					else
 						_playImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("play.png")));
@@ -121,15 +124,15 @@ namespace MWP
 							 (int)(20 * scale + 0.5f)
 							);
 							lastImage.LayoutParameters = lastImageParams;
-							switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? Enums.LoopState.None)
+							switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? LoopState.None)
 							{
-								case Enums.LoopState.None:
+								case LoopState.None:
 									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
 									break;
-								case Enums.LoopState.All:
+								case LoopState.All:
 									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
 									break;
-								case Enums.LoopState.Single:
+								case LoopState.Single:
 									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
 									break;
 							}
@@ -146,10 +149,10 @@ namespace MWP
 			return cube;
 		}
 
-		private static void pause_play(object sender, EventArgs e, AppCompatActivity context)
+		private static void pause_play()
 		{
 			if (!MainActivity.ServiceConnection.Connected) return;
-			if (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)
+			if (MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)
 			{
 				MainActivity.ServiceConnection.Binder?.Service.Pause();
 			}
@@ -157,23 +160,25 @@ namespace MWP
 			{
 				MainActivity.ServiceConnection.Binder?.Service.Play();
 			}
+			
+			// WidgetServiceHandler.UpdateWidgetViews();
 		}
 
-		public static void SetPlayButton(AppCompatActivity context)
+		public static void SetPlayButton()
 		{
-			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("play.png")));
+			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(Application.Context.Assets?.Open("play.png")));
 		}
 
-		public static void SetStopButton(AppCompatActivity context)
+		public static void SetStopButton()
 		{
-			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("pause.png")));
+			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(Application.Context.Assets?.Open("pause.png")));
 		}
 
 	  
-		public static void populate_side_bar(AppCompatActivity context, AssetManager assets)
+		public static void populate_side_bar(AppCompatActivity? context, AssetManager assets)
 		{
 			// basic  vars
-			if (context.Resources is { DisplayMetrics: not null })
+			if (context?.Resources is { DisplayMetrics: not null })
 			{
 				float scale = context.Resources.DisplayMetrics.Density;
 				Typeface? font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
@@ -254,19 +259,19 @@ namespace MWP
 					repeat.Click += delegate
 					{
 						ImageView? repeatImg = (ImageView?)repeat.GetChildAt(0);
-						switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? Enums.LoopState.None)
+						switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? LoopState.None)
 						{
-							case Enums.LoopState.None:
+							case LoopState.None:
 								repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
-								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.All);
+								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(LoopState.All);
 								break;
-							case Enums.LoopState.All:
+							case LoopState.All:
 								repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
-								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.Single);
+								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(LoopState.Single);
 								break;
-							case Enums.LoopState.Single:
+							case LoopState.Single:
 								repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
-								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(Enums.LoopState.None);
+								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(LoopState.None);
 								break;
 						}
 
@@ -282,7 +287,7 @@ namespace MWP
 					//_playerButtons.Add(last, "last");
 
 					LinearLayout playPause = cube_creator("big", scale, context);
-					playPause.Click += (sender, e) => { pause_play(sender, e, context);  };
+					playPause.Click += (sender, e) => { pause_play();  };
 					//_playerButtons.Add(playPause, "play_pause");
 
 					LinearLayout next = cube_creator("small", scale, context, "right");
@@ -321,27 +326,27 @@ namespace MWP
 
 			// progress song
 
-            TextView? progTime = context.FindViewById<TextView>(Resource.Id.progress_time);
+            TextView? progTime = context?.FindViewById<TextView>(Resource.Id.progress_time);
             if (progTime != null)
             {
 	            progTime.Click += delegate
 	            {
-		            MainActivity.stateHandler.ProgTimeState = !MainActivity.stateHandler.ProgTimeState;
+		            MainActivity.StateHandler.ProgTimeState = !MainActivity.StateHandler.ProgTimeState;
 	            };
 
-	            if (!(MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.IsPlaying ?? false)) return;
-	            TextView? constTime = context.FindViewById<TextView>(Resource.Id.end_time);
-	            SeekBar? sek = context.FindViewById<SeekBar>(Resource.Id.seek);
+	            if (!(MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)) return;
+	            TextView? constTime = context?.FindViewById<TextView>(Resource.Id.end_time);
+	            SeekBar? sek = context?.FindViewById<SeekBar>(Resource.Id.seek);
 	            if (constTime != null)
-		            constTime.Text = converts_millis_to_seconds_and_minutes(MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0);
+		            constTime.Text = converts_millis_to_seconds_and_minutes(MainActivity.ServiceConnection.Binder?.Service.Duration ?? 0);
 	            if (sek != null)
 	            {
-		            sek.Max = (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) / 1000;
-		            sek.SetProgress((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.CurrentPosition ?? 0) / 1000, true);
-		            if (MainActivity.stateHandler.ProgTimeState)
+		            sek.Max = (MainActivity.ServiceConnection.Binder?.Service.Duration ?? 0) / 1000;
+		            sek.SetProgress((MainActivity.ServiceConnection.Binder?.Service.CurrentPosition ?? 0) / 1000, true);
+		            if (MainActivity.StateHandler.ProgTimeState)
 		            {
 			            progTime.Text = "-" +
-			                            converts_millis_to_seconds_and_minutes((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) - sek.Progress * 1000);
+			                            converts_millis_to_seconds_and_minutes((MainActivity.ServiceConnection.Binder?.Service.Duration ?? 0) - sek.Progress * 1000);
 		            }
 		            else
 		            {
@@ -355,24 +360,24 @@ namespace MWP
 		            };
 	            }
 
-	            StartMovingProgress(MainActivity.stateHandler.SongProgressCts.Token, context);
+	            StartMovingProgress(MainActivity.StateHandler.SongProgressCts.Token, context);
             }
 		}
 
-		public static void StartMovingProgress(CancellationToken token, AppCompatActivity context)
+		public static void StartMovingProgress(CancellationToken token, AppCompatActivity? context)
 		{
-            SeekBar? sek = context.FindViewById<SeekBar>(Resource.Id.seek);
-            TextView? progTime = context.FindViewById<TextView>(Resource.Id.progress_time);
+            SeekBar? sek = context?.FindViewById<SeekBar>(Resource.Id.seek);
+            TextView? progTime = context?.FindViewById<TextView>(Resource.Id.progress_time);
             _ = Interval.SetIntervalAsync(() =>
 			{
-                sek?.SetProgress((MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.CurrentPosition ?? 0) / 1000, true);
-                if (MainActivity.stateHandler.ProgTimeState)
+                sek?.SetProgress((MainActivity.ServiceConnection.Binder?.Service.CurrentPosition ?? 0) / 1000, true);
+                if (MainActivity.StateHandler.ProgTimeState)
                 {
 	                if (progTime == null) return;
 	                if (sek != null)
 		                progTime.Text = "-" +
 		                                converts_millis_to_seconds_and_minutes(
-			                                (MainActivity.ServiceConnection.Binder?.Service.mediaPlayer?.Duration ?? 0) - (sek.Progress * 1000));
+			                                (MainActivity.ServiceConnection.Binder?.Service.Duration ?? 0) - (sek.Progress * 1000));
                 }
 				else
                 {

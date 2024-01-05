@@ -340,8 +340,8 @@ namespace MWP.BackEnd.Network
                     case CommandsEnum.ArtistImageRequest:
                         if (data != null)
                         {
-                            string artistName = Encoding.UTF8.GetString(data);
-                            List<Artist> artists = MainActivity.stateHandler.Artists.Search(artistName);
+                            string? artistName = Encoding.UTF8.GetString(data);
+                            List<Artist> artists = MainActivity.StateHandler.Artists.Search(artistName);
                             foreach (Artist artist in artists.Where(artist => artist.ImgPath != "Default"))
                             {
                                 networkStream.WriteFile(artist.ImgPath, ref encryptor, ref aes, CommandsArr.ArtistImageSend, Encoding.UTF8.GetBytes(artists[0].Title));
@@ -353,8 +353,8 @@ namespace MWP.BackEnd.Network
                     case CommandsEnum.AlbumImageRequest:
                         if (data != null)
                         {
-                            string albumName = Encoding.UTF8.GetString(data);
-                            List<Album> albums = MainActivity.stateHandler.Albums.Search(albumName);
+                            string? albumName = Encoding.UTF8.GetString(data);
+                            List<Album> albums = MainActivity.StateHandler.Albums.Search(albumName);
                             foreach (Album album in albums.Where(album => album.ImgPath != "Default"))
                             {
                                 networkStream.WriteFile(album.ImgPath, ref encryptor, ref aes, CommandsArr.AlbumImageSend, Encoding.UTF8.GetBytes(albums[0].Title));

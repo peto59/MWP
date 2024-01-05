@@ -1,32 +1,37 @@
-﻿using Android.App;
-using Android.Content;
-using Android.Media.Session;
+﻿using System;
 using Android.OS;
-using Android.Runtime;
-using Android.Systems;
-using Android.Views;
-using Android.Widget;
-using Java.Util;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Contexts;
-using System.Text;
-using AndroidApp = Android.App.Application;
+using Java.Lang;
+using MWP.DatatypesAndExtensions;
+using Exception = System.Exception;
 #if DEBUG
 using MWP.Helpers;
 #endif
 
-namespace MWP
+namespace MWP.BackEnd.Player
 {
-    class MediaSessionCallback : Android.Support.V4.Media.Session.MediaSessionCompat.Callback
+    internal class MediaSessionCallback : Android.Support.V4.Media.Session.MediaSessionCompat.Callback
     {
+        private readonly MediaServiceBinder binder;
+
+        public MediaSessionCallback(IBinder bind)
+        {
+            if (bind is MediaServiceBinder tmp)
+            {
+                binder = tmp;
+            }
+            else
+            {
+                throw new IllegalArgumentException("Ja tieto nully nenavidim");
+            }
+            
+        }
+
         public override void OnPlay()
         {
 #if DEBUG
             MyConsole.WriteLine("OnPlay");
 #endif
-            MainActivity.ServiceConnection.Binder?.Service.Play();
+            binder.Service.Play();
             //OnPlayImpl();
             base.OnPlay();
         }
@@ -36,7 +41,13 @@ namespace MWP
 #if DEBUG
             MyConsole.WriteLine("OnSkipToQueueItem");
 #endif
-            //OnSkipToQueueItemImpl(id);
+            if (id != binder.Service.QueueObject.Index)
+            {
+                if (binder.Service.QueueObject.SetIndex(id))
+                {
+                    binder.Service.Play(true);
+                }
+            }
             base.OnSkipToQueueItem(id);
         }
 
@@ -47,7 +58,7 @@ namespace MWP
             MyConsole.WriteLine($"POSTION: {pos}");
 #endif
 
-            MainActivity.ServiceConnection.Binder?.Service.SeekTo((int)pos);
+            binder.Service.SeekTo((int)pos);
             //OnSeekToImpl(pos);
             base.OnSeekTo(pos);
         }
@@ -75,14 +86,49 @@ namespace MWP
             switch (mediaType)
             {
                 case MediaType.Song:
-                    MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Songs.Search(mediaId));
+                    if (mediaId == MyMediaBrowserService.MySongsPlayAll)
+                    {
+                        binder.Service.GenerateQueue(MainActivity.StateHandler.Songs);
+                    }
+                    else if (mediaId == MyMediaBrowserService.MySongsShuffle)
+                    {
+                        binder.Service.GenerateQueue(MainActivity.StateHandler.Songs, null, false);
+                        binder.Service.Shuffle(true);
+                        binder.Service.Play();
+                    }
+                    else
+                    {
+                        binder.Service.GenerateQueue(Song.FromId(mediaId));
+                    }
+                    break;
+                case MediaType.ThisPlayAll:
+                    MediaType mediaTypePlayAll = (MediaType)(mediaId[0] - '0');
+                    mediaId = mediaId[1..];
+                    if (mediaTypePlayAll == MediaType.Album)
+                    {
+                        binder.Service.GenerateQueue(Album.FromId(mediaId));
+                    }else if (mediaTypePlayAll == MediaType.Artist)
+                    {
+                        binder.Service.GenerateQueue(Artist.FromId(mediaId));
+                    }
+                    break;
+                case MediaType.ThisShufflePlay:
+                    MediaType mediaTypeShuffle = (MediaType)(mediaId[0] - '0');
+                    mediaId = mediaId[1..];
+                    if (mediaTypeShuffle == MediaType.Album)
+                    {
+                        binder.Service.GenerateQueue(Album.FromId(mediaId), null, false);
+                        binder.Service.Shuffle(true);
+                        binder.Service.Play();
+                    }else if (mediaTypeShuffle == MediaType.Artist)
+                    {
+                        binder.Service.GenerateQueue(Artist.FromId(mediaId), null, false);
+                        binder.Service.Shuffle(true);
+                        binder.Service.Play();
+                    }
                     break;
                 case MediaType.Album:
-                    MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Albums.Search(mediaId));
-                    break;
                 case MediaType.Artist:
-                    MainActivity.ServiceConnection.Binder?.Service.GenerateQueue(MainActivity.stateHandler.Artists.Search(mediaId));
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -94,7 +140,7 @@ namespace MWP
 #if DEBUG
             MyConsole.WriteLine("OnPause");
 #endif
-            MainActivity.ServiceConnection.Binder?.Service.Pause();
+            binder.Service.Pause();
             //OnPauseImpl();
             base.OnPause();
         }
@@ -104,7 +150,7 @@ namespace MWP
 #if DEBUG
             MyConsole.WriteLine("OnStop");
 #endif
-            MainActivity.ServiceConnection.Binder?.Service.Stop();
+            binder.Service.Stop();
             //OnStopImpl();
             base.OnStop();
         }
@@ -114,7 +160,7 @@ namespace MWP
 #if DEBUG
             MyConsole.WriteLine("OnSkipToNext");
 #endif
-            MainActivity.ServiceConnection.Binder?.Service.NextSong();
+            binder.Service.NextSong();
             //OnSkipToNextImpl();
             base.OnSkipToNext();
         }
@@ -124,12 +170,12 @@ namespace MWP
 #if DEBUG
             MyConsole.WriteLine("OnSkipToPrevious");
 #endif
-            MainActivity.ServiceConnection.Binder?.Service.PreviousSong();
+            binder.Service.PreviousSong();
             //OnSkipToPreviousImpl();
             base.OnSkipToPrevious();
         }
 
-        public override void OnCustomAction(string action, Bundle extras)
+        public override void OnCustomAction(string? action, Bundle? extras)
         {
 #if DEBUG
             MyConsole.WriteLine("OnCustomAction");
@@ -139,10 +185,10 @@ namespace MWP
                 switch (action)
                 {
                     case "loop":
-                        MainActivity.ServiceConnection.Binder?.Service.ToggleLoop((int)MainActivity.ServiceConnection.Binder.Service.QueueObject.LoopState + 1);
+                        binder.Service.ToggleLoop((int)binder.Service.QueueObject.LoopState + 1);
                         break;
                     case "shuffle":
-                        MainActivity.ServiceConnection.Binder?.Service.Shuffle(!MainActivity.ServiceConnection.Binder.Service.QueueObject.IsShuffled);
+                        binder.Service.Shuffle(!binder.Service.QueueObject.IsShuffled);
                         break;
                     default:
                         throw new ArgumentException("Must use loop or shuffle as action argument");
@@ -159,7 +205,7 @@ namespace MWP
             base.OnCustomAction(action, extras);
         }
 
-        public override void OnPlayFromSearch(string query, Bundle extras)
+        public override void OnPlayFromSearch(string? query, Bundle? extras)
         {
 #if DEBUG
             MyConsole.WriteLine("OnPlayFromSearch");

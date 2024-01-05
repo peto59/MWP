@@ -1,33 +1,42 @@
-﻿using Android.App;
-using Android.Content;
-using Android.Media;
-using Android.Media.Session;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-using AndroidX.AppCompat.App;
-using Java.Security;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
-using MWP.BackEnd.Player;
-using static Android.Renderscripts.Sampler;
+using AndroidX.AppCompat.App;
+using MWP.DatatypesAndExtensions;
+#if DEBUG
+using MWP.Helpers;
+#endif
 
-namespace MWP
+namespace MWP.BackEnd
 {
+    /// <summary>
+    /// Global handler of application states
+    /// </summary>
     public class StateHandler
     {
-        public static Random Rng = new Random();
+        /// <summary>
+        /// Global random number generator
+        /// </summary>
+        public static readonly Random Rng = new Random();
+        /// <summary>
+        /// Cancellation token for all song progress bars
+        /// </summary>
         public CancellationTokenSource SongProgressCts = new CancellationTokenSource();
-        public AppCompatActivity view;
+        /// <summary>
+        /// Current view
+        /// </summary>
+        public AppCompatActivity? view;
+        /// <summary>
+        /// Main Activity instance
+        /// </summary>
         public MainActivity mainActivity;
         public List<int> NotificationIDs = new List<int>();
         public Dictionary<long, (int?, int)> SessionIdToPlaylistOrderMapping = new Dictionary<long, (int?, int)>();
 
+        /// <summary>
+        /// List of live hosts on network
+        /// </summary>
         public List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> AvailableHosts =
             new List<(IPAddress ipAddress, DateTime lastSeen, string hostname)>();
         
@@ -44,41 +53,47 @@ namespace MWP
         //---------------------------------------------------------
         
         //----------Custom callbacks for internal control---------
+        /// <summary>
+        /// Binder for all functions requiring Share Fragment Refresh event
+        /// </summary>
         public static event Action OnShareFragmentRefresh;
 
+        /// <summary>
+        /// Share Fragment Refresh event invocation
+        /// </summary>
         public static void TriggerShareFragmentRefresh()
         {
             OnShareFragmentRefresh.Invoke();
         }
         //---------------------------------------------------------
         
+        /// <summary>
+        /// Whether to show remaining or elapsed time on sing progress bars
+        /// </summary>
         public bool ProgTimeState
         {
             get; set;
         }
 
+        /// <summary>
+        /// All <see cref="MWP.Song"/>s
+        /// </summary>
         public List<Song> Songs = new List<Song>();
+        /// <summary>
+        /// All <see cref="MWP.Artist"/>s
+        /// </summary>
         public List<Artist> Artists = new List<Artist>();
+        /// <summary>
+        /// All <see cref="MWP.Album"/>s
+        /// </summary>
         public List<Album> Albums = new List<Album>();
 
         ///<summary>
         ///Sets view to current screen's view
         ///</summary>
-        public void SetView(AppCompatActivity new_view)
+        public void SetView(AppCompatActivity newView)
         {
-            view = new_view;
+            view = newView;
         }
-
-
-
-        // public void setQueue(ref List<string> x)
-        // {
-        //     queue = x;
-        // }
-
-        /*public void setIndex(ref int x)
-        {
-            index = x;
-        }*/
     }
 }

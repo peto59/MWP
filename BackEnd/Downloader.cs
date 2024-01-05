@@ -12,6 +12,7 @@ using Android.Views;
 using Com.Arthenica.Ffmpegkit;
 using Com.Geecko.Fpcalc;
 using Google.Android.Material.Snackbar;
+using MWP.DatatypesAndExtensions;
 using Newtonsoft.Json;
 using YoutubeExplode;
 using YoutubeExplode.Channels;
@@ -36,7 +37,7 @@ namespace MWP.BackEnd
             //APIThrottler throttler = new APIThrottler();
             if (url.Contains("playlist"))
             {
-                Snackbar.Make(view, $"Download started", Snackbar.LengthLong).Show();
+                Snackbar.Make(view, $"Download started", BaseTransientBottomBar.LengthLong).Show();
 
                 YoutubeClient youtube = new YoutubeClient();
                 Playlist playlist = await youtube.Playlists.GetAsync(url);
@@ -73,7 +74,7 @@ namespace MWP.BackEnd
             }
             else if (url.Contains("watch"))
             {
-                Snackbar.Make(view, $"Download started", Snackbar.LengthLong).Show();
+                Snackbar.Make(view, $"Download started", BaseTransientBottomBar.LengthLong).Show();
                 YoutubeClient youtube = new YoutubeClient();
                 Video video = await youtube.Videos.GetAsync(url);
                 (string songTempPath, string unprocessedTempPath, string thumbnailTempPath) = FileManager.GetAvailableDownloaderFiles();
@@ -84,7 +85,7 @@ namespace MWP.BackEnd
             }
             else
             {
-                Snackbar.Make(view, $"This is neither video nor playlist", Snackbar.LengthLong).Show();
+                Snackbar.Make(view, $"This is neither video nor playlist", BaseTransientBottomBar.LengthLong).Show();
                 //throw new ArgumentException($"{url} is not video or playlist");
             }
         }
@@ -110,7 +111,7 @@ namespace MWP.BackEnd
                 {
                     string? album1 = album;
                     async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artists, List<(string title, string id)> releaseGroup, byte[]? thumbnail)> TaskFactory() => await GetMusicBrainzIdFromFingerprint(unprocessedPath, channelName, videoTitle, album1);
-                    mbSearchTask = MainActivity.throttler.Throttle(TaskFactory, "GetMusicBrainzIdFromFingerprint");
+                    mbSearchTask = MainActivity.Throttler.Throttle(TaskFactory, "GetMusicBrainzIdFromFingerprint");
                 }
                 
                 FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu);
@@ -133,7 +134,7 @@ namespace MWP.BackEnd
                 {
                     FFmpegSession session = new FFmpegSession(new []{"-i", unprocessedPath, "-i", thumbnailTempPath, "-filter_complex", "[1:v]crop=iw:iw/2[img]", "-map", "0:0", "-map", "[img]", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", songTempPath}); //aspect ratio 2:1
                     //FFmpegSession session = new FFmpegSession(new []{"-i", $"{Path}/tmp/unprocessed{i}.mp3", "-i", $"{Path}/tmp/file{i}.jpg", "-map", "0:0", "-map", "1:0", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", $"{Path}/tmp/video{i}.mp3"}); //original aspect ration 
-                    MainActivity.stateHandler.SessionIdToPlaylistOrderMapping.Add(session.SessionId, (poradieVPlayliste, duration));
+                    MainActivity.StateHandler.SessionIdToPlaylistOrderMapping.Add(session.SessionId, (poradieVPlayliste, duration));
                     FFmpegKitConfig.FfmpegExecute(session);
                     notification.Stage3(poradieVPlayliste);
 #if DEBUG
@@ -244,7 +245,7 @@ namespace MWP.BackEnd
                     MyConsole.WriteLine($"FFmpeg failed with status code {session.ReturnCode} {session.Output} {session}");
 #endif
                     View view = (View)sender;
-                    Snackbar.Make(view, $"{session.ReturnCode} Failed: {title}", Snackbar.LengthLong).Show();
+                    Snackbar.Make(view, $"{session.ReturnCode} Failed: {title}", BaseTransientBottomBar.LengthLong).Show();
                 }
             }
             catch (Exception ex)
@@ -259,7 +260,7 @@ namespace MWP.BackEnd
                 MyConsole.WriteLine($"[tryCatch line: {line}]BIG EROOOOOOOOR: {ex}");
 #endif
                 View view = (View)sender;
-                Snackbar.Make(view, $"Failed: {videoTitle}", Snackbar.LengthLong).Show();
+                Snackbar.Make(view, $"Failed: {videoTitle}", BaseTransientBottomBar.LengthLong).Show();
             }
         }
 
@@ -366,7 +367,7 @@ namespace MWP.BackEnd
                     );
 
 
-                MainActivity.stateHandler.FileEvent.WaitOne();
+                MainActivity.StateHandler.FileEvent.WaitOne();
                 IEnumerator<(string title, string recordingId, string trackId, IEnumerable<(string title, string id)>
                     artists, IEnumerable<(string title, string id)> releaseGroups)> rEnumerator;
                 try
@@ -379,7 +380,7 @@ namespace MWP.BackEnd
 #if DEBUG
                 MyConsole.WriteLine(e);
 #endif
-                    MainActivity.stateHandler.FileEvent.Set();
+                    MainActivity.StateHandler.FileEvent.Set();
                     return output;
                 }
 
@@ -437,7 +438,7 @@ namespace MWP.BackEnd
                                 return ((int)webResponse.StatusCode, webResponse.Headers["Location"]);
                             }
 
-                            (int statusCode, string uriString) = await MainActivity.throttler.Throttle(TaskFactory,
+                            (int statusCode, string uriString) = await MainActivity.Throttler.Throttle(TaskFactory,
                                 $"urlResolution_{originalTitle}", 1000, 1000);
 
                             // Now look to see if it's a redirect
@@ -476,50 +477,50 @@ namespace MWP.BackEnd
 
                     bool next = hasNext;
                     int cnt1 = cnt;
-                    MainActivity.stateHandler.view.RunOnUiThread(() =>
+                    MainActivity.StateHandler.view.RunOnUiThread(() =>
                     {
                         YoutubeFragment.UpdateSsDialog(current.title, current.artists.First().title,
                             current.releaseGroups.First().title,
                             imgBuffer[cnt1], originalAuthor,
                             originalTitle, cnt1 < buffer.Count - 1 || next, cnt1 > 0);
                     });
-                    MainActivity.stateHandler.ResultEvent.WaitOne();
+                    MainActivity.StateHandler.ResultEvent.WaitOne();
 
-                    if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Next)
+                    if (MainActivity.StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Next)
                     {
                         lastNavigation = LastSongSelectionNavigation.Next;
                         cnt++;
-                        MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        MainActivity.StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
                         continue;
                     }
 
-                    if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Previous)
+                    if (MainActivity.StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Previous)
                     {
                         lastNavigation = LastSongSelectionNavigation.Previous;
                         cnt--;
-                        MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        MainActivity.StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
                         continue;
                     }
 
-                    if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Cancel)
+                    if (MainActivity.StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Cancel)
                     {
-                        MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        MainActivity.StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
                         break;
                     }
 
-                    if (MainActivity.stateHandler.songSelectionDialogAction == SongSelectionDialogActions.Accept)
+                    if (MainActivity.StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Accept)
                     {
                         output = (current.title, current.recordingId, current.trackId, current.artists.ToList(),
                             current.releaseGroups.ToList(), imgBuffer[cnt]);
                         //output = ( current.title, current.recordingId, current.trackId, current.artists.ToList(), current.releaseGroups.ToList(), imgBuffer[cnt]);
-                        MainActivity.stateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        MainActivity.StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
                         break;
                     }
                 }
 
                 response.Dispose();
                 rEnumerator.Dispose();
-                MainActivity.stateHandler.FileEvent.Set();
+                MainActivity.StateHandler.FileEvent.Set();
                 return output;
             }
             catch (Exception e)
@@ -528,7 +529,7 @@ namespace MWP.BackEnd
                 MyConsole.WriteLine(e.ToString());       
 #endif
             }
-            MainActivity.stateHandler.FileEvent.Set();
+            MainActivity.StateHandler.FileEvent.Set();
             return output;
         }
     }
@@ -557,7 +558,7 @@ namespace MWP.BackEnd
             {
                 if (statistics == null) return;
                 (int? poradieVPlayliste, int duration) =
-                    MainActivity.stateHandler.SessionIdToPlaylistOrderMapping[statistics.SessionId];
+                    MainActivity.StateHandler.SessionIdToPlaylistOrderMapping[statistics.SessionId];
 #if DEBUG
                 MyConsole.WriteLine($"Percentage: {(statistics.Time / duration / 10).Constraint(0, 100)}");
                 MyConsole.WriteLine(statistics.ToString());
