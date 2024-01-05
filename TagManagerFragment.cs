@@ -167,7 +167,9 @@ namespace MWP
                 songCover.Click += async delegate
                 {
                     var res = await PickAndShow(options, songCover);
+#if DEBUG
                     MyConsole.WriteLine($"Loading image result: {res?.FileName}");
+#endif
                 };
 
 

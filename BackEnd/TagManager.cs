@@ -5,6 +5,8 @@ using System.Linq;
 using Android.Graphics;
 using MWP.DatatypesAndExtensions;
 using MWP.Helpers;
+using TagLib;
+using File = System.IO.File;
 
 namespace MWP.BackEnd
 {
@@ -108,10 +110,13 @@ namespace MWP.BackEnd
 #endif
                     return;
                 }
+
                 using (MemoryStream stream = new MemoryStream())
                 {
                     value.Compress(Bitmap.CompressFormat.Png, 0, stream);
-                    tfile.Tag.Pictures[0].Data = stream.ToArray();
+                    IPicture[] pics = new IPicture[1];
+                    pics[0] = new TagLib.Picture(stream.ToArray());
+                    tfile.Tag.Pictures = pics;
                 }
                 Changed = true;
                 saveFlags |= SongSave.Image;

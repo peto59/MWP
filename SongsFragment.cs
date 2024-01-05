@@ -11,7 +11,6 @@ using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.Views.InputMethods;
-using Bumptech.Glide.Load.Resource.Bitmap;
 using Google.Android.Material.FloatingActionButton;
 using Java.Lang;
 using MWP.BackEnd;
