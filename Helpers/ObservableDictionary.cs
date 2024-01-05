@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Android.Widget;
 
-namespace MWP.Helpers
+namespace MWP
 {
   
     public class ObservableDictionary<TKey,TValue> : Dictionary<TKey,TValue>
