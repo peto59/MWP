@@ -517,6 +517,24 @@ namespace MWP.BackEnd
             }
         }
         
+        /// <summary>
+        /// Adds song to all hosts except <paramref name="host"/>
+        /// </summary>
+        /// <param name="host"></param>
+        /// <param name="song"></param>
+        public static void AddTrustedSyncTargetSongsExcluded(string? host, Song song)
+        {
+            string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            
+            foreach (string key in targets.Keys.Where(key => key != host))
+            {
+                targets[key].Add(song);
+            }
+            File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(targets, customConverter));
+        }
+        
         public static void AddTrustedSyncTargetSongs(string host, Song song)
         {
             string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
@@ -646,9 +664,9 @@ namespace MWP.BackEnd
                 albumList.ForEach(alb => alb.AddSong(ref song));
             }
 
-            if (isNew && remoteHostname != null)
+            if (isNew)
             {
-                AddTrustedSyncTargetSongs(remoteHostname, song);
+                AddTrustedSyncTargetSongsExcluded(remoteHostname, song);
             }
         }
 
