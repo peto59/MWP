@@ -162,8 +162,11 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                                     MyConsole.WriteLine(syncSongs[0].ToString());
 #endif
-                                    networkStream.WriteFile(syncSongs[0].Path, ref encryptor, ref aes);
-                                    ackCount--;
+                                    if (File.Exists(syncSongs[0].Path))
+                                    {
+                                        networkStream.WriteFile(syncSongs[0].Path, ref encryptor, ref aes);
+                                        ackCount--;
+                                    }
                                     FileManager.DeleteTrustedSyncTargetSongs(remoteHostname, syncSongs[0]);
                                     syncSongs.RemoveAt(0);
                                 }
@@ -257,14 +260,14 @@ namespace MWP.BackEnd.Network
                 MyConsole.WriteLine("Trashing file");
 #endif
                 string trashPath = FileManager.GetAvailableTempFile("trash", "trash");
-                networkStream.ReadFile(trashPath, length, ref aes);
+                networkStream.ReadFile(trashPath, length, ref aes, ref encryptor);
                 File.Delete(trashPath);
                 return;
             }
             try
             {
                 string songPath = FileManager.GetAvailableTempFile("receive", "mp3");
-                networkStream.ReadFile(songPath, length, ref aes);
+                networkStream.ReadFile(songPath, length, ref aes, ref encryptor);
 #if DEBUG
                 MyConsole.WriteLine("Read file to temp");
 #endif
@@ -307,7 +310,7 @@ namespace MWP.BackEnd.Network
             if (!isTrustedSyncTarget)
             {
                 string trashPath = FileManager.GetAvailableTempFile("trash", "trash");
-                networkStream.ReadFile(trashPath, length, ref aes);
+                networkStream.ReadFile(trashPath, length, ref aes, ref encryptor);
                 File.Delete(trashPath);
                 return;
             }
@@ -316,7 +319,7 @@ namespace MWP.BackEnd.Network
                 string artist = FileManager.GetAlias(Encoding.UTF8.GetString(data));
                 string artistPath = FileManager.Sanitize(artist);
                 string imagePath = FileManager.GetAvailableTempFile("networkImage", "image");
-                networkStream.ReadFile(imagePath, length, ref aes);
+                networkStream.ReadFile(imagePath, length, ref aes, ref encryptor);
                 string imageExtension = FileManager.GetImageFormat(imagePath);
                 string artistImagePath =
                     $"{FileManager.MusicFolder}/{artistPath}/cover.{imageExtension.TrimStart('.')}";
@@ -344,7 +347,7 @@ namespace MWP.BackEnd.Network
             if (!isTrustedSyncTarget)
             {
                 string trashPath = FileManager.GetAvailableTempFile("trash", "trash");
-                networkStream.ReadFile(trashPath, length, ref aes);
+                networkStream.ReadFile(trashPath, length, ref aes, ref encryptor);
                 File.Delete(trashPath);
                 return;
             }
@@ -353,7 +356,7 @@ namespace MWP.BackEnd.Network
                 string album = Encoding.UTF8.GetString(data);
                 string albumPath = FileManager.Sanitize(album);
                 string imagePath = FileManager.GetAvailableTempFile("networkImage", "image");
-                networkStream.ReadFile(imagePath, length, ref aes);
+                networkStream.ReadFile(imagePath, length, ref aes, ref encryptor);
                 string imageExtension = FileManager.GetImageFormat(imagePath);
                 string albumImagePath =
                     $"{FileManager.MusicFolder}/{albumArtistPair[album]}/{albumPath}/cover.{imageExtension.TrimStart('.')}";

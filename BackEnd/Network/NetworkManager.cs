@@ -104,7 +104,7 @@ namespace MWP.BackEnd.Network
                                     //TODO: doesn't work with one time sends....
                                     if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                     
-                                    NetworkManagerCommon.Connected.Add(targetIp);
+                                    //NetworkManagerCommon.Connected.Add(targetIp);
                                     new Thread(() =>
                                     {
                                         if (!NetworkManagerCommon.P2PDecide(targetIp))

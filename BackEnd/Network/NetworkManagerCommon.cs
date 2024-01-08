@@ -155,6 +155,14 @@ namespace MWP.BackEnd.Network
 
         internal static bool P2PDecide(IPAddress ipAddress, List<Song>? songsToSend = null)
         {
+            if (ipAddress.Equals(NetworkManager.Common.MyIp) || Enumerable.Contains(Connected, ipAddress))
+            {
+#if DEBUG
+                MyConsole.WriteLine("Exit pls2");
+#endif
+                return true;
+            }
+            Connected.Add(ipAddress);
             songsToSend ??= new List<Song>();
 #if DEBUG
             MyConsole.WriteLine($"New P2P from {ipAddress}");
@@ -172,7 +180,7 @@ namespace MWP.BackEnd.Network
             byte cnt = 0;
             Dictionary<byte, byte> remote = new Dictionary<byte, byte>();
             Dictionary<byte, byte> local = new Dictionary<byte, byte>();
-            P2PState stateObject = new P2PState(new []{(byte)0});
+            P2PState stateObject = new P2PState(new []{(byte)0, (byte)0, (byte)0, (byte)0});
             try
             {
                 while (true)
@@ -453,12 +461,19 @@ namespace MWP.BackEnd.Network
                                     MyConsole.WriteLine($"found remote: {remoteHostname}, {targetIp}");       
 #endif                
                                     AddAvailableHost(targetIp, remoteHostname);
+                                    if (targetIp.Equals(MyIp) || Enumerable.Contains(Connected, targetIp))
+                                    {
+#if DEBUG
+                                        MyConsole.WriteLine("Exit pls2");
+#endif
+                                        continue;
+                                    }
                                     processedAtLestOne = true;
                                     //TODO: add to available targets. Don't connect directly, check if sync is allowed.
                                     //TODO: doesn't work with one time sends....
                                     if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                 
-                                    Connected.Add(targetIp);
+                                    //Connected.Add(targetIp);
                                     new Thread(() =>
                                     {
                                         if (!P2PDecide(targetIp, songsToSend))
