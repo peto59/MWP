@@ -101,10 +101,12 @@
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
     <Compile Include="BackEnd\Network\Commands.cs" />
+    <Compile Include="BackEnd\Network\Datatypes.cs" />
     <Compile Include="BackEnd\Network\Extensions.cs" />
     <Compile Include="BackEnd\Network\NetworkManager.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerClient.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerCommon.cs" />
+    <Compile Include="BackEnd\Network\NetworkManagerCommonCommunication.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerServer.cs" />
     <Compile Include="AlbumAuthorFragment.cs" />
     <Compile Include="AlbumFragment.cs" />
@@ -127,28 +129,33 @@
     <Compile Include="Helpers\APIThrottler.cs" />
     <Compile Include="DatatypesAndExtensions\Artist.cs" />
     <Compile Include="DownloadNotification.cs" />
+    <Compile Include="Helpers\ObservableDictionary.cs" />
+    <Compile Include="Helpers\ObservableInteger.cs" />
     <Compile Include="Helpers\SongJsonConverter.cs" />
     <Compile Include="Helpers\MyConsole.cs" />
     <Compile Include="Helpers\Interval.cs" />
     <Compile Include="DatatypesAndExtensions\Extensions.cs" />
     <Compile Include="Helpers\Levenshtein.cs" />
+    <Compile Include="Helpers\WidgetServiceHandler.cs" />
     <Compile Include="Local_notification_service.cs" />
     <Compile Include="DatatypesAndExtensions\MusicBaseClass.cs" />
     <Compile Include="BackEnd\Downloader.cs" />
     <Compile Include="BackEnd\FileManager.cs" />
     <Compile Include="Helpers\HelloWebViewClient.cs" />
     <Compile Include="MainActivity.cs" />
+    <Compile Include="MusicWidget.cs" />
     <Compile Include="PlaylistFragment.cs" />
     <Compile Include="PlaylistsFragment.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShareFragment.cs" />
-    <Compile Include="side_player.cs" />
+    <Compile Include="SidePlayer.cs" />
     <Compile Include="DatatypesAndExtensions\Song.cs" />
     <Compile Include="DatatypesAndExtensions\SongExtensions.cs" />
     <Compile Include="BackEnd\StateHandler.cs" />
     <Compile Include="BackEnd\TagManager.cs" />
     <Compile Include="SongsFragment.cs" />
+    <Compile Include="TagManagerFragment.cs" />
     <Compile Include="UIRenderFunctions.cs" />
     <Compile Include="youtube.cs" />
     <Compile Include="YoutubeFragment.cs" />
@@ -160,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\albums.xml" />
+    <AndroidResource Include="Resources\drawable\artists.xml" />
     <AndroidResource Include="Resources\drawable\back.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -178,6 +186,10 @@
     </AndroidResource>
     <AndroidResource Include="Resources\drawable\music.xml" />
     <AndroidResource Include="Resources\drawable\new_playlist.xml" />
+    <AndroidResource Include="Resources\drawable\noround_button.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\drawable\no_shuffle2.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -197,16 +209,30 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\drawable\rounded_button_left.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\rounded_button_right.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\rounded_light_20px.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\drawable\rounded_view_white.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\drawable\save.xml" />
     <AndroidResource Include="Resources\drawable\settings.xml" />
     <AndroidResource Include="Resources\drawable\share.xml" />
     <AndroidResource Include="Resources\drawable\shuffle2.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\drawable\widget_rounded.xml" />
     <AndroidResource Include="Resources\layout\activity_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
@@ -220,6 +246,7 @@
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\download_notification_single.xml" />
+    <AndroidResource Include="Resources\layout\music_widget_layout.xml" />
     <AndroidResource Include="Resources\layout\nav_header_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
@@ -230,6 +257,10 @@
     <AndroidResource Include="Resources\layout\share_new_port.xml" />
     <AndroidResource Include="Resources\layout\songs_fragment.xml" />
     <AndroidResource Include="Resources\layout\song_download_selection_dialog.xml" />
+    <AndroidResource Include="Resources\layout\tag_manager_fragment.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\layout\youtube_fragment.xml" />
     <AndroidResource Include="Resources\values\colors.xml" />
     <AndroidResource Include="Resources\values\dimens.xml" />
@@ -264,6 +295,7 @@
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
     <AndroidResource Include="Resources\xml\automotive_app_desc.xml" />
+    <AndroidResource Include="Resources\xml\musicwidget_provider.xml" />
     <AndroidResource Include="Resources\xml\provider_paths.xml" />
   </ItemGroup>
   <ItemGroup>
@@ -291,11 +323,14 @@
     <PackageReference Include="Octokit">
       <Version>7.1.0</Version>
     </PackageReference>
-    <PackageReference Include="Square.Picasso">
-      <Version>2.71828.0</Version>
-    </PackageReference>
     <PackageReference Include="TagLibSharp">
       <Version>2.3.0</Version>
+    </PackageReference>
+    <PackageReference Include="Xamarin.Android.Glide">
+      <Version>4.16.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="Xamarin.Android.Support.v7.CardView">
+      <Version>28.0.0.3</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.2.0.5" />
     <PackageReference Include="Xamarin.AndroidX.ExifInterface">
@@ -307,8 +342,10 @@
     <PackageReference Include="Xamarin.AndroidX.Migration">
       <Version>1.0.10</Version>
     </PackageReference>
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.0.0.1" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
+    <PackageReference Include="Xamarin.Google.Android.Material">
+      <Version>1.10.0.2</Version>
+    </PackageReference>
     <PackageReference Include="YoutubeExplode">
       <Version>6.3.4</Version>
     </PackageReference>
@@ -316,13 +353,12 @@
   <ItemGroup>
     <AndroidAsset Include="Assets\sulphur.ttf" />
     <AndroidAsset Include="Assets\WixMadeforText.ttf" />
-    <AndroidAsset Include="Resources\drawable\mori.jpg" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\music_placeholder.png" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidResource Include="Resources\drawable\rounded.xml" />
+    <AndroidResource Include="Resources\drawable\rounded_primaryColor.xml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Chromaprint\Chromaprint.csproj">

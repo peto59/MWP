@@ -20,6 +20,8 @@ using Socket = System.Net.Sockets.Socket;
 using SocketType = System.Net.Sockets.SocketType;
 using TransportType = Android.Net.TransportType;
 using Mono.Nat;
+using MWP.DatatypesAndExtensions;
+using SocketException = System.Net.Sockets.SocketException;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -54,11 +56,24 @@ namespace MWP.BackEnd.Network
                 canSend = value;
             }
         }
-        private IPAddress myBroadcastIp;
+        private IPAddress? myBroadcastIp;
         internal const int BroadcastPort = 8008;
         private const int P2PPort = 8009;
         internal const int RsaDataSize = 256;
+#if DEBUG
+        private string _currentSsid = string.Empty;
+        internal string CurrentSsid
+        {
+            get => _currentSsid;
+            set
+            {
+                MyConsole.WriteLine($"Changing CurrentSsid to {value}");
+                _currentSsid = value;
+            }
+        }
+#else
         internal string CurrentSsid = string.Empty;
+#endif
 
         public NetworkManagerCommon()
         {
@@ -106,7 +121,7 @@ namespace MWP.BackEnd.Network
                 };
                 NatUtility.StartDiscovery();
             }
-            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
+            if (Android.OS.Build.VERSION.SdkInt <= Android.OS.BuildVersionCodes.SV2) {
                 return;
             }
             try
@@ -114,7 +129,7 @@ namespace MWP.BackEnd.Network
                 NetworkRequest? request = new NetworkRequest.Builder()
                     .AddTransportType(TransportType.Wifi)
                     ?.Build();
-                while (MainActivity.stateHandler.view == null)
+                while (MainActivity.StateHandler.view == null)
                 {
 #if DEBUG
                     MyConsole.WriteLine("Waiting for stateHandler.view");
@@ -122,7 +137,7 @@ namespace MWP.BackEnd.Network
                     Thread.Sleep(10);
                 }
                 ConnectivityManager? connectivityManager =
-                    (ConnectivityManager?)MainActivity.stateHandler.view.GetSystemService(
+                    (ConnectivityManager?)MainActivity.StateHandler.view.GetSystemService(
                         Context.ConnectivityService);
                 MyNetworkCallback myNetworkCallback = new MyNetworkCallback(NetworkCallbackFlags.IncludeLocationInfo);
                 if (request != null && connectivityManager != null) connectivityManager.RegisterNetworkCallback(request, myNetworkCallback);
@@ -140,54 +155,163 @@ namespace MWP.BackEnd.Network
 
         internal static bool P2PDecide(IPAddress ipAddress, List<Song>? songsToSend = null)
         {
+            if (ipAddress.Equals(NetworkManager.Common.MyIp) || Enumerable.Contains(Connected, ipAddress))
+            {
+#if DEBUG
+                MyConsole.WriteLine("Exit pls2");
+#endif
+                return true;
+            }
+            Connected.Add(ipAddress);
             songsToSend ??= new List<Song>();
 #if DEBUG
             MyConsole.WriteLine($"New P2P from {ipAddress}");
 #endif
-            if (NetworkManager.Common.MyIp != null)
+            if (NetworkManager.Common.MyIp == null) return false;
+            Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            sock.ReceiveTimeout = 500;
+            IPEndPoint iep = new IPEndPoint(NetworkManager.Common.MyIp, P2PPort);
+            EndPoint endPoint = iep;
+            sock.Bind(endPoint);
+            iep = new IPEndPoint(ipAddress, P2PPort);
+            IPEndPoint remoteEndpoint = new IPEndPoint(ipAddress, P2PPort);
+            endPoint = iep;
+            byte[] buffer = new byte[4];
+            byte cnt = 0;
+            Dictionary<byte, byte> remote = new Dictionary<byte, byte>();
+            Dictionary<byte, byte> local = new Dictionary<byte, byte>();
+            P2PState stateObject = new P2PState(new []{(byte)0, (byte)0, (byte)0, (byte)0});
+            try
             {
-                Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                //TODO: add timeout
-                IPEndPoint iep = new IPEndPoint(NetworkManager.Common.MyIp, P2PPort);
-                EndPoint endPoint = iep;
-                sock.Bind(endPoint);
-                iep = new IPEndPoint(ipAddress, P2PPort);
-                endPoint = iep;
-                byte[] buffer = new byte[4];
-                //TODO: this is stupid
-                Thread.Sleep(1000);
                 while (true)
                 {
-                    int state = new Random().Next(0, 2);
-                    sock.SendTo(BitConverter.GetBytes(state), endPoint);
+                    byte state = (byte)new Random().Next(0, 2);
+                    sock.SendTo(P2PState.Send(cnt, state), remoteEndpoint);
+                    local.TryAdd(cnt, state);
 #if DEBUG
-                    MyConsole.WriteLine($"sending {state} to {((IPEndPoint)endPoint).Address}");
+                    MyConsole.WriteLine($"sending {state} at cnt {cnt} to {((IPEndPoint)endPoint).Address}");
 #endif
-                    int maxResponseCounter = 4;
-                    int response;
+                    cnt++;
+                    byte maxResponseCounter = NetworkManager.P2PMaxResponseCounter;
+                    byte? response = null;
                     do
                     {
-                        sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
-#if DEBUG
-                        MyConsole.WriteLine($"received {BitConverter.ToInt32(buffer)} from {((IPEndPoint)endPoint).Address}");
-#endif
-                        response = BitConverter.ToInt32(buffer);
-                        maxResponseCounter--;
-#if DEBUG
-                        if (response is not (0 or 1))
+                        bool breakFlag = false;
+                        do
                         {
-                            MyConsole.WriteLine($"Got invalid state in P2PDecide: {response}");
-                        }
+                            while (maxResponseCounter > 0)
+                            {
+                                try
+                                {
+                                    sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
+                                    if (!((IPEndPoint)endPoint).Address.Equals(remoteEndpoint.Address))
+                                    {
+                                        maxResponseCounter--;
+                                        continue;
+                                    }
+                                }
+                                catch (SocketException e)
+                                {
+                                    cnt++;
+                                    state = (byte)new Random().Next(0, 2);
+                                    local.TryAdd(cnt, state);
+                                    sock.SendTo(P2PState.Send(cnt, state), remoteEndpoint);
+                                    maxResponseCounter--;
+                                    continue;
+                                }
+
+                                break;
+                            }
+
+                            if (maxResponseCounter <= 0)
+                            {
+                                breakFlag = true;
+                                break;
+                            }
+                            stateObject = new P2PState(buffer);
+#if DEBUG
+                            MyConsole.WriteLine(
+                                $"received {stateObject.Type} with {stateObject.State} at cnt {stateObject.Cnt} from {((IPEndPoint)endPoint).Address}");
 #endif
-                    } while (response is not (0 or 1) && maxResponseCounter > 0);
+                            if (!stateObject.IsValid)
+                            {
+                                maxResponseCounter--;
+                                break;
+                            }
+
+                            if (stateObject.Type == P2PStateTypes.Port)
+                            {
+                                breakFlag = true;
+                                state = 1;
+                                response = 0;
+                                break;
+                            }
+
+                            if (stateObject.Type == P2PStateTypes.Request)
+                            {
+                                if (local.TryGetValue(stateObject.Cnt, out state))
+                                {
+                                    sock.SendTo(P2PState.Send(stateObject.Cnt, state), remoteEndpoint);
+                                }
+                                else
+                                {
+                                    state = (byte)new Random().Next(0, 2);
+                                    local.TryAdd(stateObject.Cnt, state);
+                                    sock.SendTo(P2PState.Send(stateObject.Cnt, state), remoteEndpoint);
+                                }
+                            }
+
+                            if (stateObject.Type == P2PStateTypes.State)
+                            {
+                                remote.TryAdd(stateObject.Cnt, stateObject.State);
+                                bool check = true;
+                                foreach ((byte key, byte localVal) in local)
+                                {
+                                    if (!remote.TryGetValue(key, out byte remoteVal))
+                                    {
+                                        sock.SendTo(P2PState.Request(key), remoteEndpoint);
+                                        check = false;
+                                    }
+
+                                    if (!check)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (localVal == remoteVal)
+                                    {
+                                        continue;
+                                    }
+
+                                    response = remoteVal;
+                                    state = localVal;
+                                    breakFlag = true;
+                                    break;
+                                }
+
+                                if (breakFlag)
+                                {
+                                    break;
+                                }
+                            }
+                        } while (sock.Available >= 4);
+
+                        if (breakFlag)
+                        {
+                            break;
+                        }
+                    } while (maxResponseCounter > 0);
 
                     if (maxResponseCounter == 0)
                     {
                         sock.Dispose();
+#if DEBUG
+                        MyConsole.WriteLine("Max Response Counter exceeded");
+#endif
                         return false;
                     }
 
-                    if (state == response) continue;
+                    if (state == (response ?? state)) continue;
                     if (state == 0)
                     {
                         //server
@@ -195,12 +319,13 @@ namespace MWP.BackEnd.Network
                         MyConsole.WriteLine("Server");
 #endif
                         if (NetworkManager.Common.MyIp == null) return false;
-                        (TcpListener server, int listenPort) = NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
-                        sock.SendTo(BitConverter.GetBytes(listenPort), endPoint);
+                        (TcpListener server, int listenPort) =
+                            NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
+                        sock.SendTo(BitConverter.GetBytes(listenPort), remoteEndpoint);
                         try
                         {
-                            sock.Dispose();
-                            NetworkManagerServer.Server(server, ipAddress, songsToSend);
+                            NetworkManagerServer.Server(server, ipAddress, songsToSend, ref endPoint, ref sock,
+                                local);
                         }
                         catch (Exception e)
                         {
@@ -208,6 +333,7 @@ namespace MWP.BackEnd.Network
                             MyConsole.WriteLine(e);
 #endif
                         }
+
                         sock.Dispose();
                         return true;
                     }
@@ -215,8 +341,44 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                     MyConsole.WriteLine("Client");
 #endif
-                    sock.ReceiveFrom(buffer, ref endPoint);
-                    int sendPort = BitConverter.ToInt32(buffer);
+                    while (stateObject.Type != P2PStateTypes.Port)
+                    {
+                        while (true)
+                        {
+                            try
+                            {
+                                sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
+                                if (!((IPEndPoint)endPoint).Address.Equals(remoteEndpoint.Address))
+                                {
+                                    continue;
+                                }
+                            }
+                            catch (SocketException e)
+                            {
+                                sock.SendTo(P2PState.Send(cnt, state), remoteEndpoint);
+                                continue;
+                            }
+
+                            break;
+                        }
+
+                        stateObject = new P2PState(buffer);
+                        if (stateObject.Type == P2PStateTypes.Request)
+                        {
+                            if (local.TryGetValue(stateObject.Cnt, out state))
+                            {
+                                sock.SendTo(P2PState.Send(stateObject.Cnt, state), remoteEndpoint);
+                            }
+                            else
+                            {
+                                state = (byte)new Random().Next(0, 2);
+                                local.TryAdd(stateObject.Cnt, state);
+                                sock.SendTo(P2PState.Send(stateObject.Cnt, state), remoteEndpoint);
+                            }
+                        }
+                    }
+
+                    int sendPort = stateObject.Port;
                     try
                     {
                         sock.Dispose();
@@ -228,9 +390,18 @@ namespace MWP.BackEnd.Network
                         MyConsole.WriteLine(e);
 #endif
                     }
+
                     sock.Dispose();
                     return true;
                 }
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+                MyConsole.WriteLine("Returning false in P2PDecide");
+#endif
+                return false;
             }
             return false;
         }
@@ -265,65 +436,66 @@ namespace MWP.BackEnd.Network
             {
                 case CanSend.Allowed:
                 {
-                    IPEndPoint destinationEndpoint = new IPEndPoint(myBroadcastIp, BroadcastPort);
-
-                    int retries = 0;
-                    const int maxRetries = 3;
-
-                    IPEndPoint iep = new IPEndPoint(IPAddress.Any, BroadcastPort);
-                    bool processedAtLestOne = false;
-                    do
+                    if (myBroadcastIp != null)
                     {
-                        Sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
-                        retries++;
-                        try
+                        IPEndPoint destinationEndpoint = new IPEndPoint(myBroadcastIp, BroadcastPort);
+
+                        int retries = 0;
+                        const int maxRetries = 3;
+
+                        IPEndPoint iep = new IPEndPoint(IPAddress.Any, BroadcastPort);
+                        bool processedAtLestOne = false;
+                        do
                         {
-                            while (true)
+                            Sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
+                            retries++;
+                            try
                             {
-                                EndPoint groupEp = iep;
-                                Sock.ReceiveFrom(Buffer, ref groupEp);
-                                IPAddress targetIp = ((IPEndPoint)groupEp).Address;
-                                string remoteHostname = Encoding.UTF8.GetString(Buffer).TrimEnd('\0');
+                                while (true)
+                                {
+                                    EndPoint groupEp = iep;
+                                    Sock.ReceiveFrom(Buffer, ref groupEp);
+                                    IPAddress targetIp = ((IPEndPoint)groupEp).Address;
+                                    string remoteHostname = Encoding.UTF8.GetString(Buffer).TrimEnd('\0');
 #if DEBUG
-                                MyConsole.WriteLine($"found remote: {remoteHostname}, {targetIp}");       
+                                    MyConsole.WriteLine($"found remote: {remoteHostname}, {targetIp}");       
 #endif                
-                                
-                                DateTime now = DateTime.Now;
-                                MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, remoteHostname));
-                                processedAtLestOne = true;
-                                //TODO: add to available targets. Don't connect directly, check if sync is allowed.
-                                //TODO: doesn't work with one time sends....
-                                //TODO: here
-                                if (!FileManager.IsTrustedSyncTarget(remoteHostname))
-                                {
-                                    FileManager.AddTrustedSyncTarget(remoteHostname);
-                                    //Thread.Sleep(100);
-                                }
-                                if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
-                                
-                                Connected.Add(targetIp);
-                                new Thread(() =>
-                                {
-                                    if (!P2PDecide(targetIp, songsToSend))
+                                    AddAvailableHost(targetIp, remoteHostname);
+                                    if (targetIp.Equals(MyIp) || Enumerable.Contains(Connected, targetIp))
                                     {
-                                        Connected.Remove(targetIp);
+#if DEBUG
+                                        MyConsole.WriteLine("Exit pls2");
+#endif
+                                        continue;
                                     }
-                                }).Start();
+                                    processedAtLestOne = true;
+                                    //TODO: add to available targets. Don't connect directly, check if sync is allowed.
+                                    //TODO: doesn't work with one time sends....
+                                    if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
+                                
+                                    //Connected.Add(targetIp);
+                                    new Thread(() =>
+                                    {
+                                        if (!P2PDecide(targetIp, songsToSend))
+                                        {
+                                            Connected.Remove(targetIp);
+                                        }
+                                    }).Start();
+                                }
                             }
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-                    } while (retries < maxRetries && !processedAtLestOne);
+                            catch
+                            {
+                                // ignored
+                            }
+                        } while (retries < maxRetries && !processedAtLestOne);
 
 #if DEBUG
-                    if (retries == maxRetries)
-                    {
-                        MyConsole.WriteLine("No reply");
-                    }
+                        if (retries == maxRetries)
+                        {
+                            MyConsole.WriteLine("No reply");
+                        }
 #endif
-                    
+                    }
                     break;
                 }
                 case CanSend.Test:
@@ -353,18 +525,18 @@ namespace MWP.BackEnd.Network
             try
             {
                 InetAddress inetAddress = InetAddress.GetByAddress(MyIp.GetAddressBytes());
-                NetworkInterface networkInterface = NetworkInterface.GetByInetAddress(inetAddress);
+                NetworkInterface? networkInterface = NetworkInterface.GetByInetAddress(inetAddress);
                 if (networkInterface is not { InterfaceAddresses: not null }) return false;
-                InetAddress broadcast = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress)).Broadcast;
+                InetAddress? broadcast = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress)).Broadcast;
                 if (broadcast != null)
                 {
                     myBroadcastIp = IPAddress.Parse(broadcast.ToString().Trim('/'));
                 }
                 else
                 {
-                    short prefix = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
+                    short? prefix = networkInterface?.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
                         .NetworkPrefixLength;
-                    myMask = PrefixLengthToNetmask(prefix);
+                    myMask = PrefixLengthToNetmask(prefix ?? 0);
                     myBroadcastIp = GetBroadCastIp(MyIp, myMask);
                 }
 #if DEBUG
@@ -402,7 +574,13 @@ namespace MWP.BackEnd.Network
                 NetworkManager.Common.CanSend = CanSend.Rejected;
                 return;
             }
-            if (!FileManager.IsTrustedSyncTarget(NetworkManager.Common.CurrentSsid))
+            
+            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S && NetworkManager.Common.CurrentSsid == string.Empty)
+            {
+                NetworkManager.Common.GetWifiSsid();
+            }
+            
+            if (!FileManager.IsTrustedSsid(NetworkManager.Common.CurrentSsid))
             {
                 NetworkManager.Common.CanSend = CanSend.Rejected;
                 return;
@@ -414,11 +592,18 @@ namespace MWP.BackEnd.Network
         [Obsolete("Deprecated")]
         internal void OnWiFiChange(ConnectivityChangedEventArgs e)
         {
+#if DEBUG
+            MyConsole.WriteLine("Changing wifi states: deprecated mode");
+#endif
             if (e.NetworkAccess is NetworkAccess.Internet or NetworkAccess.Local && e.ConnectionProfiles.Contains(ConnectionProfile.WiFi))
             {
+#if DEBUG
+                MyConsole.WriteLine($"NetworkAccess is {e.NetworkAccess}");
+#endif
                 WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
                 WifiInfo? info = wifiManager?.ConnectionInfo;
                 CurrentSsid = info?.SSID ?? string.Empty;
+                StateHandler.TriggerShareFragmentRefresh();
 
                 CanSend = GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
                 return;
@@ -426,6 +611,20 @@ namespace MWP.BackEnd.Network
 
             CurrentSsid = string.Empty;
             CanSend = CanSend.Rejected;
+            StateHandler.TriggerShareFragmentRefresh();
+        }
+
+        [Obsolete("Deprecated")]
+        internal void GetWifiSsid()
+        {
+            ConnectivityManager? connectivityManager = (ConnectivityManager?)Application.Context.GetSystemService(Context.ConnectivityService);
+            NetworkInfo? activeNetwork = connectivityManager?.ActiveNetworkInfo;
+
+            if (activeNetwork?.Type != ConnectivityType.Wifi) return;
+            WifiManager? wifiManager = (WifiManager?)Application.Context.GetSystemService(Context.WifiService);
+            WifiInfo? wifiInfo = wifiManager?.ConnectionInfo;
+            CurrentSsid = wifiInfo?.SSID ?? string.Empty;
+            StateHandler.TriggerShareFragmentRefresh();
         }
 
         internal static async Task<(string? storedPrivKey, string? storedPubKey)> LoadKeys(string remoteHostname)
@@ -441,6 +640,43 @@ namespace MWP.BackEnd.Network
                 throw new Exception("You're fucked, boy. Go buy something else than Nokia 3310");
             }
             return (storedPrivKey, storedPubKey);
+        }
+        
+        internal static void AddAvailableHost(IPAddress targetIp, string hostname)
+        {
+            DateTime now = DateTime.Now;
+            
+            List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.StateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
+            switch (currentAvailableHosts.Count)
+            {
+                case > 1:
+                {
+                    foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) currentAvailableHost in currentAvailableHosts)
+                    {
+                        MainActivity.StateHandler.AvailableHosts.Remove(currentAvailableHost);
+                    }
+                    MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, hostname));
+                    break;
+                }
+                case 1:
+                {
+                    int index = MainActivity.StateHandler.AvailableHosts.IndexOf(currentAvailableHosts.First());
+                    MainActivity.StateHandler.AvailableHosts[index] = (targetIp, now, hostname);
+                    break;
+                }
+                default:
+                    MainActivity.StateHandler.AvailableHosts.Add((targetIp, now, hostname));
+                    break;
+            }
+            
+            //remove stale hosts
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.StateHandler.AvailableHosts.Where(a =>
+                         a.lastSeen > now + NetworkManager.RemoveInterval))
+            {
+                MainActivity.StateHandler.AvailableHosts.Remove(removal);
+            }
+            
+            StateHandler.TriggerShareFragmentRefresh();
         }
     }
 
@@ -476,6 +712,7 @@ namespace MWP.BackEnd.Network
                         {
                             NetworkManager.Common.CanSend = CanSend.Test;
                             NetworkManager.Common.CurrentSsid = ssid;
+                            StateHandler.TriggerShareFragmentRefresh();
                         }
                         else if (NetworkManager.Common.CanSend == CanSend.Rejected)
                         {
@@ -497,6 +734,7 @@ namespace MWP.BackEnd.Network
             NetworkManager.Common.CanSend = CanSend.Rejected;
             NetworkManager.Common.MyIp = null;
             NetworkManager.Common.CurrentSsid = string.Empty;
+            StateHandler.TriggerShareFragmentRefresh();
         }
 
         private static bool ValidateIPv4(string ipString)

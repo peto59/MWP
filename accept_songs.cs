@@ -1,4 +1,5 @@
-﻿using AndroidX.DrawerLayout.Widget;
+﻿using System;
+using AndroidX.DrawerLayout.Widget;
 using Google.Android.Material.FloatingActionButton;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
@@ -22,7 +23,7 @@ using Java.Util.Functions;
 using Android.Views;
 using Android.Content;
 
-namespace MWP
+namespace Ass_Pain
 {
     public static class accept_songs
     {
@@ -33,7 +34,7 @@ namespace MWP
         {
             RelativeLayout lay = (RelativeLayout)sender;
 
-            if (e.Event.Action == DragAction.Started)
+            if (e.Event is { Action: DragAction.Started })
             {
                 if (e.Event.Action != DragAction.Ended)
                 {
@@ -46,40 +47,41 @@ namespace MWP
             }
         }
 
+        [Obsolete("Obsolete")]
         public static void wake_drag_button(AppCompatActivity context, int rel)
         {
-            RelativeLayout main = context.FindViewById<RelativeLayout>(rel);
+            RelativeLayout? main = context.FindViewById<RelativeLayout>(rel);
 
             // floating button
             fab = new FloatingActionButton(context);
-            RelativeLayout.LayoutParams fab_params = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MatchParent,
-                RelativeLayout.LayoutParams.WrapContent
+            RelativeLayout.LayoutParams fabParams = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                ViewGroup.LayoutParams.WrapContent
             );
             
-            fab.LayoutParameters = fab_params;
-            fab.Background.SetColorFilter(
-               Color.Rgb(255, 76, 41),
-               PorterDuff.Mode.Multiply
-            );
+            fab.LayoutParameters = fabParams;
+            if (PorterDuff.Mode.Multiply != null)
+                fab.Background?.SetColorFilter(
+                    Color.Rgb(255, 76, 41),
+                    PorterDuff.Mode.Multiply
+                );
 
-            fab.LongClick += (sender, e) =>
+            fab.LongClick += (_, _) =>
             {
-                ClipData dragData = ClipData.NewPlainText("", "");
+                ClipData? dragData = ClipData.NewPlainText("", "");
                 View.DragShadowBuilder myShadow = new View.DragShadowBuilder(fab);
                 fab.StartDrag(dragData, myShadow, null, 0);
 
             };
 
 
-            main.Drag += BtnDrapDrop_Drag;
+            if (main != null)
+            {
+                main.Drag += BtnDrapDrop_Drag;
 
-            main.AddView(fab);
-           
-            
+                main.AddView(fab);
+            }
         }
 
     }
-
-
 }

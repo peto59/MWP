@@ -4,8 +4,97 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" 
             android:id="@+id/songs_fragment_main" 
+            android:gravity="center_horizontal"
             xmlns:app="http://schemas.android.com/apk/res-auto"
 >
+    <LinearLayout 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:id="@+id/layout_search_and_btnok"
+            android:layout_marginTop="10dp"
+    android:orientation="horizontal">
+        
+        <EditText
+                android:layout_width="300dp"
+                android:layout_height="50dp"
+                android:text=""
+                android:textColor="#ffffff"
+                android:textSize="20dp"
+                android:background="@drawable/rounded_primaryColor"
+                android:paddingLeft="15dp"
+                android:id="@+id/search_songs_input"
+        />
+        <TextView android:layout_width="60dp" 
+                  android:layout_height="50dp"
+                  android:background="@drawable/rounded_button"
+                  android:layout_marginLeft="10dp"
+                  android:id="@+id/search_confirm_songs"
+                  android:text="ok"
+                  android:textColor="#ffffff"
+                  android:textAlignment="center"
+                  android:gravity="center"
+        />
+    </LinearLayout>
+    
+    <LinearLayout 
+            android:layout_width="match_parent" 
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/layout_search_and_btnok"
+            android:layout_marginTop="10dp"
+            android:gravity="center_horizontal"
+    >
+        <TextView android:layout_width="70dp"
+                  android:layout_height="40dp"
+                  android:background="@drawable/rounded_button_left"
+                  android:id="@+id/A_Z_btn"
+                  android:text="A-Z"
+                  android:textColor="#ffffff"
+                  android:textAlignment="center"
+                  android:gravity="center"
+        />
+        <TextView android:layout_width="70dp"
+                  android:layout_height="40dp"
+                  android:background="@drawable/noround_button"
+                  android:id="@+id/Z_A_btn"
+                  android:text="Z-A"
+                  android:textColor="#ffffff"
+                  android:textAlignment="center"
+                  android:gravity="center"
+                  android:layout_marginHorizontal="1dp"
+        />
+        <TextView android:layout_width="70dp"
+                  android:layout_height="40dp"
+                  android:background="@drawable/noround_button"
+                  android:id="@+id/new_order_btn"
+                  android:text="New"
+                  android:textColor="#ffffff"
+                  android:textAlignment="center"
+                  android:gravity="center"
+                  android:layout_marginRight="1dp"
+        />
+        <TextView android:layout_width="70dp"
+                  android:layout_height="40dp"
+                  android:background="@drawable/noround_button"
+                  android:id="@+id/old_order_btn"
+                  android:text="Old"
+                  android:textColor="#ffffff"
+                  android:textAlignment="center"
+                  android:gravity="center"
+        />
+        <TextView android:layout_width="70dp"
+                  android:layout_height="40dp"
+                  android:background="@drawable/rounded_button_right"
+                  android:id="@+id/reset_order_btn"
+                  android:text="Re"
+                  android:textColor="#ffffff"
+                  android:textAlignment="center"
+                  android:layout_marginLeft="1dp"
+                  android:gravity="center"
+        />
+        
+    </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab"
@@ -14,5 +103,6 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
             android:layout_margin="20dp"
+            android:backgroundTint="#ff4d29"
             app:srcCompat="@drawable/new_playlist" />
 </RelativeLayout>

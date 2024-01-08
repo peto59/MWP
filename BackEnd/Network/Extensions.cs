@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using Newtonsoft.Json;
+using System.Runtime.CompilerServices; 
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -21,6 +21,7 @@ namespace MWP.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="length">number of <see cref="byte"/>s to read from <paramref name="stream"/></param>
         /// <returns> <see cref="T:byte[]" /> of specified <paramref name="length"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte[] SafeRead(this NetworkStream stream, int length)
         {
             byte[] data = new byte[length];
@@ -45,16 +46,20 @@ namespace MWP.BackEnd.Network
         /// <param name="length">number of <see cref="byte"/>s to read from <paramref name="stream"/></param>
         /// <param name="networkStream">stream from which crypto stream reads</param>
         /// <returns> <see cref="T:byte[]" /> of specified <paramref name="length"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte[] SafeRead(this CryptoStream stream, int length, ref NetworkStream networkStream)
         {
             byte[] data = new byte[length];
             int offset = 0;
             while (length > 0)
             {
-                while (!networkStream.DataAvailable)
+                /*while (!networkStream.DataAvailable)
                 {
+#if DEBUG
+                    MyConsole.WriteLine($"Waiting for data");
+#endif
                     Thread.Sleep(10);
-                }
+                }*/
                 int read = stream.Read(data, offset, length);
                 length -= read;
                 offset += read;
@@ -69,6 +74,7 @@ namespace MWP.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="length">number of <see cref="byte"/>s to read from <paramref name="stream"/></param>
         /// <returns> <see cref="T:byte[]" /> of specified <paramref name="length"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte[] SafeRead(this NetworkStream stream, long length)
         {
             byte[] retArr = new byte[length];
@@ -83,12 +89,29 @@ namespace MWP.BackEnd.Network
 
             return retArr;
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static byte[] SafeRead(this Stream stream, int length)
+        {
+            byte[] retArr = new byte[length];
+            long totalRead = 0;
+            while (length > 0)
+            {
+                int readThisCycle = Convert.ToInt32(length);
+                Array.Copy(stream.SafeRead(readThisCycle), 0, retArr, totalRead, readThisCycle);
+                length -= readThisCycle;
+                totalRead = +readThisCycle;
+            }
+
+            return retArr;
+        }
 
         /// <summary>
         /// Read single unencrypted <see cref="CommandsEnum"/> from <paramref name="stream"/> 
         /// </summary>
         /// <param name="stream">stream to read from</param>
         /// <returns><see cref="CommandsEnum"/> read from <paramref name="stream"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CommandsEnum ReadCommand(this NetworkStream stream)
         {
             return (CommandsEnum)stream.SafeRead(1)[0];
@@ -101,13 +124,14 @@ namespace MWP.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="decryptor">decryptor to be used</param>
         /// <returns><see cref="CommandsEnum"/> read from <paramref name="stream"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static (CommandsEnum command, byte[]? data, byte[]? iv, long? length) ReadCommand(this NetworkStream stream, ref RSACryptoServiceProvider decryptor)
         {
             byte[] buff = decryptor.Decrypt(stream.SafeRead(NetworkManagerCommon.RsaDataSize), true);
             if (buff.Length == 1) return ((CommandsEnum)buff[0], null, null, null);
             
             CommandsEnum command = (CommandsEnum)buff[0];
-            byte[] restOfData = buff.TakeLast(buff.Length - 1).ToArray();
+            byte[] restOfData = buff[1..];
             if (Commands.IsLong(command))
             {
                 byte[] iv = new byte[16];
@@ -115,8 +139,8 @@ namespace MWP.BackEnd.Network
                 long longLength = BitConverter.ToInt64(restOfData, 16);
                 if (restOfData.Length <= 24) // 16 for iv, 8 for int64
                     return (command, null, iv, longLength);
-                byte[] buffer = new byte[restOfData.Length - 24]; // 16 for iv, 8 for int64
-                Array.Copy(restOfData, 24, buffer, 0, buffer.Length);
+                byte[] buffer = restOfData[24..]; // 24 = 16 for iv, 8 for int64
+                //Array.Copy(restOfData, 24, buffer, 0, buffer.Length);
                 return (command, buffer, iv, longLength);
             }
 
@@ -133,6 +157,7 @@ namespace MWP.BackEnd.Network
         /// <param name="decryptor">rsa decryptor to be used</param>
         /// <param name="aes">aes decryptor to be used</param>
         /// <returns><see cref="CommandsEnum"/>, <see cref="T:byte[]" /> read data</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static (byte command, byte[] retArr) ReadCommand(this NetworkStream stream,
             ref RSACryptoServiceProvider decryptor, ref Aes aes)
         {
@@ -150,6 +175,7 @@ namespace MWP.BackEnd.Network
         /// </summary>
         /// <param name="stream">stream to read from</param>
         /// <returns><see cref="CommandsEnum"/> and <see cref="T:byte[]" /> read data</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static (CommandsEnum command, byte[] data) ReadCommandCombined(this NetworkStream stream)
         {
             CommandsEnum command = stream.ReadCommand();
@@ -162,6 +188,7 @@ namespace MWP.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="decryptor">decryptor to be used</param>
         /// <returns>read <see cref="CommandsEnum"/>, <see cref="T:byte[]" /> data and <see cref="Aes.IV"/> if data is <see cref="long">long</see> based on <see cref="CommandsEnum"/> type</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static (byte command, byte[]? data, byte[]? iv, long? length) ReadCommandCombined(this NetworkStream stream, ref RSACryptoServiceProvider decryptor)
         {
             byte[] arr = stream.SafeRead(NetworkManagerCommon.RsaDataSize);
@@ -186,6 +213,7 @@ namespace MWP.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="isLong">whether data is long</param>
         /// <returns>read <see cref="T:byte[]" /> data</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static byte[] ReadData(this NetworkStream stream, bool isLong = false)
         {
             byte[] len;
@@ -207,6 +235,7 @@ namespace MWP.BackEnd.Network
         /// <param name="stream">stream to read from</param>
         /// <param name="decryptor">decryptor to be used</param>
         /// <returns>decrypted <see cref="T:byte[]" /></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static byte[] ReadData(this NetworkStream stream, ref RSACryptoServiceProvider decryptor)
         {
             return decryptor.Decrypt(stream.SafeRead(NetworkManagerCommon.RsaDataSize), true);
@@ -220,6 +249,7 @@ namespace MWP.BackEnd.Network
         /// <param name="decryptor">decryptor to be used</param>
         /// <param name="aes">aes to decrypt with</param>
         /// <returns>decrypted <see cref="T:byte[]" /></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static byte[] ReadData(this NetworkStream stream, ref RSACryptoServiceProvider decryptor, ref Aes aes)
         {
             byte[] buffer = decryptor.Decrypt(stream.SafeRead(NetworkManagerCommon.RsaDataSize), true);
@@ -237,6 +267,7 @@ namespace MWP.BackEnd.Network
         /// <param name="aes">aes to decrypt with</param>
         /// <param name="readLength">number of bytes to read</param>
         /// <returns>decrypted <see cref="T:byte[]" /></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static byte[] ReadEncrypted(this NetworkStream stream, ref Aes aes, long readLength)
         {
             byte[] retArr = new byte[readLength];
@@ -260,6 +291,7 @@ namespace MWP.BackEnd.Network
         /// <param name="path">path to write to</param>
         /// <param name="decryptor">rsa decryptor to be used</param>
         /// <param name="aes">aes decryptor to be used</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ReadFile(this NetworkStream stream, string path, ref RSACryptoServiceProvider decryptor,
             ref Aes aes)
         {
@@ -289,7 +321,7 @@ namespace MWP.BackEnd.Network
             }
             csDecrypt.Dispose();
         }
-        
+
         /// <summary>
         /// Reads encrypted <see cref="File" /> from stream to <see cref="File" /> specified at <see cref="Path" /> (this file <see cref="File" /> be created/overwritten)
         /// </summary>
@@ -297,31 +329,35 @@ namespace MWP.BackEnd.Network
         /// <param name="path">path to write to</param>
         /// <param name="length">length of encrypted data</param>
         /// <param name="aes">aes decryptor to be used</param>
+        /// <param name="encryptor">rsa encryptor to be used for wait messages</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ReadFile(this NetworkStream stream, string path, long length,
-            ref Aes aes)
+            ref Aes aes, ref RSACryptoServiceProvider encryptor)
         {
             if(length > 4000000000){
                 throw new Exception("You can't receive files larger than 4GB on Android");
             }
-            using FileStream fileStream = new FileStream(path, FileMode.Create);
-
-            CryptoStream csDecrypt = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Read, true);
+            FileStream fileStream = new FileStream(path, FileMode.Create);
+            string encryptedFilePath = FileManager.GetAvailableTempFile("encrypted", "file");
+            FileStream encryptedFileStream = new FileStream(encryptedFilePath, FileMode.Create);
             while (length > 0)
             {
-                int readThisCycle = length > 8096 ? 8096 : Convert.ToInt32(length);
-#if DEBUG
-                MyConsole.WriteLine($"remaining length: {length}");
-                MyConsole.WriteLine($"read this cycle: {readThisCycle}");
-#endif
-                byte[] buffer = csDecrypt.SafeRead(readThisCycle, ref stream);
-                fileStream.Write(buffer);
+                int readThisCycle = length > NetworkManager.DefaultBuffSize ? NetworkManager.DefaultBuffSize : Convert.ToInt32(length);
+                byte[] buffer = stream.SafeRead(readThisCycle);
+                encryptedFileStream.Write(buffer);
                 length -= readThisCycle;
             }
+            stream.WriteCommand(CommandsArr.Wait, ref encryptor);
+            encryptedFileStream.Seek(0, SeekOrigin.Begin);
+            CryptoStream csDecrypt = new CryptoStream(encryptedFileStream, aes.CreateDecryptor(), CryptoStreamMode.Read, false);
+            fileStream.WriteData(csDecrypt);
             csDecrypt.Dispose();
+            encryptedFileStream.Dispose();
             fileStream.Dispose();
+            File.Delete(encryptedFilePath);
         }
     }
-
+    
     internal static class WriteExtensions
     {
         /// <summary>
@@ -329,6 +365,7 @@ namespace MWP.BackEnd.Network
         /// </summary>
         /// <param name="stream">stream to write to</param>
         /// <param name="command"><see cref="CommandsEnum" /> to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void WriteCommand(this NetworkStream stream, byte[] command)
         {
             stream.Write(command, 0, 1);
@@ -340,6 +377,7 @@ namespace MWP.BackEnd.Network
         /// <param name="stream">stream to write to</param>
         /// <param name="command"><see cref="CommandsEnum" /> to write</param>
         /// <param name="encryptor">encryptor to be used</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void WriteCommand(this NetworkStream stream, byte[] command,
             ref RSACryptoServiceProvider encryptor)
         {
@@ -354,6 +392,7 @@ namespace MWP.BackEnd.Network
         /// <param name="stream">stream to write to</param>
         /// <param name="command"><see cref="CommandsEnum" /> to write</param>
         /// <param name="data"><see cref="T:byte[]" />data to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void WriteCommand(this NetworkStream stream, byte[] command, byte[] data)
         {
             int len = 1 + 4 + data.Length;
@@ -372,6 +411,7 @@ namespace MWP.BackEnd.Network
         /// <param name="data"><see cref="T:byte[]" />data to write</param>
         /// <param name="encryptor">encryptor to be used</param>
         /// <exception cref="InvalidDataException"><see cref="RSACryptoServiceProvider" /> with key length of 2048 has max data length of 190 bytes. 5 bytes are reserved for command and data length leaving us 185 bytes for data </exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void WriteCommand(this NetworkStream stream, byte[] command, byte[] data,
             ref RSACryptoServiceProvider encryptor)
         {
@@ -396,6 +436,7 @@ namespace MWP.BackEnd.Network
         /// <param name="data">long data to write</param>
         /// <param name="encryptor">rsa encryptor to be used</param>
         /// <param name="aes">aes encryptor to be used</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void WriteCommand(this NetworkStream stream, byte[] command, byte[] data,
             ref RSACryptoServiceProvider encryptor, ref Aes aes)
         {
@@ -422,6 +463,7 @@ namespace MWP.BackEnd.Network
         /// <param name="data">data to write</param>
         /// <param name="encryptor">encryptor to be used</param>
         /// <exception cref="InvalidDataException"><see cref="RSACryptoServiceProvider" /> with key length of 2048 has max data length of 190 bytes.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void WriteData(this NetworkStream stream, byte[] data,
             ref RSACryptoServiceProvider encryptor)
         {
@@ -440,6 +482,7 @@ namespace MWP.BackEnd.Network
         /// <param name="data">long data to write</param>
         /// <param name="encryptor">rsa encryptor to be used</param>
         /// <param name="aes">aes encryptor to be used</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void WriteData(this NetworkStream stream, byte[] data,
             ref RSACryptoServiceProvider encryptor, ref Aes aes)
         {
@@ -465,6 +508,7 @@ namespace MWP.BackEnd.Network
         /// <param name="songs">list of songs to serialize</param>
         /// <param name="encryptor">rsa encryptor to be used</param>
         /// <param name="aes">aes encryptor to be used</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void WriteData(this NetworkStream stream, List<Song> songs,
             ref RSACryptoServiceProvider encryptor, ref Aes aes)
         {
@@ -492,7 +536,8 @@ namespace MWP.BackEnd.Network
         /// </summary>
         /// <param name="destination">Destination of copy</param>
         /// <param name="source">Source of copy</param>
-        private static void WriteData(this Stream destination, Stream source)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void WriteData(this Stream destination, Stream source)
         {
             if (source.CanSeek)
             {
@@ -500,13 +545,24 @@ namespace MWP.BackEnd.Network
                 source.Seek(0, SeekOrigin.Begin);
             }
             source.CopyTo(destination);
-            /*long writeLength = otherStream.Length;
+            /*long writeLength = source.Length;
+            
+#if DEBUG
+            MyConsole.WriteLine($"File size {writeLength}");
+#endif
             while (writeLength > 0)
             {
-                int writeThisCycle = writeLength > int.MaxValue ? int.MaxValue : Convert.ToInt32(writeLength);
-                otherStream.CopyTo(networkStream, writeThisCycle);
+                int writeThisCycle = writeLength > buffSize ? buffSize : Convert.ToInt32(writeLength);
+                byte[] read = source.SafeRead(writeThisCycle);
+                destination.Write(read);
+#if DEBUG
+                MyConsole.WriteLine($"rem {writeLength}");
+#endif
                 writeLength -= writeThisCycle;
-            }*/
+            }
+            */
+            source.Flush();
+            destination.Flush();
         }
         
         
@@ -516,7 +572,8 @@ namespace MWP.BackEnd.Network
         /// </summary>
         /// <param name="stream">stream to be written to</param>
         /// <param name="data">data to be written</param>
-        private static void WriteLongData(this Stream stream, byte[] data)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void WriteLongData(this Stream stream, byte[] data)
         {
             long writeLength = data.LongLength;
             long totalWritten = 0;
@@ -540,9 +597,14 @@ namespace MWP.BackEnd.Network
         /// <param name="aes">aes encryptor to be used</param>
         /// <param name="command">command to write, default is <see cref="CommandsEnum.SongSend" /></param>
         /// <param name="data">optional extra data to be written</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void WriteFile(this NetworkStream stream, string path,
             ref RSACryptoServiceProvider encryptor, ref Aes aes, byte[]? command = null, byte[]? data = null)
         {
+            if (!File.Exists(path))
+            {
+                return;
+            }
             int len = 1 + 16 + 8 + (data?.Length ?? 0); //command(1), aes IV (16), encrypted data length as long(8)
             if (len > 190 )
             {
@@ -550,9 +612,7 @@ namespace MWP.BackEnd.Network
                 throw new InvalidDataException("Data cannot exceed 190 bytes");
             }
             FileInfo fi = new FileInfo(path);
-            //long encryptedDataLength = fi.Length + (16 - fi.Length % 16);
-            long encryptedDataLength = fi.Length + 16 - (fi.Length % 16);
-            //long encryptedDataLength = fi.Length;
+            long encryptedDataLength = fi.Length + (16 - fi.Length % 16);
             byte[] rv = new byte[len];
             aes.GenerateIV();
             
@@ -572,27 +632,32 @@ namespace MWP.BackEnd.Network
 #endif
             rv = encryptor.Encrypt(rv, true);
             stream.Write(rv, 0, rv.Length);
-#if DEBUG
-            MyConsole.WriteLine($"encrypted rv {rv.Length}");
-#endif
-            MemoryStream ms = new MemoryStream();
-            CryptoStream csEncrypt = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+            /*using MemoryStream ms = new MemoryStream();
+            using CryptoStream csEncrypt = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
             using FileStream fs = fi.Open(FileMode.Open);
             csEncrypt.WriteData(fs);
-            csEncrypt.Dispose();
-            fs.Dispose();
             //ms.CopyTo(stream);
+            csEncrypt.FlushFinalBlock();
+            csEncrypt.Flush();
+            csEncrypt.Close();
+            csEncrypt.Clear();
+            csEncrypt.Dispose();
             byte[] enc = ms.ToArray();
-            ms.Dispose();
             stream.Write(enc);
-            if (enc.Length != encryptedDataLength)
+            if (enc.LongLength != encryptedDataLength)
             {
                 throw new Java.Lang.Exception("Invalid data size");
-            }
-            /*CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
-            using FileStream fs = fi.Open(FileMode.Open);
+            }*/
+            CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+            using FileStream fs = fi.Open(FileMode.Open, FileAccess.Read);
             csEncrypt.WriteData(fs);
-            csEncrypt.Dispose();*/
+            csEncrypt.FlushFinalBlock();
+            csEncrypt.Flush();
+            csEncrypt.Close();
+            csEncrypt.Clear();
+            csEncrypt.Dispose();
+            
+            stream.Flush();
         }
     }
 }

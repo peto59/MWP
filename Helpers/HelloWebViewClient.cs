@@ -15,9 +15,10 @@ namespace MWP
     public class HelloWebViewClient : WebViewClient
     {
         // For API level 24 and later
-        public override bool ShouldOverrideUrlLoading(WebView view, IWebResourceRequest request)
+        /// <inheritdoc />
+        public override bool ShouldOverrideUrlLoading(WebView? view, IWebResourceRequest? request)
         {
-            view.LoadUrl(request.Url?.ToString()!);
+            if (request is { Url: not null }) view?.LoadUrl(request.Url.ToString() ?? string.Empty);
             return false;
         }
 

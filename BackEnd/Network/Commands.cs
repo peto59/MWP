@@ -23,6 +23,8 @@ namespace MWP.BackEnd.Network
         internal const byte AlbumImageSend = (byte)CommandsEnum.AlbumImageSend;
         internal const byte ArtistImageRequest = (byte)CommandsEnum.ArtistImageRequest;
         internal const byte AlbumImageRequest = (byte)CommandsEnum.AlbumImageRequest;
+        internal const byte ArtistImageNotFound = (byte)CommandsEnum.ArtistImageNotFound;
+        internal const byte AlbumImageNotFound = (byte)CommandsEnum.AlbumImageNotFound;
         internal const byte Ack = (byte)CommandsEnum.Ack;
         internal const byte End = (byte)CommandsEnum.End;
         internal static bool IsLong(byte command)
@@ -84,6 +86,8 @@ namespace MWP.BackEnd.Network
         internal static readonly byte[] AlbumImageSend = { Commands.AlbumImageSend };
         internal static readonly byte[] ArtistImageRequest = { Commands.ArtistImageRequest };
         internal static readonly byte[] AlbumImageRequest = { Commands.AlbumImageRequest };
+        internal static readonly byte[] ArtistImageNotFound = { Commands.ArtistImageNotFound };
+        internal static readonly byte[] AlbumImageNotFound = { Commands.AlbumImageNotFound };
         internal static readonly byte[] Ack = { Commands.Ack };
         internal static readonly byte[] End = { Commands.End };
         internal static readonly byte[] LongCommands = { Commands.SongRequestInfo, Commands.SongSend, Commands.ArtistImageSend, Commands.AlbumImageSend };
@@ -131,6 +135,8 @@ namespace MWP.BackEnd.Network
         AlbumImageSend = 42,
         ArtistImageRequest = 43,
         AlbumImageRequest = 44,
+        ArtistImageNotFound = 45,
+        AlbumImageNotFound = 46,
         Ack = 254,
         End = 255
     }

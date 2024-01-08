@@ -5,9 +5,14 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Android.Content.Res;
 using Android.Graphics;
 using Android.Util;
+using Java.Util;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using Orientation = Android.Widget.Orientation;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -23,11 +28,17 @@ namespace MWP
     {
         private readonly float scale;
         private readonly Context context;
-        private RelativeLayout mainLayout;
+        private RelativeLayout? mainLayout;
         private Artist artist;
+        private AssetManager? assets;
 
-        private Dictionary<LinearLayout, object> albumButtons = new Dictionary<LinearLayout, object>();
-        private Dictionary<LinearLayout, int> songButtons = new Dictionary<LinearLayout, int>();
+        private Dictionary<LinearLayout?, object> albumButtons = new Dictionary<LinearLayout?, object>();
+        private Dictionary<LinearLayout?, Guid> songButtons = new Dictionary<LinearLayout?, Guid>();
+
+        private ObservableDictionary<string, Bitmap> albumImagesBuffer;
+        private ObservableDictionary<string, Bitmap> songImagesBuffer;
+        private Dictionary<string, LinearLayout?> albumTilesBuffer;
+        private Dictionary<string, LinearLayout?> songTilesBuffer;
 
         private AlbumFragment albumFragment;
 
@@ -35,11 +46,18 @@ namespace MWP
         /// Constructor for AuthorFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (insert "this")</param>
-        public AuthorFragment(Context ctx)
+        /// <param name="assets"></param>
+        public AuthorFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
+            this.assets = assets;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
-            albumFragment = new AlbumFragment(ctx);
+            albumFragment = new AlbumFragment(ctx, this.assets);
+            
+            albumImagesBuffer = new ObservableDictionary<string, Bitmap>();
+            songImagesBuffer = new ObservableDictionary<string, Bitmap>();
+            albumTilesBuffer = new Dictionary<string, LinearLayout?>();
+            songTilesBuffer = new Dictionary<string, LinearLayout?>();
         }
 
         /// <summary>
@@ -49,30 +67,80 @@ namespace MWP
         /// <param name="container"></param>
         /// <param name="savedInstanceState"></param>
         /// <returns></returns>
-        public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
-            View view = inflater.Inflate(Resource.Layout.author_fragment, container, false);
+            View? view = inflater.Inflate(Resource.Layout.author_fragment, container, false);
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.author_fragment_main);
 
-            string title = Arguments.GetString("title");
-            List<Artist> retreivedSongs = MainActivity.stateHandler.Artists.Search(title);
+            string? title = Arguments?.GetString("title");
+            List<Artist> retreivedSongs = MainActivity.StateHandler.Artists.Search(title);
             if (retreivedSongs.Count > 0)
             {
                 artist = retreivedSongs[0];
             }
-            Console.WriteLine("FOUNDED SEARCHED ARTIST NAME IN FRAGMENT: " + artist.Title);
+
+            songImagesBuffer.ValueChanged += (_, _) =>
+            {
+                ((Activity)context).RunOnUiThread(() =>
+                {
+                    string last = songImagesBuffer.Items.Keys.Last();
+
+                    LinearLayout? child = songTilesBuffer?[last] ?? new LinearLayout(context);
+                    if (assets != null)
+                        UIRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
+                });
+            };
             
+            albumImagesBuffer.ValueChanged += (_, _) =>
+            {
+                ((Activity)context).RunOnUiThread(() =>
+                {
+                    string last = albumImagesBuffer.Items.Keys.Last();
+
+                    LinearLayout? child = albumTilesBuffer?[last] ?? new LinearLayout(context);
+                    if (assets != null)
+                        UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
+                });
+            };
+            
+
             RenderAlbumsSongs();
 
 
             return view;
         }
 
+        
+        
+        /// <inheritdoc />
+        public override void OnViewCreated(View view, Bundle? savedInstanceState)
+        {
+            base.OnViewCreated(view, savedInstanceState);
 
+            Task.Run(async () =>
+            {
+                await UIRenderFunctions.LoadSongImages(artist.Albums.Select("Uncategorized")[0].Songs, songImagesBuffer,
+                    UIRenderFunctions.LoadImageType.SONG);
+                
+                UIRenderFunctions.FillImageHoles(context, songTilesBuffer, songImagesBuffer, assets);
+            });
+            Task.Run(async () =>
+            {
+                await UIRenderFunctions.LoadSongImages(artist.Albums, albumImagesBuffer,
+                    UIRenderFunctions.LoadImageType.ALBUM);
+                
+                UIRenderFunctions.FillImageHoles(context, albumTilesBuffer, albumImagesBuffer, assets);
+            });
+        }
+
+        
+        
+        
         private void UncategorizedSongsRender(bool visible)
         {
             UIRenderFunctions.FragmentPositionObject = artist.Albums.Select("Uncategorized")[0];
+            songTilesBuffer = new Dictionary<string, LinearLayout?>();
             
             ScrollView songsScroll = new ScrollView(context);
             RelativeLayout.LayoutParams songsScrollParams = new RelativeLayout.LayoutParams(
@@ -96,29 +164,20 @@ namespace MWP
             int[] nameMargins = { 50, 50, 50, 50 };
             int[] cardMargins = { 0, 50, 0, 0 };
 
-            
-            
-            for (int i = 0; i < artist.Albums.Select("Uncategorized")[0].Songs.Count; i++)
+
+            List<Song> uncategorized = artist.Albums.Select("Uncategorized")[0].Songs;
+            for (int i = 0; i < uncategorized.Count; i++)
             {
                 
-                LinearLayout lnIn = UIRenderFunctions.PopulateHorizontal(
-                    artist.Albums.Select("Uncategorized")[0].Songs[i], scale,
+                LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
+                    uncategorized[i], scale,
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                    i, context, songButtons, UIRenderFunctions.SongType.albumSong, lnMain
+                    context, songButtons, UIRenderFunctions.SongType.AlbumSong, assets, ParentFragmentManager, lnMain
                 );
-                UIRenderFunctions.SetTilesImage(
-                    lnIn, artist.Albums.Select("Uncategorized")[0].Songs[i],  150, 100,
-                    buttonMargins, 17,
-                    nameMargins, scale, context
-                );
-                
-                
-                
-                
-                
-                lnMain.AddView(lnIn);
+                if (songTilesBuffer.TryAdd(uncategorized[i].Title, lnIn))
+                    lnMain.AddView(lnIn);
             }
 
            
@@ -128,15 +187,11 @@ namespace MWP
 
         private void RenderAlbumsSongs()
         {
+            albumTilesBuffer = new Dictionary<string, LinearLayout?>();
+            
             HorizontalScrollView hr = new HorizontalScrollView(context);
             int hrHeight = (int)(240 * scale + 0.5f);;
-
-            /*
-            if (artist.Albums.Count < 2)
-                hrHeight = 0;
-            else
-                hrHeight = (int)(240 * scale + 0.5f);
-            */
+            
             RelativeLayout.LayoutParams hrParams = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
                 hrHeight
@@ -157,28 +212,23 @@ namespace MWP
             int[] cardMargins = { 40, 50, 0, 0 };
 
             int index = 0;
-            foreach (var t in artist.Albums)
+            foreach (var album in artist.Albums)
             {
-                if (t.Showable && artist.Albums.Count > 1)
+                if (album.Showable && artist.Albums.Count > 1)
                 {
                     
-                    LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                        t, scale, cardMargins, 15, index, context, albumButtons, ParentFragmentManager, albumFragment);
-                    UIRenderFunctions.SetTilesImage(
-                        lnIn, t, 150, 100,
-                        buttonMargins, 17,
-                        nameMargins, scale, context
-                    );
-                   
-                    lin.AddView(lnIn);
-                    index++;
+                    LinearLayout? lnIn = UIRenderFunctions.PopulateVertical(
+                        album, scale, 
+                        150, 100, buttonMargins, cardMargins, nameMargins, 15, index, 
+                        context, albumButtons, ParentFragmentManager, assets, albumFragment);
+                    if (albumTilesBuffer.TryAdd(album.Title, lnIn))
+                    {
+                        lin.AddView(lnIn);
+                        index++;
+                    }
                 }
             }
-
-            /*
-            hr.AddView(lin);
-            mainLayout?.AddView(hr);
-           */
+            
             
             if (artist.Albums.Count > 1)
             {

@@ -1,20 +1,15 @@
 using System;
 using Android.App;
 using Android.Content;
-using Android.OS;
 using Android.Views;
 using Android.Widget;
-using System.Collections.Generic;
-using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
-using Android.Text.Style;
-using Android.Util;
-using Google.Android.Material.FloatingActionButton;
 using MWP.BackEnd;
-using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
-
+#if DEBUG
+using MWP.Helpers;
+#endif
 
 namespace MWP
 {
@@ -119,7 +114,9 @@ namespace MWP
         /// <param name="title">title of either an album or artist</param>
         public static void ReplaceFragments(FragmentType type, string title)
         {
-            Console.WriteLine("REPLACE FRAGMENTS TESTTTT");
+#if DEBUG
+            MyConsole.WriteLine("REPLACE FRAGMENTS TESTTTT");
+#endif
             /*
             var fragmentTransaction = manager.BeginTransaction();
             Bundle bundle = new Bundle();
@@ -204,29 +201,26 @@ namespace MWP
         private void add_alias_popup(string authorN)
         {
 
-            LayoutInflater ifl = LayoutInflater.From(context);
-            View view = ifl?.Inflate(Resource.Layout.add_alias_popup, null);
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? view = ifl?.Inflate(Resource.Layout.add_alias_popup, null);
             AlertDialog.Builder alert = new AlertDialog.Builder(context);
             alert.SetView(view);
 
-            AlertDialog dialog = alert.Create();
+            AlertDialog? dialog = alert.Create();
 
-            if (view != null)
-            {
-                TextView author = view.FindViewById<TextView>(Resource.Id.author_name);
-                if (author != null) author.Text = authorN;
-            }
+            TextView? author = view?.FindViewById<TextView>(Resource.Id.author_name);
+            if (author != null) author.Text = authorN;
 
-            EditText userInput = view?.FindViewById<EditText>(Resource.Id.user_author);
-            Button sub = view?.FindViewById<Button>(Resource.Id.submit_alias);
+            EditText? userInput = view?.FindViewById<EditText>(Resource.Id.user_author);
+            Button? sub = view?.FindViewById<Button>(Resource.Id.submit_alias);
             if (sub != null)
                 sub.Click += delegate
                 {
-                    if (userInput != null) FileManager.AddAlias(authorN, userInput.Text);
+                    if (userInput is { Text: not null }) FileManager.AddAlias(authorN, userInput.Text);
                     dialog?.Hide();
                 };
 
-            Button cancel = view?.FindViewById<Button>(Resource.Id.cancel_alias);
+            Button? cancel = view?.FindViewById<Button>(Resource.Id.cancel_alias);
             if (cancel != null)
                 cancel.Click += delegate { dialog?.Hide(); };
 

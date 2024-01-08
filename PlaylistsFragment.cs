@@ -4,9 +4,11 @@ using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Android.Content.Res;
 using Android.Graphics;
 using MWP.BackEnd;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using Orientation = Android.Widget.Orientation;
 
 
 namespace MWP
@@ -17,7 +19,7 @@ namespace MWP
     public class PlaylistsFragment : Fragment
     {
         private readonly Context context;
-        private RelativeLayout mainLayout;
+        private RelativeLayout? mainLayout;
 
 
         private PlaylistFragment playlistFragment; 
@@ -29,9 +31,9 @@ namespace MWP
         /// <param name="container"></param>
         /// <param name="savedInstanceState"></param>
         /// <returns></returns>
-        public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
-            View view = inflater.Inflate(Resource.Layout.playlists_fragment, container, false);
+            View? view = inflater.Inflate(Resource.Layout.playlists_fragment, container, false);
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.playlists_fragment_main);
 
@@ -44,10 +46,11 @@ namespace MWP
         /// Constructor for SongsFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (e.g. "this")</param>
-        public PlaylistsFragment(Context ctx)
+        /// <param name="assets"></param>
+        public PlaylistsFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
-            playlistFragment = new PlaylistFragment(ctx);
+            playlistFragment = new PlaylistFragment(ctx, assets);
         }
 
 
@@ -80,7 +83,7 @@ namespace MWP
 
                 LinearLayout lnIn = new LinearLayout(context);
                 lnIn.Orientation = Orientation.Vertical;
-                lnIn.SetBackgroundResource(Resource.Drawable.rounded);
+                lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
 
                 LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MatchParent,

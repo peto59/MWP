@@ -63,7 +63,7 @@
                         android:textColor="#ffffff"
                         android:layout_marginLeft="20dp"
                         android:textSize="20dp"
-                        android:background="@drawable/rounded"
+                        android:background="@drawable/rounded_primaryColor"
                         android:paddingLeft="15dp"
                         android:paddingRight="150dp"
                         android:paddingVertical="8dp"

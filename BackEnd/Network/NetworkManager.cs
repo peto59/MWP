@@ -26,8 +26,11 @@ namespace MWP.BackEnd.Network
 
         //TODO: move to settings
         private const int numberOfMissedBroadcastsToRemoveHost = 3;
+        internal const int MaxTimeoutCounter = 10000;
+        internal const int DefaultBuffSize = 8096;
+        internal const int P2PMaxResponseCounter = 6;
 
-        private static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
+        internal static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
 
         /// <summary>
         /// Starts listening for broadcasts, sending broadcasts and managing connections. Entry point for NetworkManager.
@@ -38,14 +41,16 @@ namespace MWP.BackEnd.Network
             NetworkManagerCommon.BroadcastTimer.Interval = BroadcastInterval;
             NetworkManagerCommon.BroadcastTimer.Elapsed += delegate { Common.SendBroadcast(); };
             NetworkManagerCommon.BroadcastTimer.AutoReset = true;
-
-            if (Android.OS.Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.S) {
+            
+            if (Android.OS.Build.VERSION.SdkInt <= Android.OS.BuildVersionCodes.SV2) {
                 Connectivity.ConnectivityChanged += delegate(object _, ConnectivityChangedEventArgs args) { Common.OnWiFiChange(args); };
+                Common.GetWifiSsid();
                 if (Common.MyIp == null)
                 {
                     Common.CanSend = Common.GetConnectionInfo() ? CanSend.Test : CanSend.Rejected;
                 }
             }
+
             
             //Thread.Sleep(5000);
             //Common.SendBroadcast();
@@ -90,16 +95,16 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                                     MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {remoteHostname}");
 #endif
-                                    sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), groupEp);
+                                    sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), groupEp);
                                     
-                                    AddAvailableHost(targetIp, remoteHostname);
+                                    NetworkManagerCommon.AddAvailableHost(targetIp, remoteHostname);
                                     
 
                                     //TODO: add to available targets. Don't connect directly, check if sync is allowed.
                                     //TODO: doesn't work with one time sends....
                                     if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                     
-                                    NetworkManagerCommon.Connected.Add(targetIp);
+                                    //NetworkManagerCommon.Connected.Add(targetIp);
                                     new Thread(() =>
                                     {
                                         if (!NetworkManagerCommon.P2PDecide(targetIp))
@@ -138,8 +143,12 @@ namespace MWP.BackEnd.Network
         {
             List<string> trusted = FileManager.GetTrustedSyncTargets();
             List<(string hostname, DateTime? lastSeen, bool state)> output = new List<(string hostname, DateTime? lastSeen, bool state)>();
-            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.stateHandler.AvailableHosts)
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.StateHandler.AvailableHosts)
             {
+                if (stateHandlerAvailableHost.hostname == "localhost")
+                {
+                    continue;
+                }
                 if (trusted.Contains(stateHandlerAvailableHost.hostname))
                 {
                     output.Add((stateHandlerAvailableHost.hostname, stateHandlerAvailableHost.lastSeen, true));
@@ -152,41 +161,6 @@ namespace MWP.BackEnd.Network
             }
             output.AddRange(trusted.Select(s => ((string hostname, DateTime? lastSeen, bool state))(s, null, true)));
             return output;
-        }
-
-        private static void AddAvailableHost(IPAddress targetIp, string hostname)
-        {
-            DateTime now = DateTime.Now;
-            
-            List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.stateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
-            switch (currentAvailableHosts.Count)
-            {
-                case > 1:
-                {
-                    foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) currentAvailableHost in currentAvailableHosts)
-                    {
-                        MainActivity.stateHandler.AvailableHosts.Remove(currentAvailableHost);
-                    }
-                    MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, hostname));
-                    break;
-                }
-                case 1:
-                {
-                    int index = MainActivity.stateHandler.AvailableHosts.IndexOf(currentAvailableHosts.First());
-                    MainActivity.stateHandler.AvailableHosts[index] = (targetIp, now, hostname);
-                    break;
-                }
-                default:
-                    MainActivity.stateHandler.AvailableHosts.Add((targetIp, now, hostname));
-                    break;
-            }
-            
-            //remove stale hosts
-            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.stateHandler.AvailableHosts.Where(a =>
-                         a.lastSeen > now + RemoveInterval))
-            {
-                MainActivity.stateHandler.AvailableHosts.Remove(removal);
-            }
         }
     }
 }

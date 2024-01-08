@@ -4,9 +4,16 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Android.Content.Res;
 using Android.Graphics;
+using Android.Text.Style;
 using Android.Util;
+using Java.Util;
+using MWP.Helpers;
 using Fragment = AndroidX.Fragment.App.Fragment;
+using Orientation = Android.Widget.Orientation;
 
 
 namespace MWP
@@ -20,10 +27,18 @@ namespace MWP
     {
         private readonly float scale;
         private readonly Context context;
-        private RelativeLayout mainLayout;
+        private RelativeLayout? mainLayout;
+        private AssetManager? assets;
 
-        private Dictionary<LinearLayout, object> albumButtons = new Dictionary<LinearLayout, object>();
+        private Dictionary<LinearLayout?, object> albumButtons = new Dictionary<LinearLayout?, object>();
 
+        private Dictionary<string, LinearLayout?> albumTilesBuffer;
+        private Dictionary<string, LinearLayout?> authorTilesBuffer;
+        private ObservableDictionary<string, Bitmap> albumImagesBuffer;
+        private ObservableDictionary<string, Bitmap> authorImagesBuffer;
+
+        private ObservableInteger UIdone;
+        
         private AlbumFragment albumFragment;
         private AuthorFragment authorFragment;
         
@@ -32,43 +47,114 @@ namespace MWP
         /// Constructor for AlbumAuthorFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (e.g. "this")</param>
-        public AlbumAuthorFragment(Context ctx)
+        public AlbumAuthorFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
+            this.assets = assets;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
-
+            
             // fragmentManager = ParentFragment.Activity.SupportFragmentManager;
-            albumFragment = new AlbumFragment(context);
-            authorFragment = new AuthorFragment(context);
+            albumFragment = new AlbumFragment(context, this.assets);
+            authorFragment = new AuthorFragment(context, this.assets);
+
+            albumTilesBuffer = new Dictionary<string, LinearLayout?>();
+            albumImagesBuffer = new ObservableDictionary<string, Bitmap>();
+
+            authorImagesBuffer = new ObservableDictionary<string, Bitmap>();
+            authorTilesBuffer = new Dictionary<string, LinearLayout?>();
+
+            UIdone = new ObservableInteger();
+            
         }
-        
-        /// <summary>
-        ///  AlbumAuthorFragment On create view
-        /// </summary>
-        /// <param name="inflater"></param>
-        /// <param name="container"></param>
-        /// <param name="savedInstanceState"></param>
-        /// <returns></returns>
-        public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+
+
+        /// <inheritdoc />
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
-            View view = inflater.Inflate(Resource.Layout.album_author_fragment, container, false);
+            View? view = inflater.Inflate(Resource.Layout.album_author_fragment, container, false);
             
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.album_author_fragment_main);
 
+
+            
+            albumImagesBuffer.ValueChanged += delegate
+            {
+                ((Activity)context).RunOnUiThread(() => 
+                {
+                    string last = albumImagesBuffer.lastValueAdded;
+                    LinearLayout? child = albumTilesBuffer?[last] ?? new LinearLayout(context);
+                    if (assets != null)
+                        UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
+                });
+            };
+            
+            authorImagesBuffer.ValueChanged += delegate
+            {
+                ((Activity)context).RunOnUiThread(() => 
+                {
+                    string last = authorImagesBuffer.lastValueAdded;
+                    LinearLayout? child = authorTilesBuffer?[last] ?? new LinearLayout(context);
+                    if (assets != null)
+                        UIRenderFunctions.LoadSongImageFromBuffer(child, authorImagesBuffer, assets);
+                });
+            };
+            
+            
+            
             SetupStructure();
+            
+
             
             return view;
         }
-        
-        
-        
-        
-        
-        
-        
+
+
+        /// <inheritdoc />
+        public override void OnViewCreated(View view, Bundle? savedInstanceState)
+        {
+            base.OnViewCreated(view, savedInstanceState);
+            
+                 
+            Task.Run(async () =>
+            {
+                await UIRenderFunctions.LoadSongImages(MainActivity.StateHandler.Albums, albumImagesBuffer,
+                    UIRenderFunctions.LoadImageType.ALBUM);
+
+                ((Activity)context).RunOnUiThread(() =>
+                {
+                    foreach (var tile in albumTilesBuffer)
+                    {
+                        ImageView? vv = (ImageView)tile.Value.GetChildAt(0);
+                        if (vv?.Drawable == null)
+                            UIRenderFunctions.LoadSongImageFromBuffer(tile.Value, albumImagesBuffer, assets);
+                    }
+                });
+            });
+            Task.Run(async () =>
+            {
+                await UIRenderFunctions.LoadSongImages(MainActivity.StateHandler.Artists, authorImagesBuffer,
+                    UIRenderFunctions.LoadImageType.AUTHOR);
+                
+                ((Activity)context).RunOnUiThread(() =>
+                {
+                    foreach (var tile in authorTilesBuffer)
+                    {
+                        ImageView? vv = (ImageView)tile.Value.GetChildAt(0);
+                        if (vv?.Drawable == null)
+                            UIRenderFunctions.LoadSongImageFromBuffer(tile.Value, authorImagesBuffer, assets);
+                    }
+                });
+            });
+
+          
+            
+        }
+
+
         private LinearLayout AlbumTiles()
         {
-
+            albumTilesBuffer = new Dictionary<string, LinearLayout?>();
+            
             LinearLayout lin = new LinearLayout(context);
             lin.Orientation = Orientation.Vertical;
             LinearLayout.LayoutParams linParams = new LinearLayout.LayoutParams(
@@ -82,20 +168,29 @@ namespace MWP
             int[] nameMargins = { 50, 50, 50, 50 };
             int[] cardMargins = { 30, 50, 0, 0 };
 
-            for (int i = 0; i < MainActivity.stateHandler.Albums.Count; i++)
+            var albums = MainActivity.StateHandler.Albums;
+            for (int i = 0; i < albums.Count; i++)
             {
-                Bundle bundle = new Bundle();
-                
-                LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    MainActivity.stateHandler.Albums[i], scale, cardMargins, 15, i, context, albumButtons, 
-                    ParentFragmentManager, albumFragment, authorFragment);
-                UIRenderFunctions.SetTilesImage(
-                    lnIn, MainActivity.stateHandler.Albums[i], 150, 100,
-                    buttonMargins, 17,
-                    nameMargins, scale, context
-                );
-                
-                lin.AddView(lnIn);
+                LinearLayout? lnIn = UIRenderFunctions.PopulateVertical(
+                    albums[i], 
+                    scale, 150, 100, buttonMargins,cardMargins, nameMargins, 15, i, 
+                    context, albumButtons, 
+                    ParentFragmentManager, assets, albumFragment, authorFragment);
+                if (albumTilesBuffer.TryAdd(albums[i].Title, lnIn))
+                {
+                    lin.AddView(lnIn);
+                }
+            }
+            
+            
+            decimal percentage = ((decimal)albumImagesBuffer.Items.Count / (decimal)albumTilesBuffer.Count) * 100;
+            if (percentage > 80)
+            {
+                for (int i = 0; i < albums.Count; i++)
+                {
+                    LinearLayout? child = albumTilesBuffer[albums[i].Title];
+                    if (assets != null) UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
+                }
             }
             
 
@@ -105,6 +200,8 @@ namespace MWP
 
         private LinearLayout AuthorTiles()
         {
+            authorTilesBuffer = new Dictionary<string, LinearLayout?>();
+            
             LinearLayout lin = new LinearLayout(context);
             lin.Orientation = Orientation.Vertical;
             LinearLayout.LayoutParams linParams = new LinearLayout.LayoutParams(
@@ -117,21 +214,27 @@ namespace MWP
             int[] nameMargins = { 50, 50, 50, 50 };
             int[] cardMargins = { 20, 50, 0, 0 };
 
-
-            for (int i = 0; i < MainActivity.stateHandler.Artists.Count; i++)
+            List<Artist> artists = MainActivity.StateHandler.Artists;
+            for (int i = 0; i < artists.Count; i++)
             {
-                LinearLayout lnIn = UIRenderFunctions.PopulateVertical(
-                    MainActivity.stateHandler.Artists[i], scale, cardMargins, 15, i, context, albumButtons, 
-                    ParentFragmentManager, albumFragment, authorFragment);
-                UIRenderFunctions.SetTilesImage(
-                    lnIn, MainActivity.stateHandler.Artists[i], 150, 100,
-                    buttonMargins, 17,
-                    nameMargins, scale, context
-                );
-                //全部加える
-                lin.AddView(lnIn);
-
+                LinearLayout? lnIn = UIRenderFunctions.PopulateVertical(
+                    MainActivity.StateHandler.Artists[i], scale, 150, 100, buttonMargins ,cardMargins, nameMargins, 15, i, context, albumButtons, 
+                    ParentFragmentManager, assets, albumFragment, authorFragment);
+                if (authorTilesBuffer.TryAdd(artists[i].Title, lnIn))
+                {
+                    lin.AddView(lnIn);
+                }
             } 
+            
+            decimal percentage = ((decimal)authorImagesBuffer.Items.Count / (decimal)authorTilesBuffer.Count) * 100;
+            if (percentage > 80)
+            {
+                for (int i = 0; i < artists.Count; i++)
+                {
+                    LinearLayout? child = authorTilesBuffer[artists[i].Title];
+                    if (assets != null) UIRenderFunctions.LoadSongImageFromBuffer(child, authorImagesBuffer, assets);
+                }
+            }
 
             return lin;
         }
@@ -142,33 +245,12 @@ namespace MWP
             ScrollView authorScroll = new ScrollView(context);
             ScrollView albumScroll = new ScrollView(context);
             
-            DisplayMetrics displayMetrics = Resources.DisplayMetrics;
+            DisplayMetrics? displayMetrics = Resources.DisplayMetrics;
             if (displayMetrics != null)
             {
                 int displayWidth = displayMetrics.WidthPixels;
                 
-                LinearLayout labelsForScrolls = new LinearLayout(context);
-                LinearLayout.LayoutParams labelForScrollsParams = new LinearLayout.LayoutParams(
-                    displayWidth,
-                    (int)(500 * scale + 0.5f)
-                );
-                labelForScrollsParams.SetMargins(50, 40, 0, 150);
-                labelsForScrolls.LayoutParameters = labelForScrollsParams;
-                labelsForScrolls.SetHorizontalGravity(GravityFlags.Center);
-                TextView authorLabel = new TextView(context);
-                authorLabel.SetPadding(0, 0, 175, 0);
-                authorLabel.Text = "Authors";
-                authorLabel.TextSize = 20;
-                authorLabel.SetTextColor(Color.White);
-                TextView albumsLabel = new TextView(context);
-                albumsLabel.SetPadding(175, 0, 0, 0);
-                albumsLabel.Text = "Albums";
-                albumsLabel.TextSize = 20;
-                albumsLabel.SetTextColor(Color.White);
-                    
-                labelsForScrolls.AddView(authorLabel);
-                labelsForScrolls.AddView(albumsLabel);
-                mainLayout?.AddView(labelsForScrolls);
+               
                 
                 //作家
                 // ScrollView author_scroll = new ScrollView(this);
@@ -198,6 +280,8 @@ namespace MWP
             LinearLayout albumLin = AlbumTiles();
             albumScroll.AddView(albumLin);
             mainLayout?.AddView(albumScroll);
+            
+            
             
         }
     }
