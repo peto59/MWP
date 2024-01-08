@@ -329,7 +329,6 @@ namespace MWP
         /// <returns>true if albums match, false otherwise</returns>
         protected bool Equals(Album other)
         {
-            //todo: stack smashing?
             return Title == other.Title && Equals(Songs, other.Songs) && Equals(Artists, other.Artists) && Equals(ImgPath, other.ImgPath);
         }
 

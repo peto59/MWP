@@ -26,6 +26,9 @@ namespace MWP.BackEnd.Network
 
         //TODO: move to settings
         private const int numberOfMissedBroadcastsToRemoveHost = 3;
+        internal const int MaxTimeoutCounter = 10000;
+        internal const int DefaultBuffSize = 8096;
+        internal const int P2PMaxResponseCounter = 6;
 
         internal static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
 
@@ -92,7 +95,7 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                                     MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {remoteHostname}");
 #endif
-                                    sock.SendTo(Encoding.UTF8.GetBytes(Dns.GetHostName()), groupEp);
+                                    sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), groupEp);
                                     
                                     NetworkManagerCommon.AddAvailableHost(targetIp, remoteHostname);
                                     

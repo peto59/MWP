@@ -513,6 +513,55 @@ namespace MWP.BackEnd
             if (targets.ContainsKey(host))
             {
                 targets[host] = songs;
+                File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(targets, customConverter));
+            }
+        }
+        
+        public static void AddTrustedSyncTargetSongs(string host, Song song)
+        {
+            string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            if (targets.ContainsKey(host))
+            {
+                targets[host].Add(song);
+                File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(targets, customConverter));
+            }
+        }
+        
+        public static void AddTrustedSyncTargetSongs(string host, IEnumerable<Song> song)
+        {
+            string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            if (targets.ContainsKey(host))
+            {
+                targets[host].AddRange(song);
+                File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(targets, customConverter));
+            }
+        }
+        
+        public static void DeleteTrustedSyncTargetSongs(string host, Song song)
+        {
+            string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            if (targets.ContainsKey(host))
+            {
+                targets[host].Remove(song);
+                File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(targets, customConverter));
+            }
+        }
+        
+        public static void DeleteTrustedSyncTargetSongs(string host, IEnumerable<Song> songs)
+        {
+            string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            if (targets.ContainsKey(host))
+            {
+                targets[host].RemoveAll(s => songs.Any(song => song.Equals(s)));
+                File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(targets, customConverter));
             }
         }
         
@@ -524,7 +573,7 @@ namespace MWP.BackEnd
             return targets.Keys.ToList();
         }
 
-        private static void AddSong(string path, string title, IReadOnlyList<string> artists, string? album = null)
+        private static void AddSong(string path, string title, IReadOnlyList<string> artists, string? album = null, bool generateStateHandlerEntry = true, bool isNew = false, string? remoteHostname = null)
         {
             List<Artist> artistList = new List<Artist>();
             foreach (string artist in artists)
@@ -544,15 +593,20 @@ namespace MWP.BackEnd
                         artistObj = new Artist(artistAlias, $"{_musicFolder}/{artistPath}/cover.png");
                     else
                         artistObj = new Artist(artistAlias, "Default");
-                    MainActivity.StateHandler.Artists.Add(artistObj);
+                    if (generateStateHandlerEntry)
+                    {
+                        MainActivity.StateHandler.Artists.Add(artistObj);
+                    }
                 }
                 artistList.Add(artistObj);
             }
             
             Song song = new Song(artistList, title, File.GetCreationTime(path), path);
             artistList.ForEach(art => art.AddSong(ref song));
-            //TODO: prepend
-            MainActivity.StateHandler.Songs.Add(song);
+            if (generateStateHandlerEntry)
+            {
+                MainActivity.StateHandler.Songs.Insert(0, song);
+            }
 
             Album albumObj = new Album(string.Empty, string.Empty, false, false);
             if (!string.IsNullOrEmpty(album))
@@ -576,7 +630,10 @@ namespace MWP.BackEnd
                             albumObj = new Album(album, song, artistList, $"{_musicFolder}/{artistPath}/{albumPath}/cover.png");
                         else
                             albumObj = new Album(album, song, artistList, "Default");
-                        MainActivity.StateHandler.Albums.Add(albumObj);
+                        if (generateStateHandlerEntry)
+                        {
+                            MainActivity.StateHandler.Albums.Add(albumObj);
+                        }
                     }
                 }
 
@@ -588,9 +645,14 @@ namespace MWP.BackEnd
                 List<Album> albumList = artistList.SelectMany(art => art.Albums.Where(alb => alb.Title == "Uncategorized")).ToList();
                 albumList.ForEach(alb => alb.AddSong(ref song));
             }
+
+            if (isNew && remoteHostname != null)
+            {
+                AddTrustedSyncTargetSongs(remoteHostname, song);
+            }
         }
 
-        public static (List<string> missingArtists, (string album, string artistPath) missingAlbum) AddSong(string path, bool isNew = false, bool generateStateHandlerEntry = true)
+        public static (List<string> missingArtists, (string album, string artistPath) missingAlbum) AddSong(string path, bool isNew = false, bool generateStateHandlerEntry = true, string? remoteHostname = null)
         {
             using TagLib.File tfile = TagLib.File.Create(path, ReadStyle.PictureLazy);
             string title;
@@ -661,15 +723,10 @@ namespace MWP.BackEnd
                 }
                 path = output;
             }
-
-
-            /*MainActivity.StateHandler.view.RunOnUiThread(() =>
+            
+            if (generateStateHandlerEntry || isNew)
             {
-                YoutubeFragment.UpdateSsDialog(title, artists[0], album, tfile.Tag.Pictures[0].Data.Data, string.Empty, string.Empty, true, true);
-            });*/
-            if (generateStateHandlerEntry)
-            {
-                AddSong(path, title, artists, album);
+                AddSong(path, title, artists, album, generateStateHandlerEntry, isNew, remoteHostname);
             }
 
             List<string> missingArtists = (from artist in artists let artistPath = $"{_musicFolder}/{Sanitize(GetAlias(artist))}" where !File.Exists($"{artistPath}/cover.jpg") && !File.Exists($"{artistPath}/cover.png") select artist).ToList();

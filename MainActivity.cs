@@ -471,6 +471,7 @@ namespace MWP
             {
                 permissionsLocation.Add(Android.Manifest.Permission.AccessWifiState);
                 permissionsLocation.Add(Android.Manifest.Permission.AccessFineLocation);
+                permissionsLocation.Add(Android.Manifest.Permission.AccessBackgroundLocation);
             }
 
             bool exitFlag = permissionsLocation.Aggregate(true, (current, perm) => current & ContextCompat.CheckSelfPermission(this, perm) == (int)Permission.Granted);
