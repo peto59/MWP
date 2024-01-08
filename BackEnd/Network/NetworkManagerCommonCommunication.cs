@@ -105,7 +105,7 @@ namespace MWP.BackEnd.Network
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Write(ref bool ending, CommandsEnum command, EncryptionState encryptionState, ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, ref Aes aes, ref List<Song> songsToSend, ref List<Song> syncSongs, ref SyncRequestState syncRequestState, ref SongSendRequestState songSendRequestState, ref bool? isTrustedSyncTarget, ref int ackCount, string remoteHostname)
+        internal static void Write(ref bool ending, CommandsEnum command, EncryptionState encryptionState, ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, ref Aes aes, ref List<Song> songsToSend, ref List<Song> syncSongs, ref SyncRequestState syncRequestState, ref SongSendRequestState songSendRequestState, ref bool? isTrustedSyncTarget, ref int ackCount, string remoteHostname, ref List<string> artistImageRequests, ref List<string> albumImageRequests)
         {
             if (ending && command == CommandsEnum.None)
             {
@@ -162,10 +162,13 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                                     MyConsole.WriteLine(syncSongs[0].ToString());
 #endif
-                                    networkStream.WriteFile(syncSongs[0].Path, ref encryptor, ref aes);
-                                    ackCount--;
-                                    FileManager.DeleteTrustedSyncTargetSongs(remoteHostname, syncSongs[0]);
+                                    if (File.Exists(syncSongs[0].Path))
+                                    {
+                                        networkStream.WriteFile(syncSongs[0].Path, ref encryptor, ref aes);
+                                        ackCount--;
+                                    }
                                     syncSongs.RemoveAt(0);
+                                    FileManager.SetTrustedSyncTargetSongs(remoteHostname, syncSongs);
                                 }
                                 break;
                             default:
@@ -175,7 +178,9 @@ namespace MWP.BackEnd.Network
                                     &&
                                     (syncSongs.Count == 0 || 
                                      (syncSongs.Count > 0 && syncRequestState == SyncRequestState.Rejected))
-                                    && ackCount >= 0;
+                                    && ackCount >= 0
+                                    && artistImageRequests.Count == 0
+                                    && albumImageRequests.Count == 0;
 #if DEBUG
                                     MyConsole.WriteLine($"isEnding? {ending}");                               
 #endif
@@ -249,7 +254,7 @@ namespace MWP.BackEnd.Network
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void SongSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, long length, ref Aes aes, ref Dictionary<string, string> albumArtistPair, bool isTrustedSyncTarget, string remoteHostname)
+        internal static void SongSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, long length, ref Aes aes, ref Dictionary<string, string> albumArtistPair, bool isTrustedSyncTarget, string remoteHostname, ref List<string> artistImageRequests, ref List<string> albumImageRequests)
         {
             if (!isTrustedSyncTarget)
             {
@@ -257,14 +262,14 @@ namespace MWP.BackEnd.Network
                 MyConsole.WriteLine("Trashing file");
 #endif
                 string trashPath = FileManager.GetAvailableTempFile("trash", "trash");
-                networkStream.ReadFile(trashPath, length, ref aes);
+                networkStream.ReadFile(trashPath, length, ref aes, ref encryptor);
                 File.Delete(trashPath);
                 return;
             }
             try
             {
                 string songPath = FileManager.GetAvailableTempFile("receive", "mp3");
-                networkStream.ReadFile(songPath, length, ref aes);
+                networkStream.ReadFile(songPath, length, ref aes, ref encryptor);
 #if DEBUG
                 MyConsole.WriteLine("Read file to temp");
 #endif
@@ -280,6 +285,7 @@ namespace MWP.BackEnd.Network
 #endif
                     networkStream.WriteCommand(CommandsArr.ArtistImageRequest,
                         Encoding.UTF8.GetBytes(name), ref encryptor);
+                    artistImageRequests.Add(name);
                 }
 
                 if (!string.IsNullOrEmpty(missingAlbum))
@@ -290,6 +296,7 @@ namespace MWP.BackEnd.Network
                     networkStream.WriteCommand(CommandsArr.AlbumImageRequest,
                         Encoding.UTF8.GetBytes(missingAlbum), ref encryptor);
                     albumArtistPair.TryAdd(missingAlbum, albumArtistPath);
+                    albumImageRequests.Add(missingAlbum);
                 }
             }
             catch (Exception e)
@@ -302,21 +309,23 @@ namespace MWP.BackEnd.Network
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void ArtistImageSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, ref Aes aes, long length, byte[] data, bool isTrustedSyncTarget)
+        internal static void ArtistImageSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, ref Aes aes, long length, byte[] data, bool isTrustedSyncTarget, ref List<string> artistImageRequests)
         {
             if (!isTrustedSyncTarget)
             {
                 string trashPath = FileManager.GetAvailableTempFile("trash", "trash");
-                networkStream.ReadFile(trashPath, length, ref aes);
+                networkStream.ReadFile(trashPath, length, ref aes, ref encryptor);
                 File.Delete(trashPath);
                 return;
             }
             try
             {
+                artistImageRequests.Remove(Encoding.UTF8.GetString(data));
                 string artist = FileManager.GetAlias(Encoding.UTF8.GetString(data));
+                artistImageRequests.Remove(artist);
                 string artistPath = FileManager.Sanitize(artist);
                 string imagePath = FileManager.GetAvailableTempFile("networkImage", "image");
-                networkStream.ReadFile(imagePath, length, ref aes);
+                networkStream.ReadFile(imagePath, length, ref aes, ref encryptor);
                 string imageExtension = FileManager.GetImageFormat(imagePath);
                 string artistImagePath =
                     $"{FileManager.MusicFolder}/{artistPath}/cover.{imageExtension.TrimStart('.')}";
@@ -339,21 +348,22 @@ namespace MWP.BackEnd.Network
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void AlbumImageSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, ref Aes aes, long length, byte[] data, ref Dictionary<string,string> albumArtistPair, bool isTrustedSyncTarget)
+        internal static void AlbumImageSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, ref Aes aes, long length, byte[] data, ref Dictionary<string,string> albumArtistPair, bool isTrustedSyncTarget, ref List<string> albumImageRequests)
         {
             if (!isTrustedSyncTarget)
             {
                 string trashPath = FileManager.GetAvailableTempFile("trash", "trash");
-                networkStream.ReadFile(trashPath, length, ref aes);
+                networkStream.ReadFile(trashPath, length, ref aes, ref encryptor);
                 File.Delete(trashPath);
                 return;
             }
             try
             {
                 string album = Encoding.UTF8.GetString(data);
+                albumImageRequests.Remove(album);
                 string albumPath = FileManager.Sanitize(album);
                 string imagePath = FileManager.GetAvailableTempFile("networkImage", "image");
-                networkStream.ReadFile(imagePath, length, ref aes);
+                networkStream.ReadFile(imagePath, length, ref aes, ref encryptor);
                 string imageExtension = FileManager.GetImageFormat(imagePath);
                 string albumImagePath =
                     $"{FileManager.MusicFolder}/{albumArtistPair[album]}/{albumPath}/cover.{imageExtension.TrimStart('.')}";
@@ -383,14 +393,20 @@ namespace MWP.BackEnd.Network
 #if DEBUG
             MyConsole.WriteLine($"Got request for artist {artistName}");
 #endif
+            bool processed = false;
             foreach (Artist artist in artists.Where(artist => artist.ImgPath != "Default"))
             {
-                networkStream.WriteFile(artist.ImgPath, ref encryptor, ref aes, CommandsArr.ArtistImageSend, Encoding.UTF8.GetBytes(artists[0].Title));
+                networkStream.WriteFile(artist.ImgPath, ref encryptor, ref aes, CommandsArr.ArtistImageSend, data);
                 ackCount--;
+                processed = true;
 #if DEBUG
                 MyConsole.WriteLine($"Sending image for artist {artistName}");
 #endif
                 break;
+            }
+            if (!processed)
+            {
+                networkStream.WriteCommand(CommandsArr.ArtistImageNotFound, data, ref encryptor);
             }
         }
 
@@ -403,14 +419,20 @@ namespace MWP.BackEnd.Network
 #if DEBUG
             MyConsole.WriteLine($"Got request for album {albumName}");
 #endif
+            bool processed = false;
             foreach (Album album in albums.Where(album => album.ImgPath != "Default"))
             {
-                networkStream.WriteFile(album.ImgPath, ref encryptor, ref aes, CommandsArr.AlbumImageSend, Encoding.UTF8.GetBytes(albums[0].Title));
+                networkStream.WriteFile(album.ImgPath, ref encryptor, ref aes, CommandsArr.AlbumImageSend, data);
                 ackCount--;
+                processed = true;
 #if DEBUG
                 MyConsole.WriteLine($"Sending image for album {albumName}");
 #endif
                 break;
+            }
+            if (!processed)
+            {
+                networkStream.WriteCommand(CommandsArr.AlbumImageNotFound, data, ref encryptor);
             }
         }
     }

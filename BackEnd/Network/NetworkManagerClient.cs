@@ -39,6 +39,8 @@ namespace MWP.BackEnd.Network
             aes.Mode = CipherMode.CBC;
             aes.Padding = PaddingMode.PKCS7;
             int timeoutCounter = 0;
+            List<string> artistImageRequests = new List<string>();
+            List<string> albumImageRequests = new List<string>();
             
             networkStream.WriteCommand(CommandsArr.Host, Encoding.UTF8.GetBytes(DeviceInfo.Name));
 
@@ -76,7 +78,7 @@ namespace MWP.BackEnd.Network
 
                 NetworkManagerCommonCommunication.Write(ref ending, command, encryptionState, ref networkStream,
                     ref encryptor, ref aes, ref songsToSend, ref syncSongs, ref syncRequestState,
-                    ref songSendRequestState, ref isTrustedSyncTarget, ref ackCount, remoteHostname);
+                    ref songSendRequestState, ref isTrustedSyncTarget, ref ackCount, remoteHostname, ref artistImageRequests, ref albumImageRequests);
 
                 #endregion
                 
@@ -173,21 +175,21 @@ namespace MWP.BackEnd.Network
                             MyConsole.WriteLine($"file length: {length}");
 #endif
                             NetworkManagerCommonCommunication.SongSend(ref networkStream, ref encryptor, (long)length, ref aes,
-                                ref albumArtistPair, (bool)isTrustedSyncTarget, remoteHostname);
+                                ref albumArtistPair, (bool)isTrustedSyncTarget, remoteHostname, ref artistImageRequests, ref albumImageRequests);
                         }
                         break;
                     case CommandsEnum.ArtistImageSend:
                         if (data != null && length != null && isTrustedSyncTarget != null)
                         {
                             NetworkManagerCommonCommunication.ArtistImageSend(ref networkStream, ref encryptor, ref aes,
-                                (long)length, data, (bool)isTrustedSyncTarget);
+                                (long)length, data, (bool)isTrustedSyncTarget, ref artistImageRequests);
                         }
                         break;
                     case CommandsEnum.AlbumImageSend:
                         if (data != null && length != null && isTrustedSyncTarget != null)
                         {
                             NetworkManagerCommonCommunication.AlbumImageSend(ref networkStream, ref encryptor, ref aes,
-                                (long)length, data, ref albumArtistPair, (bool)isTrustedSyncTarget);
+                                (long)length, data, ref albumArtistPair, (bool)isTrustedSyncTarget, ref albumImageRequests);
                         }
                         break;
                     case CommandsEnum.ArtistImageRequest:
@@ -202,6 +204,22 @@ namespace MWP.BackEnd.Network
                         {
                             NetworkManagerCommonCommunication.AlbumImageRequest(ref networkStream, ref encryptor, ref aes,
                                 ref ackCount, data);
+                        }
+                        break;
+                    case CommandsEnum.ArtistImageNotFound:
+                        if (data != null)
+                        {
+                            string artistName = Encoding.UTF8.GetString(data);
+                            artistImageRequests.Remove(artistName);
+                            string artistAlias = FileManager.GetAlias(artistName);
+                            artistImageRequests.Remove(artistAlias);
+                        }
+                        break;
+                    case CommandsEnum.AlbumImageNotFound:
+                        if (data != null)
+                        {
+                            string albumName = Encoding.UTF8.GetString(data);
+                            albumImageRequests.Remove(albumName);
                         }
                         break;
                     case CommandsEnum.Ack:

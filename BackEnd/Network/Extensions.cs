@@ -321,7 +321,7 @@ namespace MWP.BackEnd.Network
             }
             csDecrypt.Dispose();
         }
-        
+
         /// <summary>
         /// Reads encrypted <see cref="File" /> from stream to <see cref="File" /> specified at <see cref="Path" /> (this file <see cref="File" /> be created/overwritten)
         /// </summary>
@@ -329,28 +329,32 @@ namespace MWP.BackEnd.Network
         /// <param name="path">path to write to</param>
         /// <param name="length">length of encrypted data</param>
         /// <param name="aes">aes decryptor to be used</param>
+        /// <param name="encryptor">rsa encryptor to be used for wait messages</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ReadFile(this NetworkStream stream, string path, long length,
-            ref Aes aes)
+            ref Aes aes, ref RSACryptoServiceProvider encryptor)
         {
             if(length > 4000000000){
                 throw new Exception("You can't receive files larger than 4GB on Android");
             }
-            using FileStream fileStream = new FileStream(path, FileMode.Create);
-            using FileStream encryptedFileStream = new FileStream(FileManager.GetAvailableTempFile("encrypted", "file"), FileMode.Create);
-            
+            FileStream fileStream = new FileStream(path, FileMode.Create);
+            string encryptedFilePath = FileManager.GetAvailableTempFile("encrypted", "file");
+            FileStream encryptedFileStream = new FileStream(encryptedFilePath, FileMode.Create);
             while (length > 0)
             {
                 int readThisCycle = length > NetworkManager.DefaultBuffSize ? NetworkManager.DefaultBuffSize : Convert.ToInt32(length);
                 byte[] buffer = stream.SafeRead(readThisCycle);
                 encryptedFileStream.Write(buffer);
                 length -= readThisCycle;
-                stream.WriteCommand(CommandsArr.Wait);
             }
-
+            stream.WriteCommand(CommandsArr.Wait, ref encryptor);
             encryptedFileStream.Seek(0, SeekOrigin.Begin);
-            using CryptoStream csDecrypt = new CryptoStream(encryptedFileStream, aes.CreateDecryptor(), CryptoStreamMode.Read, false);
+            CryptoStream csDecrypt = new CryptoStream(encryptedFileStream, aes.CreateDecryptor(), CryptoStreamMode.Read, false);
             fileStream.WriteData(csDecrypt);
+            csDecrypt.Dispose();
+            encryptedFileStream.Dispose();
+            fileStream.Dispose();
+            File.Delete(encryptedFilePath);
         }
     }
     
@@ -609,8 +613,6 @@ namespace MWP.BackEnd.Network
             }
             FileInfo fi = new FileInfo(path);
             long encryptedDataLength = fi.Length + (16 - fi.Length % 16);
-            //long encryptedDataLength = (fi.Length + (16 - (fi.Length % 16)))-16;
-            //long encryptedDataLength = fi.Length;
             byte[] rv = new byte[len];
             aes.GenerateIV();
             
@@ -630,26 +632,31 @@ namespace MWP.BackEnd.Network
 #endif
             rv = encryptor.Encrypt(rv, true);
             stream.Write(rv, 0, rv.Length);
-            /*MemoryStream ms = new MemoryStream();
-            CryptoStream csEncrypt = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+            /*using MemoryStream ms = new MemoryStream();
+            using CryptoStream csEncrypt = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
             using FileStream fs = fi.Open(FileMode.Open);
             csEncrypt.WriteData(fs);
-            csEncrypt.Dispose();
             //ms.CopyTo(stream);
+            csEncrypt.FlushFinalBlock();
+            csEncrypt.Flush();
+            csEncrypt.Close();
+            csEncrypt.Clear();
+            csEncrypt.Dispose();
             byte[] enc = ms.ToArray();
-            ms.Dispose();
             stream.Write(enc);
-            if (enc.Length != encryptedDataLength)
+            if (enc.LongLength != encryptedDataLength)
             {
                 throw new Java.Lang.Exception("Invalid data size");
             }*/
-            using CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+            CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
             using FileStream fs = fi.Open(FileMode.Open, FileAccess.Read);
             csEncrypt.WriteData(fs);
             csEncrypt.FlushFinalBlock();
             csEncrypt.Flush();
             csEncrypt.Close();
             csEncrypt.Clear();
+            csEncrypt.Dispose();
+            
             stream.Flush();
         }
     }
