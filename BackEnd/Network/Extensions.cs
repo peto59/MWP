@@ -337,8 +337,9 @@ namespace MWP.BackEnd.Network
             if(length > 4000000000){
                 throw new Exception("You can't receive files larger than 4GB on Android");
             }
-            using FileStream fileStream = new FileStream(path, FileMode.Create);
-            using FileStream encryptedFileStream = new FileStream(FileManager.GetAvailableTempFile("encrypted", "file"), FileMode.Create);
+            FileStream fileStream = new FileStream(path, FileMode.Create);
+            string encryptedFilePath = FileManager.GetAvailableTempFile("encrypted", "file");
+            FileStream encryptedFileStream = new FileStream(encryptedFilePath, FileMode.Create);
             while (length > 0)
             {
                 int readThisCycle = length > NetworkManager.DefaultBuffSize ? NetworkManager.DefaultBuffSize : Convert.ToInt32(length);
@@ -348,8 +349,12 @@ namespace MWP.BackEnd.Network
             }
             stream.WriteCommand(CommandsArr.Wait, ref encryptor);
             encryptedFileStream.Seek(0, SeekOrigin.Begin);
-            using CryptoStream csDecrypt = new CryptoStream(encryptedFileStream, aes.CreateDecryptor(), CryptoStreamMode.Read, false);
+            CryptoStream csDecrypt = new CryptoStream(encryptedFileStream, aes.CreateDecryptor(), CryptoStreamMode.Read, false);
             fileStream.WriteData(csDecrypt);
+            csDecrypt.Dispose();
+            encryptedFileStream.Dispose();
+            fileStream.Dispose();
+            File.Delete(encryptedFilePath);
         }
     }
     
