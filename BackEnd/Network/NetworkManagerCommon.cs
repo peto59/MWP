@@ -172,13 +172,13 @@ namespace MWP.BackEnd.Network
                 byte cnt = 0;
                 Dictionary<byte, byte> remote = new Dictionary<byte, byte>();
                 Dictionary<byte, byte> local = new Dictionary<byte, byte>();
-                P2PState stateObject;
+                P2PState stateObject = new P2PState(new []{(byte)0});
                 try
                 {
                     while (true)
                     {
                         byte state = (byte)new Random().Next(0, 2);
-                        sock.SendTo(P2PState.Send(cnt, state), endPoint);
+                        sock.SendTo(P2PState.Send(cnt, state), iep);
                         local.TryAdd(cnt, state);
 #if DEBUG
                         MyConsole.WriteLine($"sending {state} at cnt {cnt} to {((IPEndPoint)endPoint).Address}");
@@ -202,11 +202,17 @@ namespace MWP.BackEnd.Network
                                         cnt++;
                                         state = (byte)new Random().Next(0, 2);
                                         local.TryAdd(cnt, state);
-                                        sock.SendTo(P2PState.Send(cnt, state), endPoint);
+                                        sock.SendTo(P2PState.Send(cnt, state), iep);
                                         maxResponseCounter--;
                                         continue;
                                     }
 
+                                    break;
+                                }
+
+                                if (maxResponseCounter <= 0)
+                                {
+                                    breakFlag = true;
                                     break;
                                 }
                                 stateObject = new P2PState(buffer);
@@ -232,13 +238,13 @@ namespace MWP.BackEnd.Network
                                 {
                                     if (local.TryGetValue(stateObject.Cnt, out state))
                                     {
-                                        sock.SendTo(P2PState.Send(stateObject.Cnt, state), endPoint);
+                                        sock.SendTo(P2PState.Send(stateObject.Cnt, state), iep);
                                     }
                                     else
                                     {
                                         state = (byte)new Random().Next(0, 2);
                                         local.TryAdd(stateObject.Cnt, state);
-                                        sock.SendTo(P2PState.Send(stateObject.Cnt, state), endPoint);
+                                        sock.SendTo(P2PState.Send(stateObject.Cnt, state), iep);
                                     }
                                 }
 
@@ -250,7 +256,7 @@ namespace MWP.BackEnd.Network
                                     {
                                         if (!remote.TryGetValue(key, out byte remoteVal))
                                         {
-                                            sock.SendTo(P2PState.Request(key), endPoint);
+                                            sock.SendTo(P2PState.Request(key), iep);
                                             check = false;
                                         }
 
@@ -302,7 +308,7 @@ namespace MWP.BackEnd.Network
                             if (NetworkManager.Common.MyIp == null) return false;
                             (TcpListener server, int listenPort) =
                                 NetworkManagerServer.StartServer(NetworkManager.Common.MyIp);
-                            sock.SendTo(BitConverter.GetBytes(listenPort), endPoint);
+                            sock.SendTo(BitConverter.GetBytes(listenPort), iep);
                             try
                             {
                                 NetworkManagerServer.Server(server, ipAddress, songsToSend, ref endPoint, ref sock,
@@ -332,7 +338,7 @@ namespace MWP.BackEnd.Network
                                 }
                                 catch (SocketException e)
                                 {
-                                    sock.SendTo(P2PState.Send(cnt, state), endPoint);
+                                    sock.SendTo(P2PState.Send(cnt, state), iep);
                                     continue;
                                 }
 
@@ -344,13 +350,13 @@ namespace MWP.BackEnd.Network
                             {
                                 if (local.TryGetValue(stateObject.Cnt, out state))
                                 {
-                                    sock.SendTo(P2PState.Send(stateObject.Cnt, state), endPoint);
+                                    sock.SendTo(P2PState.Send(stateObject.Cnt, state), iep);
                                 }
                                 else
                                 {
                                     state = (byte)new Random().Next(0, 2);
                                     local.TryAdd(stateObject.Cnt, state);
-                                    sock.SendTo(P2PState.Send(stateObject.Cnt, state), endPoint);
+                                    sock.SendTo(P2PState.Send(stateObject.Cnt, state), iep);
                                 }
                             }
                         }

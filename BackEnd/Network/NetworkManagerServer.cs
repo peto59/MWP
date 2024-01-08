@@ -78,21 +78,21 @@ internal static class NetworkManagerServer
             
             while (!task.IsCompleted)
             {
+                EndPoint eP = endPoint;
                 if (sock.Available >= 4)
                 {
-                    
                     byte[] buffer = new byte[4];
                     sock.ReceiveFrom(buffer, 4, SocketFlags.None, ref endPoint);
                     P2PState stateObject = new P2PState(buffer);
                     if (stateObject is { IsValid: true, Type: P2PStateTypes.Request })
                     {
-                        sock.SendTo( P2PState.Send(stateObject.Cnt, local[stateObject.Cnt]), endPoint);
+                        sock.SendTo( P2PState.Send(stateObject.Cnt, local[stateObject.Cnt]), eP);
                     }
                 }
                 else
                 {
                     Thread.Sleep(5);
-                    sock.SendTo( P2PState.Send(local.Keys.Last(), local[local.Keys.Last()]), endPoint);
+                    sock.SendTo( P2PState.Send(local.Keys.Last(), local[local.Keys.Last()]), eP);
                 }
             }
             
