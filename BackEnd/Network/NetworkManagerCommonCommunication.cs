@@ -163,14 +163,12 @@ namespace MWP.BackEnd.Network
                                     MyConsole.WriteLine(syncSongs[0].ToString());
 #endif
                                     networkStream.WriteFile(syncSongs[0].Path, ref encryptor, ref aes);
-                                    syncSongs.RemoveAt(0);
                                     ackCount--;
-                                    FileManager.SetTrustedSyncTargetSongs(remoteHostname, syncSongs);
+                                    FileManager.DeleteTrustedSyncTargetSongs(remoteHostname, syncSongs[0]);
+                                    syncSongs.RemoveAt(0);
                                 }
                                 break;
                             default:
-                                if (!ending)
-                                {
                                     ending =
                                     (songsToSend.Count == 0 || 
                                      (songsToSend.Count > 0 && songSendRequestState == SongSendRequestState.Rejected))
@@ -181,7 +179,6 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                                     MyConsole.WriteLine($"isEnding? {ending}");                               
 #endif
-                                }
                                 break;
                         }
                         break;
@@ -252,7 +249,7 @@ namespace MWP.BackEnd.Network
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void SongSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, long length, ref Aes aes, ref Dictionary<string, string> albumArtistPair, bool isTrustedSyncTarget)
+        internal static void SongSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, long length, ref Aes aes, ref Dictionary<string, string> albumArtistPair, bool isTrustedSyncTarget, string remoteHostname)
         {
             if (!isTrustedSyncTarget)
             {
@@ -272,7 +269,7 @@ namespace MWP.BackEnd.Network
                 MyConsole.WriteLine("Read file to temp");
 #endif
                 (List<string> missingArtists, (string missingAlbum, string albumArtistPath)) =
-                    FileManager.AddSong(songPath, true);
+                    FileManager.AddSong(songPath, true, true, remoteHostname);
 #if DEBUG
                 MyConsole.WriteLine("Added file");
 #endif
@@ -383,10 +380,16 @@ namespace MWP.BackEnd.Network
         {
             string artistName = Encoding.UTF8.GetString(data);
             List<Artist> artists = MainActivity.StateHandler.Artists.Search(artistName);
+#if DEBUG
+            MyConsole.WriteLine($"Got request for artist {artistName}");
+#endif
             foreach (Artist artist in artists.Where(artist => artist.ImgPath != "Default"))
             {
                 networkStream.WriteFile(artist.ImgPath, ref encryptor, ref aes, CommandsArr.ArtistImageSend, Encoding.UTF8.GetBytes(artists[0].Title));
                 ackCount--;
+#if DEBUG
+                MyConsole.WriteLine($"Sending image for artist {artistName}");
+#endif
                 break;
             }
         }
@@ -397,10 +400,16 @@ namespace MWP.BackEnd.Network
         {
             string albumName = Encoding.UTF8.GetString(data);
             List<Album> albums = MainActivity.StateHandler.Albums.Search(albumName);
+#if DEBUG
+            MyConsole.WriteLine($"Got request for album {albumName}");
+#endif
             foreach (Album album in albums.Where(album => album.ImgPath != "Default"))
             {
                 networkStream.WriteFile(album.ImgPath, ref encryptor, ref aes, CommandsArr.AlbumImageSend, Encoding.UTF8.GetBytes(albums[0].Title));
                 ackCount--;
+#if DEBUG
+                MyConsole.WriteLine($"Sending image for album {albumName}");
+#endif
                 break;
             }
         }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -54,13 +53,13 @@ namespace MWP.BackEnd.Network
             int offset = 0;
             while (length > 0)
             {
-                while (!networkStream.DataAvailable)
+                /*while (!networkStream.DataAvailable)
                 {
 #if DEBUG
                     MyConsole.WriteLine($"Waiting for data");
 #endif
                     Thread.Sleep(10);
-                }
+                }*/
                 int read = stream.Read(data, offset, length);
                 length -= read;
                 offset += read;
@@ -338,16 +337,20 @@ namespace MWP.BackEnd.Network
                 throw new Exception("You can't receive files larger than 4GB on Android");
             }
             using FileStream fileStream = new FileStream(path, FileMode.Create);
-
-            CryptoStream csDecrypt = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Read, true);
+            using FileStream encryptedFileStream = new FileStream(FileManager.GetAvailableTempFile("encrypted", "file"), FileMode.Create);
+            
             while (length > 0)
             {
-                int readThisCycle = length > 8096 ? 8096 : Convert.ToInt32(length);
-                byte[] buffer = csDecrypt.SafeRead(readThisCycle, ref stream);
-                fileStream.Write(buffer);
+                int readThisCycle = length > NetworkManager.DefaultBuffSize ? NetworkManager.DefaultBuffSize : Convert.ToInt32(length);
+                byte[] buffer = stream.SafeRead(readThisCycle);
+                encryptedFileStream.Write(buffer);
                 length -= readThisCycle;
+                stream.WriteCommand(CommandsArr.Wait);
             }
-            csDecrypt.Dispose();
+
+            encryptedFileStream.Seek(0, SeekOrigin.Begin);
+            using CryptoStream csDecrypt = new CryptoStream(encryptedFileStream, aes.CreateDecryptor(), CryptoStreamMode.Read, false);
+            fileStream.WriteData(csDecrypt);
         }
     }
     
@@ -529,9 +532,8 @@ namespace MWP.BackEnd.Network
         /// </summary>
         /// <param name="destination">Destination of copy</param>
         /// <param name="source">Source of copy</param>
-        /// <param name="buffSize">size of buffer, default is 8096</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteData(this Stream destination, Stream source, int buffSize = 8096)
+        internal static void WriteData(this Stream destination, Stream source)
         {
             if (source.CanSeek)
             {
@@ -595,6 +597,10 @@ namespace MWP.BackEnd.Network
         internal static void WriteFile(this NetworkStream stream, string path,
             ref RSACryptoServiceProvider encryptor, ref Aes aes, byte[]? command = null, byte[]? data = null)
         {
+            if (!File.Exists(path))
+            {
+                return;
+            }
             int len = 1 + 16 + 8 + (data?.Length ?? 0); //command(1), aes IV (16), encrypted data length as long(8)
             if (len > 190 )
             {
@@ -602,8 +608,8 @@ namespace MWP.BackEnd.Network
                 throw new InvalidDataException("Data cannot exceed 190 bytes");
             }
             FileInfo fi = new FileInfo(path);
-            //long encryptedDataLength = fi.Length + (16 - fi.Length % 16);
-            long encryptedDataLength = (fi.Length + (16 - (fi.Length % 16)))-16;
+            long encryptedDataLength = fi.Length + (16 - fi.Length % 16);
+            //long encryptedDataLength = (fi.Length + (16 - (fi.Length % 16)))-16;
             //long encryptedDataLength = fi.Length;
             byte[] rv = new byte[len];
             aes.GenerateIV();
@@ -624,15 +630,11 @@ namespace MWP.BackEnd.Network
 #endif
             rv = encryptor.Encrypt(rv, true);
             stream.Write(rv, 0, rv.Length);
-#if DEBUG
-            MyConsole.WriteLine($"encrypted rv {rv.Length}");
-#endif
             /*MemoryStream ms = new MemoryStream();
             CryptoStream csEncrypt = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
             using FileStream fs = fi.Open(FileMode.Open);
             csEncrypt.WriteData(fs);
             csEncrypt.Dispose();
-            fs.Dispose();
             //ms.CopyTo(stream);
             byte[] enc = ms.ToArray();
             ms.Dispose();
@@ -641,15 +643,14 @@ namespace MWP.BackEnd.Network
             {
                 throw new Java.Lang.Exception("Invalid data size");
             }*/
-            CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
-            using FileStream fs = fi.Open(FileMode.Open);
+            using CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+            using FileStream fs = fi.Open(FileMode.Open, FileAccess.Read);
             csEncrypt.WriteData(fs);
             csEncrypt.FlushFinalBlock();
             csEncrypt.Flush();
             csEncrypt.Close();
             csEncrypt.Clear();
             stream.Flush();
-            csEncrypt.Dispose();
         }
     }
 }

@@ -38,6 +38,7 @@ namespace MWP.BackEnd.Network
             aes.KeySize = 256;
             aes.Mode = CipherMode.CBC;
             aes.Padding = PaddingMode.PKCS7;
+            int timeoutCounter = 0;
             
             networkStream.WriteCommand(CommandsArr.Host, Encoding.UTF8.GetBytes(DeviceInfo.Name));
 
@@ -54,9 +55,15 @@ namespace MWP.BackEnd.Network
                 if (networkStream.DataAvailable)
                 {
                     (command, data, length) = NetworkManagerCommonCommunication.Read(encryptionState, ref networkStream, ref decryptor, ref aes, false);
+                    timeoutCounter = 0;
                 }
                 else
                 {
+                    timeoutCounter++;
+                    if (timeoutCounter > NetworkManager.MaxTimeoutCounter)
+                    {
+                        goto EndClient;
+                    }
                     command = CommandsEnum.None;
                 }
 
@@ -166,7 +173,7 @@ namespace MWP.BackEnd.Network
                             MyConsole.WriteLine($"file length: {length}");
 #endif
                             NetworkManagerCommonCommunication.SongSend(ref networkStream, ref encryptor, (long)length, ref aes,
-                                ref albumArtistPair, (bool)isTrustedSyncTarget);
+                                ref albumArtistPair, (bool)isTrustedSyncTarget, remoteHostname);
                         }
                         break;
                     case CommandsEnum.ArtistImageSend:
@@ -225,8 +232,6 @@ namespace MWP.BackEnd.Network
                             MyConsole.WriteLine("Disconnected");
 #endif
                         }
-                        networkStream.Close();
-                        client.Close();
                         goto EndClient;
                     //break;
                     case CommandsEnum.Wait:
@@ -246,6 +251,8 @@ namespace MWP.BackEnd.Network
 #if DEBUG
             MyConsole.WriteLine("END");
 #endif
+            networkStream.Close();
+            client.Close();
             encryptor.Dispose();
             decryptor.Dispose();
             aes.Dispose();

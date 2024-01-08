@@ -184,14 +184,14 @@ namespace MWP.BackEnd.Network
                         MyConsole.WriteLine($"sending {state} at cnt {cnt} to {((IPEndPoint)endPoint).Address}");
 #endif
                         cnt++;
-                        byte maxResponseCounter = 4;
+                        byte maxResponseCounter = NetworkManager.P2PMaxResponseCounter;
                         byte? response = null;
                         do
                         {
                             bool breakFlag = false;
                             do
                             {
-                                while (true)
+                                while (maxResponseCounter > 0)
                                 {
                                     try
                                     {
@@ -203,6 +203,7 @@ namespace MWP.BackEnd.Network
                                         state = (byte)new Random().Next(0, 2);
                                         local.TryAdd(cnt, state);
                                         sock.SendTo(P2PState.Send(cnt, state), endPoint);
+                                        maxResponseCounter--;
                                         continue;
                                     }
 

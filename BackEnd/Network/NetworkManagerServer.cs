@@ -62,6 +62,7 @@ internal static class NetworkManagerServer
             int ackCount = 0;
             List<Song> syncSongs = new List<Song>();
             bool? isTrustedSyncTarget = null;
+            int timeoutCounter = 0;
 
             List<string> files = new List<string>();
             Dictionary<string, string> albumArtistPair = new Dictionary<string, string>();
@@ -123,9 +124,15 @@ internal static class NetworkManagerServer
                 if (networkStream.DataAvailable)
                 {
                     (command, data, length) = NetworkManagerCommonCommunication.Read(encryptionState, ref networkStream, ref decryptor, ref aes, true);
+                    timeoutCounter = 0;
                 }
                 else
                 {
+                    timeoutCounter++;
+                    if (timeoutCounter > NetworkManager.MaxTimeoutCounter)
+                    {
+                        goto EndServer;
+                    }
                     command = CommandsEnum.None;
                 }
 
@@ -205,7 +212,7 @@ internal static class NetworkManagerServer
                             MyConsole.WriteLine($"file length: {length}");
 #endif
                             NetworkManagerCommonCommunication.SongSend(ref networkStream, ref encryptor, (long)length, ref aes,
-                                ref albumArtistPair, (bool)isTrustedSyncTarget);
+                                ref albumArtistPair, (bool)isTrustedSyncTarget, remoteHostname);
                         }
                         break;
                     case CommandsEnum.ArtistImageSend:
@@ -264,8 +271,6 @@ internal static class NetworkManagerServer
                             MyConsole.WriteLine("Disconnected");
 #endif
                         }
-                        networkStream.Close();
-                        client.Close();
                         goto EndServer;
                     case CommandsEnum.Wait:
                         Thread.Sleep(25);
@@ -284,6 +289,8 @@ internal static class NetworkManagerServer
 #if DEBUG
             MyConsole.WriteLine("END");
 #endif
+            networkStream.Close();
+            client.Close();
             encryptor.Dispose();
             decryptor.Dispose();
             aes.Dispose();
