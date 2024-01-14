@@ -35,10 +35,10 @@ namespace MWP
         private Dictionary<LinearLayout?, object> albumButtons = new Dictionary<LinearLayout?, object>();
         private Dictionary<LinearLayout?, Guid> songButtons = new Dictionary<LinearLayout?, Guid>();
 
-        private ObservableDictionary<string, Bitmap> albumImagesBuffer;
-        private ObservableDictionary<string, Bitmap> songImagesBuffer;
-        private Dictionary<string, LinearLayout?> albumTilesBuffer;
-        private Dictionary<string, LinearLayout?> songTilesBuffer;
+        private ObservableDictionary<string, Bitmap>? albumImagesBuffer;
+        private ObservableDictionary<string, Bitmap>? songImagesBuffer;
+        private Dictionary<string, LinearLayout?>? albumTilesBuffer;
+        private Dictionary<string, LinearLayout?>? songTilesBuffer;
 
         private AlbumFragment albumFragment;
 

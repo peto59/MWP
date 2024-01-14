@@ -33,8 +33,8 @@ namespace MWP
         
         private Dictionary<LinearLayout?, Guid> SongButtons = new Dictionary<LinearLayout?, Guid>();
 
-        private Dictionary<string, LinearLayout?> songTilesBuffer;
-        private ObservableDictionary<string, Bitmap> songImagesBuffer;
+        private Dictionary<string, LinearLayout?>? songTilesBuffer;
+        private ObservableDictionary<string, Bitmap>? songImagesBuffer;
 
 
         /// <summary>

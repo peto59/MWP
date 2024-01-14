@@ -149,6 +149,7 @@ namespace MWP
             Task.Run(async () =>
             {
                 await UIRenderFunctions.LoadSongImages(MainActivity.StateHandler.Songs, _lazyImageBuffer, UIRenderFunctions.LoadImageType.SONG);
+                UIRenderFunctions.FillImageHoles(context, _lazyBuffer, _lazyImageBuffer, _assets);
             });
             
             return view;
