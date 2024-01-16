@@ -99,8 +99,12 @@ namespace MWP
             /*
              * register music widget click for opening application on widget layout click
              */
+            var pendingIntentFlags = (Build.VERSION.SdkInt >= BuildVersionCodes.S)
+                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable
+                : PendingIntentFlags.UpdateCurrent;
+            
             Intent mainAcitivtyIntent = new Intent(context, typeof(MainActivity));
-            PendingIntent? pendingIntent = PendingIntent.GetActivity(context, 0, mainAcitivtyIntent, 0);
+            PendingIntent? pendingIntent = PendingIntent.GetActivity(context, 0, mainAcitivtyIntent, pendingIntentFlags);
             widgetView.SetOnClickPendingIntent(Resource.Id.widgetBackground, pendingIntent);
         }
 
@@ -110,7 +114,7 @@ namespace MWP
             intent.SetAction(action);
             
             var pendingIntentFlags = (Build.VERSION.SdkInt >= BuildVersionCodes.S)
-                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Mutable
+                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable
                 : PendingIntentFlags.UpdateCurrent;
             
             return PendingIntent.GetBroadcast(context, 0, intent, pendingIntentFlags);
