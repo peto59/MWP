@@ -258,7 +258,7 @@ namespace MWP
                     displayWidth / 2,
                     ViewGroup.LayoutParams.MatchParent
                 );
-                authorScrollParams.SetMargins(0, 100, 0, 0);
+                authorScrollParams.SetMargins(0, 185, 0, 0);
                 authorScroll.LayoutParameters = authorScrollParams;
 
                 LinearLayout authorLin = AuthorTiles();
@@ -273,7 +273,7 @@ namespace MWP
                     displayWidth / 2,
                     ViewGroup.LayoutParams.MatchParent
                 );
-                albumScrollParams.SetMargins((displayWidth / 2) - 20, 100, 0, 0);
+                albumScrollParams.SetMargins((displayWidth / 2) - 20, 185, 0, 0);
                 albumScroll.LayoutParameters = albumScrollParams;
             }
 

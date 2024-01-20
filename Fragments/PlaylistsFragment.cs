@@ -1,12 +1,18 @@
+using System;
 using Android.Content;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Threading.Tasks;
+using Android.App;
 using Android.Content.Res;
 using Android.Graphics;
+using Android.Graphics.Drawables;
+using Google.Android.Material.FloatingActionButton;
 using MWP.BackEnd;
+using Color = Android.Graphics.Color;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 
@@ -20,7 +26,7 @@ namespace MWP
     {
         private readonly Context context;
         private RelativeLayout? mainLayout;
-
+        private Typeface? font;
 
         private PlaylistFragment playlistFragment; 
             
@@ -34,10 +40,17 @@ namespace MWP
         public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
             View? view = inflater.Inflate(Resource.Layout.playlists_fragment, container, false);
-
+            
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.playlists_fragment_main);
 
             RenderPlaylists();
+            
+            FloatingActionButton? createPlaylist = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.playlists_fab);
+            if (BlendMode.Multiply != null)
+                createPlaylist?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+            if (createPlaylist != null) createPlaylist.Click += CreatePlaylistPopup;
             
             return view;
         }
@@ -51,6 +64,7 @@ namespace MWP
         {
             context = ctx;
             playlistFragment = new PlaylistFragment(ctx, assets);
+            font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
         }
 
 
@@ -104,6 +118,7 @@ namespace MWP
                 nameParams.SetMargins(0, 20, 0, 20);
                 plaName.LayoutParameters = nameParams; 
                 plaName.Text = playlist;
+                plaName.Typeface = font;
                 plaName.SetTextColor(Color.White);
                 plaName.TextSize = 30;
                 plaName.TextAlignment = TextAlignment.Center;
@@ -116,6 +131,7 @@ namespace MWP
                 countParams.SetMargins(0, 20, 0, 20);
                 songsCount.LayoutParameters = countParams;
                 songsCount.Text = $"number of songs: {FileManager.GetPlaylist(playlist).Count}";
+                songsCount.Typeface = font;
                 songsCount.SetTextColor(Color.White);
                 songsCount.TextSize = 15;
                 songsCount.TextAlignment = TextAlignment.Center;
@@ -144,6 +160,54 @@ namespace MWP
 
             playlistsScroll.AddView(playlistLnMain);
             mainLayout?.AddView(playlistsScroll);
+        }
+        
+        
+        private void CreatePlaylistPopup(object sender, EventArgs e)
+        {
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? view = ifl?.Inflate(Resource.Layout.new_playlist_popup, null);
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(view);
+
+            TextView? dialogTitle = view?.FindViewById<TextView>(Resource.Id.AddPlaylist_title);
+            if (dialogTitle != null) dialogTitle.Typeface = font;
+
+            EditText? userData = view?.FindViewById<EditText>(Resource.Id.editText);
+            if (userData != null)
+            {
+                userData.Typeface = font;
+                alert.SetCancelable(false);
+
+
+                TextView? pButton = view?.FindViewById<TextView>(Resource.Id.AddPlaylist_submit);
+                if (pButton != null) pButton.Typeface = font;
+                if (pButton != null)
+                    pButton.Click += (_, _) =>
+                    {
+                        if (userData.Text != null)
+                        {
+                            FileManager.CreatePlaylist(userData.Text);
+                            Toast.MakeText(
+                                    context, userData.Text + " Created successfully",
+                                    ToastLength.Short
+                                )
+                                ?.Show();
+                        }
+
+                        alert.Dispose();
+                        RenderPlaylists();
+                    };
+            }
+
+            TextView? nButton = view?.FindViewById<TextView>(Resource.Id.AddPlaylist_cancel);
+            if (nButton != null) nButton.Typeface = font;
+            
+            AlertDialog? dialog = alert.Create();
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+            if (nButton != null) nButton.Click += (_, _) => dialog?.Cancel();
+            
+            dialog?.Show();
         }
         
         

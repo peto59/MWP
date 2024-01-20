@@ -79,7 +79,12 @@ namespace MWP
             {
                 artist = retreivedSongs[0];
             }
+            
+            RenderAlbumsSongs();
 
+            // NOTE: It's just loading song images it does not have ui for, soo just comment this thread if
+            // you are commenting uncategorized songs, or making the ui not load for uncategorized songs. 
+            /*
             songImagesBuffer.ValueChanged += (_, _) =>
             {
                 ((Activity)context).RunOnUiThread(() =>
@@ -91,6 +96,7 @@ namespace MWP
                         UIRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
                 });
             };
+            */
             
             albumImagesBuffer.ValueChanged += (_, _) =>
             {
@@ -104,8 +110,6 @@ namespace MWP
                 });
             };
             
-
-            RenderAlbumsSongs();
 
 
             return view;
@@ -136,9 +140,12 @@ namespace MWP
 
         
         
-        
+        //TODO: Very big problem error, the key uncategorized cant be found in dictionary, fix!!!
         private void UncategorizedSongsRender(bool visible)
         {
+#if DEBUG
+            MyConsole.WriteLine("Trying to load uncategorized songs");   
+#endif
             UIRenderFunctions.FragmentPositionObject = artist.Albums.Select("Uncategorized")[0];
             songTilesBuffer = new Dictionary<string, LinearLayout?>();
             
@@ -234,10 +241,10 @@ namespace MWP
             {
                 hr.AddView(lin);
                 mainLayout?.AddView(hr);
-                UncategorizedSongsRender(true);
+                // UncategorizedSongsRender(true);
             }
-            else
-                UncategorizedSongsRender(false);
+            // else
+                // UncategorizedSongsRender(false);
             
         }
 

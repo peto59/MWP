@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
                 android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:id="@+id/playlists_fragment_main"
 >
+    
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/playlists_fab"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_margin="20dp"
+            android:backgroundTint="#ff4d29"
+            app:tint="#ffffff"
+            app:borderWidth="0dp"
+            app:srcCompat="@drawable/new_playlist" />
+    
+    
+    
 
 </RelativeLayout>

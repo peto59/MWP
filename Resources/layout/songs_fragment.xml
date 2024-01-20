@@ -97,12 +97,14 @@
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab"
+            android:id="@+id/songs_fab"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
             android:layout_margin="20dp"
+            app:tint="#ffffff"
+            app:borderWidth="0dp"
             android:backgroundTint="#ff4d29"
-            app:srcCompat="@drawable/new_playlist" />
+            app:srcCompat="@drawable/shuffle2" />
 </RelativeLayout>

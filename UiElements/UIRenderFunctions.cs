@@ -45,25 +45,29 @@ namespace MWP
         private static void AreYouSure(
             object sender, EventArgs e, Song song, AlertDialog? di, 
             LinearLayout linFromDelete, LinearLayout? linForDelete, 
-            Context context, SongsFragment songsFragmentContext)
+            Context context, SongsFragment songsFragmentContext, Typeface font)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
-            View? view = ifl?.Inflate(Resource.Layout.are_you_sure_popup, null);
+            View? view = ifl?.Inflate(Resource.Layout.share_are_you_sure, null);
             AlertDialog.Builder alert = new AlertDialog.Builder(context);
             alert.SetView(view);
+            
+            TextView? title = view?.FindViewById<TextView>(Resource.Id.share_are_you_sure_title);
+            TextView? yes = view?.FindViewById<TextView>(Resource.Id.share_are_you_sure_yes);
+            TextView? no = view?.FindViewById<TextView>(Resource.Id.share_are_you_sure_no);
+
+            if (title != null) title.Typeface = font;
+            if (yes != null) yes.Typeface = font;
+            if (no != null) no.Typeface = font;
+
 
             AlertDialog? dialog = alert.Create();
-
-            TextView? txt = view?.FindViewById<TextView>(Resource.Id.are_you_sure_text);
-            txt?.SetTextColor(Color.White);
-            if (txt != null) txt.Text = "Deleting: " + song.Title;
-
-            Button? yes = view?.FindViewById<Button>(Resource.Id.yes_daddy);
-            if (BlendMode.Multiply != null)
-                yes?.Background?.SetColorFilter(
-                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                );
-            yes?.SetTextColor(Color.Black);
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+            
+            title?.SetTextColor(Color.White);
+            if (title != null) title.Text = "Deleting: " + song.Title;
+            
+            yes?.SetTextColor(Color.White);
 
             if (yes != null)
                 yes.Click += delegate
@@ -77,20 +81,18 @@ namespace MWP
                     Toast.MakeText(context, $"{song.Title} has been deleted", ToastLength.Short)?.Show();
                 };
 
-            Button? no = view?.FindViewById<Button>(Resource.Id.you_are_not_sure);
-            if (BlendMode.Multiply != null)
-                no?.Background?.SetColorFilter(
-                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                );
-            no?.SetTextColor(Color.Black);
 
             if (no != null)
-                no.Click += (_, _) => { di?.Hide(); };
+                no.Click += (_, _) =>
+                {
+                    dialog?.Hide();
+                    di?.Hide();
+                };
 
             dialog?.Show();
         }
 
-        private static void ListPlaylistsPopup(Song song, Context context, float scale)
+        private static void ListPlaylistsPopup(Song song, Context context, float scale, Typeface? font)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? view = ifl?.Inflate(Resource.Layout.list_plas_popup, null);
@@ -132,6 +134,7 @@ namespace MWP
                 };
                 
                 TextView name = new TextView(context);
+                name.Typeface = font;
                 name.TextAlignment = TextAlignment.Center;
                 name.SetTextColor(Color.White);
                 name.Text = p;
@@ -141,13 +144,9 @@ namespace MWP
             }
             
             
-            Button? submit = view?.FindViewById<Button>(Resource.Id.submit_plas);
-            if (BlendMode.Multiply != null)
-                submit?.Background?.SetColorFilter(
-                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                );
-            submit?.SetTextColor(Color.Black);
-
+            TextView? submit = view?.FindViewById<TextView>(Resource.Id.submit_plas);
+            submit.Typeface = font;
+            
             if (submit != null)
                 submit.Click += (_, _) =>
                 {
@@ -173,15 +172,12 @@ namespace MWP
                     _selectedPlaylists.Clear();
                 };
 
-            Button? cancel = view?.FindViewById<Button>(Resource.Id.cancel_plas);
-            if (BlendMode.Multiply != null)
-                cancel?.Background?.SetColorFilter(
-                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                );
-            cancel?.SetTextColor(Color.Black);
-
+            TextView? cancel = view?.FindViewById<TextView>(Resource.Id.cancel_plas);
             if (cancel != null)
+            {
+                cancel.Typeface = font;
                 cancel.Click += (_, _) => { dialog?.Hide(); };
+            }
 
 
             dialog?.Show();
@@ -213,15 +209,11 @@ namespace MWP
                 {
                     addToPla.SetTextColor(Color.White);
                     addToPla.Typeface = font;
-                    if (BlendMode.Multiply != null)
-                        addToPla?.Background?.SetColorFilter(
-                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                        );
                     if (addToPla != null)
                         addToPla.Click += (_, _) =>
                         {
                             dialog?.Hide();
-                            ListPlaylistsPopup(song, context, scale);
+                            ListPlaylistsPopup(song, context, scale, font);
                         };
                 }
 
@@ -237,18 +229,6 @@ namespace MWP
                     delete.Typeface = font;
                     edit.Typeface = font;
                     
-                    if (BlendMode.Multiply != null)
-                    {
-                        addToQu?.Background?.SetColorFilter(
-                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                        );
-                        delete?.Background?.SetColorFilter(
-                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                        );
-                        edit?.Background?.SetColorFilter(
-                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                        );
-                    }
 
                     if (addToQu != null)
                         addToQu.Click += (_, _) =>
@@ -262,7 +242,7 @@ namespace MWP
                         {
                             if (songsFragmentContext != null)
                                 AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context,
-                                    songsFragmentContext);
+                                    songsFragmentContext, font);
                         };
 
                     if (edit != null)

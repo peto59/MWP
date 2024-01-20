@@ -135,12 +135,17 @@ namespace MWP
             /*
              * Handle floating button for creating new playlist
              */
-            FloatingActionButton? createPlaylist = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.fab);
+            FloatingActionButton? createPlaylist = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.songs_fab);
             if (BlendMode.Multiply != null)
                 createPlaylist?.Background?.SetColorFilter(
                     new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
                 );
-            if (createPlaylist != null) createPlaylist.Click += CreatePlaylistPopup;
+            if (createPlaylist != null) createPlaylist.Click += delegate
+            {
+                MainActivity.ServiceConnection.Binder?.Service.Shuffle(
+                    !MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false);
+                MainActivity.ServiceConnection.Binder?.Service.Play();
+            };
 
             
             /*
@@ -365,51 +370,6 @@ namespace MWP
         
         
         
-        private void CreatePlaylistPopup(object sender, EventArgs e)
-        {
-            LayoutInflater? ifl = LayoutInflater.From(context);
-            View? view = ifl?.Inflate(Resource.Layout.new_playlist_popup, null);
-            AlertDialog.Builder alert = new AlertDialog.Builder(context);
-            alert.SetView(view);
-
-            TextView? dialogTitle = view?.FindViewById<TextView>(Resource.Id.AddPlaylist_title);
-            if (dialogTitle != null) dialogTitle.Typeface = font;
-
-            EditText? userData = view?.FindViewById<EditText>(Resource.Id.editText);
-            if (userData != null)
-            {
-                userData.Typeface = font;
-                alert.SetCancelable(false);
-
-
-                TextView? pButton = view?.FindViewById<TextView>(Resource.Id.AddPlaylist_submit);
-                if (pButton != null) pButton.Typeface = font;
-                if (pButton != null)
-                    pButton.Click += (_, _) =>
-                    {
-                        if (userData.Text != null)
-                        {
-                            FileManager.CreatePlaylist(userData.Text);
-                            Toast.MakeText(
-                                    context, userData.Text + " Created successfully",
-                                    ToastLength.Short
-                                )
-                                ?.Show();
-                        }
-
-                        alert.Dispose();
-                    };
-            }
-
-            TextView? nButton = view?.FindViewById<TextView>(Resource.Id.AddPlaylist_cancel);
-            if (nButton != null) nButton.Typeface = font;
-            
-            AlertDialog? dialog = alert.Create();
-            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
-            if (nButton != null) nButton.Click += (_, _) => dialog?.Cancel();
-            
-            dialog?.Show();
-        }
 
 
         /// <summary>

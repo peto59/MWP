@@ -111,10 +111,12 @@ namespace MWP
 							if (MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false)
 							{
 								lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("shuffle_on.png")));
+								//lastImage.SetImageResource(Resource.Drawable.shuffle2);
 							}
 							else
 							{
 								lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("shuffle.png")));
+								//lastImage.SetImageResource(Resource.Drawable.no_shuffle2);
 							}
 							
 							break;
@@ -127,13 +129,13 @@ namespace MWP
 							switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? LoopState.None)
 							{
 								case LoopState.None:
-									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
+									lastImage.SetImageResource(Resource.Drawable.no_repeat);
 									break;
 								case LoopState.All:
-									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
+									lastImage.SetImageResource(Resource.Drawable.repeat);
 									break;
 								case LoopState.Single:
-									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
+									lastImage.SetImageResource(Resource.Drawable.repeat_one);
 									break;
 							}
 							break;
