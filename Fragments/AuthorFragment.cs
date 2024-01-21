@@ -5,12 +5,13 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Android.Content.Res;
 using Android.Graphics;
-using Android.Util;
-using Java.Util;
+using Bitmap = Android.Graphics.Bitmap;
+using Color = Android.Graphics.Color;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
 #if DEBUG
@@ -28,9 +29,10 @@ namespace MWP
     {
         private readonly float scale;
         private readonly Context context;
-        private RelativeLayout? mainLayout;
-        private Artist artist;
+        private LinearLayout? mainLayout;
+        private Artist artist = null!;
         private AssetManager? assets;
+        private Typeface? font;
 
         private Dictionary<LinearLayout?, object> albumButtons = new Dictionary<LinearLayout?, object>();
         private Dictionary<LinearLayout?, Guid> songButtons = new Dictionary<LinearLayout?, Guid>();
@@ -54,6 +56,8 @@ namespace MWP
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
             albumFragment = new AlbumFragment(ctx, this.assets);
             
+            font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
+            
             albumImagesBuffer = new ObservableDictionary<string, Bitmap>();
             songImagesBuffer = new ObservableDictionary<string, Bitmap>();
             albumTilesBuffer = new Dictionary<string, LinearLayout?>();
@@ -71,7 +75,7 @@ namespace MWP
         {
             View? view = inflater.Inflate(Resource.Layout.author_fragment, container, false);
 
-            mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.author_fragment_main);
+            mainLayout = view?.FindViewById<LinearLayout>(Resource.Id.author_fragment_main);
 
             string? title = Arguments?.GetString("title");
             List<Artist> retreivedSongs = MainActivity.StateHandler.Artists.Search(title);
@@ -84,32 +88,37 @@ namespace MWP
 
             // NOTE: It's just loading song images it does not have ui for, soo just comment this thread if
             // you are commenting uncategorized songs, or making the ui not load for uncategorized songs. 
-            /*
-            songImagesBuffer.ValueChanged += (_, _) =>
-            {
-                ((Activity)context).RunOnUiThread(() =>
-                {
-                    string last = songImagesBuffer.Items.Keys.Last();
 
-                    LinearLayout? child = songTilesBuffer?[last] ?? new LinearLayout(context);
-                    if (assets != null)
-                        UIRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
-                });
-            };
-            */
-            
-            albumImagesBuffer.ValueChanged += (_, _) =>
-            {
-                ((Activity)context).RunOnUiThread(() =>
+            if (songImagesBuffer != null)
+                songImagesBuffer.ValueChanged += (_, _) =>
                 {
-                    string last = albumImagesBuffer.Items.Keys.Last();
+                    ((Activity)context).RunOnUiThread(() =>
+                    {
+                        string last = songImagesBuffer.Items.Keys.Last();
 
-                    LinearLayout? child = albumTilesBuffer?[last] ?? new LinearLayout(context);
-                    if (assets != null)
-                        UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
-                });
-            };
-            
+                        LinearLayout child = songTilesBuffer?[last] ?? new LinearLayout(context);
+                        if (assets != null)
+                            UIRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
+                    });
+                };
+
+
+            if (albumImagesBuffer != null)
+                albumImagesBuffer.ValueChanged += (_, _) =>
+                {
+                    ((Activity)context).RunOnUiThread(() =>
+                    {
+                        string last = albumImagesBuffer.Items.Keys.Last();
+
+                        MyConsole.WriteLine($"{last}");
+                        if (!last.Equals("Uncategorized"))
+                        {
+                            LinearLayout child = albumTilesBuffer?[last] ?? new LinearLayout(context);
+                            if (assets != null)
+                                UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
+                        }
+                    });
+                };
 
 
             return view;
@@ -122,6 +131,7 @@ namespace MWP
         {
             base.OnViewCreated(view, savedInstanceState);
 
+            
             Task.Run(async () =>
             {
                 await UIRenderFunctions.LoadSongImages(artist.Albums.Select("Uncategorized")[0].Songs, songImagesBuffer,
@@ -129,6 +139,8 @@ namespace MWP
                 
                 UIRenderFunctions.FillImageHoles(context, songTilesBuffer, songImagesBuffer, assets);
             });
+            
+            
             Task.Run(async () =>
             {
                 await UIRenderFunctions.LoadSongImages(artist.Albums, albumImagesBuffer,
@@ -141,20 +153,19 @@ namespace MWP
         
         
         //TODO: Very big problem error, the key uncategorized cant be found in dictionary, fix!!!
+        
         private void UncategorizedSongsRender(bool visible)
         {
-#if DEBUG
-            MyConsole.WriteLine("Trying to load uncategorized songs");   
-#endif
+
             UIRenderFunctions.FragmentPositionObject = artist.Albums.Select("Uncategorized")[0];
             songTilesBuffer = new Dictionary<string, LinearLayout?>();
             
             ScrollView songsScroll = new ScrollView(context);
-            RelativeLayout.LayoutParams songsScrollParams = new RelativeLayout.LayoutParams(
+            LinearLayout.LayoutParams songsScrollParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
                 ViewGroup.LayoutParams.MatchParent
             );
-            songsScrollParams.SetMargins(0, visible ? (int)(300 * scale + 0.5f) : (int)(50 * scale + 0.5f), 0, 0);
+            songsScrollParams.SetMargins(0, visible ? (int)(0 * scale + 0.5f) : (int)(50 * scale + 0.5f), 0, 0);
             songsScroll.LayoutParameters = songsScrollParams;
             
 
@@ -169,7 +180,7 @@ namespace MWP
 
             int[] buttonMargins = { 50, 50, 50, 50 };
             int[] nameMargins = { 50, 50, 50, 50 };
-            int[] cardMargins = { 0, 50, 0, 0 };
+            int[] cardMargins = { 0, 0, 0, 50 };
 
 
             List<Song> uncategorized = artist.Albums.Select("Uncategorized")[0].Songs;
@@ -197,9 +208,9 @@ namespace MWP
             albumTilesBuffer = new Dictionary<string, LinearLayout?>();
             
             HorizontalScrollView hr = new HorizontalScrollView(context);
-            int hrHeight = (int)(240 * scale + 0.5f);;
+            int hrHeight = (int)(240 * scale + 0.5f);
             
-            RelativeLayout.LayoutParams hrParams = new RelativeLayout.LayoutParams(
+            LinearLayout.LayoutParams hrParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MatchParent,
                 hrHeight
             );
@@ -235,16 +246,49 @@ namespace MWP
                     }
                 }
             }
+
+            TextView labelUncategorized = new TextView(context);
+            labelUncategorized.Text = "Uncategorized Songs";
+            labelUncategorized.TextSize = 20;
+            labelUncategorized.Typeface = font;
+            labelUncategorized.SetTextColor(new Color(0, 0, 0));
+            LinearLayout.LayoutParams labelUncategorizedParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                ViewGroup.LayoutParams.WrapContent
+            );
+            labelUncategorizedParams.SetMargins(20, 50, 20, 50);
+            labelUncategorized.LayoutParameters = labelUncategorizedParams;
+            labelUncategorized.SetBackgroundResource(Resource.Drawable.rounded_view_white);
+            labelUncategorized.SetPadding(30, 30, 30, 30);
             
+            
+            TextView labelAthorsAlbum = new TextView(context);
+            labelAthorsAlbum.Text = $"{artist.Title}'s Albums";
+            labelAthorsAlbum.TextSize = 20;
+            labelAthorsAlbum.Typeface = font;
+            labelAthorsAlbum.SetTextColor(new Color(0, 0, 0));
+            LinearLayout.LayoutParams labelAthorsAlbumParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                ViewGroup.LayoutParams.WrapContent
+            );
+            labelAthorsAlbumParams.SetMargins(20, 50, 20, 0);
+            labelAthorsAlbum.LayoutParameters = labelAthorsAlbumParams;
+            labelAthorsAlbum.SetBackgroundResource(Resource.Drawable.rounded_view_white);
+            labelAthorsAlbum.SetPadding(30, 30, 30, 30);
             
             if (artist.Albums.Count > 1)
             {
                 hr.AddView(lin);
+                mainLayout?.AddView(labelAthorsAlbum);
                 mainLayout?.AddView(hr);
-                // UncategorizedSongsRender(true);
+                mainLayout?.AddView(labelUncategorized);
+                UncategorizedSongsRender(true);
             }
-            // else
-                // UncategorizedSongsRender(false);
+            else
+            {
+                mainLayout?.AddView(labelUncategorized);
+                UncategorizedSongsRender(false);
+            }
             
         }
 

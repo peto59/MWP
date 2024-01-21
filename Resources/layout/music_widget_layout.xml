@@ -61,7 +61,7 @@
             <TextView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:background="@drawable/shuffle2"
+                    android:background="@drawable/shuffle_off"
                     android:backgroundTint="#ffffff"
                     android:layout_marginRight="10dp"
                     android:id="@+id/widgetShuffleButton"

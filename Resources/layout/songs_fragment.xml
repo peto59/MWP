@@ -76,21 +76,11 @@
         />
         <TextView android:layout_width="70dp"
                   android:layout_height="40dp"
-                  android:background="@drawable/noround_button"
+                  android:background="@drawable/rounded_button_right"
                   android:id="@+id/old_order_btn"
                   android:text="Old"
                   android:textColor="#ffffff"
                   android:textAlignment="center"
-                  android:gravity="center"
-        />
-        <TextView android:layout_width="70dp"
-                  android:layout_height="40dp"
-                  android:background="@drawable/rounded_button_right"
-                  android:id="@+id/reset_order_btn"
-                  android:text="Re"
-                  android:textColor="#ffffff"
-                  android:textAlignment="center"
-                  android:layout_marginLeft="1dp"
                   android:gravity="center"
         />
         
@@ -106,5 +96,5 @@
             app:tint="#ffffff"
             app:borderWidth="0dp"
             android:backgroundTint="#ff4d29"
-            app:srcCompat="@drawable/shuffle2" />
+            app:srcCompat="@drawable/shuffle_off" />
 </RelativeLayout>

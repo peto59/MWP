@@ -75,7 +75,7 @@ namespace MWP
         /// shuffle symbol
         /// </summary>
         public static Bitmap ShuffleImage =>
-            _shuffleImage ??= BitmapFactory.DecodeResource(Application.Context.Resources, Resource.Drawable.shuffle2) ??
+            _shuffleImage ??= BitmapFactory.DecodeResource(Application.Context.Resources, Resource.Drawable.shuffle_off) ??
                               Placeholder;
     }
     /// <summary>

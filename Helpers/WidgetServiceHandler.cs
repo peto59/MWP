@@ -98,8 +98,8 @@ namespace MWP
         {
             remoteViews?.SetInt(Resource.Id.widgetShuffleButton, "setBackgroundResource",
                 MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false 
-                ? Resource.Drawable.shuffle2
-                : Resource.Drawable.no_shuffle2
+                ? Resource.Drawable.shuffle_off
+                : Resource.Drawable.shuffle_on
             );
         }
 

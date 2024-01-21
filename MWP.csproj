@@ -190,7 +190,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
-    <AndroidResource Include="Resources\drawable\no_shuffle2.xml">
+    <AndroidResource Include="Resources\drawable\shuffle_on.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
@@ -228,7 +228,7 @@
     <AndroidResource Include="Resources\drawable\save.xml" />
     <AndroidResource Include="Resources\drawable\settings.xml" />
     <AndroidResource Include="Resources\drawable\share.xml" />
-    <AndroidResource Include="Resources\drawable\shuffle2.xml">
+    <AndroidResource Include="Resources\drawable\shuffle_off.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>

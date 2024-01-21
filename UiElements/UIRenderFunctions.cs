@@ -705,7 +705,7 @@ namespace MWP
             TextView? currentTitle = (TextView)child?.GetChildAt(1)!;
             if (currentTitle.Text != null && images.Items.ContainsKey(currentTitle.Text))
             {
-                // MyConsole.WriteLine($"{images.Items?[currentTitle.Text]} <<>> {currentTitle.Text}");
+                MyConsole.WriteLine($"{images.Items?[currentTitle.Text]} <<>> {currentTitle.Text}");
                 if (((BitmapDrawable)currentImage?.Drawable!)?.Bitmap != images.Items?[currentTitle.Text]) 
                     currentImage?.SetImageBitmap(images.Items?[currentTitle.Text]);
             }

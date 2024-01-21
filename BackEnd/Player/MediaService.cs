@@ -191,7 +191,7 @@ namespace MWP.BackEnd.Player
 					_ => Resource.Drawable.no_repeat
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
-				stateBuilder.AddCustomAction("shuffle", "shuffle", QueueObject.IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", QueueObject.IsShuffled ? Resource.Drawable.shuffle_on : Resource.Drawable.shuffle_off);
 				session?.SetPlaybackState(stateBuilder.Build());
 			}
 
@@ -333,7 +333,7 @@ namespace MWP.BackEnd.Player
 					_ => Resource.Drawable.no_repeat
 				};
 				stateBuilder.AddCustomAction("loop", "loop", icon);
-				stateBuilder.AddCustomAction("shuffle", "shuffle", QueueObject.IsShuffled ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2);
+				stateBuilder.AddCustomAction("shuffle", "shuffle", QueueObject.IsShuffled ? Resource.Drawable.shuffle_on : Resource.Drawable.shuffle_off);
 				stateBuilder.SetActiveQueueItemId(QueueObject.Index);
 				session?.SetPlaybackState(stateBuilder.Build());
 			}

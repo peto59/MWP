@@ -19,6 +19,7 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.Media;
 using Android.Provider;
+using Android.Util;
 using Android.Views.InputMethods;
 using Android.Widget;
 using AndroidX.Core.Content;
@@ -121,6 +122,9 @@ namespace MWP
             toggle.SyncState();
 
             NavigationView? navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
+            DisplayMetrics metric = new DisplayMetrics();
+            WindowManager?.DefaultDisplay?.GetMetrics(metric);
+            navigationView.LayoutParameters.Width = metric.WidthPixels;
             navigationView?.SetNavigationItemSelectedListener(this);
 
             if (Assets != null)

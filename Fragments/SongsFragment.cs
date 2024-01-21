@@ -168,21 +168,18 @@ namespace MWP
             TextView? zA = view?.FindViewById<TextView>(Resource.Id.Z_A_btn);
             TextView? newDate = view?.FindViewById<TextView>(Resource.Id.new_order_btn);
             TextView? oldDate = view?.FindViewById<TextView>(Resource.Id.old_order_btn);
-            TextView? reset = view?.FindViewById<TextView>(Resource.Id.reset_order_btn);
 
             if (aZ != null) aZ.Typeface = font;
             if (zA != null) zA.Typeface = font;
             if (newDate != null) newDate.Typeface = font;
             if (oldDate != null) oldDate.Typeface = font;
-            if (reset != null) reset.Typeface = font;
 
-            if (aZ != null && zA != null && newDate != null && oldDate != null && reset != null)
+            if (aZ != null && zA != null && newDate != null && oldDate != null)
             {
                 aZ.Typeface = font;
                 zA.Typeface = font;
                 newDate.Typeface = font;
                 oldDate.Typeface = font;
-                reset.Typeface = font;
                 
                 aZ.Click += delegate
                 {
@@ -203,11 +200,6 @@ namespace MWP
                 {
                     _allSongsLnMain?.RemoveAllViews();
                     RenderSongs(MainActivity.StateHandler.Songs.OrderByDate(true));
-                };
-                reset.Click += delegate
-                {
-                    _allSongsLnMain?.RemoveAllViews();
-                    RenderSongs(MainActivity.StateHandler.Songs.OrderByDate());
                 };
             }
        
@@ -316,6 +308,7 @@ namespace MWP
                     
             }
 
+            /*
             decimal percentage = ((decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count) * 100;
             #if DEBUG
             MyConsole.WriteLine($"Percentage of Loaded Songs {_lazyImageBuffer.Items.Count} / {_lazyBuffer.Count} = {(decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count}");
@@ -328,44 +321,10 @@ namespace MWP
                     if (_assets != null) UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
                 }
             }
-          
-            /*
-            var viewTreeObserver = _allSongsLnMain?.ViewTreeObserver;
-            if (viewTreeObserver is { IsAlive: true })
-            {
-                viewTreeObserver.AddOnScrollChangedListener(new MyScrollListener());
-            } */
-            
+            */
             
         } 
         
-        private class MyScrollListener : Java.Lang.Object, ViewTreeObserver.IOnScrollChangedListener
-        {
-            public void OnScrollChanged()
-            {
-                
-                _handler.RemoveCallbacksAndMessages(null);
-
-                _handler.PostDelayed(() =>
-                {
-                   if (_allSongsLnMain != null)
-                       if (_lazyBuffer != null)
-                           foreach (var tup in _lazyBuffer)
-                           {
-                               LinearLayout? child = tup.Value;
-                               if (UIRenderFunctions.IsVisible(child))
-                               { 
-                                   UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
-                               }
-                           }
-
-                }, 50);
-                
-            }
-            
-
-        }
-
       
         
         
