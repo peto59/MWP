@@ -170,8 +170,8 @@
                 />
             </LinearLayout>
             
-            <ScrollView android:layout_width="match_parent" android:layout_height="190dp" 
-                        android:background="@drawable/rounded_view_white"
+            <ScrollView android:layout_width="match_parent" android:layout_height="wrap_content" 
+                        android:background="@drawable/rounded_view_white" android:paddingBottom="9dp"
             >
                 <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
                 android:orientation="vertical" android:gravity="center_horizontal">

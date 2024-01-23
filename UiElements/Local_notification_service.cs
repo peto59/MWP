@@ -1,22 +1,13 @@
 ﻿using Android.App;
 using Android.Content;
-using Android.Graphics;
-using Android.Icu.Number;
 using Android.OS;
 using Android.Support.V4.Media.Session;
-using Android.Widget;
-using AndroidX.AppCompat.App;
 using AndroidX.Core.App;
 using System;
-using System.Drawing;
-using System.IO;
-using System.Runtime.Remoting.Contexts;
 using MWP.BackEnd.Player;
-using Xamarin.Essentials;
 //using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
 using Context = Android.Content.Context;
-using TaskStackBuilder = AndroidX.Core.App.TaskStackBuilder;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -25,9 +16,9 @@ namespace MWP
 {
     public class Local_notification_service
     {
-        private const string CHANNEL_ID = "local_notification_channel";
-        private const string CHANNEL_NAME = "Notifications";
-        private const string CHANNEL_DESCRIPTION = "description";
+        private const string ChannelId = "local_notification_channel";
+        private const string ChannelName = "Notifications";
+        private const string ChannelDescription = "description";
 
         private int notification_id = 1;
         public int NotificationId
@@ -155,9 +146,9 @@ namespace MWP
                 return;
             }
 
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationImportance.Low)
+            NotificationChannel channel = new NotificationChannel(ChannelId, ChannelName, NotificationImportance.Low)
             {
-                Description = CHANNEL_DESCRIPTION
+                Description = ChannelDescription
             };
 
             NotificationManager? managerLocal = (NotificationManager?)AndroidApp.Context.GetSystemService(Context.NotificationService);
@@ -182,9 +173,9 @@ namespace MWP
                     (int) (PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable));*/
 
 
-            notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+            notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, ChannelId)
                 .SetSmallIcon(
-                    Resource.Drawable.ic_menu_camera
+                    Resource.Drawable.music
                 )
                 .SetShowWhen(false)
                 //.SetSilent(true)

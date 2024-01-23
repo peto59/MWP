@@ -249,7 +249,8 @@ namespace MWP
             TextView? playlistsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemPlaylists);
             TextView? albumsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemAlbums);
 
-            TextView? downloadNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemDownload);
+            //TextView? downloadNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemDownload);
+            TextView? downloadNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemUpload);
             TextView? shareNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemUpload);
             TextView? settingsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemSettings);
 
