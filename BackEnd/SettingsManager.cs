@@ -1,4 +1,6 @@
-﻿using MWP.DatatypesAndExtensions;
+﻿using System;
+using System.Collections.Generic;
+using MWP.DatatypesAndExtensions;
 using Xamarin.Essentials;
 
 namespace MWP.BackEnd
@@ -11,6 +13,38 @@ namespace MWP.BackEnd
         {
             Preferences.Clear(ShareName);
             RegisterSettings();
+        }
+
+        public static List<(string name, Func<bool> read, Action<bool> write, string? remark)> GetBoolSettings()
+        {
+            return new List<(string name, Func<bool> read, Action<bool> write, string? remark)> {
+                ("Can use network", () => CanUseNetwork == CanUseNetworkState.Allowed, (val) =>
+                {
+                    CanUseNetwork = val
+                        ? CanUseNetworkState.Allowed
+                        : CanUseNetworkState.Rejected;
+                }, "Enabling this will allow other devices on network to see your device"),
+                
+                ("Check for updates", () => CheckUpdates == AutoUpdate.Requested, (val) =>
+                {
+                    CheckUpdates = val
+                        ? AutoUpdate.Requested
+                        : AutoUpdate.Forbidden;
+                }, null),
+            };
+        }
+
+        public static List<(string name, Func<int> read, Action<int> write, Dictionary<string, int>? mapping, string? remark)> GetIntSettings()
+        {
+            return new List<(string name, Func<int> read, Action<int> write, Dictionary<string, int>? mapping, string? remark)> {
+                ("Can use network", () => (int)CanUseNetwork, (val) => { CanUseNetwork = (CanUseNetworkState)val; },
+                    new Dictionary<string, int> {
+                        {"Allowed", (int)CanUseNetworkState.Allowed},
+                        {"Rejected", (int)CanUseNetworkState.Rejected}
+                    }, "Warning: this is test message"
+                ),
+                
+            };
         }
 
         private static void RegisterSettings()
@@ -45,7 +79,7 @@ namespace MWP.BackEnd
         }
         
         //TODO: set to false
-        private static Setting<bool> _canUseWan = new BoolSetting(ShareName, "canUseWan", true);
+        private static Setting<bool> _canUseWan = new BoolSetting(ShareName, "canUseWan", false);
         public static bool CanUseWan
         {
             get => _canUseWan.Value;
