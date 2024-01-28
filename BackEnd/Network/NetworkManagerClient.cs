@@ -211,8 +211,7 @@ namespace MWP.BackEnd.Network
                         {
                             string artistName = Encoding.UTF8.GetString(data);
                             artistImageRequests.Remove(artistName);
-                            string artistAlias = FileManager.GetAlias(artistName);
-                            artistImageRequests.Remove(artistAlias);
+                            artistImageRequests.Remove(FileManager.GetAlias(artistName));
                         }
                         break;
                     case CommandsEnum.AlbumImageNotFound:

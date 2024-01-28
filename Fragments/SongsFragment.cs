@@ -394,7 +394,7 @@ namespace MWP
         
         
         
-        private void add_alias_popup(string authorN)
+        /*private void add_alias_popup(string authorN)
         {
 
             LayoutInflater? ifl = LayoutInflater.From(context);
@@ -422,7 +422,7 @@ namespace MWP
 
 
             dialog?.Show();
-        }
+        }*/
     }
     
     

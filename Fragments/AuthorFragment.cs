@@ -109,8 +109,9 @@ namespace MWP
                     ((Activity)context).RunOnUiThread(() =>
                     {
                         string last = albumImagesBuffer.Items.Keys.Last();
-
+#if DEBUG
                         MyConsole.WriteLine($"{last}");
+#endif
                         if (!last.Equals("Uncategorized"))
                         {
                             LinearLayout child = albumTilesBuffer?[last] ?? new LinearLayout(context);

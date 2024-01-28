@@ -703,9 +703,11 @@ namespace MWP
         {
             ImageView currentImage = (ImageView)child?.GetChildAt(0)!;
             TextView? currentTitle = (TextView)child?.GetChildAt(1)!;
-            if (currentTitle.Text != null && images.Items.ContainsKey(currentTitle.Text))
+            if (images != null && currentTitle.Text != null && images.Items.ContainsKey(currentTitle.Text))
             {
+#if DEBUG
                 MyConsole.WriteLine($"{images.Items?[currentTitle.Text]} <<>> {currentTitle.Text}");
+#endif
                 if (((BitmapDrawable)currentImage?.Drawable!)?.Bitmap != images.Items?[currentTitle.Text]) 
                     currentImage?.SetImageBitmap(images.Items?[currentTitle.Text]);
             }

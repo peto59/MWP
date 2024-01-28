@@ -320,9 +320,10 @@ namespace MWP.BackEnd.Network
             }
             try
             {
-                artistImageRequests.Remove(Encoding.UTF8.GetString(data));
-                string artist = FileManager.GetAlias(Encoding.UTF8.GetString(data));
+                string artist = Encoding.UTF8.GetString(data);
                 artistImageRequests.Remove(artist);
+                string artistAlias = FileManager.GetAlias(artist);
+                artistImageRequests.Remove(artistAlias);
                 string artistPath = FileManager.Sanitize(artist);
                 string imagePath = FileManager.GetAvailableTempFile("networkImage", "image");
                 networkStream.ReadFile(imagePath, length, ref aes, ref encryptor);
@@ -330,7 +331,7 @@ namespace MWP.BackEnd.Network
                 string artistImagePath =
                     $"{FileManager.MusicFolder}/{artistPath}/cover.{imageExtension.TrimStart('.')}";
                 File.Move(imagePath, artistImagePath);
-                List<Artist> artists = MainActivity.StateHandler.Artists.Search(artist);
+                List<Artist> artists = MainActivity.StateHandler.Artists.Search(artistAlias);
                 if (artists.Count > 1)
                 {
                     int artistIndex = MainActivity.StateHandler.Artists.IndexOf(artists[0]);

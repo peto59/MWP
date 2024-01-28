@@ -126,12 +126,13 @@ namespace MWP.BackEnd
                     AddSong(file, _musicFolder != null && !file.Contains(_musicFolder), generateStateHandlerEntry || (_musicFolder != null && !file.Contains(_musicFolder)));
                     
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
 #if DEBUG
                     MyConsole.WriteLine($"error: {file}");
                     MyConsole.WriteLine(ex);
 #endif
+                    // ignored
                 }
             }
         }
@@ -238,10 +239,10 @@ namespace MWP.BackEnd
 
         public static string GetAlias(string name)
         {
+            string json = File.ReadAllText($"{_musicFolder}/aliases.json");
+            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
             while (true)
             {
-                string json = File.ReadAllText($"{_musicFolder}/aliases.json");
-                Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
                 if (aliases.TryGetValue(name, out string alias))
                 {
                     name = alias;
@@ -252,17 +253,17 @@ namespace MWP.BackEnd
                 name = alias;
             }
         }
-
-        // TODO : recursive alias 
-        public static void AddAlias(string name, string target)
+        
+        /*[Obsolete]
+        public static void AddAliasObsolete(string originalName, string newAlias)
         {
-            if(name == target)
+            if(originalName == newAlias)
             {
                 return;
             }
-            string author = Sanitize(target);
+            string author = Sanitize(newAlias);
 
-            string nameFile = Sanitize(name);
+            string nameFile = Sanitize(originalName);
 
             string json = File.ReadAllText($"{_musicFolder}/aliases.json");
             Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
@@ -303,13 +304,12 @@ namespace MWP.BackEnd
                 string[] authors = tfile.Tag.Performers;
                 for (int i = 0; i < authors.Length; i++)
                 {
-                    if (authors[i] == name)
+                    if (authors[i] == originalName)
                     {
-                        authors[i] = target;
+                        authors[i] = newAlias;
                     }
                     else
                     {
-                        //TODO: add symlink move
                         if (i == 0)
                         {
                         }
@@ -319,7 +319,7 @@ namespace MWP.BackEnd
                 tfile.Tag.Performers = authors;
                 tfile.Save();
             }
-        }
+        }*/
 
         public static void CreatePlaylist(string name)
         {
@@ -641,7 +641,7 @@ namespace MWP.BackEnd
                     else
                     {
                         string albumPath = Sanitize(album);
-                        string artistPath = Sanitize(GetAlias(artists[0]));
+                        string artistPath = Sanitize(artists[0]);
                         if(File.Exists($"{_musicFolder}/{artistPath}/{albumPath}/cover.jpg"))
                             albumObj = new Album(album, song, artistList, $"{_musicFolder}/{artistPath}/{albumPath}/cover.jpg");
                         else if(File.Exists($"{_musicFolder}/{artistPath}/{albumPath}/cover.png"))
@@ -720,7 +720,7 @@ namespace MWP.BackEnd
             if (isNew)
             {
                 int newBitrate = tfile.Properties.AudioBitrate;
-                string output = $"{_musicFolder}/{Sanitize(GetAlias(artists[0]))}";
+                string output = $"{_musicFolder}/{Sanitize(artists[0])}";
                 if (!string.IsNullOrEmpty(album))
                 {
                     output = $"{output}/{Sanitize(album)}";
@@ -748,6 +748,7 @@ namespace MWP.BackEnd
 #if DEBUG
                     MyConsole.WriteLine(e);
 #endif
+                    //ignored
                 }
                 path = output;
             }
@@ -757,13 +758,13 @@ namespace MWP.BackEnd
                 AddSong(path, title, artists, album, generateStateHandlerEntry, isNew, remoteHostname);
             }
 
-            List<string> missingArtists = (from artist in artists let artistPath = $"{_musicFolder}/{Sanitize(GetAlias(artist))}" where !File.Exists($"{artistPath}/cover.jpg") && !File.Exists($"{artistPath}/cover.png") select artist).ToList();
+            List<string> missingArtists = (from artist in artists let artistPath = $"{_musicFolder}/{Sanitize(artist)}" where !File.Exists($"{artistPath}/cover.jpg") && !File.Exists($"{artistPath}/cover.png") select artist).ToList();
             if (!string.IsNullOrEmpty(album))
             {
-                string albumPath = $"{_musicFolder}/{Sanitize(GetAlias(artists[0]))}/{Sanitize(album)}";
+                string albumPath = $"{_musicFolder}/{Sanitize(artists[0])}/{Sanitize(album)}";
                 if (!File.Exists($"{albumPath}/cover.jpg") && !File.Exists($"{albumPath}/cover.png"))
                 {
-                    return (missingArtists, (album, Sanitize(GetAlias(artists[0]))));
+                    return (missingArtists, (album, Sanitize(artists[0])));
                 }
             }
             return (missingArtists, (string.Empty, string.Empty));
@@ -795,7 +796,7 @@ namespace MWP.BackEnd
             }
             
             
-            string output = $"{_musicFolder}/{Sanitize(GetAlias(artists[0]))}";
+            string output = $"{_musicFolder}/{Sanitize(artists[0])}";
             if (!string.IsNullOrEmpty(album))
             {
                 output = $"{output}/{Sanitize(album!)}";
@@ -910,6 +911,7 @@ namespace MWP.BackEnd
 #if DEBUG
                 MyConsole.WriteLine(e);
 #endif
+                //ignored
             }
         }
         
@@ -927,6 +929,7 @@ namespace MWP.BackEnd
 #if DEBUG
                 MyConsole.WriteLine(e);
 #endif
+                //ignored
             }
         }
     }

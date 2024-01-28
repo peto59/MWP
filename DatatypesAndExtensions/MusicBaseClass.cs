@@ -94,7 +94,7 @@ namespace MWP
         /// <summary>
         /// Name of object
         /// </summary>
-        public abstract string Title { get; }
+        public abstract string Title { get; protected internal set; }
         /// <summary>
         /// Image for this object
         /// </summary>
