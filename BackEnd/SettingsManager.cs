@@ -31,17 +31,25 @@ namespace MWP.BackEnd
                         ? AutoUpdate.Requested
                         : AutoUpdate.Forbidden;
                 }, null),
+                
+                ("Move sing files to hierarchy", () => MoveFiles == MoveFilesEnum.Yes, (val) =>
+                {
+                    MoveFiles = val
+                        ? MoveFilesEnum.Yes
+                        : MoveFilesEnum.No;
+                }, null),
             };
         }
 
         public static List<(string name, Func<int> read, Action<int> write, Dictionary<string, int>? mapping, string? remark)> GetIntSettings()
         {
             return new List<(string name, Func<int> read, Action<int> write, Dictionary<string, int>? mapping, string? remark)> {
-                ("Can use network", () => (int)CanUseNetwork, (val) => { CanUseNetwork = (CanUseNetworkState)val; },
+                ("Discover missing metadata", () => (int)ShouldUseChromaprintAtDiscover, (val) => { ShouldUseChromaprintAtDiscover = (UseChromaprint)val; },
                     new Dictionary<string, int> {
-                        {"Allowed", (int)CanUseNetworkState.Allowed},
-                        {"Rejected", (int)CanUseNetworkState.Rejected}
-                    }, "Warning: this is test message"
+                        {"Disable", (int)UseChromaprint.No},
+                        {"Manual", (int)UseChromaprint.Manual},
+                        {"Automatic", (int)UseChromaprint.Automatic}
+                    }, "Setting to Automatic can produce weird tags"
                 ),
                 
             };
@@ -49,11 +57,19 @@ namespace MWP.BackEnd
 
         private static void RegisterSettings()
         {
+            _moveFiles = new IntSetting(ShareName, "MoveFiles", (int)MoveFilesEnum.None);
             _shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
-            _shouldUseChromaprintAtDiscover = new BoolSetting(ShareName, "ShouldUseChromaprintAtDiscover", true);
+            _shouldUseChromaprintAtDiscover = new IntSetting(ShareName, "ShouldUseChromaprintAtDiscover", (int)UseChromaprint.None);
             _canUseNetwork = new IntSetting(ShareName, "canUseNetwork", (int)CanUseNetworkState.None);
             _defaultDownloadAction = new IntSetting(ShareName, "defaultDownloadAction", (int)DownloadActions.DownloadOnly);
             _checkUpdates = new IntSetting(ShareName, "checkUpdates", (int)AutoUpdate.NoState);
+        }
+        
+        private static Setting<int> _moveFiles = new IntSetting(ShareName, "MoveFiles", (int)MoveFilesEnum.None);
+        public static MoveFilesEnum MoveFiles
+        {
+            get => (MoveFilesEnum)_moveFiles.Value;
+            set => _moveFiles.Value = (int)value;
         }
 
         private static Setting<bool> _shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
@@ -63,11 +79,11 @@ namespace MWP.BackEnd
             set => _shouldUseChromaprintAtDownload.Value = value;
         }
 
-        private static Setting<bool> _shouldUseChromaprintAtDiscover = new BoolSetting(ShareName, "ShouldUseChromaprintAtDiscover", true);
-        public static bool ShouldUseChromaprintAtDiscover
+        private static Setting<int> _shouldUseChromaprintAtDiscover = new IntSetting(ShareName, "ShouldUseChromaprintAtDiscover", (int)UseChromaprint.None);
+        public static UseChromaprint ShouldUseChromaprintAtDiscover
         {
-            get => _shouldUseChromaprintAtDiscover.Value;
-            set => _shouldUseChromaprintAtDiscover.Value = value;
+            get => (UseChromaprint)_shouldUseChromaprintAtDiscover.Value;
+            set => _shouldUseChromaprintAtDiscover.Value = (int)value;
         }
         
         

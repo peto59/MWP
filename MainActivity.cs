@@ -124,8 +124,11 @@ namespace MWP
             NavigationView? navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             DisplayMetrics metric = new DisplayMetrics();
             WindowManager?.DefaultDisplay?.GetMetrics(metric);
-            navigationView.LayoutParameters.Width = metric.WidthPixels;
-            navigationView?.SetNavigationItemSelectedListener(this);
+            if (navigationView != null)
+            {
+                if (navigationView.LayoutParameters != null) navigationView.LayoutParameters.Width = metric.WidthPixels;
+                navigationView?.SetNavigationItemSelectedListener(this);
+            }
 
             if (Assets != null)
             {
@@ -201,6 +204,89 @@ namespace MWP
                 {
                     remainingDialogsBeforeRequestingPermissions++;
                     SettingsManager.CanUseNetwork = CanUseNetworkState.Rejected;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+            }
+            
+            if (SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.None)
+            {
+                remainingDialogsBeforeRequestingPermissions--;
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.SetTitle("Automatic metadata discover");
+                builder.SetMessage("Would you like to enable searching for metadata such as Artist and Album for your songs on the internet?");
+
+                builder.SetPositiveButton("Yes", delegate
+                {
+                    AlertDialog.Builder builder2 = new AlertDialog.Builder(this);
+                    builder2.SetTitle("Precise searching");
+                    builder2.SetMessage("Would you like to have precise metadata searching with need to manually confirm each new tag or automatic which can produce unexpected tags?");
+
+                    builder2.SetPositiveButton("Manual", delegate
+                    {
+                        remainingDialogsBeforeRequestingPermissions++;
+                        SettingsManager.ShouldUseChromaprintAtDiscover = UseChromaprint.Manual;
+                        if (remainingDialogsBeforeRequestingPermissions == 0)
+                        {
+                            RequestMyPermission();
+                        }
+                    });
+
+                    builder2.SetNegativeButton("Automatic", delegate
+                    {
+                        remainingDialogsBeforeRequestingPermissions++;
+                        SettingsManager.ShouldUseChromaprintAtDiscover = UseChromaprint.Automatic;
+                        if (remainingDialogsBeforeRequestingPermissions == 0)
+                        {
+                            RequestMyPermission();
+                        }
+                    });
+
+                    AlertDialog dialog2 = builder2.Create();
+                    dialog2.Show();
+                });
+
+                builder.SetNegativeButton("No", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.ShouldUseChromaprintAtDiscover = UseChromaprint.No;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+            }
+            
+            if (SettingsManager.MoveFiles == MoveFilesEnum.None)
+            {
+                remainingDialogsBeforeRequestingPermissions--;
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.SetTitle("File moving");
+                builder.SetMessage("Would you like to enable moving of files into hierarchy based on metadata into Music folder?");
+
+                builder.SetPositiveButton("Yes", delegate
+                {
+                    //TODO: would you like to edit excluded folders?
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.MoveFiles = MoveFilesEnum.Yes;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                builder.SetNegativeButton("No", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.MoveFiles = MoveFilesEnum.No;
                     if (remainingDialogsBeforeRequestingPermissions == 0)
                     {
                         RequestMyPermission();

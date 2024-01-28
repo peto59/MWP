@@ -6,6 +6,7 @@ using System.Text;
 using Android.App;
 using Android.Views;
 using Google.Android.Material.Snackbar;
+using MWP.DatatypesAndExtensions;
 using Newtonsoft.Json;
 using TagLib;
 using TagLib.Id3v2;
@@ -684,7 +685,7 @@ namespace MWP.BackEnd
                     tfile.Save();
                 }
             }
-            else if(SettingsManager.ShouldUseChromaprintAtDiscover)
+            else if (SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Manual || SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Automatic)
             {
                 title = "";
             }
@@ -704,7 +705,7 @@ namespace MWP.BackEnd
             {
                 artists = tfile.Tag.AlbumArtists;
             }
-            else if (SettingsManager.ShouldUseChromaprintAtDiscover)
+            else if (SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Manual || SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Automatic)
             {
                 artists = new[] { "No Artist" };
             }

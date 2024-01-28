@@ -100,6 +100,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
+    <Compile Include="BackEnd\Chromaprint.cs" />
     <Compile Include="BackEnd\Network\Commands.cs" />
     <Compile Include="BackEnd\Network\Datatypes.cs" />
     <Compile Include="BackEnd\Network\Extensions.cs" />
