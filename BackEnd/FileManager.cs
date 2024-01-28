@@ -719,6 +719,7 @@ namespace MWP.BackEnd
             string album = tfile.Tag.Album;
             if (isNew)
             {
+                int newBitrate = tfile.Properties.AudioBitrate;
                 string output = $"{_musicFolder}/{Sanitize(GetAlias(artists[0]))}";
                 if (!string.IsNullOrEmpty(album))
                 {
@@ -732,6 +733,15 @@ namespace MWP.BackEnd
                     MyConsole.WriteLine("Moving " + path);
 #endif
                     File.Move(path, output);
+                }
+                catch (IOException ioe)
+                {
+                    using TagLib.File tfileDest = TagLib.File.Create(path, ReadStyle.PictureLazy);
+                    if (newBitrate > tfileDest.Properties.AudioBitrate)
+                    {
+                        File.Delete(output);
+                        File.Move(path, output);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -795,6 +805,8 @@ namespace MWP.BackEnd
                     tfile.Tag.MusicBrainzReleaseGroupId = releaseGroupId;
                 }
             }
+
+            int newBitrate = tfile.Properties.AudioBitrate;
             tfile.Save();
             Directory.CreateDirectory(output);
             output = $"{output}/{Sanitize(title)}.mp3";
@@ -802,7 +814,16 @@ namespace MWP.BackEnd
             {
                 File.Move(path, output);
             }
-            catch
+            catch (IOException ioe)
+            {
+                using TagLib.File tfileDest = TagLib.File.Create(path, ReadStyle.PictureLazy);
+                if (newBitrate > tfileDest.Properties.AudioBitrate)
+                {
+                    File.Delete(output);
+                    File.Move(path, output);
+                }
+            }
+            catch (Exception e)
             {
                 File.Delete(path);
 #if DEBUG
