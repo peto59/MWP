@@ -158,7 +158,7 @@ namespace MWP
             
             
             /*
-             * Vytvorenie click eventu pre prepinac sluziaci na prepinanie medzi stavom "moze pouzicat WAN" a "nemoze pouzivat WAN"
+             * Vytvorenie click eventu pre switch sluziaci na prepinanie medzi stavom "moze pouzivat WAN" a "nemoze pouzivat WAN"
              */
             SwitchCompat? remoteListeningSwitch = view?.FindViewById<SwitchCompat>(Resource.Id.remote_listening_switch);
             if (remoteListeningSwitch != null)

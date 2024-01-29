@@ -178,7 +178,6 @@ namespace MWP
                     Resource.Drawable.music
                 )
                 .SetShowWhen(false)
-                //.SetSilent(true)
                 .SetContentIntent(PendingIntent.GetActivity(AndroidApp.Context, 57, songsIntent, PendingIntentFlags.Immutable))
                 .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token));
 

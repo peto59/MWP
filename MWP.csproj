@@ -129,6 +129,7 @@
     <Compile Include="Fragments\AuthorFragment.cs" />
     <Compile Include="Fragments\PlaylistFragment.cs" />
     <Compile Include="Fragments\PlaylistsFragment.cs" />
+    <Compile Include="Fragments\SettingsFragment.cs" />
     <Compile Include="Fragments\ShareFragment.cs" />
     <Compile Include="Fragments\SongsFragment.cs" />
     <Compile Include="Fragments\TagManagerFragment.cs" />
@@ -181,6 +182,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\drawable\dropdown_item.xml" />
     <AndroidResource Include="Resources\drawable\forward.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -261,6 +263,7 @@
     </AndroidResource>
     <AndroidResource Include="Resources\layout\playlists_fragment.xml" />
     <AndroidResource Include="Resources\layout\playlist_fragment.xml" />
+    <AndroidResource Include="Resources\layout\settings_fragment.xml" />
     <AndroidResource Include="Resources\layout\share_are_you_sure.xml" />
     <AndroidResource Include="Resources\layout\share_fragment.xml" />
     <AndroidResource Include="Resources\layout\share_new_port.xml" />

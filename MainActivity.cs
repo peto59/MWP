@@ -83,11 +83,10 @@ namespace MWP
          */
         private YoutubeFragment? youtubeFragment;
         private ShareFragment? shareFragment;
-        
+        private SettingsFragment? settingsFragment;
         private SongsFragment? songsFragment;
         private AlbumAuthorFragment? albumsFragment;
         private PlaylistsFragment? playlistsFragment;
-        
         
         bool activeFragment = false;
         
@@ -324,6 +323,7 @@ namespace MWP
             songsFragment = new SongsFragment(this, Assets);
             albumsFragment = new AlbumAuthorFragment(this, Assets);
             playlistsFragment = new PlaylistsFragment(this, Assets);
+            settingsFragment = new SettingsFragment(this, Assets);
             
             
             /*
@@ -439,9 +439,30 @@ namespace MWP
                     drawer?.CloseDrawer(GravityCompat.Start);
                     Title = "Share";
                 };
-            
+
+            if (settingsNavigationButton != null)
+                settingsNavigationButton.Click += (_, _) =>
+                {
+                    FragmentTransaction fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        if (shareFragment != null)
+                            fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, settingsFragment,
+                                "settingsFragTag");
+                        activeFragment = true;
+                    }
+                    else if (shareFragment != null)
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, settingsFragment,
+                            "settingsFragTag");
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Settings";
+                };
+
             /*
-             * Initialize Widget Service 
+             * Initialize Widget Service
              */
             WidgetServiceHandler.Init(this);
         }
