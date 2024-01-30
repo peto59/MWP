@@ -179,25 +179,7 @@ namespace MWP.BackEnd
         ///</summary>
         public static void Delete(string path)
         {
-            if (IsDirectory(path))
-            {
-                foreach (string playlistName in GetPlaylist())
-                {
-                    foreach(string file in GetSongs(path))
-                    {
-                        DeletePlaylist(playlistName, file);
-                    }
-                }
-                Directory.Delete(path, true);
-            }
-            else
-            {
-                File.Delete(path);
-                foreach (string playlistName in GetPlaylist())
-                {
-                    DeletePlaylist(playlistName, path);
-                }
-            }
+            Directory.Delete(path, IsDirectory(path));
         }
 
         ///<summary>
@@ -322,6 +304,51 @@ namespace MWP.BackEnd
                 tfile.Save();
             }
         }*/
+        
+        ///<summary>
+        ///Gets all playlist names
+        ///</summary>
+        public static List<string> GetPlaylist()
+        {
+            try
+            {
+                string json = File.ReadAllText($"{_musicFolder}/playlists.json");
+                SongJsonConverter customConverter = new SongJsonConverter(true);
+                Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+                return playlists.Keys.ToList();
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                MyConsole.WriteLine(ex);
+#endif
+                return new List<string>();
+            }
+        }
+
+        ///<summary>
+        ///Gets all <see cref="Song"/>s in <paramref name="playlist"/>
+        ///</summary>
+        ///<param name="playlist">Name of playlist from which you want to get songs</param>
+        ///<returns>
+        ///<see cref="List{Song}"/> of <see cref="Song"/>s in <paramref name="playlist"/> or empty <see cref="List{Song}"/> of <see cref="Song"/>s if <paramref name="playlist"/> doesn't exist
+        ///</returns>
+        public static List<Song> GetPlaylist(string playlist)
+        {
+            string json = File.ReadAllText($"{_musicFolder}/playlists.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            if (!playlists.TryGetValue(playlist, out List<Song> playlist1))
+            {
+               return new List<Song>();
+            }
+            foreach (Song song in playlist1)
+            {
+                song.AddPlaylist(playlist);
+            }
+
+            return playlist1;
+        }
 
         public static void CreatePlaylist(string name)
         {
@@ -331,18 +358,20 @@ namespace MWP.BackEnd
             File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
 
-        public static void AddToPlaylist(string name, string song)
+        public static void AddToPlaylist(string name, Song song)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             playlists[name].Add(song);
             File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
 
-        public static void AddToPlaylist(string name, List<string> songs)
+        public static void AddToPlaylist(string name, List<Song> songs)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             playlists[name].AddRange(songs);
             File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
@@ -351,11 +380,12 @@ namespace MWP.BackEnd
         ///<summary>
         ///Deletes <paramref name="song"/> from <paramref name="playlist"/>
         ///</summary>
-        public static void DeletePlaylist(string playlist, string song)
+        public static void DeletePlaylist(string playlist, Song song)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
-            if (!playlists.TryGetValue(playlist, out List<string> playlist1)) return;
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            if (!playlists.TryGetValue(playlist, out List<Song> playlist1)) return;
             playlist1.Remove(song);
             File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
         }
@@ -406,54 +436,6 @@ namespace MWP.BackEnd
         public static void GetPlaceholderFile(string writePath, string name, string extension)
         {
             File.Create($"{writePath}/{name}.{extension}").Close();
-        }
-
-        ///<summary>
-        ///Gets all playlist names
-        ///</summary>
-        public static List<string> GetPlaylist()
-        {
-            try
-            {
-                string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-                Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
-                return playlists.Keys.ToList();
-            }
-            catch (Exception ex)
-            {
-#if DEBUG
-                MyConsole.WriteLine(ex);
-#endif
-                return new List<string>();
-            }
-        }
-
-        ///<summary>
-        ///Gets all <see cref="Song"/>s in <paramref name="playlist"/>
-        ///</summary>
-        ///<param name="playlist">Name of playlist from which you want to get songs</param>
-        ///<returns>
-        ///<see cref="List{Song}"/> of <see cref="Song"/>s in <paramref name="playlist"/> or empty <see cref="List{Song}"/> of <see cref="Song"/>s if <paramref name="playlist"/> doesn't exist
-        ///</returns>
-        public static List<Song> GetPlaylist(string playlist)
-        {
-            string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
-            if (!playlists.TryGetValue(playlist, out List<string> playlist1)) return new List<Song>();
-            List<Song> x = new List<Song>();
-            foreach (string song in playlist1)
-            {
-                List<Song> y = MainActivity.StateHandler.Songs.Where(a => a.Path == song).ToList();
-                if (y.Any())
-                {
-                    x.AddRange(y);
-                }
-                else
-                {
-                    DeletePlaylist(playlist, song);
-                }
-            }
-            return x;
         }
 
         public static void AddTrustedSyncTarget(string host)

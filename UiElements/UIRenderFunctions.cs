@@ -157,7 +157,7 @@ namespace MWP
                             Toast.MakeText(context, "already exists in : " + s, ToastLength.Short)?.Show();
                         else
                         {
-                            FileManager.AddToPlaylist(s, song.Path);
+                            FileManager.AddToPlaylist(s, song);
 
                             Toast.MakeText(
                                     context, "added successfully",

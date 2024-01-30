@@ -41,6 +41,11 @@ namespace MWP
         /// </summary>
         public Album Album => Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
 
+        /// <summary>
+        /// Which playlists ist this song member of
+        /// </summary>
+        public List<string> Playlists { get; } = new List<string>();
+
         /// <inheritdoc />
         public override string Title { get; protected internal set; }
 
@@ -97,6 +102,15 @@ namespace MWP
         {
             if (!Albums.Contains(album))
                 Albums.Add(album);
+        }
+
+        /// <summary>
+        /// Adds <paramref name="playlist"/> to <see cref="MWP.Song.Playlists"/>
+        /// </summary>
+        /// <param name="playlist">playlist to be added to <see cref="MWP.Song.Playlists"/></param>
+        public void AddPlaylist(string playlist)
+        {
+            Playlists.Add(playlist);
         }
         
         /// <summary>
