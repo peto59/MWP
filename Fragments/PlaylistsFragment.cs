@@ -10,8 +10,11 @@ using Android.App;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
+using Android.Text;
+using AndroidX.Core.Text;
 using Google.Android.Material.FloatingActionButton;
 using MWP.BackEnd;
+using MWP.BackEnd.Network;
 using Color = Android.Graphics.Color;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using Orientation = Android.Widget.Orientation;
@@ -92,9 +95,8 @@ namespace MWP
 
 
             List<string> playlists = FileManager.GetPlaylist();
-            Parallel.ForEach(playlists, playlist =>
+            foreach (var playlist in playlists)
             {
-
                 LinearLayout lnIn = new LinearLayout(context);
                 lnIn.Orientation = Orientation.Vertical;
                 lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
@@ -148,15 +150,17 @@ namespace MWP
                     fragmentTransaction.AddToBackStack(null);
                     fragmentTransaction.Commit();
                 };
-                
+
+                lnIn.LongClick += (_, _) =>
+                {
+                    DeletePlaylist(playlist);
+                };
 
                 lnIn.AddView(plaName);
                 lnIn.AddView(songsCount);
 
                 playlistLnMain.AddView(lnIn);
-
-            });
-           
+            }
 
             playlistsScroll.AddView(playlistLnMain);
             mainLayout?.AddView(playlistsScroll);
@@ -173,6 +177,7 @@ namespace MWP
             TextView? dialogTitle = view?.FindViewById<TextView>(Resource.Id.AddPlaylist_title);
             if (dialogTitle != null) dialogTitle.Typeface = font;
 
+            AlertDialog? dialog = alert.Create();
             EditText? userData = view?.FindViewById<EditText>(Resource.Id.editText);
             if (userData != null)
             {
@@ -194,8 +199,9 @@ namespace MWP
                                 )
                                 ?.Show();
                         }
-
+                        
                         alert.Dispose();
+                        dialog?.Cancel();
                         RenderPlaylists();
                     };
             }
@@ -203,7 +209,51 @@ namespace MWP
             TextView? nButton = view?.FindViewById<TextView>(Resource.Id.AddPlaylist_cancel);
             if (nButton != null) nButton.Typeface = font;
             
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+            if (nButton != null) nButton.Click += (_, _) => dialog?.Cancel();
+            
+            dialog?.Show();
+        }
+        
+         private void DeletePlaylist(string playlistName)
+        {
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? view = ifl?.Inflate(Resource.Layout.delete_playlist_popup, null);
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(view);
+
+            TextView? dialogTitle = view?.FindViewById<TextView>(Resource.Id.delete_playlist_title);
+            if (dialogTitle != null) dialogTitle.Typeface = font;
+            
+            dialogTitle?.SetText( Html.FromHtml(
+                $"By performing this action, you will delete playlist: <font color='#fa6648'>{playlistName}" +
+                $"</font>, proceed ?",
+                HtmlCompat.FromHtmlModeLegacy
+            ), TextView.BufferType.Spannable);
+            
             AlertDialog? dialog = alert.Create();
+            
+            TextView? pButton = view?.FindViewById<TextView>(Resource.Id.delete_playlist_submit);
+            if (pButton != null) pButton.Typeface = font;
+            if (pButton != null)
+                pButton.Click += (_, _) =>
+                {
+                    FileManager.DeletePlaylist(playlistName);
+                    Toast.MakeText(
+                            context, playlistName + " Deleted successfully",
+                            ToastLength.Short
+                        )
+                        ?.Show();
+                    
+                    alert.Dispose();
+                    dialog?.Cancel();
+                    RenderPlaylists();
+                };
+
+            TextView? nButton = view?.FindViewById<TextView>(Resource.Id.delete_playlist_cancel);
+            if (nButton != null) nButton.Typeface = font;
+            
+            
             dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
             if (nButton != null) nButton.Click += (_, _) => dialog?.Cancel();
             

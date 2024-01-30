@@ -91,6 +91,7 @@ namespace MWP.BackEnd
             MainActivity.StateHandler.FileListGenerationEvent.WaitOne();
             if (Root != null) DiscoverFiles(Root, generateStateHandlerEntry);
             MainActivity.StateHandler.FileListGenerationEvent.Set();
+            MainActivity.StateHandler.FileListGenerated.Set();
         }
 
         private static void DiscoverFiles(string path, bool generateStateHandlerEntry)

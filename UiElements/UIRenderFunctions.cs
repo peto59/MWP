@@ -731,7 +731,7 @@ namespace MWP
         /// <param name="tiles">List Elementov uzivatelskeho rozhrania (Songs, Albums, Authors) v podobe slovnika v paroch (string, LinearLayout)</param>
         /// <param name="images">List Obrazkov pre elementy uzivatelskeho rozhrania v podobe slovnika v paroch (string, Bitmap)</param>
         /// <param name="assets">staticke subory, assety</param>
-        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout?>? tiles, ObservableDictionary<string, Bitmap>? images, AssetManager? assets)
+        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout> tiles, ObservableDictionary<string, Bitmap>? images, AssetManager? assets)
         {
             
             ((Activity)context).RunOnUiThread(() =>

@@ -49,6 +49,7 @@ namespace MWP.BackEnd
         internal readonly AutoResetEvent ResultEvent = new AutoResetEvent(false);
         //-----------Discovery synchronization event------------------
         internal readonly AutoResetEvent FileListGenerationEvent = new AutoResetEvent(true);
+        internal readonly ManualResetEvent FileListGenerated = new ManualResetEvent(false);
         
 
         //---------------------------------------------------------

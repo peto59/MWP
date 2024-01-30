@@ -256,6 +256,10 @@
     <AndroidResource Include="Resources\layout\content_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\delete_playlist_popup.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\layout\download_notification_single.xml" />
     <AndroidResource Include="Resources\layout\music_widget_layout.xml" />
     <AndroidResource Include="Resources\layout\nav_header_main.xml">
