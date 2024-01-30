@@ -353,9 +353,10 @@ namespace MWP.BackEnd
         public static void CreatePlaylist(string name)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
-            playlists.Add(name, new List<string>());
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            playlists.Add(name, new List<Song>());
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
         public static void AddToPlaylist(string name, Song song)
@@ -364,16 +365,16 @@ namespace MWP.BackEnd
             SongJsonConverter customConverter = new SongJsonConverter(true);
             Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             playlists[name].Add(song);
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
-        public static void AddToPlaylist(string name, List<Song> songs)
+        public static void AddToPlaylist(string name, IEnumerable<Song> songs)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
             SongJsonConverter customConverter = new SongJsonConverter(true);
             Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             playlists[name].AddRange(songs);
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
 
@@ -387,7 +388,7 @@ namespace MWP.BackEnd
             Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             if (!playlists.TryGetValue(playlist, out List<Song> playlist1)) return;
             playlist1.Remove(song);
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
         ///<summary>
@@ -396,9 +397,10 @@ namespace MWP.BackEnd
         public static void DeletePlaylist(string playlist)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             playlists.Remove(playlist);
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
         public static string Sanitize(string value)
