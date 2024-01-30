@@ -11,6 +11,7 @@ using Android.Graphics.Drawables;
 using Android.Text;
 using AndroidX.AppCompat.Widget;
 using AndroidX.Core.Text;
+using Google.Android.Material.FloatingActionButton;
 using MWP.BackEnd;
 using MWP.BackEnd.Network;
 using TagLib.Tiff.Arw;
@@ -35,6 +36,9 @@ namespace MWP
         private List<string> trustedSsids;
         private LinearLayout? trustedNetworkList;
         private LinearLayout? availableHostsList;
+
+        private FloatingActionButton? songPickerFragmentFab;
+        private SongPickerFragment? songPickerFragment;
         
         private enum ShareActionType
         {
@@ -56,6 +60,21 @@ namespace MWP
             MyConsole.WriteLine(NetworkManager.GetAllHosts().ToString());
 #endif
             
+            songPickerFragmentFab = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.share_pick_songs_for_sharing_fab);
+            if (BlendMode.Multiply != null)
+                songPickerFragmentFab?.Background?.SetColorFilter(
+                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+                );
+            if (songPickerFragmentFab != null) songPickerFragmentFab.Click += delegate
+            {
+                var fragmentTransaction = ParentFragmentManager.BeginTransaction();
+
+                if (songPickerFragment != null)
+                    fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, songPickerFragment);
+                fragmentTransaction.AddToBackStack(null);
+                fragmentTransaction.Commit(); 
+            };
+
             return view;
         }
 
@@ -67,6 +86,7 @@ namespace MWP
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             this.assets = assets;
+            this.songPickerFragment = new SongPickerFragment(ctx, assets);
             StateHandler.OnShareFragmentRefresh += RefreshFragment;
         }
 
@@ -107,10 +127,6 @@ namespace MWP
              * zamknutie moznosti pridania novej doveryhodnej siete v pripade ak aktualne siet nie je doveryhodna
              * ak je doveryhodna, pridanie noveho click eventu pre tlacidlo a odomknutie moznosti pridania soveryhodnej siete
              */
-#if DEBUG
-            MyConsole.WriteLine(NetworkManager.Common.CurrentSsid);
-#endif
-            
             if (NetworkManager.Common.CurrentSsid == string.Empty     || 
                 NetworkManager.Common.CurrentSsid == "<unknown ssid>" || 
                 FileManager.IsTrustedSsid(NetworkManager.Common.CurrentSsid)

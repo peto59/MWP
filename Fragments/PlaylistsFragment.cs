@@ -43,7 +43,6 @@ namespace MWP
         public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
             View? view = inflater.Inflate(Resource.Layout.playlists_fragment, container, false);
-            
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.playlists_fragment_main);
 
             RenderPlaylists();

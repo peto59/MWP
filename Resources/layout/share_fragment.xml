@@ -27,6 +27,7 @@
                         android:id="@+id/remote_listening_label"
                 />
                 
+                
         
                 <androidx.appcompat.widget.SwitchCompat
                         android:id="@+id/remote_listening_switch"
@@ -70,9 +71,6 @@
                         android:layout_marginTop="10dp"
                         android:id="@+id/remote_connections_port"
                 />
-                
-                
-                
             </LinearLayout>
             
             <LinearLayout 
@@ -118,11 +116,7 @@
                     android:background="@drawable/rounded_view_white"
                     android:id="@+id/trusted_network_list"
                     android:layout_marginHorizontal="20dp"
-            >
-               
-                
-            </LinearLayout>
-        
+            />
         
         
         
@@ -155,10 +149,22 @@
                     android:background="@drawable/rounded_view_white"
                     android:id="@+id/available_hosts_list"
                     android:layout_marginHorizontal="20dp"
-            >
+            />
         
-        
-            </LinearLayout>
+                
+            
+            
         </LinearLayout>
     </ScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/share_pick_songs_for_sharing_fab"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_margin="20dp"
+            android:backgroundTint="#FFFFFF"
+            app:srcCompat="@drawable/share" />
+    
 </RelativeLayout>

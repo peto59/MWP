@@ -649,7 +649,7 @@ namespace MWP
                     for (int i = 0; i < al.Count; i++)
                     {
                         if (buffer != null && !buffer.Items.ContainsKey(al[i].Title)) 
-                            buffer.AddItem(al[i].Title, al[i].Image);
+                            buffer.AddItem(al[i].Title, WidgetServiceHandler.GetRoundedCornerBitmap(al[i].Image, 50));
                     }
                     break;
                 case LoadImageType.SONG:
@@ -657,7 +657,7 @@ namespace MWP
                     for (int i = 0; i < sg.Count; i++)
                     {
                         if (buffer != null && !buffer.Items.ContainsKey(sg[i].Title)) 
-                            buffer.AddItem(sg[i].Title, sg[i].Image);
+                            buffer.AddItem(sg[i].Title, WidgetServiceHandler.GetRoundedCornerBitmap(sg[i].Image, 50));
                     }
                     break;
                 case LoadImageType.AUTHOR:
@@ -665,7 +665,7 @@ namespace MWP
                     for (int i = 0; i < au.Count; i++)
                     {
                         if (buffer != null && !buffer.Items.ContainsKey(au[i].Title)) 
-                            buffer.AddItem(au[i].Title, au[i].Image);
+                            buffer.AddItem(au[i].Title, WidgetServiceHandler.GetRoundedCornerBitmap(au[i].Image, 50));
                     }
                     break;
             }
@@ -728,7 +728,7 @@ namespace MWP
         /// <param name="tiles">List Elementov uzivatelskeho rozhrania (Songs, Albums, Authors) v podobe slovnika v paroch (string, LinearLayout)</param>
         /// <param name="images">List Obrazkov pre elementy uzivatelskeho rozhrania v podobe slovnika v paroch (string, Bitmap)</param>
         /// <param name="assets">staticke subory, assety</param>
-        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout> tiles, ObservableDictionary<string, Bitmap>? images, AssetManager? assets)
+        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout?> tiles, ObservableDictionary<string, Bitmap>? images, AssetManager? assets)
         {
             
             ((Activity)context).RunOnUiThread(() =>

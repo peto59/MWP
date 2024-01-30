@@ -131,6 +131,7 @@
     <Compile Include="Fragments\PlaylistsFragment.cs" />
     <Compile Include="Fragments\SettingsFragment.cs" />
     <Compile Include="Fragments\ShareFragment.cs" />
+    <Compile Include="Fragments\SongPickerFragment.cs" />
     <Compile Include="Fragments\SongsFragment.cs" />
     <Compile Include="Fragments\TagManagerFragment.cs" />
     <Compile Include="Fragments\YoutubeFragment.cs" />
@@ -277,6 +278,7 @@
     <AndroidResource Include="Resources\layout\share_new_port.xml" />
     <AndroidResource Include="Resources\layout\songs_fragment.xml" />
     <AndroidResource Include="Resources\layout\song_download_selection_dialog.xml" />
+    <AndroidResource Include="Resources\layout\song_picker_fragment.xml" />
     <AndroidResource Include="Resources\layout\tag_manager_fragment.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
