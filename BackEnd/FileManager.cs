@@ -2,18 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Android.App;
-using Android.Icu.Text;
 using Android.Views;
 using Google.Android.Material.Snackbar;
 using MWP.DatatypesAndExtensions;
 using Newtonsoft.Json;
 using TagLib;
-using TagLib.Id3v2;
 using Xamarin.Essentials;
 using File = System.IO.File;
-using Tag = TagLib.Id3v2.Tag;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -715,42 +711,7 @@ namespace MWP.BackEnd
             {
                 useChromaprint = true;
             }
-            if (isNew) //TODO: If can move
-            {
-                int newBitrate = tfile.Properties.AudioBitrate;
-                string output = $"{_musicFolder}/{Sanitize(artists[0])}";
-                if (!string.IsNullOrEmpty(album))
-                {
-                    output = $"{output}/{Sanitize(album)}";
-                }
-                Directory.CreateDirectory(output);
-                output = $"{output}/{Sanitize(title)}.mp3";
-                try
-                {
-#if DEBUG
-                    MyConsole.WriteLine("Moving " + path);
-#endif
-                    File.Move(path, output);
-                }
-                catch (IOException ioe)
-                {
-                    using TagLib.File tfileDest = TagLib.File.Create(path, ReadStyle.PictureLazy);
-                    if (newBitrate > tfileDest.Properties.AudioBitrate)
-                    {
-                        File.Delete(output);
-                        File.Move(path, output);
-                    }
-                }
-                catch (Exception e)
-                {
-#if DEBUG
-                    MyConsole.WriteLine(e);
-#endif
-                    //ignored
-                }
-                path = output;
-            }
-
+            
             if (chromaprintAllowed && useChromaprint && !tfile.readPrivateFrame("chromaprintUsed", false))
             {
                 (string title, string recordingId, string trackId, List<(string title, string id)> artist,
@@ -783,13 +744,49 @@ namespace MWP.BackEnd
                 tfile.Tag.MusicBrainzTrackId = result.recordingId;
             }
             
+            if (isNew && SettingsManager.MoveFiles == MoveFilesEnum.Yes)
+            {
+                int newBitrate = tfile.Properties.AudioBitrate;
+                string output = $"{_musicFolder}/{Sanitize(artists[0])}";
+                if (!string.IsNullOrEmpty(album) && album != null)
+                {
+                    output = $"{output}/{Sanitize(album)}";
+                }
+                Directory.CreateDirectory(output);
+                output = $"{output}/{Sanitize(title)}.mp3";
+                try
+                {
+#if DEBUG
+                    MyConsole.WriteLine("Moving " + path);
+#endif
+                    File.Move(path, output);
+                }
+                catch (IOException ioe)
+                {
+                    using TagLib.File tfileDest = TagLib.File.Create(path, ReadStyle.PictureLazy);
+                    if (newBitrate > tfileDest.Properties.AudioBitrate)
+                    {
+                        File.Delete(output);
+                        File.Move(path, output);
+                    }
+                }
+                catch (Exception e)
+                {
+#if DEBUG
+                    MyConsole.WriteLine(e);
+#endif
+                    //ignored
+                }
+                path = output;
+            }
+            
             if (generateStateHandlerEntry || isNew)
             {
                 AddSong(path, title, artists, album, generateStateHandlerEntry, isNew, remoteHostname);
             }
 
             List<string> missingArtist = (from artist in artists let artistPath = $"{_musicFolder}/{Sanitize(artist)}" where !File.Exists($"{artistPath}/cover.jpg") && !File.Exists($"{artistPath}/cover.png") select artist).ToList();
-            if (!string.IsNullOrEmpty(album))
+            if (!string.IsNullOrEmpty(album) && album != null)
             {
                 string albumPath = $"{_musicFolder}/{Sanitize(artists[0])}/{Sanitize(album)}";
                 if (!File.Exists($"{albumPath}/cover.jpg") && !File.Exists($"{albumPath}/cover.png"))
