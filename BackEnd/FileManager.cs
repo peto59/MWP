@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Android.App;
+using Android.Icu.Text;
 using Android.Views;
 using Google.Android.Material.Snackbar;
 using MWP.DatatypesAndExtensions;
@@ -659,6 +660,11 @@ namespace MWP.BackEnd
         public static (List<string> missingArtists, (string album, string artistPath) missingAlbum) AddSong(string path, bool isNew = false, bool generateStateHandlerEntry = true, string? remoteHostname = null)
         {
             using TagLib.File tfile = TagLib.File.Create(path, ReadStyle.PictureLazy);
+            bool useChromaprint = false;
+            bool chromaprintAllowed =
+                (SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Manual ||
+                 SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Automatic) &&
+                string.IsNullOrEmpty(remoteHostname);
             string title;
             if (!string.IsNullOrEmpty(tfile.Tag.Title))
             {
@@ -670,9 +676,10 @@ namespace MWP.BackEnd
                     tfile.Save();
                 }
             }
-            else if (SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Manual || SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Automatic)
+            else if (chromaprintAllowed)
             {
-                title = "";
+                useChromaprint = true;
+                title = Path.GetFileName(path).Replace(".mp3", "");
             }
             else
             {
@@ -690,8 +697,9 @@ namespace MWP.BackEnd
             {
                 artists = tfile.Tag.AlbumArtists;
             }
-            else if (SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Manual || SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Automatic)
+            else if (chromaprintAllowed)
             {
+                useChromaprint = true;
                 artists = new[] { "No Artist" };
             }
             else
@@ -702,8 +710,12 @@ namespace MWP.BackEnd
 
 
 
-            string album = tfile.Tag.Album;
-            if (isNew)
+            string? album = tfile.Tag.Album;
+            if (chromaprintAllowed && string.IsNullOrEmpty(album))
+            {
+                useChromaprint = true;
+            }
+            if (isNew) //TODO: If can move
             {
                 int newBitrate = tfile.Properties.AudioBitrate;
                 string output = $"{_musicFolder}/{Sanitize(artists[0])}";
@@ -738,22 +750,54 @@ namespace MWP.BackEnd
                 }
                 path = output;
             }
+
+            if (chromaprintAllowed && useChromaprint && !tfile.readPrivateFrame("chromaprintUsed", false))
+            {
+                (string title, string recordingId, string trackId, List<(string title, string id)> artist,
+                    List<(string title, string id)> releaseGroup, byte[]? thumbnail) result = Chromaprint.Search(
+                            path,
+                            artists[0],
+                            title,
+                            album,
+                            SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Manual
+                        )
+                        .GetAwaiter()
+                        .GetResult();
+                title = result.title;
+                artists = result.artist.Select(a => a.title).ToArray();
+                album = null;
+                if (result.releaseGroup.Count > 0 && !string.IsNullOrEmpty(result.releaseGroup[0].title))
+                {
+                    album = result.releaseGroup[0].title;
+                    if (!string.IsNullOrEmpty(result.releaseGroup[0].id))
+                    {
+                        tfile.Tag.MusicBrainzReleaseGroupId = result.releaseGroup[0].id;
+                    }
+                }
+                tfile.writePrivateFrame("chromaprintUsed", true);
+                tfile.Tag.Title = title;
+                tfile.Tag.Performers = artists;
+                tfile.Tag.AlbumArtists = artists;
+                tfile.Tag.Album = album;
+                tfile.Tag.MusicBrainzArtistId = result.artist.First().id;
+                tfile.Tag.MusicBrainzTrackId = result.recordingId;
+            }
             
             if (generateStateHandlerEntry || isNew)
             {
                 AddSong(path, title, artists, album, generateStateHandlerEntry, isNew, remoteHostname);
             }
 
-            List<string> missingArtists = (from artist in artists let artistPath = $"{_musicFolder}/{Sanitize(artist)}" where !File.Exists($"{artistPath}/cover.jpg") && !File.Exists($"{artistPath}/cover.png") select artist).ToList();
+            List<string> missingArtist = (from artist in artists let artistPath = $"{_musicFolder}/{Sanitize(artist)}" where !File.Exists($"{artistPath}/cover.jpg") && !File.Exists($"{artistPath}/cover.png") select artist).ToList();
             if (!string.IsNullOrEmpty(album))
             {
                 string albumPath = $"{_musicFolder}/{Sanitize(artists[0])}/{Sanitize(album)}";
                 if (!File.Exists($"{albumPath}/cover.jpg") && !File.Exists($"{albumPath}/cover.png"))
                 {
-                    return (missingArtists, (album, Sanitize(artists[0])));
+                    return (missingArtist, (album, Sanitize(artists[0])));
                 }
             }
-            return (missingArtists, (string.Empty, string.Empty));
+            return (missingArtist, (string.Empty, string.Empty));
         }
         
         public static void AddSong(View view, string path, string title, string[] artists, string artistId,

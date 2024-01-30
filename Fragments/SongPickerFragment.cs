@@ -70,7 +70,9 @@ namespace MWP
                 {
                     foreach (var sel in selectedSongs)
                     {
+#if DEBUG
                         MyConsole.WriteLine($"selected name: {sel.Key}");
+#endif
                     }
                 };
 
@@ -206,8 +208,9 @@ namespace MWP
 
         private void EnableShareOnChange()
         {
-            
+#if DEBUG
             MyConsole.WriteLine("sakk alele jooj");
+#endif
             if (selectedSongs.Count == 0)
                 if (songPickerButton != null) songPickerButton.Visibility = ViewStates.Gone;
             else
