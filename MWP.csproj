@@ -268,6 +268,10 @@
     <AndroidResource Include="Resources\layout\playlists_fragment.xml" />
     <AndroidResource Include="Resources\layout\playlist_fragment.xml" />
     <AndroidResource Include="Resources\layout\settings_fragment.xml" />
+    <AndroidResource Include="Resources\layout\settings_restricted_paths_popup.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\layout\share_are_you_sure.xml" />
     <AndroidResource Include="Resources\layout\share_fragment.xml" />
     <AndroidResource Include="Resources\layout\share_new_port.xml" />

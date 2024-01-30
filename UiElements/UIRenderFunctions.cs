@@ -145,9 +145,9 @@ namespace MWP
             
             
             TextView? submit = view?.FindViewById<TextView>(Resource.Id.submit_plas);
-            submit.Typeface = font;
-            
             if (submit != null)
+            {
+                submit.Typeface = font;
                 submit.Click += (_, _) =>
                 {
                     foreach (string s in _selectedPlaylists)
@@ -171,6 +171,7 @@ namespace MWP
                     dialog?.Hide();
                     _selectedPlaylists.Clear();
                 };
+            }
 
             TextView? cancel = view?.FindViewById<TextView>(Resource.Id.cancel_plas);
             if (cancel != null)
@@ -209,12 +210,11 @@ namespace MWP
                 {
                     addToPla.SetTextColor(Color.White);
                     addToPla.Typeface = font;
-                    if (addToPla != null)
-                        addToPla.Click += (_, _) =>
-                        {
-                            dialog?.Hide();
-                            ListPlaylistsPopup(song, context, scale, font);
-                        };
+                    addToPla.Click += (_, _) =>
+                    {
+                        dialog?.Hide();
+                        ListPlaylistsPopup(song, context, scale, font);
+                    };
                 }
 
                 
@@ -230,33 +230,30 @@ namespace MWP
                     edit.Typeface = font;
                     
 
-                    if (addToQu != null)
-                        addToQu.Click += (_, _) =>
-                        {
-                            MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song);
-                            dialog?.Hide();
-                        };
+                    addToQu.Click += (_, _) =>
+                    {
+                        MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song);
+                        dialog?.Hide();
+                    };
 
-                    if (delete != null)
-                        delete.Click += (o, args) =>
-                        {
-                            if (songsFragmentContext != null)
-                                AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context,
-                                    songsFragmentContext, font);
-                        };
+                    delete.Click += (o, args) =>
+                    {
+                        if (songsFragmentContext != null)
+                            AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context,
+                                songsFragmentContext, font);
+                    };
 
-                    if (edit != null)
-                        edit.Click += (_, _) =>
-                        {
-                            dialog?.Hide();
+                    edit.Click += (_, _) =>
+                    {
+                        dialog?.Hide();
 
                             
-                            TagManagerFragment tagFrag = new TagManagerFragment(context, assets, path);
-                            FragmentTransaction fragmentTransaction = manager.BeginTransaction();
-                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, tagFrag);
-                            fragmentTransaction.AddToBackStack(null);
-                            fragmentTransaction.Commit();
-                        };
+                        TagManagerFragment tagFrag = new TagManagerFragment(context, assets, path);
+                        FragmentTransaction fragmentTransaction = manager.BeginTransaction();
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, tagFrag);
+                        fragmentTransaction.AddToBackStack(null);
+                        fragmentTransaction.Commit();
+                    };
                 }
             }
             

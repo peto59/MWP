@@ -11,12 +11,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Android.Content.Res;
 using Android.Graphics;
+using Android.Graphics.Drawables;
 using Android.Net;
+using Android.Provider;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using MWP.BackEnd;
 using MWP.Helpers;
 using Color = Android.Graphics.Color;
 using Orientation = Android.Widget.Orientation;
+using Uri = Android.Net.Uri;
 
 namespace MWP
 {
@@ -56,12 +59,19 @@ namespace MWP
             if (dropdownItem != null) dropdownItem.Typeface = font;
 
             /*
-             * INT  -> popup list
-             * BOOL -> switch
+             * Príjmanie dáta nastavení z pozadia aplikácie. Rozlišijeme 3 typi nastavení
+             * Bool - Nastavenie reprezentované komponentom Switch
+             * Int  - Nastavenie reprezentované komponentom Spinner typu dropdown
+             * Folder Picker - statické nastavenie zadefinované v XML. Môže sa nachádzať iba raz.
              */
             List<(string name, Func<bool> read, Action<bool> write, string? remark)> boolSettings = SettingsManager.GetBoolSettings();
             List<(string name, Func<int> read, Action<int> write, Dictionary<string, int>? mapping, string? remark)> intSettings = SettingsManager.GetIntSettings();
 
+            /*
+             * Vykreslovanie všetkých n-počet Bool nastavení získaných z pozadia. Vytváram for loop podľa počtu
+             * nastavení v liste. Pre každý element v liste nastavení volám funkciy DropdownSetting ktorá vráti
+             * LinearLayout obsahujúci užívateľské rozhranie pripravené na vykreslenie.
+             */
             for (int i = 0; i < boolSettings.Count; i++)
             {
                 mainLinearLayout?.AddView(
@@ -74,6 +84,11 @@ namespace MWP
                 );
             }
             
+            /*
+             * Vykreslovanie všetkých n-počet Int nastavení získaných z pozadia. Vytváram for loop podľa počtu
+             * nastavení v liste. Pre každý element v liste nastavení volám funkciy DropdownSetting ktorá vráti
+             * LinearLayout obsahujúci užívateľské rozhranie pripravené na vykreslenie.
+             */
             for (int i = 0; i < intSettings.Count; i++)
             {
                 mainLinearLayout?.AddView(
@@ -88,7 +103,21 @@ namespace MWP
             }
             
             
-    
+            /*
+             * Restricted MP3 folders setting
+             */
+            TextView? restrictedTitle = view?.FindViewById<TextView>(Resource.Id.settings_restricted_title);
+            if (restrictedTitle != null) restrictedTitle.Typeface = font;
+            TextView? restrictedRemark = view?.FindViewById<TextView>(Resource.Id.settings_restricted_remark);
+            if (restrictedRemark != null) restrictedRemark.Typeface = font;
+            TextView? addNewRestricted = view?.FindViewById<TextView>(Resource.Id.settings_restricted_button);
+            if (addNewRestricted != null)
+            {
+                addNewRestricted.Typeface = font;
+                List<string> paths = new List<string>{ "path1", "path2", "path3", "path4" };
+                addNewRestricted.Click += delegate { ListPlaylistsPopup(paths); };
+            }
+
             return view;
         }
 
@@ -279,7 +308,13 @@ namespace MWP
             
             return switchCompat;
         }
-
+        
+        /*
+         * Meoda slúžiaca na vytvorenie nového Spinner komponentu typu dropdown pre nastavenie typu Int,
+         * v ktorom každý riadok predstavuje jednu z monžostí pre používateľa daného nastavenia.
+         * Dáta pre rolovací list sú získavané z pozadia aplikácie
+         * ktoré sa následne musia vložiť ako argumentu ktoré príjma táto metóda.
+         */
         private Spinner CreateDropdown(Action<int> write, int initialValue, Dictionary<string, int>? values)
         {
             string[]? items = values?.Keys.ToArray();
@@ -310,6 +345,146 @@ namespace MWP
             }
 
             return dropdown;
+        }
+        
+        /*
+         * Privátna metóda slúžiaca na vytvorenie AlertDialogu v ktorom sa nachádza ScrollView s listom
+         * zakázaných ciest priečinkov pre hľadanie MP3 súborov a tlačidlom pre možnosť pridania novej
+         * cesty prostredníctvom Folder Picker-u. 
+         */
+        private void ListPlaylistsPopup(List<string> paths)
+        {
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? view = ifl?.Inflate(Resource.Layout.settings_restricted_paths_popup, null);
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(view);
+
+            AlertDialog? dialog = alert.Create();
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+
+            LinearLayout? ln = view?.FindViewById<LinearLayout>(Resource.Id.settings_restricted_path_list);
+            
+            /*
+             * Prechádzanie cestami v liste a pre každú cestu vytvorenie nového záznamu v liste v ScrollView.
+             */
+            foreach (string path in paths)
+            {
+                /*
+                 * Vytvaranie LinearLayout-u ktory bude obsahpvat text cesty a tlacidlo na vymazanie
+                 */
+                LinearLayout lnIn = new LinearLayout(context);
+                lnIn.Orientation = Orientation.Horizontal;
+                lnIn.SetBackgroundResource(Resource.Drawable.rounded_light);
+
+                LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MatchParent,
+                    ViewGroup.LayoutParams.WrapContent
+                );
+                lnInParams.SetMargins(20, 20, 20, 20);
+                lnIn.LayoutParameters = lnInParams;
+                lnIn.SetPadding(0, (int)ConvertDpToPixels(10), 0, (int)ConvertDpToPixels(10));
+                lnIn.SetGravity(GravityFlags.Center);
+
+                /*
+                 * Vytváranie TextView komponentu pre názov cesty
+                 */
+                LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(
+                    0,
+                    ViewGroup.LayoutParams.WrapContent
+                );
+                nameParams.Weight = 1;
+                TextView name = new TextView(context);
+                name.SetPadding(
+                    (int)ConvertDpToPixels(10),
+                    (int)ConvertDpToPixels(10),
+                    (int)ConvertDpToPixels(10),
+                    (int)ConvertDpToPixels(10)
+
+                );
+                name.LayoutParameters = nameParams;
+                name.TextSize = (int)ConvertDpToPixels(5);
+                name.Typeface = font;
+                name.SetTextColor(Color.White);
+                name.Text = path;
+                lnIn.AddView(name);
+                
+                /*
+                 * Vytváranie tlačidla slúžiaceho na vymazanie aktuálneho riadka z listu ciest
+                 */
+                LinearLayout.LayoutParams deleteButtonParams = new LinearLayout.LayoutParams(
+                    (int)ConvertDpToPixels(30),
+                    ViewGroup.LayoutParams.WrapContent
+                );
+                deleteButtonParams.SetMargins(0, 0, (int)ConvertDpToPixels(10), 0);
+                TextView deleteButton = new TextView(context);
+                deleteButton.LayoutParameters = deleteButtonParams;
+                deleteButton.TextSize = (int)ConvertDpToPixels(3);
+                deleteButton.Typeface = font;
+                deleteButton.TextAlignment = TextAlignment.Center;
+                deleteButton.SetForegroundGravity(GravityFlags.Center);
+                deleteButton.SetPadding(
+                    (int)ConvertDpToPixels(10),
+                    (int)ConvertDpToPixels(10),
+                    (int)ConvertDpToPixels(10),
+                    (int)ConvertDpToPixels(10)
+
+                );
+                deleteButton.SetTextColor(Color.White);
+                deleteButton.SetBackgroundResource(Resource.Drawable.rounded_button);
+                deleteButton.Text = "X";
+                deleteButton.Click += delegate
+                {
+                    
+                };
+                lnIn.AddView(deleteButton);
+                
+                ln?.AddView(lnIn);
+            }
+            
+            
+            TextView? addNew = view?.FindViewById<TextView>(Resource.Id.settings_restricted_add_new_restricted);
+            if (addNew != null)
+            {
+                addNew.Typeface = font;
+                addNew.Click += (_, _) =>
+                {
+                    if (Android.OS.Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop){ 
+                        Intent i = new Intent(Intent.ActionOpenDocumentTree); 
+                        i.AddCategory(Intent.CategoryDefault);
+                        StartActivityForResult(Intent.CreateChooser(i, "Choose directory") ?? new Intent(), 9999);
+                    }
+                };
+            }
+
+            TextView? cancel = view?.FindViewById<TextView>(Resource.Id.settings_restricted_cancel);
+            if (cancel != null)
+            {
+                cancel.Typeface = font;
+                cancel.Click += (_, _) => { dialog?.Hide(); };
+            }
+
+
+            dialog?.Show();
+            
+            
+            
+        }
+        
+        public override void OnActivityResult(int requestCode, int resultCode, Intent data) {
+            base.OnActivityResult(requestCode, resultCode, data);
+
+            switch(requestCode) {
+                case 9999:
+                    /*
+                    Uri? uri = data.Data;
+                    Uri? docUri = DocumentsContract.BuildDocumentUriUsingTree(uri, 
+                        DocumentsContract.GetTreeDocumentId(uri));
+                    String path = Android.Net.Uri.GetPath(context, docUri); */
+#if DEBUG
+                    MyConsole.WriteLine($"Result URI {data.Data}");
+#endif
+                    break;
+            }
         }
         
     }

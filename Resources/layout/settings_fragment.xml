@@ -5,7 +5,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/settings_fragment_layout"
-
+            android:background="@color/colorPrimaryDark"
 >
     <LinearLayout 
             android:layout_width="match_parent" 
@@ -13,7 +13,7 @@
             android:orientation="vertical"
             android:id="@+id/settings_main_linear"
     >
-        <!--
+        
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:orientation="horizontal" android:gravity="center"
                       android:layout_margin="20dp"
@@ -23,25 +23,30 @@
                         android:orientation="vertical"
             >
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                           android:text="Network something" android:textColor="#ffffff"
-                          android:textSize="20dp"
+                           android:text="Restricted folders" android:textColor="#ffffff"
+                          android:textSize="20dp" android:id="@+id/settings_restricted_title"
                 />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                          android:text="This will do something idk wat" android:textColor="#A9A9A9"
-                          android:textSize="12dp"
+                          android:text="Paths where looking for mp3 files is forbidden" android:textColor="#A9A9A9"
+                          android:textSize="12dp" android:id="@+id/settings_restricted_remark"
                 />
             </LinearLayout>
 
             
-            <Spinner android:layout_width="wrap_content" android:layout_height="wrap_content"
-                     android:spinnerMode="dropdown" 
-                     android:id="@+id/spinnder1"
-                     android:background="@drawable/rounded_dark"
-                     android:padding="10dp"
-                     android:gravity="center"
+            <TextView 
+                    android:layout_width="wrap_content" 
+                    android:layout_height="wrap_content"
+                    android:text="Add New"
+                    android:textColor="#ffffff"
+                    android:paddingVertical="8dp"
+                    android:paddingHorizontal="15dp"
+                    android:background="@drawable/rounded_button"
+                    android:id="@+id/settings_restricted_button"
             />
         </LinearLayout>
-        -->
+        -
+        
+        
     </LinearLayout>
     
 </ScrollView>

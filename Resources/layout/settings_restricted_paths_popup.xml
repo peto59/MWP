@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"  
+    android:orientation="vertical"  
+    android:layout_width="match_parent"  
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="300dp">
+    
+    
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:id="@+id/settings_restricted_path_list">
+            <!-- 
+            <LinearLayout 
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:background="@drawable/rounded_light"
+                    android:layout_margin="10dp" android:gravity="center" android:paddingVertical="10dp"
+            >
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1" android:padding="10dp"
+                    android:text="path/path/path/path" android:textColor="#ffffff" android:textSize="20dp"
+                />
+                <TextView 
+                        android:layout_width="40dp" 
+                        android:layout_height="wrap_content"
+                        android:text="X"
+                        android:padding="10dp"
+                        android:layout_marginRight="10dp"
+                        android:background="@drawable/rounded_button"
+                        android:gravity="center"
+                        android:textSize="15dp"
+                        android:textColor="#ffffff"
+                />
+                
+            </LinearLayout>
+            -->
+        </LinearLayout>
+    
+    
+    </ScrollView>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:gravity="center">
+        
+        <TextView android:layout_width="120dp" android:layout_height="45dp"
+                  android:text="Add New"
+                  android:layout_marginRight="10dp"
+                  android:background="@drawable/rounded_button"
+                  android:gravity="center"
+                  android:textSize="15dp"
+                  android:textColor="#ffffff"
+                  android:id="@+id/settings_restricted_add_new_restricted"
+        />
+        <TextView android:layout_width="120dp" android:layout_height="45dp"
+                  android:text="Cancel"
+                  android:layout_marginLeft="10dp"
+                  android:background="@drawable/rounded_button"
+                  android:gravity="center"
+                  android:textSize="15dp"
+                  android:textColor="#ffffff"
+                  android:id="@+id/settings_restricted_cancel"
+        />
+      
+    
+    </LinearLayout>
+                                             
+
+    
+</LinearLayout>
