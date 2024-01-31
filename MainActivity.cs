@@ -60,6 +60,7 @@ namespace MWP
         /// </summary>
         public static readonly StateHandler StateHandler = new StateHandler();
         private static readonly MediaServiceConnection ServiceConnectionPrivate = new MediaServiceConnection();
+        private ActionBarDrawerToggle? toggle;
         /// <summary>
         /// Instance of Service Connection
         /// </summary>
@@ -118,7 +119,7 @@ namespace MWP
             if (action == "openDrawer")
                 drawer?.OpenDrawer(GravityCompat.Start);
 
-            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
+            toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
             drawer?.OpenDrawer(GravityCompat.Start);
             drawer?.AddDrawerListener(toggle);
             toggle.SyncState();
@@ -358,7 +359,23 @@ namespace MWP
         [Obsolete("deprecated")]
         public override void OnBackPressed()
         {
-            if (drawer != null && drawer.IsDrawerOpen(GravityCompat.Start))
+            AndroidX.Fragment.App.Fragment? myFragment = SupportFragmentManager.FindFragmentByTag("SettingsFromDialog");
+            if (myFragment is { IsVisible: true })
+            {
+#if DEBUG
+                MyConsole.WriteLine($"returning from initial settings");
+#endif
+                if (toggle != null)
+                {
+                    toggle.DrawerIndicatorEnabled = true;
+                    toggle.SetHomeAsUpIndicator(null);
+                    toggle.ToolbarNavigationClickListener = null;
+                    toggle.SyncState();
+                }
+                drawer?.OpenDrawer(GravityCompat.Start);
+                RequestMyPermission();
+            }
+            else if (drawer != null && drawer.IsDrawerOpen(GravityCompat.Start))
             {
                 drawer.CloseDrawer(GravityCompat.Start);
             }
@@ -414,10 +431,34 @@ namespace MWP
                 {
                     // ReSharper disable once AccessToModifiedClosure
                     remainingDialogsBeforeRequestingPermissions++;
+
+                    if (toggle != null)
+                    {
+                        toggle.DrawerIndicatorEnabled = false;
+                        toggle.SetHomeAsUpIndicator(Resource.Drawable.back);
+                        toggle.ToolbarNavigationClickListener = new MyClickListener(
+                            () =>
+                            {
+                                if (toggle != null)
+                                {
+                                    toggle.DrawerIndicatorEnabled = true;
+                                    toggle.SetHomeAsUpIndicator(null);
+                                    toggle.ToolbarNavigationClickListener = null;
+                                    toggle.SyncState();
+                                }
+                                drawer?.OpenDrawer(GravityCompat.Start);
+                                RequestMyPermission();
+                            }
+                        );
+                        
+                        toggle.SyncState();
+                    }
+
                     SettingsFragment settingsFragmentAdam = new SettingsFragment(this, Assets);
                     FragmentTransaction settingsTransaction = SupportFragmentManager.BeginTransaction();
-                    settingsTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, settingsFragmentAdam);
-                    settingsTransaction.AddToBackStack(null);
+                    settingsTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, settingsFragmentAdam, "SettingsFromDialog");
+                    settingsTransaction.AddToBackStack("SettingsFromDialog");
+                    drawer?.CloseDrawer(GravityCompat.Start);
                     settingsTransaction.Commit();
                 });
 
@@ -580,8 +621,6 @@ namespace MWP
                 dialog.Show();
             }
             
-            
-            
             if (remainingDialogsBeforeRequestingPermissions == 0)
             {
                 RequestMyPermission();
@@ -732,7 +771,7 @@ namespace MWP
             TextView? textView = view?.FindViewById<TextView>(Resource.Id.discoveryTextView);
             System.Timers.Timer timer = new System.Timers.Timer(500);
             
-            timer.Elapsed += (sender, e) => {
+            timer.Elapsed += (_, _) => {
                 RunOnUiThread(() =>
                 {
                     if (textView != null)
@@ -769,11 +808,12 @@ namespace MWP
                     dialog.Hide();
                     timer.Stop();
                     timer.Dispose();
-                    dialog.Dispose();
+                    //TODO: crashing because doing something on disposed textView
+                    /*dialog.Dispose();
                     builder.Dispose();
                     view?.Dispose();
                     ifl?.Dispose();
-                    textView?.Dispose();
+                    textView?.Dispose();*/
                 });
 #if DEBUG
                 MyConsole.WriteLine($"Songs count {StateHandler.Songs.Count}");       
@@ -926,6 +966,20 @@ namespace MWP
             StartActivity(installIntent);
         }
         
+    }
+
+    internal class MyClickListener : Java.Lang.Object, View.IOnClickListener
+    {
+        private Action action;
+
+        internal MyClickListener(Action a)
+        {
+            action = a;
+        }
+        public void OnClick(View? v)
+        {
+            action.Invoke();
+        }
     }
 }
 
