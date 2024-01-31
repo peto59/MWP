@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Android.App;
 using Android.Views;
 using Google.Android.Material.Snackbar;
@@ -28,17 +29,11 @@ namespace MWP.BackEnd
         //private static readonly string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string( System.IO.Path.GetInvalidFileNameChars() ) + new string( System.IO.Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>");
         //private static readonly string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", invalidChars );
         private static readonly string InvalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", System.Text.RegularExpressions.Regex.Escape(new string( Path.GetInvalidFileNameChars() ) + new string( Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>") );
+        private static HashSet<string> _chromaprintUsedSongs;
+        private static List<Task> Discoveries = new List<Task>();
 
-        public static void Innit()
+        public static void EarlyInnit()
         {
-            if (!Directory.Exists(_musicFolder))
-            {
-#if DEBUG
-                MyConsole.WriteLine("Creating " + $"{_musicFolder}");
-#endif
-                if (_musicFolder != null) Directory.CreateDirectory(_musicFolder);
-            }
-
             if (!Directory.Exists($"{_privatePath}/tmp"))
             {
 #if DEBUG
@@ -46,6 +41,8 @@ namespace MWP.BackEnd
 #endif
                 Directory.CreateDirectory($"{_privatePath}/tmp");
             }
+
+            
             
             //File.Delete($"{FileManager.PrivatePath}/trusted_sync_targets.json");
             if (!File.Exists($"{_privatePath}/trusted_sync_targets.json"))
@@ -53,9 +50,33 @@ namespace MWP.BackEnd
                 File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
             }
             
+            if (!File.Exists($"{_privatePath}/usedChromaprintSongs.json"))
+            {
+                File.WriteAllText($"{_privatePath}/usedChromaprintSongs.json", JsonConvert.SerializeObject(new HashSet<string>()));
+                _chromaprintUsedSongs = new HashSet<string>();
+            }
+            else
+            {
+                _chromaprintUsedSongs = GetHashSet();
+            }
+#if DEBUG
+            MyConsole.WriteLine($"Hashset length {_chromaprintUsedSongs.Count}");
+#endif
+            
             if (!File.Exists($"{_privatePath}/trusted_SSIDs.json"))
             {
                 File.WriteAllText($"{_privatePath}/trusted_SSIDs.json", JsonConvert.SerializeObject(new List<string>()));
+            }
+        }
+
+        public static void LateInnit()
+        {
+            if (!Directory.Exists(_musicFolder))
+            {
+#if DEBUG
+                MyConsole.WriteLine("Creating " + $"{_musicFolder}");
+#endif
+                if (_musicFolder != null) Directory.CreateDirectory(_musicFolder);
             }
 
             if (!File.Exists($"{_musicFolder}/aliases.json"))
@@ -66,7 +87,8 @@ namespace MWP.BackEnd
 
             if (!File.Exists($"{_musicFolder}/playlists.json"))
             {
-                File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
+                SongJsonConverter customConverter = new SongJsonConverter(true);
+                File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>(), customConverter));
             }
             
             DirectoryInfo di = new DirectoryInfo($"{_privatePath}/tmp/");
@@ -87,6 +109,11 @@ namespace MWP.BackEnd
         {
             MainActivity.StateHandler.FileListGenerationEvent.WaitOne();
             if (Root != null) DiscoverFiles(Root, generateStateHandlerEntry);
+            while (Discoveries.Any())
+            {
+                Task finishedTask = Task.WhenAny(Discoveries).GetAwaiter().GetResult();
+                Discoveries.Remove(finishedTask);
+            }
             MainActivity.StateHandler.FileListGenerationEvent.Set();
             MainActivity.StateHandler.FileListGenerated.Set();
         }
@@ -122,7 +149,12 @@ namespace MWP.BackEnd
             {
                 try
                 {
-                    AddSong(file, _musicFolder != null && !file.Contains(_musicFolder), generateStateHandlerEntry || (_musicFolder != null && !file.Contains(_musicFolder)));
+                    Task x = new Task(() =>
+                    {
+                        _ = AddSong(file, _musicFolder != null && !file.Contains(_musicFolder),
+                            generateStateHandlerEntry || (_musicFolder != null && !file.Contains(_musicFolder)));
+                    });
+                    Discoveries.Add(x);
                     
                 }
                 catch (Exception ex)
@@ -712,8 +744,11 @@ namespace MWP.BackEnd
                 useChromaprint = true;
             }
             
-            if (chromaprintAllowed && useChromaprint && !tfile.readPrivateFrame("chromaprintUsed", false))
+            if (chromaprintAllowed && useChromaprint && !_chromaprintUsedSongs.Contains(path))
             {
+#if DEBUG
+                MyConsole.WriteLine($"Using chromaprint for {path}");
+#endif
                 (string title, string recordingId, string trackId, List<(string title, string id)> artist,
                     List<(string title, string id)> releaseGroup, byte[]? thumbnail) result = Chromaprint.Search(
                             path,
@@ -724,6 +759,9 @@ namespace MWP.BackEnd
                         )
                         .GetAwaiter()
                         .GetResult();
+#if DEBUG
+                MyConsole.WriteLine($"Finished chromaprint for {path}");
+#endif
                 title = result.title;
                 artists = result.artist.Select(a => a.title).ToArray();
                 album = null;
@@ -735,7 +773,6 @@ namespace MWP.BackEnd
                         tfile.Tag.MusicBrainzReleaseGroupId = result.releaseGroup[0].id;
                     }
                 }
-                tfile.writePrivateFrame("chromaprintUsed", true);
                 tfile.Tag.Title = title;
                 tfile.Tag.Performers = artists;
                 tfile.Tag.AlbumArtists = artists;
@@ -751,6 +788,10 @@ namespace MWP.BackEnd
                     tfile.Tag.Pictures = pics;
                 }
                 tfile.Save();
+                if (_chromaprintUsedSongs.Add(path))
+                {
+                    SaveHashSet();
+                }
             }
             
             if (isNew && SettingsManager.MoveFiles == MoveFilesEnum.Yes)
@@ -933,7 +974,6 @@ namespace MWP.BackEnd
         {
             try
             {
-                
 #if DEBUG
                 MyConsole.WriteLine(ssid);
 #endif
@@ -967,6 +1007,17 @@ namespace MWP.BackEnd
 #endif
                 //ignored
             }
+        }
+
+        private static HashSet<string> GetHashSet()
+        {
+            string json = File.ReadAllText($"{_privatePath}/usedChromaprintSongs.json");
+            return JsonConvert.DeserializeObject<HashSet<string>>(json) ?? new HashSet<string>();
+        }
+        
+        private static void SaveHashSet()
+        {
+            File.WriteAllText($"{_privatePath}/usedChromaprintSongs.json", JsonConvert.SerializeObject(_chromaprintUsedSongs));
         }
     }
 }

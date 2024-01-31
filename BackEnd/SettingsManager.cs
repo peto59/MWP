@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using MWP.BackEnd.Network;
 using MWP.DatatypesAndExtensions;
 using Xamarin.Essentials;
 
@@ -23,6 +25,10 @@ namespace MWP.BackEnd
                     CanUseNetwork = val
                         ? CanUseNetworkState.Allowed
                         : CanUseNetworkState.Rejected;
+                    if (val)
+                    {
+                            new Thread(NetworkManager.Listener).Start();
+                    }
                 }, "Enabling this will allow other devices on network to see your device"),
                 
                 ("Check for updates", () => CheckUpdates == AutoUpdate.Requested, (val) =>

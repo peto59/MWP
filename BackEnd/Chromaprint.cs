@@ -86,7 +86,7 @@ namespace MWP.BackEnd
 
                 LastSongSelectionNavigation lastNavigation = LastSongSelectionNavigation.None;
                 int cnt = 0;
-                var buffer =
+                List<(string, string, string, IEnumerable<(string, string)>, IEnumerable<(string, string)>)> buffer =
                     new List<(string, string, string, IEnumerable<(string, string)>, IEnumerable<(string, string)>)>();
                 List<CoverArt?> coverBuffer = new List<CoverArt?>();
                 List<byte[]> imgBuffer = new List<byte[]>();
@@ -100,15 +100,25 @@ namespace MWP.BackEnd
                     if (cnt >= buffer.Count && hasNext)
                     {
                         current = rEnumerator.Current;
+                        List<(string title, string id)> releaseGroupsList = current.releaseGroups.ToList();
+                        for (int i = 0; i < current.releaseGroups.Count(); i++)
+                        {
+                            (string? title, string? id) = releaseGroupsList[i];
+                            response.Dispose();
+                            response = await client.GetAsync(
+                                $"https://coverartarchive.org/release-group/{id}");
+
+                            hasNext = rEnumerator.MoveNext();
+                            if (!response.IsSuccessStatusCode) continue;
+                            current.releaseGroups = new List<(string title, string id)> { (title, id) };
+                            break;
+                        }
                         buffer.Add(current);
-                        response.Dispose();
-                        response = await client.GetAsync(
-                            $"https://coverartarchive.org/release-group/{current.releaseGroups.First().id}");
-
-                        hasNext = rEnumerator.MoveNext();
-
                         if (!response.IsSuccessStatusCode)
                         {
+#if DEBUG
+                            MyConsole.WriteLine("Response isn't success");
+#endif
                             coverBuffer.Add(null);
                             if (lastNavigation == LastSongSelectionNavigation.Previous)
                             {
@@ -179,13 +189,22 @@ namespace MWP.BackEnd
                     int cnt1 = cnt;
                     if (manual)
                     {
-                        MainActivity.StateHandler.view?.RunOnUiThread(() =>
+                        if (MainActivity.StateHandler.view != null)
                         {
-                            YoutubeFragment.UpdateSsDialog(current.title, current.artists.First().title,
-                                current.releaseGroups.First().title,
-                                imgBuffer[cnt1], originalAuthor,
-                                originalTitle, cnt1 < buffer.Count - 1 || next, cnt1 > 0);
-                        });
+                            MainActivity.StateHandler.view.RunOnUiThread(() =>
+                            {
+                                YoutubeFragment.UpdateSsDialog(current.title, current.artists.First().title,
+                                    current.releaseGroups.First().title,
+                                    imgBuffer[cnt1], originalAuthor,
+                                    originalTitle, cnt1 < buffer.Count - 1 || next, cnt1 > 0);
+                            });
+                        }
+#if DEBUG
+                        else
+                        {
+                            MyConsole.WriteLine("Empty view");
+                        }
+#endif
                         MainActivity.StateHandler.ResultEvent.WaitOne();
                     }
 

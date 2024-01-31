@@ -31,7 +31,20 @@ namespace MWP.BackEnd.Network
     internal class NetworkManagerCommon
     {
         internal static readonly List<IPAddress> Connected = new List<IPAddress>();
+#if DEBUG
+        private IPAddress? myip;
+        internal IPAddress? MyIp
+        {
+            get => myip;
+            set
+            {
+                MyConsole.WriteLine($"New IP is {value}");
+                myip = value;
+            }
+        }
+#else
         internal IPAddress? MyIp;
+#endif
         private IPAddress myMask = new IPAddress(0); //0.0.0.0
         
         /// <summary>
@@ -692,33 +705,37 @@ namespace MWP.BackEnd.Network
             if (networkCapabilities.HasCapability(NetCapability.NotMetered) && networkCapabilities.HasCapability(NetCapability.Trusted))
             {
                 Dictionary<string, string> transportInfo = networkCapabilities.TransportInfo.ToDictionary();
-                string ipString = transportInfo["IpAddress"];
-                if (int.TryParse(ipString, out int ipInt))
+
+                if (transportInfo.TryGetValue("IpAddress", out string ipString))
                 {
-                    IPAddress ipAdd = new IPAddress(ipInt);
-                    string ip = ipAdd.ToString();
-                    if (ValidateIPv4(ip) && ip != "0.0.0.0")
+                    if (long.TryParse(ipString, out long longip))
                     {
-                        if (NetworkManager.Common.MyIp == null)
+                        byte[] x = BitConverter.GetBytes(longip).Take(4).ToArray();
+                        IPAddress ipAdd = new IPAddress(x);
+                        string ip = ipAdd.ToString();
+                        if (ValidateIPv4(ip) && ip != "0.0.0.0")
                         {
-                            NetworkManager.Common.CanSend = NetworkManager.Common.GetConnectionInfo(ipAdd) ? CanSend.Test : CanSend.Rejected;
-                        }
-                        string ssid = transportInfo["SSID"];
+                            if (NetworkManager.Common.MyIp == null)
+                            {
+                                NetworkManager.Common.CanSend = NetworkManager.Common.GetConnectionInfo(ipAdd) ? CanSend.Test : CanSend.Rejected;
+                            }
+                            string ssid = transportInfo["SSID"];
 #if DEBUG
-                        MyConsole.WriteLine($"SSID: {ssid}");         
-                        MyConsole.WriteLine($"BLUD: {ssid == "<unknown ssid>"}");
+                            MyConsole.WriteLine($"SSID: {ssid}");         
+                            MyConsole.WriteLine($"BLUD: {ssid == "<unknown ssid>"}");
 #endif
-                        if (ssid != NetworkManager.Common.CurrentSsid)
-                        {
-                            NetworkManager.Common.CanSend = CanSend.Test;
-                            NetworkManager.Common.CurrentSsid = ssid;
-                            StateHandler.TriggerShareFragmentRefresh();
+                            if (ssid != NetworkManager.Common.CurrentSsid)
+                            {
+                                NetworkManager.Common.CanSend = CanSend.Test;
+                                NetworkManager.Common.CurrentSsid = ssid;
+                                StateHandler.TriggerShareFragmentRefresh();
+                            }
+                            else if (NetworkManager.Common.CanSend == CanSend.Rejected)
+                            {
+                                NetworkManager.Common.CanSend = CanSend.Test;
+                            }
+                            return;
                         }
-                        else if (NetworkManager.Common.CanSend == CanSend.Rejected)
-                        {
-                            NetworkManager.Common.CanSend = CanSend.Test;
-                        }
-                        return;
                     }
                 }
             }
