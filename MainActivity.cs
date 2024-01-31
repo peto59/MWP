@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Android;
 using Android.App;
@@ -33,8 +32,10 @@ using Xamarin.Essentials;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
 using Application = Android.App.Application;
 using Environment = Android.OS.Environment;
+using Exception = System.Exception;
 using FileProvider = AndroidX.Core.Content.FileProvider;
 using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
+using Thread = System.Threading.Thread;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
 using Uri = Android.Net.Uri;
 #if DEBUG
@@ -151,8 +152,6 @@ namespace MWP
             FileManager.EarlyInnit();
             
             VersionTracking.Track();
-            
-            ShowDialogs();
             
 
             // notififcations
@@ -317,6 +316,8 @@ namespace MWP
              * Initialize Widget Service
              */
             WidgetServiceHandler.Init(this);
+            
+            ShowDialogs();
         }
 
 
@@ -718,6 +719,28 @@ namespace MWP
             {
                 new Thread(NetworkManager.Listener).Start();
             }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            LayoutInflater? ifl = LayoutInflater.From(this);
+            View? view = ifl?.Inflate(Resource.Layout.discovery_popup_layout, null);
+            builder.SetView(view);
+            builder.SetCancelable(false);
+            
+            AlertDialog dialog = builder.Create();
+            dialog.Show();
+            
+            TextView? textView = view?.FindViewById<TextView>(Resource.Id.discoveryTextView);
+            System.Timers.Timer timer = new System.Timers.Timer(500);
+            
+            timer.Elapsed += (sender, e) => {
+                RunOnUiThread(() =>
+                {
+                    if (textView != null)
+                        textView.Text =
+                            $"Indexing songs {System.Environment.NewLine}{StateHandler.Songs.Count} songs indexed {System.Environment.NewLine}Please wait";
+                });
+            };
+            timer.Start();
             
             new Thread(() => {
                 FileManager.DiscoverFiles(StateHandler.Songs.Count == 0);
@@ -743,6 +766,14 @@ namespace MWP
                 RunOnUiThread(() =>
                 {
                     if (Assets != null) SidePlayer.populate_side_bar(this, Assets);
+                    dialog.Hide();
+                    timer.Stop();
+                    timer.Dispose();
+                    dialog.Dispose();
+                    builder.Dispose();
+                    view?.Dispose();
+                    ifl?.Dispose();
+                    textView?.Dispose();
                 });
 #if DEBUG
                 MyConsole.WriteLine($"Songs count {StateHandler.Songs.Count}");       

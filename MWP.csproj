@@ -273,6 +273,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\discovery_popup_layout.xml" />
     <AndroidResource Include="Resources\layout\download_notification_single.xml" />
     <AndroidResource Include="Resources\layout\host_picker_fragment.xml">
       <SubType>Designer</SubType>
