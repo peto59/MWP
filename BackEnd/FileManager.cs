@@ -740,8 +740,17 @@ namespace MWP.BackEnd
                 tfile.Tag.Performers = artists;
                 tfile.Tag.AlbumArtists = artists;
                 tfile.Tag.Album = album;
-                tfile.Tag.MusicBrainzArtistId = result.artist.First().id;
-                tfile.Tag.MusicBrainzTrackId = result.recordingId;
+                string tagMusicBrainzArtistId = result.artist.First().id;
+                if (string.IsNullOrEmpty(tagMusicBrainzArtistId)) tfile.Tag.MusicBrainzArtistId = tagMusicBrainzArtistId;
+                if (string.IsNullOrEmpty(result.recordingId)) tfile.Tag.MusicBrainzReleaseId = result.recordingId;
+                if (string.IsNullOrEmpty(result.trackId)) tfile.Tag.MusicBrainzTrackId = result.trackId;
+                if (result.thumbnail != null)
+                {
+                    IPicture[] pics = new IPicture[1];
+                    pics[0] = new Picture(result.thumbnail);
+                    tfile.Tag.Pictures = pics;
+                }
+                tfile.Save();
             }
             
             if (isNew && SettingsManager.MoveFiles == MoveFilesEnum.Yes)
