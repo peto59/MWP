@@ -23,20 +23,30 @@
                       android:id="@+id/song_picker_song_list" android:orientation="vertical"/>
         
     </ScrollView>
+    
 
-    <TextView
-            android:id="@+id/song_picker_share_button"
-            android:layout_width="100dp"
-            android:layout_height="50dp"
+    <ImageView android:layout_width="match_parent" android:layout_height="150dp"
+               android:layout_alignParentBottom="true"
+               android:layout_centerHorizontal="true"
+               android:src="@drawable/shadow"
+               android:visibility="gone"
+               android:id="@+id/song_picker_slide_bar_bg"
+    />
+    
+    <SeekBar
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:layout_margin="20dp"
-            android:background="@drawable/rounded_button"
-            android:text="Share songs"
-            android:gravity="center"
-            android:textSize="12dp"
-            android:visibility="gone" android:textColor="#ffffff"
-            
-            />
+            android:id="@+id/song_picker_confirm_share"
+            android:layout_margin="25dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:max="100"
+            android:visibility="gone"
+            android:background="@drawable/slide_button_background"
+            android:padding="5dp"
+            android:thumbOffset="10dp"
+            android:progressDrawable="@android:color/transparent"
+            android:thumb="@drawable/slide_button_thumb" />
     
 </RelativeLayout>

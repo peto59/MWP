@@ -127,6 +127,7 @@
     <Compile Include="Fragments\AlbumFragment.cs" />
     <Compile Include="Fragments\AllSongsFragment.cs" />
     <Compile Include="Fragments\AuthorFragment.cs" />
+    <Compile Include="Fragments\HostPickerFragment.cs" />
     <Compile Include="Fragments\PlaylistFragment.cs" />
     <Compile Include="Fragments\PlaylistsFragment.cs" />
     <Compile Include="Fragments\SettingsFragment.cs" />
@@ -160,6 +161,7 @@
     <Compile Include="UiElements\Local_notification_service.cs" />
     <Compile Include="UiElements\MusicWidget.cs" />
     <Compile Include="UiElements\SidePlayer.cs" />
+    <Compile Include="UiElements\SlideButton.cs" />
     <Compile Include="UiElements\UIRenderFunctions.cs" />
     <Compile Include="youtube.cs" />
   </ItemGroup>
@@ -194,6 +196,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\drawable\shadow.xml" />
     <AndroidResource Include="Resources\drawable\shuffle_on.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -236,6 +239,15 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\drawable\slide_button_background.xml" />
+    <AndroidResource Include="Resources\drawable\slide_button_background_gren.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\slide_button_thumb.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\drawable\white_rounded_label_left.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -262,6 +274,10 @@
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\download_notification_single.xml" />
+    <AndroidResource Include="Resources\layout\host_picker_fragment.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\layout\music_widget_layout.xml" />
     <AndroidResource Include="Resources\layout\nav_header_main.xml">
       <SubType>Designer</SubType>

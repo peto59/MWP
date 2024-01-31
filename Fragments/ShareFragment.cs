@@ -38,7 +38,7 @@ namespace MWP
         private LinearLayout? availableHostsList;
 
         private FloatingActionButton? songPickerFragmentFab;
-        private SongPickerFragment? songPickerFragment;
+        private HostPickerFragment? hostPickerFragment;
         
         private enum ShareActionType
         {
@@ -69,8 +69,8 @@ namespace MWP
             {
                 var fragmentTransaction = ParentFragmentManager.BeginTransaction();
 
-                if (songPickerFragment != null)
-                    fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, songPickerFragment);
+                if (hostPickerFragment != null)
+                    fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, hostPickerFragment);
                 fragmentTransaction.AddToBackStack(null);
                 fragmentTransaction.Commit(); 
             };
@@ -86,7 +86,7 @@ namespace MWP
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             this.assets = assets;
-            this.songPickerFragment = new SongPickerFragment(ctx, assets);
+            hostPickerFragment = new HostPickerFragment(ctx, assets);
             StateHandler.OnShareFragmentRefresh += RefreshFragment;
         }
 

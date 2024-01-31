@@ -30,7 +30,10 @@ namespace MWP
         private readonly Typeface? font;
         private readonly AssetManager assets;
         private RelativeLayout? mainLayout;
-        private TextView? songPickerButton;
+        
+        private SeekBar? confirmPick;
+        private ImageView? confirmPickBg;
+        private bool sendingConfirmed;
 
         private Dictionary<string, LinearLayout?> lazyBuffer;
         private ObservableDictionary<string, Bitmap>? lazyImageBuffer;
@@ -38,7 +41,7 @@ namespace MWP
         private Dictionary<string, Song> selectedSongs;
 
         /// <inheritdoc />
-        public SongPickerFragment(Context context, AssetManager assets)
+        public SongPickerFragment(Context context, AssetManager assets, string hostname)
         {
             this.assets = assets;
             this.context = context;
@@ -47,6 +50,7 @@ namespace MWP
             
             lazyImageBuffer = new ObservableDictionary<string, Bitmap>();
             selectedSongs = new Dictionary<string, Song>();
+            sendingConfirmed = false;
         }
         
         /// <inheritdoc />
@@ -56,25 +60,14 @@ namespace MWP
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.song_picker_layout_main);
 
             /* Získanie komoponentov z XML súboru a nastavenie fontov*/
+            confirmPickBg = view?.FindViewById<ImageView>(Resource.Id.song_picker_slide_bar_bg);
             TextView? songPickerTitle = view?.FindViewById<TextView>(Resource.Id.song_picker_title);
-            songPickerButton = view?.FindViewById<TextView>(Resource.Id.song_picker_share_button);
-            if (songPickerButton != null) songPickerButton.Typeface = font;
             if (songPickerTitle != null) songPickerTitle.Typeface = font;
 
             /* získanie listu pre vykreslenie jednotlivých skladieb */
             LinearLayout? songList = view?.FindViewById<LinearLayout>(Resource.Id.song_picker_song_list);
 
-
-            if (songPickerButton != null)
-                songPickerButton.Click += delegate
-                {
-                    foreach (var sel in selectedSongs)
-                    {
-#if DEBUG
-                        MyConsole.WriteLine($"selected name: {sel.Key}");
-#endif
-                    }
-                };
+            
 
 
             /*
@@ -104,6 +97,7 @@ namespace MWP
             foreach (var song in songs)
             {
                 LinearLayout? lnIn = CreateSongTile(song);
+                lnIn!.Enabled = !sendingConfirmed;
                 if (lazyBuffer.TryAdd(song.Title, lnIn))
                 {
                     songList?.AddView(lnIn);
@@ -120,8 +114,53 @@ namespace MWP
                 UIRenderFunctions.FillImageHoles(context, lazyBuffer, lazyImageBuffer, assets);
             });
             
+            
+            HandleSongConfirm(view);
+            
             return view; 
         }
+        
+        /*
+         * Metóda HandleSongConfirm slúži na obstaranie eventov SeekBar-u. SeekBar v kontexte výberu skladieb nesie 2 úlohy.
+         * 1. Ako posúvacie tlačidlo na potvrdenie odoslania skladieb,
+         * 2. Indikátor, koľko percent skladieb už bolo odoslaných
+         */
+        private void HandleSongConfirm(View? view)
+        {
+            confirmPick = view?.FindViewById<SeekBar>(Resource.Id.song_picker_confirm_share);
+            
+            /*
+             * V prípade že sa zmení progres (čiže či používateľ potiahol SeekBar) skontrolovať či uź je na konci
+             * a tak potvrdiť potvrdenie poslania.
+             */
+            if (confirmPick != null)
+                confirmPick.ProgressChanged += (sender, e) =>
+                {
+                    if (e.Progress > 95)
+                    {
+                        confirmPick.Enabled = false;
+                        confirmPick.SetBackgroundResource(Resource.Drawable.slide_button_background_gren);
+                        confirmPick.SetThumb(Resources.GetDrawable(Resource.Drawable.custom_thumb, null));
+                        confirmPick.Progress = 50;
+
+                        Toast.MakeText(context, "Sending songs", ToastLength.Long)?.Show();
+                        sendingConfirmed = true;
+                    }
+                };
+
+            /*
+             * Keď užívateľ prestane pohybovať SeekBar-om a stále nie je na konci, zresetovať pozíciu.
+             */
+            if (confirmPick != null)
+                confirmPick.StopTrackingTouch += (sender, e) =>
+                {
+                    if (confirmPick.Progress <= 95)
+                    {
+                        confirmPick.Progress = 0;
+                    }
+                };
+        }
+        
         
         /*
          * Metóda slúžiaca na vygenerovanie LinearLayout komponentu s obrázkom a názvom sklaby pre vykreslenie jednotlivých
@@ -147,6 +186,8 @@ namespace MWP
             bool selected = false;
             lnIn.Click += delegate
             {
+                // lnIn.Enabled = sendingConfirmed ? false : true;
+                
                 if (!selected)
                 {
                     lnIn.SetBackgroundResource(Resource.Drawable.rounded_button);
@@ -158,10 +199,12 @@ namespace MWP
                     lnIn.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
                     selected = false;
                     selectedSongs.Remove(song.Title);
-                    
-                    if (songPickerButton != null) songPickerButton.Visibility = ViewStates.Visible;
+                    // if (songPickerButton != null) songPickerButton.Visibility = ViewStates.Visible;
                 }
-                
+
+                if (confirmPick != null) confirmPick.Visibility = selectedSongs.Count > 0 ? ViewStates.Visible : ViewStates.Gone;
+                if (confirmPickBg != null) confirmPickBg.Visibility = selectedSongs.Count > 0 ? ViewStates.Visible : ViewStates.Gone;
+
             };
             
             /*
@@ -206,18 +249,7 @@ namespace MWP
         }
 
 
-        private void EnableShareOnChange()
-        {
-#if DEBUG
-            MyConsole.WriteLine("sakk alele jooj");
-#endif
-            if (selectedSongs.Count == 0)
-                if (songPickerButton != null) songPickerButton.Visibility = ViewStates.Gone;
-            else
-                if (songPickerButton != null) songPickerButton.Visibility = ViewStates.Visible;
-            
-        }
-
+      
      
         
  

@@ -309,7 +309,7 @@ namespace MWP
                     
             }
 
-            
+            /*
             decimal percentage = ((decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count) * 100;
             #if DEBUG
             MyConsole.WriteLine($"Percentage of Loaded Songs {_lazyImageBuffer.Items.Count} / {_lazyBuffer.Count} = {(decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count}");
@@ -321,7 +321,7 @@ namespace MWP
                     LinearLayout? child = _lazyBuffer[songs[i].Title];
                     if (_assets != null) UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
                 }
-            }
+            } */
             
             
         } 
