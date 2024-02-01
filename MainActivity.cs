@@ -61,6 +61,7 @@ namespace MWP
         public static readonly StateHandler StateHandler = new StateHandler();
         private static readonly MediaServiceConnection ServiceConnectionPrivate = new MediaServiceConnection();
         private ActionBarDrawerToggle? toggle;
+        private long lastBackPressedTime;
         /// <summary>
         /// Instance of Service Connection
         /// </summary>
@@ -365,19 +366,31 @@ namespace MWP
 #if DEBUG
                 MyConsole.WriteLine($"returning from initial settings");
 #endif
-                if (toggle != null)
-                {
-                    toggle.DrawerIndicatorEnabled = true;
-                    toggle.SetHomeAsUpIndicator(null);
-                    toggle.ToolbarNavigationClickListener = null;
-                    toggle.SyncState();
-                }
-                drawer?.OpenDrawer(GravityCompat.Start);
-                RequestMyPermission();
+                AfterInitialSettingsReturn();
             }
-            else if (drawer != null && drawer.IsDrawerOpen(GravityCompat.Start))
+
+            bool canCloseDrawer = true;
+            if (SupportFragmentManager is { Fragments: not null })
             {
-                drawer.CloseDrawer(GravityCompat.Start);
+                bool isAnyFragmentVisible = SupportFragmentManager.Fragments.Aggregate(false, (current, fragment) => current | fragment.IsVisible);
+                canCloseDrawer = !isAnyFragmentVisible;
+                if (!isAnyFragmentVisible && lastBackPressedTime + 2000 > DateTimeOffset.Now.ToUnixTimeMilliseconds())
+                {
+                    Finish();
+                }
+                else
+                {
+                    Toast.MakeText(this, "Press back again to exit", ToastLength.Short)?.Show();
+                    lastBackPressedTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                }
+            }
+
+            if (drawer != null && drawer.IsDrawerOpen(GravityCompat.Start))
+            {
+                if (!canCloseDrawer)
+                {
+                    drawer.CloseDrawer(GravityCompat.Start);
+                }
             }
             else
             {
@@ -436,20 +449,7 @@ namespace MWP
                     {
                         toggle.DrawerIndicatorEnabled = false;
                         toggle.SetHomeAsUpIndicator(Resource.Drawable.back);
-                        toggle.ToolbarNavigationClickListener = new MyClickListener(
-                            () =>
-                            {
-                                if (toggle != null)
-                                {
-                                    toggle.DrawerIndicatorEnabled = true;
-                                    toggle.SetHomeAsUpIndicator(null);
-                                    toggle.ToolbarNavigationClickListener = null;
-                                    toggle.SyncState();
-                                }
-                                drawer?.OpenDrawer(GravityCompat.Start);
-                                RequestMyPermission();
-                            }
-                        );
+                        toggle.ToolbarNavigationClickListener = new MyClickListener(AfterInitialSettingsReturn);
                         
                         toggle.SyncState();
                     }
@@ -458,6 +458,7 @@ namespace MWP
                     FragmentTransaction settingsTransaction = SupportFragmentManager.BeginTransaction();
                     settingsTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, settingsFragmentAdam, "SettingsFromDialog");
                     settingsTransaction.AddToBackStack("SettingsFromDialog");
+                    drawer?.SetDrawerLockMode(DrawerLayout.LockModeLockedClosed, GravityCompat.Start);
                     drawer?.CloseDrawer(GravityCompat.Start);
                     settingsTransaction.Commit();
                 });
@@ -965,12 +966,27 @@ namespace MWP
             installIntent.AddFlags(ActivityFlags.NewTask);
             StartActivity(installIntent);
         }
+
+        private void AfterInitialSettingsReturn()
+        {
+            if (toggle != null)
+            {
+                toggle.DrawerIndicatorEnabled = true;
+                toggle.SetHomeAsUpIndicator(null);
+                toggle.ToolbarNavigationClickListener = null;
+                toggle.SyncState();
+            }
+            drawer?.SetDrawerLockMode(DrawerLayout.LockModeUnlocked, GravityCompat.Start);
+            drawer?.OpenDrawer(GravityCompat.Start);
+            SupportFragmentManager.PopBackStack();
+            RequestMyPermission();
+        }
         
     }
 
     internal class MyClickListener : Java.Lang.Object, View.IOnClickListener
     {
-        private Action action;
+        private readonly Action action;
 
         internal MyClickListener(Action a)
         {

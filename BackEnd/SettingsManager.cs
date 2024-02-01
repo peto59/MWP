@@ -38,12 +38,12 @@ namespace MWP.BackEnd
                         : AutoUpdate.Forbidden;
                 }, null),
                 
-                ("Move sing files to hierarchy", () => MoveFiles == MoveFilesEnum.Yes, (val) =>
+                ("Move and organize songs to Music folder", () => MoveFiles == MoveFilesEnum.Yes, (val) =>
                 {
                     MoveFiles = val
                         ? MoveFilesEnum.Yes
                         : MoveFilesEnum.No;
-                }, null),
+                }, "Will change location of mp3 files to Music folder based on metadata (ID3v2 tags)"),
             };
         }
 
@@ -55,7 +55,7 @@ namespace MWP.BackEnd
                         {"Disable", (int)UseChromaprint.No},
                         {"Manual", (int)UseChromaprint.Manual},
                         {"Automatic", (int)UseChromaprint.Automatic}
-                    }, "Setting to Automatic can produce weird tags"
+                    }, "Setting to Automatic can produce weird Titles and names"
                 ),
                 
             };
