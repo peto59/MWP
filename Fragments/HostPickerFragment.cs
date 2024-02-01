@@ -12,6 +12,7 @@ using Android.Graphics.Drawables;
 using Android.OS;
 using Java.Util;
 using MWP.BackEnd;
+using MWP.BackEnd.Network;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using Orientation = Android.Widget.Orientation;
@@ -88,19 +89,20 @@ namespace MWP
              * zabezpečuje sa tak výber iba jedného políčka
              */
             List<string> hosts = new List<string>{"host1 meno #1", "host2 meno #2"};
+            List<(string hostname, DateTime? lastSeen, bool state)> allHosts = NetworkManager.GetAllHosts(false);
             Dictionary<string, LinearLayout> tiles = new Dictionary<string, LinearLayout>(); 
             
-            foreach (var host in hosts)
+            // TODO: Print no hosts available if allHosts Count is 0
+            
+            foreach (var host in allHosts)
             {
-                LinearLayout? lnIn = CreateSongTile(host);
+                LinearLayout? lnIn = CreateSongTile(host.hostname);
 
                 if (lnIn != null)
                 {
-
-                    tiles.Add(host, lnIn);
+                    tiles.Add(host.hostname, lnIn);
                     lnIn.Click += (sender, args) =>
                     {
-                        
                         LinearLayout? currentLin = sender as LinearLayout;
                         foreach (var tile in tiles)
                         {

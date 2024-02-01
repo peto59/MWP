@@ -321,8 +321,8 @@ namespace MWP
             
             ShowDialogs();
         }
-
-
+        
+        
         /// <inheritdoc />
         public override bool DispatchTouchEvent(MotionEvent? ev)
         {
