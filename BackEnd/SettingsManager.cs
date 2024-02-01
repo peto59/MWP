@@ -24,7 +24,7 @@ namespace MWP.BackEnd
                 "MIUI",
                 "Alarms"
             }; 
-            return string.Join(';', paths.Select(path => $"{FileManager.Root}{path}").ToArray());
+            return string.Join(';', paths.Select(path => $"{FileManager.Root}{System.IO.Path.DirectorySeparatorChar}{path}").ToArray());
         }
         public static void ResetSettings()
         {

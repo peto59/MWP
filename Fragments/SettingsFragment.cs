@@ -14,6 +14,7 @@ using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.Net;
 using Android.Provider;
+using Java.IO;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using MWP.BackEnd;
 using MWP.Helpers;
@@ -32,6 +33,8 @@ namespace MWP
         private AssetManager? assets;
         private LinearLayout? mainLinearLayout;
         private Typeface? font;
+        private List<string> paths;
+        private AlertDialog? dialog;
 
 
         /// <summary>
@@ -114,8 +117,9 @@ namespace MWP
             if (addNewRestricted != null)
             {
                 addNewRestricted.Typeface = font;
-                List<string> paths = new List<string>{ "path1", "path2", "path3", "path4" };
-                addNewRestricted.Click += delegate { ListPlaylistsPopup(paths); };
+                // List<string> paths = new List<string>{ "path1", "path2", "path3", "path4" };
+                paths = SettingsManager.ExcludedPaths;
+                addNewRestricted.Click += delegate { ListPathsPopup(paths); };
             }
 
             return view;
@@ -288,7 +292,7 @@ namespace MWP
 
         } 
         
-        
+        /**/
         private AndroidX.AppCompat.Widget.SwitchCompat CreateSwitch(Action<bool> write, bool initialValue)
         {
             AndroidX.AppCompat.Widget.SwitchCompat switchCompat = new AndroidX.AppCompat.Widget.SwitchCompat(context);
@@ -352,14 +356,14 @@ namespace MWP
          * zakázaných ciest priečinkov pre hľadanie MP3 súborov a tlačidlom pre možnosť pridania novej
          * cesty prostredníctvom Folder Picker-u. 
          */
-        private void ListPlaylistsPopup(List<string> paths)
+        private void ListPathsPopup(List<string> paths)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? view = ifl?.Inflate(Resource.Layout.settings_restricted_paths_popup, null);
             AlertDialog.Builder alert = new AlertDialog.Builder(context);
             alert.SetView(view);
 
-            AlertDialog? dialog = alert.Create();
+            dialog = alert.Create();
             dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
 
             LinearLayout? ln = view?.FindViewById<LinearLayout>(Resource.Id.settings_restricted_path_list);
@@ -405,7 +409,10 @@ namespace MWP
                 name.TextSize = (int)ConvertDpToPixels(5);
                 name.Typeface = font;
                 name.SetTextColor(Color.White);
-                name.Text = path;
+                int index = path.IndexOf(FileManager.Root, StringComparison.Ordinal);
+                name.Text = (index < 0)
+                    ? path
+                    : path.Remove(index, FileManager.Root.Length);
                 lnIn.AddView(name);
                 
                 /*
@@ -434,7 +441,10 @@ namespace MWP
                 deleteButton.Text = "X";
                 deleteButton.Click += delegate
                 {
-                    
+                    paths.Remove(path);
+                    SettingsManager.ExcludedPaths = paths;
+                    dialog?.Cancel();
+                    ListPathsPopup(paths);
                 };
                 lnIn.AddView(deleteButton);
                 
@@ -480,9 +490,20 @@ namespace MWP
                     Uri? docUri = DocumentsContract.BuildDocumentUriUsingTree(uri, 
                         DocumentsContract.GetTreeDocumentId(uri));
                     String path = Android.Net.Uri.GetPath(context, docUri); */
+                    if (data.Data?.Path != null)
+                    {
+                        File file = new File(data.Data.Path);//create path from uri
+                        String[] split = file.Path.Split(System.IO.Path.PathSeparator);//split the path.
+                        string filePath = $"{FileManager.Root}{System.IO.Path.DirectorySeparatorChar}{split[1]}";//assign it to a string(your choice).
+                        paths.Add(filePath);
+                        SettingsManager.ExcludedPaths = paths;
 #if DEBUG
-                    MyConsole.WriteLine($"Result URI {data.Data}");
+                        MyConsole.WriteLine($"Result URI {filePath}");
 #endif
+                        dialog?.Cancel();
+                        ListPathsPopup(paths);
+                    }
+
                     break;
             }
         }
