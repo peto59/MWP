@@ -19,7 +19,8 @@ namespace MWP.BackEnd
 {
     internal static class FileManager
     {
-        private static readonly string? Root = (string?)Android.OS.Environment.ExternalStorageDirectory;
+        private static readonly string? _root = (string?)Android.OS.Environment.ExternalStorageDirectory;
+        public static string Root => _root ?? string.Empty;
         // ReSharper disable once InconsistentNaming
         private static readonly string? _privatePath = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
         public static string PrivatePath => _privatePath ?? string.Empty;
@@ -108,7 +109,7 @@ namespace MWP.BackEnd
         public static void DiscoverFiles(bool generateStateHandlerEntry = false)
         {
             MainActivity.StateHandler.FileListGenerationEvent.WaitOne();
-            if (Root != null) DiscoverFiles(Root, generateStateHandlerEntry);
+            if (_root != null) DiscoverFiles(_root, generateStateHandlerEntry);
             while (Discoveries.Any())
             {
                 Task finishedTask = Task.WhenAny(Discoveries).GetAwaiter().GetResult();

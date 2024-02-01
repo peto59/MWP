@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using MWP.BackEnd.Network;
 using MWP.DatatypesAndExtensions;
@@ -11,11 +12,26 @@ namespace MWP.BackEnd
     {
         private const string ShareName = "AssPainSharedPreferences";
 
+        private static string GetDefaultExcludedPaths()
+        {
+            List<string> paths = new List<string>
+            {
+                "Android",
+                "sound_recorder",
+                "Notifications",
+                "Recordings",
+                "Ringtones",
+                "MIUI",
+                "Alarms"
+            }; 
+            return string.Join(';', paths.Select(path => $"{FileManager.Root}{path}").ToArray());
+        }
         public static void ResetSettings()
         {
             Preferences.Clear(ShareName);
             RegisterSettings();
         }
+        
 
         public static List<(string name, Func<bool> read, Action<bool> write, string? remark)> GetBoolSettings()
         {
@@ -69,6 +85,7 @@ namespace MWP.BackEnd
             _canUseNetwork = new IntSetting(ShareName, "canUseNetwork", (int)CanUseNetworkState.None);
             _defaultDownloadAction = new IntSetting(ShareName, "defaultDownloadAction", (int)DownloadActions.DownloadOnly);
             _checkUpdates = new IntSetting(ShareName, "checkUpdates", (int)AutoUpdate.NoState);
+            _excludedPaths = new StringSetting(ShareName, "ShouldUseChromaprintAtDownload", GetDefaultExcludedPaths());
         }
         
         private static Setting<int> _moveFiles = new IntSetting(ShareName, "MoveFiles", (int)MoveFilesEnum.None);
@@ -76,6 +93,13 @@ namespace MWP.BackEnd
         {
             get => (MoveFilesEnum)_moveFiles.Value;
             set => _moveFiles.Value = (int)value;
+        }
+        
+        private static Setting<string> _excludedPaths = new StringSetting(ShareName, "ShouldUseChromaprintAtDownload", GetDefaultExcludedPaths());
+        public static List<string> ExcludedPaths
+        {
+            get => _excludedPaths.Value.Split(';').ToList();
+            set => _excludedPaths.Value = string.Join(';', value.ToArray());
         }
 
         private static Setting<bool> _shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
