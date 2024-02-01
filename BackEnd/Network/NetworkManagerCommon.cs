@@ -74,14 +74,14 @@ namespace MWP.BackEnd.Network
         private const int P2PPort = 8009;
         internal const int RsaDataSize = 256;
 #if DEBUG
-        private string _currentSsid = string.Empty;
+        private string currentSsid = string.Empty;
         internal string CurrentSsid
         {
-            get => _currentSsid;
+            get => currentSsid;
             set
             {
                 MyConsole.WriteLine($"Changing CurrentSsid to {value}");
-                _currentSsid = value;
+                currentSsid = value;
             }
         }
 #else
@@ -95,7 +95,7 @@ namespace MWP.BackEnd.Network
             Sock.ReceiveTimeout = 2000;
             if (SettingsManager.CanUseWan)
             {
-                NatUtility.DeviceFound += delegate(object sender, DeviceEventArgs args)
+                NatUtility.DeviceFound += delegate(object _, DeviceEventArgs args)
                 {
                     INatDevice device = args.Device;
 #if DEBUG

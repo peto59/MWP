@@ -104,7 +104,6 @@ namespace MWP.BackEnd.Network
                                     //TODO: doesn't work with one time sends....
                                     if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                     
-                                    //NetworkManagerCommon.Connected.Add(targetIp);
                                     new Thread(() =>
                                     {
                                         if (!NetworkManagerCommon.P2PDecide(targetIp))
@@ -139,18 +138,15 @@ namespace MWP.BackEnd.Network
         /// Get combination of all trusted and available hosts
         /// </summary>
         /// <returns>List of tuple with hostname, lastSeen, and whether this host is trusted</returns>
-        public static List<(string hostname, DateTime? lastSeen, bool state)> GetAllHosts()
+        public static List<(string hostname, DateTime? lastSeen, bool state)> GetAllHosts(bool includeTrusted = true)
         {
             List<string> trusted = FileManager.GetTrustedSyncTargets();
             List<(string hostname, DateTime? lastSeen, bool state)> output = new List<(string hostname, DateTime? lastSeen, bool state)>();
-            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.StateHandler.AvailableHosts)
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.StateHandler.AvailableHosts.Where(stateHandlerAvailableHost => stateHandlerAvailableHost.hostname != "localhost"))
             {
-                if (stateHandlerAvailableHost.hostname == "localhost")
-                {
-                    continue;
-                }
                 if (trusted.Contains(stateHandlerAvailableHost.hostname))
                 {
+                    if (!includeTrusted) continue;
                     output.Add((stateHandlerAvailableHost.hostname, stateHandlerAvailableHost.lastSeen, true));
                     trusted.Remove(stateHandlerAvailableHost.hostname);
                 }
