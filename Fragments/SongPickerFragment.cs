@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
@@ -12,6 +13,7 @@ using Android.Graphics.Drawables;
 using Android.OS;
 using Java.Util;
 using MWP.BackEnd;
+using MWP.BackEnd.Network;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using Orientation = Android.Widget.Orientation;
@@ -34,6 +36,7 @@ namespace MWP
         private SeekBar? confirmPick;
         private ImageView? confirmPickBg;
         private bool sendingConfirmed;
+        private string hostname;
 
         private Dictionary<string, LinearLayout?> lazyBuffer;
         private ObservableDictionary<string, Bitmap>? lazyImageBuffer;
@@ -51,6 +54,7 @@ namespace MWP
             lazyImageBuffer = new ObservableDictionary<string, Bitmap>();
             selectedSongs = new Dictionary<string, Song>();
             sendingConfirmed = false;
+            this.hostname = hostname;
         }
         
         /// <inheritdoc />
@@ -145,6 +149,16 @@ namespace MWP
 
                         Toast.MakeText(context, "Sending songs", ToastLength.Long)?.Show();
                         sendingConfirmed = true;
+                        
+                        /* /* prenasanie songov */
+                        List<Song> listOfSelectedSongs = selectedSongs.Values.ToList();
+                        
+                        List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.StateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
+                        if(currentAvailableHosts.Count > 0){
+                            IPAddress currentHostAddress = currentAvailableHosts.First().ipAddress;
+                            NetworkManager.Common.SendBroadcast(listOfSelectedSongs, currentHostAddress);
+                        }
+                        
                     }
                 };
 
