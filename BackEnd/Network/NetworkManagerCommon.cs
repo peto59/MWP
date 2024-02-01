@@ -440,8 +440,10 @@ namespace MWP.BackEnd.Network
             return (pubKey, privKey);
         }
         
-        internal void SendBroadcast(List<Song>? songsToSend = null)
+        
+        internal void SendBroadcast(List<Song>? songsToSend = null, IPAddress? ipAddress = null)
         {
+            
 #if DEBUG
             MyConsole.WriteLine($"SSID: {CurrentSsid}");            
 #endif
@@ -449,14 +451,22 @@ namespace MWP.BackEnd.Network
             {
                 case CanSend.Allowed:
                 {
-                    if (myBroadcastIp != null)
+                    if (myBroadcastIp != null || ipAddress != null)
                     {
-                        IPEndPoint destinationEndpoint = new IPEndPoint(myBroadcastIp, BroadcastPort);
+                        IPEndPoint destinationEndpoint = ipAddress != null
+                            ? new IPEndPoint(ipAddress,
+                                BroadcastPort)
+                            : new IPEndPoint(myBroadcastIp!,
+                                BroadcastPort);
 
                         int retries = 0;
                         const int maxRetries = 3;
 
-                        IPEndPoint iep = new IPEndPoint(IPAddress.Any, BroadcastPort);
+                        IPEndPoint iep = ipAddress != null
+                            ? new IPEndPoint(ipAddress,
+                                BroadcastPort)
+                            : new IPEndPoint(IPAddress.Any,
+                                BroadcastPort);
                         bool processedAtLestOne = false;
                         do
                         {
