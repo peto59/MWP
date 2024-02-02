@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -23,26 +22,20 @@ namespace MWP.BackEnd.Network
 #endif
             TcpClient client = new TcpClient(server.ToString(), port);
             NetworkStream networkStream = client.GetStream();
-            EncryptionState encryptionState = EncryptionState.None;
-            SyncRequestState syncRequestState = SyncRequestState.None;
-            SongSendRequestState songSendRequestState = SongSendRequestState.None;
-            Dictionary<string, string> albumArtistPair = new Dictionary<string, string>();
-            bool ending = false;
-            string remoteHostname = string.Empty;
-            bool? isTrustedSyncTarget = null;
-            List<Song> syncSongs = new List<Song>();
-            int ackCount = 0;
             RSACryptoServiceProvider encryptor = new RSACryptoServiceProvider();
             RSACryptoServiceProvider decryptor = new RSACryptoServiceProvider();
             Aes aes = Aes.Create();
             aes.KeySize = 256;
             aes.Mode = CipherMode.CBC;
             aes.Padding = PaddingMode.PKCS7;
-            int timeoutCounter = 0;
-            List<string> artistImageRequests = new List<string>();
-            List<string> albumImageRequests = new List<string>();
             
+            if (songsToSend.Count > 0)
+            {
+                networkStream.WriteCommand(CommandsArr.OnetimeSend);
+            }
             networkStream.WriteCommand(CommandsArr.Host, Encoding.UTF8.GetBytes(DeviceInfo.Name));
+
+            ConnectionState connectionState = new ConnectionState(false, songsToSend);
 
             Thread.Sleep(100);
             while (true)
@@ -56,13 +49,13 @@ namespace MWP.BackEnd.Network
 
                 if (networkStream.DataAvailable)
                 {
-                    (command, data, length) = NetworkManagerCommonCommunication.Read(encryptionState, ref networkStream, ref decryptor, ref aes, false);
-                    timeoutCounter = 0;
+                    (command, data, length) = NetworkManagerCommonCommunication.Read(ref networkStream, ref decryptor, ref aes, ref connectionState);
+                    connectionState.timeoutCounter = 0;
                 }
                 else
                 {
-                    timeoutCounter++;
-                    if (timeoutCounter > NetworkManager.MaxTimeoutCounter)
+                    connectionState.timeoutCounter++;
+                    if (connectionState.timeoutCounter > NetworkManager.MaxTimeoutCounter)
                     {
                         goto EndClient;
                     }
@@ -76,22 +69,23 @@ namespace MWP.BackEnd.Network
 
                 #region Writing
 
-                NetworkManagerCommonCommunication.Write(ref ending, command, encryptionState, ref networkStream,
-                    ref encryptor, ref aes, ref songsToSend, ref syncSongs, ref syncRequestState,
-                    ref songSendRequestState, ref isTrustedSyncTarget, ref ackCount, remoteHostname, ref artistImageRequests, ref albumImageRequests);
+                NetworkManagerCommonCommunication.Write(command, ref networkStream,
+                    ref encryptor, ref aes, ref connectionState);
 
                 #endregion
                 
                 switch (command)
                 {
-                    case CommandsEnum.Host: //host
-                        NetworkManagerCommonCommunication.Host(ref remoteHostname, ref networkStream, ref decryptor, ref encryptor, ref aes, ref encryptionState, false);
+                    case CommandsEnum.OnetimeSend:
+                        connectionState.gotOneTimeSendFlag = true;
+                        break;
+                    case CommandsEnum.Host:
+                        NetworkManagerCommonCommunication.Host(ref networkStream, ref decryptor, ref encryptor, ref aes, ref connectionState);
                         break;
                     case CommandsEnum.RsaExchange:
                         if (data != null)
                         {
-                            NetworkManagerCommonCommunication.RsaExchange(ref networkStream, ref data, remoteHostname,
-                                ref encryptionState, ref decryptor, ref encryptor, ref aes, false);
+                            NetworkManagerCommonCommunication.RsaExchange(ref networkStream, ref data, ref decryptor, ref encryptor, ref aes, ref connectionState);
                         }
                         break;
                     case CommandsEnum.AesSend:
@@ -99,7 +93,7 @@ namespace MWP.BackEnd.Network
                         {
                             aes.Key = data;
                             networkStream.WriteCommand(CommandsArr.AesReceived, ref encryptor);
-                            encryptionState = EncryptionState.Encrypted;
+                            connectionState.encryptionState = EncryptionState.Encrypted;
 #if DEBUG
                             MyConsole.WriteLine("encrypted");
 #endif
@@ -108,7 +102,7 @@ namespace MWP.BackEnd.Network
                     case CommandsEnum.AesReceived:
                         throw new IllegalStateException("Client doesn't receive aes confirmation");
                     case CommandsEnum.SyncRequest:
-                        if (FileManager.IsTrustedSyncTarget(remoteHostname))
+                        if (FileManager.IsTrustedSyncTarget(connectionState.remoteHostname))
                         {
                             networkStream.WriteCommand(CommandsArr.SyncAccepted, ref encryptor);
                         }
@@ -118,10 +112,10 @@ namespace MWP.BackEnd.Network
                         }
                         break;
                     case CommandsEnum.SyncAccepted:
-                        syncRequestState = SyncRequestState.Accepted;
+                        connectionState.syncRequestState = SyncRequestState.Accepted;
                         break;
                     case CommandsEnum.SyncRejected:
-                        syncRequestState = SyncRequestState.Rejected;
+                        connectionState.syncRequestState = SyncRequestState.Rejected;
                         break;
                     case CommandsEnum.SongRequest:
                         break;
@@ -163,72 +157,69 @@ namespace MWP.BackEnd.Network
                         }
                         break;
                     case CommandsEnum.SongRequestAccepted:
-                        songSendRequestState = SongSendRequestState.Accepted;
+                        connectionState.songSendRequestState = SongSendRequestState.Accepted;
                         break;
                     case CommandsEnum.SongRequestRejected:
-                        songSendRequestState = SongSendRequestState.Rejected;
+                        connectionState.songSendRequestState = SongSendRequestState.Rejected;
                         break;
                     case CommandsEnum.SongSend:
-                        if (length != null && isTrustedSyncTarget != null)
+                        if (length != null && connectionState.isTrustedSyncTarget != null)
                         {
 #if DEBUG
                             MyConsole.WriteLine($"file length: {length}");
 #endif
-                            NetworkManagerCommonCommunication.SongSend(ref networkStream, ref encryptor, (long)length, ref aes,
-                                ref albumArtistPair, (bool)isTrustedSyncTarget, remoteHostname, ref artistImageRequests, ref albumImageRequests);
+                            NetworkManagerCommonCommunication.SongSend(ref networkStream, ref encryptor, (long)length, ref aes, ref connectionState);
                         }
                         break;
                     case CommandsEnum.ArtistImageSend:
-                        if (data != null && length != null && isTrustedSyncTarget != null)
+                        if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
                         {
                             NetworkManagerCommonCommunication.ArtistImageSend(ref networkStream, ref encryptor, ref aes,
-                                (long)length, data, (bool)isTrustedSyncTarget, ref artistImageRequests);
+                                (long)length, data, ref connectionState);
                         }
                         break;
                     case CommandsEnum.AlbumImageSend:
-                        if (data != null && length != null && isTrustedSyncTarget != null)
+                        if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
                         {
                             NetworkManagerCommonCommunication.AlbumImageSend(ref networkStream, ref encryptor, ref aes,
-                                (long)length, data, ref albumArtistPair, (bool)isTrustedSyncTarget, ref albumImageRequests);
+                                (long)length, data, ref connectionState);
                         }
                         break;
                     case CommandsEnum.ArtistImageRequest:
                         if (data != null)
                         {
-                            NetworkManagerCommonCommunication.ArtistImageRequest(ref networkStream, ref encryptor, ref aes,
-                                ref ackCount, data);
+                            NetworkManagerCommonCommunication.ArtistImageRequest(ref networkStream, ref encryptor, ref aes, data, ref connectionState);
                         }
                         break;
                     case CommandsEnum.AlbumImageRequest:
                         if (data != null)
                         {
-                            NetworkManagerCommonCommunication.AlbumImageRequest(ref networkStream, ref encryptor, ref aes,
-                                ref ackCount, data);
+                            NetworkManagerCommonCommunication.AlbumImageRequest(ref networkStream, ref encryptor, ref aes, data, ref connectionState);
                         }
                         break;
                     case CommandsEnum.ArtistImageNotFound:
                         if (data != null)
                         {
                             string artistName = Encoding.UTF8.GetString(data);
-                            artistImageRequests.Remove(artistName);
-                            artistImageRequests.Remove(FileManager.GetAlias(artistName));
+                            connectionState.artistImageRequests.Remove(artistName);
+                            connectionState.artistImageRequests.Remove(FileManager.GetAlias(artistName));
                         }
                         break;
                     case CommandsEnum.AlbumImageNotFound:
                         if (data != null)
                         {
                             string albumName = Encoding.UTF8.GetString(data);
-                            albumImageRequests.Remove(albumName);
+                            connectionState.albumImageRequests.Remove(albumName);
                         }
                         break;
                     case CommandsEnum.Ack:
-                        ackCount++;
+                        connectionState.ackCount++;
                         break;
-                    case CommandsEnum.End: //end
+                    case CommandsEnum.End:
 #if DEBUG
                         MyConsole.WriteLine("got end");
 #endif
-                        if (!ending || ackCount < 0)//if work to do
+                        if (!connectionState.ending || connectionState.ackCount < 0)//if work to do
                         {
 #if DEBUG
                             MyConsole.WriteLine("Still work to do");
@@ -237,7 +228,7 @@ namespace MWP.BackEnd.Network
                         }
                         try
                         {
-                            if (encryptionState == EncryptionState.Encrypted)
+                            if (connectionState.encryptionState == EncryptionState.Encrypted)
                                 networkStream.WriteCommand(CommandsArr.End, ref encryptor);
                             else
                                 networkStream.WriteCommand(CommandsArr.End);

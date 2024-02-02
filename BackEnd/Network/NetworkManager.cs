@@ -102,7 +102,7 @@ namespace MWP.BackEnd.Network
 
                                     //TODO: add to available targets. Don't connect directly, check if sync is allowed.
                                     //TODO: doesn't work with one time sends....
-                                    if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
+                                    //if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                     
                                     new Thread(() =>
                                     {
@@ -140,6 +140,15 @@ namespace MWP.BackEnd.Network
         /// <returns>List of tuple with hostname, lastSeen, and whether this host is trusted</returns>
         public static List<(string hostname, DateTime? lastSeen, bool state)> GetAllHosts(bool includeTrusted = true)
         {
+            DateTime now = DateTime.Now;
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.StateHandler.AvailableHosts.Where(a =>
+                         a.lastSeen > now + RemoveInterval))
+            {
+                MainActivity.StateHandler.AvailableHosts.Remove(removal);
+            }
+            
+            StateHandler.TriggerShareFragmentRefresh();
+            
             List<string> trusted = FileManager.GetTrustedSyncTargets();
             List<(string hostname, DateTime? lastSeen, bool state)> output = new List<(string hostname, DateTime? lastSeen, bool state)>();
             foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.StateHandler.AvailableHosts.Where(stateHandlerAvailableHost => stateHandlerAvailableHost.hostname != "localhost"))

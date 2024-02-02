@@ -4,7 +4,10 @@ using System.Net;
 using System.Threading;
 using Android.Graphics;
 using AndroidX.AppCompat.App;
+using Java.Util;
+using MWP.BackEnd.Network;
 using MWP.DatatypesAndExtensions;
+using Random = System.Random;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -48,6 +51,8 @@ namespace MWP.BackEnd
         /// </summary>
         public List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> AvailableHosts =
             new List<(IPAddress ipAddress, DateTime lastSeen, string hostname)>();
+
+        internal static Dictionary<string, UserAcceptedState> OneTimeSendStates = new Dictionary<string, UserAcceptedState>();
         
         
         

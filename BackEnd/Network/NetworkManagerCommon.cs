@@ -494,7 +494,7 @@ namespace MWP.BackEnd.Network
                                     processedAtLestOne = true;
                                     //TODO: add to available targets. Don't connect directly, check if sync is allowed.
                                     //TODO: doesn't work with one time sends....
-                                    if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
+                                    //if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                 
                                     //Connected.Add(targetIp);
                                     new Thread(() =>

@@ -121,6 +121,9 @@ namespace MWP.BackEnd
 
         private static void DiscoverFiles(string path, bool generateStateHandlerEntry)
         {
+#if DEBUG
+            MyConsole.WriteLine($"Path {path}");
+#endif
             string nameFromPath = GetNameFromPath(path);
             if(nameFromPath.StartsWith(".") || File.Exists($"{path}/.nomedia"))
             {

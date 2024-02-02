@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using AngleSharp.Io;
 
 namespace MWP.BackEnd.Network
@@ -55,5 +56,33 @@ namespace MWP.BackEnd.Network
         Port,
         Request,
         None
+    }
+
+    internal class ConnectionState
+    {
+        internal ConnectionState(bool isServer, List<Song> songsToSend)
+        {
+            IsServer = isServer;
+            sendOnetimeSendFlag = songsToSend.Count > 0;
+            this.songsToSend = songsToSend;
+        }
+
+        internal bool IsServer;
+        internal bool ending = false;
+        internal EncryptionState encryptionState = EncryptionState.None;
+        internal SyncRequestState syncRequestState = SyncRequestState.None;
+        internal SongSendRequestState songSendRequestState = SongSendRequestState.None;
+        internal string remoteHostname = string.Empty;
+        internal int ackCount = 0;
+        internal bool? isTrustedSyncTarget = null;
+        internal int timeoutCounter = 0;
+        
+        internal List<Song> syncSongs = new List<Song>();
+        internal List<Song> songsToSend;
+        internal Dictionary<string, string> albumArtistPair = new Dictionary<string, string>();
+        internal List<string> artistImageRequests = new List<string>();
+        internal List<string> albumImageRequests = new List<string>();
+        internal bool sendOnetimeSendFlag;
+        internal bool gotOneTimeSendFlag = false;
     }
 }

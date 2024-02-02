@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using MWP.BackEnd.Network;
 using MWP.DatatypesAndExtensions;
+using MWP.Helpers;
 using Xamarin.Essentials;
 
 namespace MWP.BackEnd
@@ -98,8 +99,21 @@ namespace MWP.BackEnd
         private static Setting<string> _excludedPaths = new StringSetting(ShareName, "ShouldUseChromaprintAtDownload", GetDefaultExcludedPaths());
         public static List<string> ExcludedPaths
         {
+#if DEBUG
+            get
+            {
+                MyConsole.WriteLine($"Excluded paths {_excludedPaths.Value}");
+                return _excludedPaths.Value.Split(';').ToList();
+            }
+            set
+            {
+                MyConsole.WriteLine($"New Excluded paths {string.Join(';', value.ToArray())}");
+                _excludedPaths.Value = string.Join(';', value.ToArray());
+            }
+#else
             get => _excludedPaths.Value.Split(';').ToList();
             set => _excludedPaths.Value = string.Join(';', value.ToArray());
+#endif
         }
 
         private static Setting<bool> _shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
