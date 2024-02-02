@@ -42,15 +42,15 @@ namespace MWP.BackEnd.Network
         }
         internal static bool IsLong(byte[] command)
         {
-            return Commands.IsLong(command[0]);
+            return IsLong(command[0]);
         }
         internal static bool IsFileCommand(byte[] command)
         {
-            return Commands.IsFileCommand(command[0]);
+            return IsFileCommand(command[0]);
         }
         internal static bool IsEncryptedOnlyCommand(byte[] command)
         {
-            return Commands.IsEncryptedOnlyCommand(command[0]);
+            return IsEncryptedOnlyCommand(command[0]);
         }
         internal static bool IsLong(CommandsEnum command)
         {
@@ -142,40 +142,5 @@ namespace MWP.BackEnd.Network
         AlbumImageNotFound = 46,
         Ack = 254,
         End = 255
-    }
-
-    internal enum EncryptionState : byte
-    {
-        None,
-        RsaExchange,
-        AesSend,
-        AesReceived,
-        Encrypted,
-    }
-    
-    internal enum SyncRequestState : byte
-    {
-        None,
-        Sent,
-        Rejected,
-        Accepted
-    }
-
-    internal enum SongSendRequestState : byte
-    {
-        None,
-        Sent,
-        Rejected,
-        Accepted
-    }
-
-    internal enum UserAcceptedState : byte
-    {
-        None,
-        Showed,
-        Cancelled,
-        ConnectionAccepted,
-        SongsShowed,
-        SongsAccepted,
     }
 }

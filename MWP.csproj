@@ -103,12 +103,14 @@
     <Compile Include="BackEnd\Chromaprint.cs" />
     <Compile Include="BackEnd\Network\Commands.cs" />
     <Compile Include="BackEnd\Network\Datatypes.cs" />
+    <Compile Include="BackEnd\Network\Enums.cs" />
     <Compile Include="BackEnd\Network\Extensions.cs" />
     <Compile Include="BackEnd\Network\NetworkManager.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerClient.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerCommon.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerCommonCommunication.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerServer.cs" />
+    <Compile Include="BackEnd\Network\Notifications.cs" />
     <Compile Include="BackEnd\Player\Enums.cs" />
     <Compile Include="BackEnd\Player\MediaService.cs" />
     <Compile Include="BackEnd\Player\MediaServiceBinder.cs" />

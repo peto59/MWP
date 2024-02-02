@@ -138,7 +138,6 @@ namespace MWP.BackEnd
             set => _canUseNetwork.Value = (int)value;
         }
         
-        //TODO: set to false
         private static Setting<bool> _canUseWan = new BoolSetting(ShareName, "canUseWan", false);
         public static bool CanUseWan
         {

@@ -145,10 +145,10 @@ namespace MWP.BackEnd.Network
 #endif
                             if (connectionState.isTrustedSyncTarget ?? false)
                             {
-                                connectionState.syncSongs = FileManager.GetTrustedSyncTargetSongs(connectionState.remoteHostname);
+                                connectionState.SyncSongs = FileManager.GetTrustedSyncTargetSongs(connectionState.remoteHostname);
                             }
                         }
-                        switch (connectionState.syncSongs.Count)
+                        switch (connectionState.SyncSongs.Count)
                         {
                             case > 0 when connectionState.syncRequestState == SyncRequestState.None:
                                 networkStream.WriteCommand(CommandsArr.SyncRequest, ref encryptor);
@@ -161,15 +161,15 @@ namespace MWP.BackEnd.Network
                                 if (connectionState.ackCount >= 0)
                                 {
 #if DEBUG
-                                    MyConsole.WriteLine(connectionState.syncSongs[0].ToString());
+                                    MyConsole.WriteLine(connectionState.SyncSongs[0].ToString());
 #endif
-                                    if (File.Exists(connectionState.syncSongs[0].Path))
+                                    if (File.Exists(connectionState.SyncSongs[0].Path))
                                     {
-                                        networkStream.WriteFile(connectionState.syncSongs[0].Path, ref encryptor, ref aes);
+                                        networkStream.WriteFile(connectionState.SyncSongs[0].Path, ref encryptor, ref aes);
                                         connectionState.ackCount--;
                                     }
-                                    connectionState.syncSongs.RemoveAt(0);
-                                    FileManager.SetTrustedSyncTargetSongs(connectionState.remoteHostname, connectionState.syncSongs);
+                                    connectionState.SyncSongs.RemoveAt(0);
+                                    FileManager.SetTrustedSyncTargetSongs(connectionState.remoteHostname, connectionState.SyncSongs);
                                 }
                                 break;
                             default:
@@ -177,8 +177,8 @@ namespace MWP.BackEnd.Network
                                     (connectionState.songsToSend.Count == 0 || 
                                      (connectionState.songsToSend.Count > 0 && connectionState.songSendRequestState == SongSendRequestState.Rejected))
                                     &&
-                                    (connectionState.syncSongs.Count == 0 || 
-                                     (connectionState.syncSongs.Count > 0 && connectionState.syncRequestState == SyncRequestState.Rejected))
+                                    (connectionState.SyncSongs.Count == 0 || 
+                                     (connectionState.SyncSongs.Count > 0 && connectionState.syncRequestState == SyncRequestState.Rejected))
                                     && connectionState is { ackCount: >= 0, artistImageRequests: { Count: 0 } }
                                     && connectionState.albumImageRequests.Count == 0;
 #if DEBUG

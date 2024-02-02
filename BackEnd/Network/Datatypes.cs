@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using AngleSharp.Io;
 
 namespace MWP.BackEnd.Network
 {
@@ -65,9 +64,10 @@ namespace MWP.BackEnd.Network
             IsServer = isServer;
             sendOnetimeSendFlag = songsToSend.Count > 0;
             this.songsToSend = songsToSend;
+            oneTimeSendCount = songsToSend.Count;
         }
 
-        internal bool IsServer;
+        internal readonly bool IsServer;
         internal bool ending = false;
         internal EncryptionState encryptionState = EncryptionState.None;
         internal SyncRequestState syncRequestState = SyncRequestState.None;
@@ -77,12 +77,45 @@ namespace MWP.BackEnd.Network
         internal bool? isTrustedSyncTarget = null;
         internal int timeoutCounter = 0;
         
-        internal List<Song> syncSongs = new List<Song>();
-        internal List<Song> songsToSend;
-        internal Dictionary<string, string> albumArtistPair = new Dictionary<string, string>();
-        internal List<string> artistImageRequests = new List<string>();
-        internal List<string> albumImageRequests = new List<string>();
+        private List<Song> syncSongs = new List<Song>();
+        internal readonly List<Song> songsToSend;
+        internal readonly Dictionary<string, string> albumArtistPair = new Dictionary<string, string>();
+        internal readonly List<string> artistImageRequests = new List<string>();
+        internal readonly List<string> albumImageRequests = new List<string>();
         internal bool sendOnetimeSendFlag;
         internal bool gotOneTimeSendFlag = false;
+
+        internal int syncSendCount = 0;
+        internal int syncSentCount = 0;
+        internal int syncReceiveCount = 0;
+        internal int syncReceivedCount = 0;
+        internal int oneTimeReceiveCount = 0;
+        internal int oneTimeReceivedCount = 0;
+        internal int oneTimeSendCount;
+        internal int oneTimeSentCount = 0;
+
+        internal bool CanReceiveFiles => (isTrustedSyncTarget ?? false) ||
+            (StateHandler.OneTimeSendStates.TryGetValue(remoteHostname, out UserAcceptedState userAcceptedState) &&
+             userAcceptedState == UserAcceptedState.SongsAccepted);
+
+        internal bool CanSendFiles =>
+            ((isTrustedSyncTarget ?? false) && syncRequestState == SyncRequestState.Accepted) ||
+            (sendOnetimeSendFlag && songSendRequestState == SongSendRequestState.Accepted);
+
+        internal int TotalSyncCount => syncReceiveCount + SyncSongs.Count;
+        internal int SyncCount => syncReceivedCount + syncSentCount;
+
+        internal int OneTimeSendCountLeft => songsToSend.Count;
+
+        internal List<Song> SyncSongs
+        {
+            get => syncSongs;
+            set
+            {
+                syncSongs = value;
+                syncSendCount = value.Count;
+            }
+        }
+        
     }
 }

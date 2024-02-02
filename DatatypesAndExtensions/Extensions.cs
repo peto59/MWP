@@ -130,7 +130,7 @@ namespace MWP
             {
                 return privateFrame != null ? Convert.ToBoolean(privateFrame.PrivateData.Data) : defaultValue;
             }
-            catch (Exception _)
+            catch (Exception)
             {
                 //ignored
             }
