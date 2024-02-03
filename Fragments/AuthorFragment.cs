@@ -98,7 +98,7 @@ namespace MWP
 
                         LinearLayout child = songTilesBuffer?[last] ?? new LinearLayout(context);
                         if (assets != null)
-                            UIRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
+                            UiRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
                     });
                 };
 
@@ -116,7 +116,7 @@ namespace MWP
                         {
                             LinearLayout child = albumTilesBuffer?[last] ?? new LinearLayout(context);
                             if (assets != null)
-                                UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
+                                UiRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
                         }
                     });
                 };
@@ -135,19 +135,19 @@ namespace MWP
             
             Task.Run(async () =>
             {
-                await UIRenderFunctions.LoadSongImages(artist.Albums.Select("Uncategorized")[0].Songs, songImagesBuffer,
-                    UIRenderFunctions.LoadImageType.SONG);
+                await UiRenderFunctions.LoadSongImages(artist.Albums.Select("Uncategorized")[0].Songs, songImagesBuffer,
+                    UiRenderFunctions.LoadImageType.SONG);
                 
-                UIRenderFunctions.FillImageHoles(context, songTilesBuffer, songImagesBuffer, assets);
+                UiRenderFunctions.FillImageHoles(context, songTilesBuffer, songImagesBuffer, assets);
             });
             
             
             Task.Run(async () =>
             {
-                await UIRenderFunctions.LoadSongImages(artist.Albums, albumImagesBuffer,
-                    UIRenderFunctions.LoadImageType.ALBUM);
+                await UiRenderFunctions.LoadSongImages(artist.Albums, albumImagesBuffer,
+                    UiRenderFunctions.LoadImageType.ALBUM);
                 
-                UIRenderFunctions.FillImageHoles(context, albumTilesBuffer, albumImagesBuffer, assets);
+                UiRenderFunctions.FillImageHoles(context, albumTilesBuffer, albumImagesBuffer, assets);
             });
         }
 
@@ -158,7 +158,7 @@ namespace MWP
         private void UncategorizedSongsRender(bool visible)
         {
 
-            UIRenderFunctions.FragmentPositionObject = artist.Albums.Select("Uncategorized")[0];
+            UiRenderFunctions.FragmentPositionObject = artist.Albums.Select("Uncategorized")[0];
             songTilesBuffer = new Dictionary<string, LinearLayout?>();
             
             ScrollView songsScroll = new ScrollView(context);
@@ -188,12 +188,12 @@ namespace MWP
             for (int i = 0; i < uncategorized.Count; i++)
             {
                 
-                LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
+                LinearLayout? lnIn = UiRenderFunctions.PopulateHorizontal(
                     uncategorized[i], scale,
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                    context, songButtons, UIRenderFunctions.SongType.AlbumSong, assets, ParentFragmentManager, lnMain
+                    context, songButtons, UiRenderFunctions.SongMediaType.AlbumSong, assets, ParentFragmentManager, lnMain
                 );
                 if (songTilesBuffer.TryAdd(uncategorized[i].Title, lnIn))
                     lnMain.AddView(lnIn);
@@ -236,7 +236,7 @@ namespace MWP
                 if (album.Showable && artist.Albums.Count > 1)
                 {
                     
-                    LinearLayout? lnIn = UIRenderFunctions.PopulateVertical(
+                    LinearLayout? lnIn = UiRenderFunctions.PopulateVertical(
                         album, scale, 
                         150, 100, buttonMargins, cardMargins, nameMargins, 15, index, 
                         context, albumButtons, ParentFragmentManager, assets, albumFragment);

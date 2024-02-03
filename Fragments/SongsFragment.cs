@@ -40,7 +40,7 @@ namespace MWP
         private static AssetManager? _assets;
         
         private Dictionary<LinearLayout?, Guid> songButtons = new Dictionary<LinearLayout?, Guid>();
-        private static Dictionary<string, LinearLayout?>? _lazyBuffer;
+        private static Dictionary<string, LinearLayout> _lazyBuffer;
         private static ObservableDictionary<string, Bitmap>? _lazyImageBuffer;
         
         private readonly long delay = 500; 
@@ -90,7 +90,7 @@ namespace MWP
 
                         LinearLayout? child = _lazyBuffer?[last] ?? new LinearLayout(context);
                         if (_assets != null)
-                            UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
+                            UiRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
                     });
                 };
             
@@ -154,8 +154,8 @@ namespace MWP
             Task.Run(async () =>
             {
                 MainActivity.StateHandler.FileListGenerated.WaitOne();
-                await UIRenderFunctions.LoadSongImages(MainActivity.StateHandler.Songs, _lazyImageBuffer, UIRenderFunctions.LoadImageType.SONG);
-                UIRenderFunctions.FillImageHoles(context, _lazyBuffer, _lazyImageBuffer, _assets);
+                await UiRenderFunctions.LoadSongImages(MainActivity.StateHandler.Songs, _lazyImageBuffer, UiRenderFunctions.LoadImageType.SONG);
+                UiRenderFunctions.FillImageHoles(context, _lazyBuffer, _lazyImageBuffer, _assets);
             });
             
             return view;
@@ -210,7 +210,10 @@ namespace MWP
         private void SongSearch(View? view)
         {
              /*
-             * VYHLADAVNIE
+             * Metóda slúžiaca na prerenderovanie políčok skladieb po tom čo puživateľ prestal písať po dobu 1 skeundy.
+             * Ak čas uplynutý od poslednej úpravy vyhľadávania je väčší ako čas od kedy používateľ niečo zadal plus x milisekúnd
+             * podľa premennej delay. Pokiaľ je podmienka pravidvá, premaže sa celé rozhranie sladieb a načítaju sa od znova, ale iba tie ktoré
+              * vyhovujú vyhľiadávaniu
              */
             Action<List<Song>, View, Context> inputFinishChecker = (songs, view1, ctx) =>
             {   
@@ -227,7 +230,7 @@ namespace MWP
             if (searchInput != null)
             {
                 /*
-                 * Nacitanie songov z vyhladavania po tom co pouzivatel prestane pisat po jednej sekunde
+                 * Pokiaľ je zadaný text vo vyhľiadavaní prázdny. Vykreslia sa všetky skladby.
                  */
                 searchInput.Typeface = font;
                 if (searchInput.Text == "")
@@ -236,13 +239,21 @@ namespace MWP
                     RenderSongs(MainActivity.StateHandler.Songs);
                 }
                 
-                searchInput.TextChanged += (object sender, Android.Text.TextChangedEventArgs e) =>
+                /*
+                 * V prípade zmeny vyhľiadavania používateľom:
+                 */
+                searchInput.TextChanged += (_, e) =>
                 {
                     _handler.RemoveCallbacks(() =>
                     {
                         if (view != null) inputFinishChecker(MainActivity.StateHandler.Songs, view, context);
                     });
 
+                    /*
+                     * Pokiaľ zadaný text nie je prázdny, zaznamenáme poslednú úpravu, zostatkový text vo vyhľiadavaní
+                     * použijeme na získanie skladieb vyhovujícim vyhľiadavaniu za pomoci metódy Search z pozadia,
+                     * a prekreslíme na obrazovku za pomoci metódy InputFinishChecker
+                     */
                     if (e.Text != null && e.Text.Any())
                     {
                         lastTextEdit = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
@@ -259,6 +270,9 @@ namespace MWP
                     }
                     else
                     {
+                        /*
+                         * Ak je vyhľiadavanie prázdne, vyhľiadajú sa všetky sklaby zo zariadenia.
+                         */
                         lastTextEdit = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                         _handler.PostDelayed(() =>
                         {
@@ -266,13 +280,8 @@ namespace MWP
                         }, delay);
                     }
                 };
-
                 
-                
-                /*
-                 * Nacitanie songov po tom co pouzivatel stlaci tlacidlo na potvrdenie vyhladavania
-                 * 
-                 */
+                // Nacitanie songov po tom co pouzivatel stlaci tlacidlo na potvrdenie vyhladavania
                 if (searchButton != null)
                     searchButton.Click += delegate
                     {
@@ -291,46 +300,39 @@ namespace MWP
         {
             _lazyBuffer = new Dictionary<string, LinearLayout>();
             
-            
             for (int i = 0; i < songs.Count; i++)
             {
                 
-                LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
+                LinearLayout? lnIn = UiRenderFunctions.PopulateHorizontal(
                     songs[i], scale,
                     150, 100,
                     allSongsButtonMargins, allSongsNameMargins, allSongsCardMargins,
-                    17,  context, songButtons, UIRenderFunctions.SongType.AllSong, _assets, ParentFragmentManager, 
+                    17,  context, songButtons, UiRenderFunctions.SongMediaType.AllSong, _assets, ParentFragmentManager, 
                     _allSongsLnMain, this
                 );
-                if (_lazyBuffer.TryAdd(songs[i].Title, lnIn))
+                if (lnIn != null && _lazyBuffer.TryAdd(songs[i].Title, lnIn))
                 {
                     _allSongsLnMain?.AddView(lnIn);
                 }
                     
             }
 
-            /*
-            decimal percentage = ((decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count) * 100;
-            #if DEBUG
-            MyConsole.WriteLine($"Percentage of Loaded Songs {_lazyImageBuffer.Items.Count} / {_lazyBuffer.Count} = {(decimal)_lazyImageBuffer.Items.Count / (decimal)_lazyBuffer.Count}");
-            #endif
-            if (percentage > 80)
+            if (_lazyBuffer.Count > 0)
             {
-                for (int i = 0; i < songs.Count; i++)
+                var percentage = (_lazyImageBuffer.Items.Count / _lazyBuffer.Count) * 100;
+                if (percentage > 80)
                 {
-                    LinearLayout? child = _lazyBuffer[songs[i].Title];
-                    if (_assets != null) UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
+                    foreach (var song in songs)
+                    {
+                        LinearLayout? child = _lazyBuffer[song.Title];
+                        if (_assets != null) UiRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, _assets);
+                    }
                 }
-            } */
-            
+            }
+           
             
         } 
         
-      
-        
-        
-        
-
 
         /// <summary>
         /// Use for invalidating rendered songs and rerender them again, due to rerendering
@@ -366,11 +368,11 @@ namespace MWP
                     _lazyImageBuffer?.Items.Remove(oldTitle);
                     songButtons.Remove(ithChild);
                     // fea2db10-94ec-4fb3-8e32-f0d351d77d1b
-                    LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
+                    LinearLayout? lnIn = UiRenderFunctions.PopulateHorizontal(
                         song, scale,
                         150, 100,
                         allSongsButtonMargins, allSongsNameMargins, allSongsCardMargins,
-                        17,  context, songButtons, UIRenderFunctions.SongType.AllSong, _assets, ParentFragmentManager, 
+                        17,  context, songButtons, UiRenderFunctions.SongMediaType.AllSong, _assets, ParentFragmentManager, 
                         _allSongsLnMain, this
                     );
                     ImageView? cover = (ImageView)lnIn?.GetChildAt(0)!;

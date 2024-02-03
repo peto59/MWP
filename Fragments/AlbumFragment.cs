@@ -69,7 +69,7 @@ namespace MWP
             if (retreivedSongs.Count > 0)
             {
                 album = retreivedSongs[0];
-                UIRenderFunctions.FragmentPositionObject = album;
+                UiRenderFunctions.FragmentPositionObject = album;
             }
 
 
@@ -80,7 +80,7 @@ namespace MWP
                     string last = songImagesBuffer.Items.Keys.Last();
                     LinearLayout? child = songTilesBuffer?[last] ?? new LinearLayout(context);
                     if (assets != null)
-                        UIRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
+                        UiRenderFunctions.LoadSongImageFromBuffer(child, songImagesBuffer, assets);
                 });
             };
             
@@ -97,10 +97,10 @@ namespace MWP
 
             Task.Run(async () =>
             {
-                await UIRenderFunctions.LoadSongImages(album.Songs, songImagesBuffer,
-                    UIRenderFunctions.LoadImageType.SONG);
+                await UiRenderFunctions.LoadSongImages(album.Songs, songImagesBuffer,
+                    UiRenderFunctions.LoadImageType.SONG);
                 
-                UIRenderFunctions.FillImageHoles(context, songTilesBuffer, songImagesBuffer, assets);
+                UiRenderFunctions.FillImageHoles(context, songTilesBuffer, songImagesBuffer, assets);
             });
            
         }
@@ -139,12 +139,12 @@ namespace MWP
             for (int i = 0; i < album.Songs.Count; i++)
             {
 
-                LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
+                LinearLayout? lnIn = UiRenderFunctions.PopulateHorizontal(
                     album.Songs[i], scale,
                     150, 100,
                     buttonMargins, nameMargins, cardMargins,
                     17,
-                     context, SongButtons, UIRenderFunctions.SongType.AlbumSong, assets, ParentFragmentManager, lnMain
+                     context, SongButtons, UiRenderFunctions.SongMediaType.AlbumSong, assets, ParentFragmentManager, lnMain
                 );
                 if (songTilesBuffer.TryAdd(album.Songs[i].Title, lnIn)) 
                     lnMain.AddView(lnIn);

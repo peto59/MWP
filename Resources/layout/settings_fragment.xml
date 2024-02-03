@@ -44,7 +44,16 @@
                     android:id="@+id/settings_restricted_button"
             />
         </LinearLayout>
-        -
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="testing"
+                android:textColor="#ffffff"
+                android:paddingVertical="8dp"
+                android:paddingHorizontal="15dp"
+                android:background="@drawable/rounded_button"
+                android:id="@+id/settings_testbtn"
+        />
         
         
     </LinearLayout>

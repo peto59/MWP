@@ -50,8 +50,8 @@ namespace MWP
             string? title = Arguments?.GetString("title");
             Task.Run(async () =>
             {
-                await UIRenderFunctions.LoadSongImages(FileManager.GetPlaylist(title), _lazyImageBuffer, UIRenderFunctions.LoadImageType.SONG);
-                UIRenderFunctions.FillImageHoles(context, _lazyBuffer, _lazyImageBuffer, assets);
+                await UiRenderFunctions.LoadSongImages(FileManager.GetPlaylist(title), _lazyImageBuffer, UiRenderFunctions.LoadImageType.SONG);
+                UiRenderFunctions.FillImageHoles(context, _lazyBuffer, _lazyImageBuffer, assets);
             });
             
             if (_lazyImageBuffer != null)
@@ -62,7 +62,7 @@ namespace MWP
 
                         LinearLayout? child = _lazyBuffer?[last] ?? new LinearLayout(context);
                         if (assets != null)
-                            UIRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, assets);
+                            UiRenderFunctions.LoadSongImageFromBuffer(child, _lazyImageBuffer, assets);
                     });
                 };
             
@@ -119,16 +119,16 @@ namespace MWP
 
 
             List<Song> playlistSongs = FileManager.GetPlaylist(title);
-            UIRenderFunctions.FragmentPositionObject = playlistSongs;
+            UiRenderFunctions.FragmentPositionObject = playlistSongs;
             
             for (int i = 0; i < playlistSongs.Count; i++)
             {
-                LinearLayout? lnIn = UIRenderFunctions.PopulateHorizontal(
+                LinearLayout? lnIn = UiRenderFunctions.PopulateHorizontal(
                     playlistSongs[i], scale,
                     150, 100,
                     inPlaylistButtonMargins, inPlaylistNameMargins, inPlaylistCardMargins,
                     17,
-                    context, songButtons, UIRenderFunctions.SongType.PlaylistSong, assets, ParentFragmentManager, inPlaylistLnMain
+                    context, songButtons, UiRenderFunctions.SongMediaType.PlaylistSong, assets, ParentFragmentManager, inPlaylistLnMain
                 );
                 if (_lazyBuffer.TryAdd(playlistSongs[i].Title, lnIn))
                 {

@@ -14,7 +14,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:id="@+id/settings_restricted_path_list">
+            android:id="@+id/accept_incoming_song_list">
             <!-- 
             <LinearLayout 
                     android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -51,22 +51,22 @@
         android:gravity="center">
         
         <TextView android:layout_width="120dp" android:layout_height="45dp"
-                  android:text="Add New"
+                  android:text="Accept"
                   android:layout_marginRight="10dp"
                   android:background="@drawable/rounded_button"
                   android:gravity="center"
                   android:textSize="15dp"
                   android:textColor="#ffffff"
-                  android:id="@+id/settings_restricted_add_new_restricted"
+                  android:id="@+id/accept_incoming_accept_songs"
         />
         <TextView android:layout_width="120dp" android:layout_height="45dp"
-                  android:text="Cancel"
+                  android:text="Reject"
                   android:layout_marginLeft="10dp"
                   android:background="@drawable/rounded_button"
                   android:gravity="center"
                   android:textSize="15dp"
                   android:textColor="#ffffff"
-                  android:id="@+id/settings_restricted_cancel"
+                  android:id="@+id/accept_incoming_reject_songs"
         />
       
     

@@ -86,7 +86,7 @@ namespace MWP
                         string last = lazyImageBuffer.Items.Keys.Last();
 
                         LinearLayout? child = lazyBuffer?[last] ?? new LinearLayout(context);
-                        UIRenderFunctions.LoadSongImageFromBuffer(child, lazyImageBuffer, assets);
+                        UiRenderFunctions.LoadSongImageFromBuffer(child, lazyImageBuffer, assets);
                     });
                 };
             
@@ -114,8 +114,8 @@ namespace MWP
             Task.Run(async () =>
             {
                 MainActivity.StateHandler.FileListGenerated.WaitOne();
-                await UIRenderFunctions.LoadSongImages(MainActivity.StateHandler.Songs, lazyImageBuffer, UIRenderFunctions.LoadImageType.SONG);
-                UIRenderFunctions.FillImageHoles(context, lazyBuffer, lazyImageBuffer, assets);
+                await UiRenderFunctions.LoadSongImages(MainActivity.StateHandler.Songs, lazyImageBuffer, UiRenderFunctions.LoadImageType.SONG);
+                UiRenderFunctions.FillImageHoles(context, lazyBuffer, lazyImageBuffer, assets);
             });
             
             

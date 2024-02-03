@@ -62,6 +62,14 @@ namespace MWP
             if (dropdownItem != null) dropdownItem.Typeface = font;
 
             /*
+            TextView? settingsTestbtbn = view?.FindViewById<TextView>(Resource.Id.settings_testbtn);
+            settingsTestbtbn.Click += delegate
+            {
+                List<string> dd = new List<string>() { "jeden song", "druhhy song", "ttreti song" };
+                if (assets != null) UiRenderFunctions.ListIncomingSongsPopup(dd, context, assets, () => { }, () => { });
+            }; */
+
+            /*
              * Príjmanie dáta nastavení z pozadia aplikácie. Rozlišijeme 3 typi nastavení
              * Bool - Nastavenie reprezentované komponentom Switch
              * Int  - Nastavenie reprezentované komponentom Spinner typu dropdown
@@ -147,10 +155,10 @@ namespace MWP
                 ViewGroup.LayoutParams.WrapContent
             );
             linParams.SetMargins(
-                (int)ConvertDpToPixels(20.0f), 
-                (int)ConvertDpToPixels(20.0f), 
-                (int)ConvertDpToPixels(20.0f), 
-                (int)ConvertDpToPixels(20.0f)
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context)
             );
             linOuter.LayoutParameters = linParams;
             linOuter.SetGravity(GravityFlags.Center);
@@ -225,10 +233,10 @@ namespace MWP
                 ViewGroup.LayoutParams.WrapContent
             );
             linParams.SetMargins(
-                (int)ConvertDpToPixels(20.0f), 
-                (int)ConvertDpToPixels(20.0f), 
-                (int)ConvertDpToPixels(20.0f), 
-                (int)ConvertDpToPixels(20.0f)
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context)
             );
             linOuter.LayoutParameters = linParams;
             linOuter.SetGravity(GravityFlags.Center);
@@ -281,24 +289,15 @@ namespace MWP
             return linOuter;
 
         }
-
-
         
-        private float ConvertDpToPixels(float dpValue) {
-            if (context.Resources is not { DisplayMetrics: not null }) return 0.0f;
-            var screenPixelDensity = context.Resources.DisplayMetrics.Density;
-            var pixels = dpValue * screenPixelDensity;
-            return pixels;
-
-        } 
         
         /**/
         private AndroidX.AppCompat.Widget.SwitchCompat CreateSwitch(Action<bool> write, bool initialValue)
         {
             AndroidX.AppCompat.Widget.SwitchCompat switchCompat = new AndroidX.AppCompat.Widget.SwitchCompat(context);
             LinearLayout.LayoutParams switchParams = new LinearLayout.LayoutParams(
-                (int)ConvertDpToPixels(60.0f),
-                (int)ConvertDpToPixels(50.0f)
+                (int)UiRenderFunctions.ConvertDpToPixels(60.0f, context),
+                (int)UiRenderFunctions.ConvertDpToPixels(50.0f, context)
             );
             switchParams.SetMargins(0, 0, 0, 0);
             switchCompat.LayoutParameters = switchParams;
@@ -331,7 +330,12 @@ namespace MWP
             Spinner dropdown = new Spinner(context);
             dropdown.LayoutParameters = dropdownParams;
             dropdown.SetBackgroundResource(Resource.Drawable.rounded_dark);
-            dropdown.SetPadding((int)ConvertDpToPixels(10), (int)ConvertDpToPixels(10), (int)ConvertDpToPixels(10), (int)ConvertDpToPixels(10));
+            dropdown.SetPadding(
+                (int)UiRenderFunctions.ConvertDpToPixels(10, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(10, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(10, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(10, context)
+            );
             ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, Resource.Drawable.dropdown_item, items);
             dropdown.Adapter = adapter;
             
@@ -386,7 +390,7 @@ namespace MWP
                 );
                 lnInParams.SetMargins(20, 20, 20, 20);
                 lnIn.LayoutParameters = lnInParams;
-                lnIn.SetPadding(0, (int)ConvertDpToPixels(10), 0, (int)ConvertDpToPixels(10));
+                lnIn.SetPadding(0, (int)UiRenderFunctions.ConvertDpToPixels(10, context), 0, (int)UiRenderFunctions.ConvertDpToPixels(10, context));
                 lnIn.SetGravity(GravityFlags.Center);
 
                 /*
@@ -399,14 +403,14 @@ namespace MWP
                 nameParams.Weight = 1;
                 TextView name = new TextView(context);
                 name.SetPadding(
-                    (int)ConvertDpToPixels(10),
-                    (int)ConvertDpToPixels(10),
-                    (int)ConvertDpToPixels(10),
-                    (int)ConvertDpToPixels(10)
+                    (int)UiRenderFunctions.ConvertDpToPixels(10, context),
+                    (int)UiRenderFunctions.ConvertDpToPixels(10, context),
+                    (int)UiRenderFunctions.ConvertDpToPixels(10, context),
+                    (int)UiRenderFunctions.ConvertDpToPixels(10, context)
 
                 );
                 name.LayoutParameters = nameParams;
-                name.TextSize = (int)ConvertDpToPixels(5);
+                name.TextSize = (int)UiRenderFunctions.ConvertDpToPixels(5, context);
                 name.Typeface = font;
                 name.SetTextColor(Color.White);
                 int index = path.IndexOf(FileManager.Root, StringComparison.Ordinal);
@@ -419,21 +423,21 @@ namespace MWP
                  * Vytváranie tlačidla slúžiaceho na vymazanie aktuálneho riadka z listu ciest
                  */
                 LinearLayout.LayoutParams deleteButtonParams = new LinearLayout.LayoutParams(
-                    (int)ConvertDpToPixels(30),
+                    (int)UiRenderFunctions.ConvertDpToPixels(30, context),
                     ViewGroup.LayoutParams.WrapContent
                 );
-                deleteButtonParams.SetMargins(0, 0, (int)ConvertDpToPixels(10), 0);
+                deleteButtonParams.SetMargins(0, 0, (int)UiRenderFunctions.ConvertDpToPixels(10, context), 0);
                 TextView deleteButton = new TextView(context);
                 deleteButton.LayoutParameters = deleteButtonParams;
-                deleteButton.TextSize = (int)ConvertDpToPixels(3);
+                deleteButton.TextSize = (int)UiRenderFunctions.ConvertDpToPixels(3, context);
                 deleteButton.Typeface = font;
                 deleteButton.TextAlignment = TextAlignment.Center;
                 deleteButton.SetForegroundGravity(GravityFlags.Center);
                 deleteButton.SetPadding(
-                    (int)ConvertDpToPixels(10),
-                    (int)ConvertDpToPixels(10),
-                    (int)ConvertDpToPixels(10),
-                    (int)ConvertDpToPixels(10)
+                    (int)UiRenderFunctions.ConvertDpToPixels(10, context),
+                    (int)UiRenderFunctions.ConvertDpToPixels(10, context),
+                    (int)UiRenderFunctions.ConvertDpToPixels(10, context),
+                    (int)UiRenderFunctions.ConvertDpToPixels(10, context)
 
                 );
                 deleteButton.SetTextColor(Color.White);
@@ -472,12 +476,8 @@ namespace MWP
                 cancel.Typeface = font;
                 cancel.Click += (_, _) => { dialog?.Hide(); };
             }
-
-
+            
             dialog?.Show();
-            
-            
-            
         }
         
         public override void OnActivityResult(int requestCode, int resultCode, Intent data) {
@@ -485,11 +485,6 @@ namespace MWP
 
             switch(requestCode) {
                 case 9999:
-                    /*
-                    Uri? uri = data.Data;
-                    Uri? docUri = DocumentsContract.BuildDocumentUriUsingTree(uri, 
-                        DocumentsContract.GetTreeDocumentId(uri));
-                    String path = Android.Net.Uri.GetPath(context, docUri); */
                     if (data.Data?.Path != null)
                     {
                         File file = new File(data.Data.Path);//create path from uri

@@ -10,8 +10,6 @@ using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.OS;
-using Java.Util;
-using Kotlin.IO;
 using MWP.BackEnd;
 using Xamarin.Essentials;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
@@ -23,14 +21,31 @@ using MWP.Helpers;
 
 namespace MWP
 {
-    public class UIRenderFunctions
+    /// <summary>
+    /// Abstraktná trieda obsahujúca základne metódy na vkreslovanie dynamického
+    /// užívateľského rozhrania. Vznikla z dôvodu nevytvárania duplicitného kódu, keďže v aplikácii sa
+    /// opakuj štýli a elementy generované dynamicky.
+    /// </summary>
+    public abstract class UiRenderFunctions
     {
         private static List<string> _selectedPlaylists = new List<string>();
 
-        public enum SongType
+        /// <summary>
+        /// Pridelenie rozdielnych metód na základe typu skladby s ktorým je manipulované.
+        /// </summary>
+        public enum SongMediaType
         {
+            /// <summary>
+            /// skladba sa nachádza v albume (fargment Albums).
+            /// </summary>
             AlbumSong,
+            /// <summary>
+            /// skladba sa nachádza vo všeobecnom prehľade všetkých skladieb (fagrment Songs)
+            /// </summary>
             AllSong,
+            /// <summary>
+            /// skladba sa nachádza v playliste (fragment Playlist)
+            /// </summary>
             PlaylistSong
         }
 
@@ -40,6 +55,105 @@ namespace MWP
         /// used to define this global position parameter
         /// </summary>
         public static object FragmentPositionObject;
+        
+        
+        public static void ListIncomingSongsPopup(List<string> songs, Context context, AssetManager assets, Action accept, Action reject)
+        {
+            Typeface? font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
+            
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? view = ifl?.Inflate(Resource.Layout.accept_incoming_popup, null);
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(view);
+
+            AlertDialog? dialog = alert.Create();
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+
+            LinearLayout? ln = view?.FindViewById<LinearLayout>(Resource.Id.accept_incoming_song_list);
+            
+            /*
+             * Prechádzanie cestami v liste a pre každú cestu vytvorenie nového záznamu v liste v ScrollView.
+             */
+            foreach (string song in songs)
+            {
+                /*
+                 * Vytvaranie LinearLayout-u ktory bude obsahpvat text cesty a tlacidlo na vymazanie
+                 */
+                LinearLayout lnIn = new LinearLayout(context);
+                lnIn.Orientation = Orientation.Horizontal;
+                lnIn.SetBackgroundResource(Resource.Drawable.rounded_light);
+
+                LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MatchParent,
+                    ViewGroup.LayoutParams.WrapContent
+                );
+                lnInParams.SetMargins(20, 20, 20, 20);
+                lnIn.LayoutParameters = lnInParams;
+                lnIn.SetPadding(0, (int)ConvertDpToPixels(10, context), 0, (int)ConvertDpToPixels(10, context));
+                lnIn.SetGravity(GravityFlags.Center);
+
+                /*
+                 * Vytváranie TextView komponentu pre názov cesty
+                 */
+                LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent,
+                    ViewGroup.LayoutParams.WrapContent
+                );
+                nameParams.Weight = 1;
+                TextView name = new TextView(context);
+                name.SetPadding(
+                    (int)ConvertDpToPixels(10, context),
+                    (int)ConvertDpToPixels(10, context),
+                    (int)ConvertDpToPixels(10, context),
+                    (int)ConvertDpToPixels(10, context)
+
+                );
+                name.LayoutParameters = nameParams;
+                name.TextSize = (int)ConvertDpToPixels(5, context);
+                name.Typeface = font;
+                name.SetTextColor(Color.White);
+                name.Text = song;
+                lnIn.AddView(name);
+                
+                ln?.AddView(lnIn);
+            }
+            
+            
+            TextView? addNew = view?.FindViewById<TextView>(Resource.Id.accept_incoming_accept_songs);
+            if (addNew != null)
+            {
+                addNew.Typeface = font;
+                addNew.Click += (_, _) =>
+                {
+                    accept();
+                    dialog?.Hide();
+                };
+            }
+
+            TextView? cancel = view?.FindViewById<TextView>(Resource.Id.accept_incoming_reject_songs);
+            if (cancel != null)
+            {
+                cancel.Typeface = font;
+                cancel.Click += (_, _) =>
+                {
+                    reject();
+                    dialog?.Hide();
+                };
+            }
+
+
+            dialog?.Show();
+            
+        }
+        
+        public static float ConvertDpToPixels(float dpValue, Context context) {
+            if (context.Resources is not { DisplayMetrics: not null }) return 0.0f;
+            var screenPixelDensity = context.Resources.DisplayMetrics.Density;
+            var pixels = dpValue * screenPixelDensity;
+            return pixels;
+
+        } 
+        
         
         
         private static void AreYouSure(
@@ -276,13 +390,13 @@ namespace MWP
         /// <param name="index"></param>
         /// <param name="context"></param>
         /// <param name="songButtons"></param>
-        /// <param name="songType"></param>
+        /// <param name="songMediaType"></param>
         /// <param name="assets"></param>
         /// <param name="linForDelete"></param>
         /// <returns></returns>
         public static LinearLayout? PopulateHorizontal(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize,
-            Context context, Dictionary<LinearLayout?, Guid> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
+            Context context, Dictionary<LinearLayout?, Guid> songButtons, SongMediaType songMediaType, AssetManager? assets, FragmentManager manager,
             LinearLayout? linForDelete = null, SongsFragment? songsfragmentContext = null 
         )
         {
@@ -320,18 +434,15 @@ namespace MWP
                 LinearLayout pressedButton = (LinearLayout)sender;
                 foreach (KeyValuePair<LinearLayout, Guid> pr in songButtons.Where(pr => pr.Key == pressedButton))
                 {
-#if DEBUG
-                    MyConsole.WriteLine($"UI Render functions testing pr value : {pr.Value} ----- {((Song)musics).Path}");
-#endif
-                    switch (songType) 
+                    switch (songMediaType) 
                     {
-                        case SongType.AllSong:
+                        case SongMediaType.AllSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.StateHandler.Songs, pr.Value);
                             break;
-                        case SongType.AlbumSong:
+                        case SongMediaType.AlbumSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((Album)FragmentPositionObject, pr.Value);
                             break;
-                        case SongType.PlaylistSong:
+                        case SongMediaType.PlaylistSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((List<Song>)FragmentPositionObject, pr.Value);
                             break;
                     }
@@ -542,62 +653,6 @@ namespace MWP
         
         
         
-        /// <summary>
-        /// Function used for applying an image to a view based on the source, which can be either album cover or song cover. 
-        /// </summary>
-        /// <param name="parent"></param>
-        /// <param name="obj"></param>
-        /// <param name="ww"></param>
-        /// <param name="hh"></param>
-        /// <param name="btnMargins"></param>
-        /// <param name="nameSize"></param>
-        /// <param name="nameMargins"></param>
-        /// <param name="scale"></param>
-        /// <param name="context"></param>
-        public static void SetTilesImage(LinearLayout? parent, MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
-        {
-            ImageView mori = new ImageView(context);
-            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
-                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
-            );
-            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
-            mori.LayoutParameters = ll;
-
-            if (obj is not (Album or Artist or Song))
-            {
-                return;
-            }
-
-            mori.SetImageBitmap(
-                obj.Image
-            );
-            
-            parent.AddView(mori);
-
-        }
-        
-        
-        public static ImageView GetTileImage(MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
-        {
-            ImageView songImage = new ImageView(context);
-            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
-                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
-            );
-            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
-            songImage.LayoutParameters = ll;
-
-            if (obj is not (Album or Artist or Song))
-            {
-                return new ImageView(context);
-            }
-
-            songImage.SetImageBitmap(
-                obj.Image
-            );
-
-            return songImage;
-
-        }
         
         
         /// <summary>
