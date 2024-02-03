@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -190,13 +191,21 @@ internal static class NetworkManagerServer
                             }
                             break;
                         case CommandsEnum.SongRequest:
+                            networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
                             break;
                         case CommandsEnum.SongRequestInfoRequest:
-                        
-                            //byte[] msg = Encoding.UTF8.GetBytes(json);
-                            //networkStream.WriteCommand(CommandsArr.SongRequestInfo, msg, ref encryptor, ref aes);
+                            SongJsonConverter customConverter = new SongJsonConverter(false);
+                            networkStream.WriteCommand(CommandsArr.SongRequestInfo,
+                                Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(connectionState.songsToSend,
+                                    customConverter)),
+                                ref encryptor,
+                                ref aes);
                             break;
                         case CommandsEnum.SongRequestInfo:
+                            if (data != null)
+                            {
+                                NetworkManagerCommonCommunication.SongRequestInfo(ref networkStream, ref connectionState, data, ref encryptor, ref notification);
+                            }
                             break;
                         case CommandsEnum.SongRequestAccepted:
                             notification?.Stage2(connectionState);

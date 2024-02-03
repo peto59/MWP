@@ -56,9 +56,17 @@ namespace MWP
         /// </summary>
         public static object FragmentPositionObject;
         
-        
-        public static void ListIncomingSongsPopup(List<Song> songs, string hostname, int count, Context context, Action accept, Action reject)
+        /// <summary>
+        /// Shows dialog for user to accept or reject incoming songs from <paramref name="hostname"/>
+        /// </summary>
+        /// <param name="songs">List of songs to be received</param>
+        /// <param name="hostname">Device that wants to send <paramref name="songs"/></param>
+        /// <param name="context">App context</param>
+        /// <param name="accept"><see cref="Action{T}"/> on accept</param>
+        /// <param name="reject"><see cref="Action{T}"/> on Reject</param>
+        public static void ListIncomingSongsPopup(List<Song> songs, string hostname, Context context, Action accept, Action reject)
         {
+            int count = songs.Count;
             Typeface? font = Typeface.CreateFromAsset(context.Assets, "sulphur.ttf");
             
             LayoutInflater? ifl = LayoutInflater.From(context);

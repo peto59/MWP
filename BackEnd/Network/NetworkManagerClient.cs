@@ -8,7 +8,6 @@ using Java.Lang;
 using Newtonsoft.Json;
 using Exception = Java.Lang.Exception;
 using Thread = System.Threading.Thread;
-using AndroidX.AppCompat.App;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -33,7 +32,7 @@ namespace MWP.BackEnd.Network
 
             Notifications? notification = null;
             ConnectionState connectionState = new ConnectionState(false, songsToSend);
-            SongJsonConverter customConverter = new SongJsonConverter(false);
+            
 
             if (songsToSend.Count > 0)
             {
@@ -138,6 +137,7 @@ namespace MWP.BackEnd.Network
                             networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
                             break;
                         case CommandsEnum.SongRequestInfoRequest:
+                            SongJsonConverter customConverter = new SongJsonConverter(false);
                             networkStream.WriteCommand(CommandsArr.SongRequestInfo,
                                 Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(connectionState.songsToSend,
                                     customConverter)),
@@ -147,64 +147,7 @@ namespace MWP.BackEnd.Network
                         case CommandsEnum.SongRequestInfo:
                             if (data != null)
                             {
-                                if (connectionState.UserAcceptedState != UserAcceptedState.ConnectionAccepted)
-                                {
-                                    networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
-                                    //TODO: move to function
-                                    return;
-                                }
-                                string json = Encoding.UTF8.GetString(data);
-#if DEBUG
-                                MyConsole.WriteLine(json);
-#endif
-                                List<Song>? recSongs = JsonConvert.DeserializeObject<List<Song>>(json, customConverter);
-                                if (recSongs is { Count: > 0 })
-                                {
-#if DEBUG
-                                    /*foreach (Song s in recSongs)
-                                    {
-                                        MyConsole.WriteLine(s.ToString());
-                                    }*/
-#endif
-                                    //TODO: dialogy daj do funkcie aby sme nemali boiler plate
-                                    connectionState.oneTimeReceiveCount = recSongs.Count;
-                                    StateHandler.OneTimeSendSongs.Add(connectionState.remoteHostname, recSongs);
-                                    notification?.Stage1Update(connectionState.remoteHostname, connectionState.oneTimeReceiveCount);
-                                    string rh = connectionState.remoteHostname;
-                                    int cnt = connectionState.oneTimeReceiveCount;
-                                    MainActivity.StateHandler.view?.RunOnUiThread(() =>
-                                    {
-                                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.StateHandler.view);
-                                        builder.SetTitle("New connection");
-                                        builder.SetMessage($"{rh} wants to send you {cnt} songs");
-                                        builder.SetCancelable(false);
-
-                                        builder.SetPositiveButton("Accept", delegate
-                                        {
-                                            StateHandler.OneTimeSendStates[rh] = UserAcceptedState.SongsAccepted;
-                                        });
-
-                                        builder.SetNegativeButton("Reject", delegate
-                                        {
-                                            StateHandler.OneTimeSendStates[rh] = UserAcceptedState.Cancelled;
-                                        });
-                                        StateHandler.OneTimeSendStates[rh] = UserAcceptedState.SongsShowed;
-                                    });
-                                    bool x = true;
-                                    if (x) //present some form of user check if they really want to receive files
-                                    {
-                                        //TODO: Stupid! Need to ask before syncing
-                                        networkStream.WriteCommand(CommandsArr.SongRequestAccepted, ref encryptor);
-                                    }
-                                    else
-                                    {
-                                        networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
-                                    }
-                                }
-                                else
-                                {
-                                    networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
-                                }
+                                NetworkManagerCommonCommunication.SongRequestInfo(ref networkStream, ref connectionState, data, ref encryptor, ref notification);
                             }
                             break;
                         case CommandsEnum.SongRequestAccepted:

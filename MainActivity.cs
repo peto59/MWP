@@ -999,27 +999,39 @@ namespace MWP
             {
                 if (action == "ShowConnectionStatus")
                 {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.SetTitle("New connection");
-                    builder.SetMessage($"{remoteHostname} wants to connect to your device.");
-                    builder.SetCancelable(false);
-
-                    builder.SetPositiveButton("Allow", delegate
-                    {
-                        StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.ConnectionAccepted;
-                    });
-
-                    builder.SetNegativeButton("Disconnect", delegate
-                    {
-                        StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled;
-                    });
+                    NewConnectionDialog(remoteHostname, this);
                 }
-
-                if (action == "ShowSongList")
+                else if (action == "ShowSongList")
                 {
-                    
+                    if (StateHandler.OneTimeSendSongs.TryGetValue(remoteHostname, out List<Song> songs))
+                    {
+                        UiRenderFunctions.ListIncomingSongsPopup(songs, remoteHostname, this, () => {}, () => {});
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Shows dialog for user to accept or reject untrusted connection attempt
+        /// </summary>
+        /// <param name="remoteHostname">Name of device wanting to connect</param>
+        /// <param name="ctx">App context</param>
+        public static void NewConnectionDialog(string remoteHostname, Context ctx)
+        {
+            AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+            builder.SetTitle("New connection");
+            builder.SetMessage($"{remoteHostname} wants to connect to your device.");
+            builder.SetCancelable(false);
+
+            builder.SetPositiveButton("Allow", delegate
+            {
+                StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.ConnectionAccepted;
+            });
+
+            builder.SetNegativeButton("Disconnect", delegate
+            {
+                StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled;
+            });
         }
     }
 

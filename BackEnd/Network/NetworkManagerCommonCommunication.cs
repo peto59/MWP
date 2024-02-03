@@ -10,7 +10,7 @@ using Xamarin.Essentials;
 using Exception = System.Exception;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using AndroidX.AppCompat.App;
+using Newtonsoft.Json;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -187,21 +187,7 @@ namespace MWP.BackEnd.Network
                 string rh = connectionState.remoteHostname;
                 MainActivity.StateHandler.view?.RunOnUiThread(() =>
                 {
-
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.StateHandler.view);
-                    builder.SetTitle("New connection");
-                    builder.SetMessage($"{rh} wants to connect to your device.");
-                    builder.SetCancelable(false);
-
-                    builder.SetPositiveButton("Allow", delegate
-                    {
-                        StateHandler.OneTimeSendStates[rh] = UserAcceptedState.ConnectionAccepted;
-                    });
-
-                    builder.SetNegativeButton("Disconnect", delegate
-                    {
-                        StateHandler.OneTimeSendStates[rh] = UserAcceptedState.Cancelled;
-                    });
+                    MainActivity.NewConnectionDialog(rh, MainActivity.StateHandler.view);
                 });
                 StateHandler.OneTimeSendStates.Add(connectionState.remoteHostname, UserAcceptedState.Showed);
             }
@@ -262,6 +248,61 @@ namespace MWP.BackEnd.Network
             else
             {
                 connectionState.encryptionState = EncryptionState.AesSend;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void SongRequestInfo(ref NetworkStream networkStream, ref ConnectionState connectionState, byte[] data, ref RSACryptoServiceProvider encryptor, ref Notifications? notification)
+        {
+            if (connectionState.UserAcceptedState != UserAcceptedState.ConnectionAccepted)
+            {
+                networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
+                return;
+            }
+            string json = Encoding.UTF8.GetString(data);
+#if DEBUG
+            MyConsole.WriteLine(json);
+#endif
+            SongJsonConverter customConverter = new SongJsonConverter(false);
+            List<Song>? recSongs = JsonConvert.DeserializeObject<List<Song>>(json, customConverter);
+            if (recSongs is { Count: > 0 })
+            {
+#if DEBUG
+                /*foreach (Song s in recSongs)
+                {
+                    MyConsole.WriteLine(s.ToString());
+                }*/
+#endif
+                connectionState.oneTimeReceiveCount = recSongs.Count;
+                StateHandler.OneTimeSendSongs.Add(connectionState.remoteHostname, recSongs);
+                notification?.Stage1Update(connectionState.remoteHostname, connectionState.oneTimeReceiveCount);
+                string rh = connectionState.remoteHostname;
+                //TODO: this cannot possibly work
+                NetworkStream stream = networkStream;
+                RSACryptoServiceProvider enc = encryptor;
+                MainActivity.StateHandler.view?.RunOnUiThread(() =>
+                {
+                    UiRenderFunctions.ListIncomingSongsPopup(
+                        recSongs,
+                        rh,
+                        MainActivity.StateHandler.view,
+                        () =>
+                        {
+                            StateHandler.OneTimeSendStates[rh] = UserAcceptedState.SongsAccepted;
+                            stream.WriteCommand(CommandsArr.SongRequestAccepted, ref enc);
+                        },
+                        () =>
+                        {
+                            StateHandler.OneTimeSendStates[rh] = UserAcceptedState.Cancelled;
+                            stream.WriteCommand(CommandsArr.SongRequestRejected, ref enc);
+                        }
+                    );
+                    StateHandler.OneTimeSendStates[rh] = UserAcceptedState.SongsShowed;
+                });
+            }
+            else
+            {
+                networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
             }
         }
 

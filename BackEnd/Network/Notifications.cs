@@ -104,7 +104,7 @@ namespace MWP.BackEnd.Network
                     Intent intent = new Intent(AndroidApp.Context, typeof(MainActivity));
                     intent.PutExtra("NotificationAction", "ShowConnectionStatus");
                     intent.PutExtra("RemoteHostname", remoteHostname);
-                    PendingIntent? pendingIntent = PendingIntent.GetActivity(MainActivity.StateHandler.view, notificationId, intent, PendingIntentFlags.UpdateCurrent);
+                    PendingIntent? pendingIntent = PendingIntent.GetActivity(AndroidApp.Context, notificationId, intent, PendingIntentFlags.UpdateCurrent);
                     notificationBuilder
                         .SetContentTitle($"{remoteHostname} wants to connect to your device")
                         .SetContentIntent(pendingIntent)
@@ -128,7 +128,7 @@ namespace MWP.BackEnd.Network
                     Intent intent = new Intent(AndroidApp.Context, typeof(MainActivity));
                     intent.PutExtra("NotificationAction", "ShowSongList");
                     intent.PutExtra("RemoteHostname", remoteHostname);
-                    PendingIntent? pendingIntent = PendingIntent.GetActivity(MainActivity.StateHandler.view, notificationId, intent, PendingIntentFlags.UpdateCurrent);
+                    PendingIntent? pendingIntent = PendingIntent.GetActivity(AndroidApp.Context, notificationId, intent, PendingIntentFlags.UpdateCurrent);
                     notificationBuilder
                         .SetContentTitle($"{remoteHostname} wants to send you {songCount} songs")
                         .SetContentIntent(pendingIntent)
