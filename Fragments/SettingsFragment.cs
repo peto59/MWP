@@ -66,7 +66,7 @@ namespace MWP
             settingsTestbtbn.Click += delegate
             {
                 List<string> dd = new List<string>() { "jeden song", "druhhy song", "ttreti song" };
-                if (assets != null) UiRenderFunctions.ListIncomingSongsPopup(dd, context, assets, () => { }, () => { });
+                if (assets != null) UiRenderFunctions.ListIncomingSongsPopup(dd, "lukas", 15, context, () => { }, () => { });
             }; */
 
             /*

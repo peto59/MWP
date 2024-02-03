@@ -57,9 +57,9 @@ namespace MWP
         public static object FragmentPositionObject;
         
         
-        public static void ListIncomingSongsPopup(List<Song> songs, Context context, AssetManager? assets, Action accept, Action reject)
+        public static void ListIncomingSongsPopup(List<Song> songs, string hostname, int count, Context context, Action accept, Action reject)
         {
-            Typeface? font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
+            Typeface? font = Typeface.CreateFromAsset(context.Assets, "sulphur.ttf");
             
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? view = ifl?.Inflate(Resource.Layout.accept_incoming_popup, null);
@@ -69,15 +69,22 @@ namespace MWP
             AlertDialog? dialog = alert.Create();
             dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
 
+            TextView? title = view?.FindViewById<TextView>(Resource.Id.accept_incoming_title);
+            if (title != null)
+            {
+                title.Typeface = font;
+                title.Text = $"{hostname} wants to send you {count} songs";
+            }
+
             LinearLayout? ln = view?.FindViewById<LinearLayout>(Resource.Id.accept_incoming_song_list);
             
             /*
-             * Prechádzanie cestami v liste a pre každú cestu vytvorenie nového záznamu v liste v ScrollView.
+             * Prechádzanie skladbami v liste a pre každú skladbu vytvorenie nového záznamu v liste v ScrollView.
              */
-            foreach (Song song in songs)
+            for (int i = 0; i < count; i++)
             {
                 /*
-                 * Vytvaranie LinearLayout-u ktory bude obsahpvat text cesty a tlacidlo na vymazanie
+                 * Vytvaranie LinearLayout-u ktory bude obsahpvat text skladby
                  */
                 LinearLayout lnIn = new LinearLayout(context);
                 lnIn.Orientation = Orientation.Horizontal;
@@ -89,31 +96,66 @@ namespace MWP
                 );
                 lnInParams.SetMargins(20, 20, 20, 20);
                 lnIn.LayoutParameters = lnInParams;
-                lnIn.SetPadding(0, (int)ConvertDpToPixels(10, context), 0, (int)ConvertDpToPixels(10, context));
-                lnIn.SetGravity(GravityFlags.Center);
+                lnIn.SetPadding(0, (int)ConvertDpToPixels(20, context), 0, (int)ConvertDpToPixels(20, context));
+                lnIn.SetGravity(GravityFlags.Left);
 
+                
                 /*
-                 * Vytváranie TextView komponentu pre názov cesty
+                 * Vytváranie TextView komponentu pre názov skladby
                  */
+                LinearLayout.LayoutParams nameAndArtistParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent,
+                    ViewGroup.LayoutParams.MatchParent
+                );
+                LinearLayout nameAndArtist = new LinearLayout(context);
+                nameAndArtist.LayoutParameters = nameAndArtistParams;
+                nameAndArtist.Orientation = Orientation.Vertical;
+                
+                
                 LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WrapContent,
                     ViewGroup.LayoutParams.WrapContent
                 );
-                nameParams.Weight = 1;
                 TextView name = new TextView(context);
-                name.SetPadding(
-                    (int)ConvertDpToPixels(10, context),
-                    (int)ConvertDpToPixels(10, context),
-                    (int)ConvertDpToPixels(10, context),
-                    (int)ConvertDpToPixels(10, context)
-
-                );
                 name.LayoutParameters = nameParams;
-                name.TextSize = (int)ConvertDpToPixels(5, context);
+                name.TextSize = (int)ConvertDpToPixels(8, context);
                 name.Typeface = font;
                 name.SetTextColor(Color.White);
-                name.Text = song.Title;
-                lnIn.AddView(name);
+                name.Text = songs[i].Title;
+                nameAndArtist.AddView(name);
+                
+                LinearLayout.LayoutParams artistParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent,
+                    ViewGroup.LayoutParams.WrapContent
+                );
+                TextView artist = new TextView(context);
+                artist.LayoutParameters = artistParams;
+                artist.TextSize = (int)ConvertDpToPixels(5, context);
+                artist.Typeface = font;
+                artist.SetTextColor(Color.White);
+                artist.Text = songs[i].Artist.Title;
+                nameAndArtist.AddView(artist);
+                
+                
+                
+                LinearLayout.LayoutParams indexParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent,
+                    ViewGroup.LayoutParams.MatchParent
+                );
+                TextView index = new TextView(context);
+                indexParams.Gravity = GravityFlags.Center;
+                indexParams.SetMargins(50, 0, 50, 0);
+                index.Gravity = GravityFlags.Center;
+                index.LayoutParameters = indexParams;
+                index.TextSize = (int)ConvertDpToPixels(8, context);
+                index.Typeface = font;
+                index.SetTextColor(Color.White);
+                index.Text = $"{i}";
+                
+                
+                lnIn.AddView(index);
+                lnIn.AddView(nameAndArtist);
+                
                 
                 ln?.AddView(lnIn);
             }
