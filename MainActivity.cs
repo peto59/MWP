@@ -714,6 +714,7 @@ namespace MWP
                 return;
             }
 
+            //TODO: add normal explanation for ExternalStorageManager and BackgroundLocation
             string explanation = Environment.IsExternalStorageManager switch
             {
                 false when SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed =>
@@ -764,8 +765,7 @@ namespace MWP
 
             if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
             {
-                //TODO: enable
-                //new Thread(NetworkManager.Listener).Start();
+                new Thread(NetworkManager.Listener).Start();
             }
 
             AlertDialog.Builder builder = new AlertDialog.Builder(this);

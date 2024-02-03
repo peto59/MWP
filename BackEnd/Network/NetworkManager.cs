@@ -142,6 +142,7 @@ namespace MWP.BackEnd.Network
         /// <returns>List of tuple with hostname, lastSeen, and whether this host is trusted</returns>
         public static List<(string hostname, DateTime? lastSeen, bool state)> GetAllHosts(bool includeTrusted = true)
         {
+            //remove stale hosts
             DateTime now = DateTime.Now;
             foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.StateHandler.AvailableHosts.Where(a =>
                          a.lastSeen > now + RemoveInterval))
@@ -149,7 +150,7 @@ namespace MWP.BackEnd.Network
                 MainActivity.StateHandler.AvailableHosts.Remove(removal);
             }
             
-            StateHandler.TriggerShareFragmentRefresh();
+            //StateHandler.TriggerShareFragmentRefresh();
             
             List<string> trusted = FileManager.GetTrustedSyncTargets();
             List<(string hostname, DateTime? lastSeen, bool state)> output = new List<(string hostname, DateTime? lastSeen, bool state)>();
