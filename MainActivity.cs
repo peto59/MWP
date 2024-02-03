@@ -764,7 +764,8 @@ namespace MWP
 
             if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
             {
-                new Thread(NetworkManager.Listener).Start();
+                //TODO: enable
+                //new Thread(NetworkManager.Listener).Start();
             }
 
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
