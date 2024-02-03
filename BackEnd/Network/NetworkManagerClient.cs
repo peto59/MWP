@@ -8,8 +8,8 @@ using Java.Lang;
 using Newtonsoft.Json;
 using Exception = Java.Lang.Exception;
 using Thread = System.Threading.Thread;
-#if DEBUG
 using AndroidX.AppCompat.App;
+#if DEBUG
 using MWP.Helpers;
 #endif
 
