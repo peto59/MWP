@@ -57,7 +57,7 @@ namespace MWP
         public static object FragmentPositionObject;
         
         
-        public static void ListIncomingSongsPopup(List<string> songs, Context context, AssetManager assets, Action accept, Action reject)
+        public static void ListIncomingSongsPopup(List<Song> songs, Context context, AssetManager? assets, Action accept, Action reject)
         {
             Typeface? font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             
@@ -74,7 +74,7 @@ namespace MWP
             /*
              * Prechádzanie cestami v liste a pre každú cestu vytvorenie nového záznamu v liste v ScrollView.
              */
-            foreach (string song in songs)
+            foreach (Song song in songs)
             {
                 /*
                  * Vytvaranie LinearLayout-u ktory bude obsahpvat text cesty a tlacidlo na vymazanie
@@ -112,7 +112,7 @@ namespace MWP
                 name.TextSize = (int)ConvertDpToPixels(5, context);
                 name.Typeface = font;
                 name.SetTextColor(Color.White);
-                name.Text = song;
+                name.Text = song.Title;
                 lnIn.AddView(name);
                 
                 ln?.AddView(lnIn);
