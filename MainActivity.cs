@@ -120,6 +120,12 @@ namespace MWP
             if (action == "openDrawer")
                 drawer?.OpenDrawer(GravityCompat.Start);
 
+            action = Intent?.GetStringExtra("NotificationAction");
+            if (action is "ShowConnectionStatus" or "ShowSongList")
+            {
+                ProcessNetworkNotification(Intent);
+            }
+
             toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
             drawer?.OpenDrawer(GravityCompat.Start);
             drawer?.AddDrawerListener(toggle);
@@ -131,7 +137,7 @@ namespace MWP
             if (navigationView != null)
             {
                 if (navigationView.LayoutParameters != null) navigationView.LayoutParameters.Width = metric.WidthPixels;
-                navigationView?.SetNavigationItemSelectedListener(this);
+                navigationView.SetNavigationItemSelectedListener(this);
             }
 
             if (Assets != null)
@@ -848,6 +854,7 @@ namespace MWP
         public void StartMediaService()
         {
             Intent serviceIntent = new Intent(Application.Context, typeof(MediaService));
+            // ReSharper disable once BitwiseOperatorOnEnumWithoutFlags
             if (!BindService(serviceIntent, ServiceConnectionPrivate, Bind.Important | Bind.AutoCreate))
             {
 #if DEBUG
@@ -982,7 +989,37 @@ namespace MWP
             SupportFragmentManager.PopBackStack();
             RequestMyPermission();
         }
-        
+
+        private void ProcessNetworkNotification(Intent? intent)
+        {
+            string? action = Intent?.GetStringExtra("NotificationAction");
+            string? remoteHostname = Intent?.GetStringExtra("RemoteHostname");
+            if (action != null && remoteHostname != null)
+            {
+                if (action == "ShowConnectionStatus")
+                {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.SetTitle("New connection");
+                    builder.SetMessage($"{remoteHostname} wants to connect to your device.");
+                    builder.SetCancelable(false);
+
+                    builder.SetPositiveButton("Allow", delegate
+                    {
+                        StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.ConnectionAccepted;
+                    });
+
+                    builder.SetNegativeButton("Disconnect", delegate
+                    {
+                        StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled;
+                    });
+                }
+
+                if (action == "ShowSongList")
+                {
+                    
+                }
+            }
+        }
     }
 
     internal class MyClickListener : Java.Lang.Object, View.IOnClickListener

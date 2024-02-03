@@ -49,10 +49,11 @@ namespace MWP.BackEnd
         /// <summary>
         /// List of live hosts on network
         /// </summary>
-        public List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> AvailableHosts =
+        public readonly List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> AvailableHosts =
             new List<(IPAddress ipAddress, DateTime lastSeen, string hostname)>();
 
-        internal static Dictionary<string, UserAcceptedState> OneTimeSendStates = new Dictionary<string, UserAcceptedState>();
+        internal static readonly Dictionary<string, UserAcceptedState> OneTimeSendStates = new Dictionary<string, UserAcceptedState>();
+        internal static readonly Dictionary<string, List<Song>> OneTimeSendSongs = new Dictionary<string, List<Song>>();
         
         
         

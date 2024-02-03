@@ -24,6 +24,14 @@ namespace MWP.BackEnd.Network
         Rejected,
         Accepted
     }
+    
+    internal enum P2PStateTypes : byte
+    {
+        State,
+        Port,
+        Request,
+        None
+    }
 
     internal enum UserAcceptedState : byte
     {

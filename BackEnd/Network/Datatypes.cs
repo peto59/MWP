@@ -5,7 +5,7 @@ namespace MWP.BackEnd.Network
 {
     internal class P2PState
     {
-        internal bool IsValid;
+        internal readonly bool IsValid;
         private readonly byte[] value;
         internal P2PState(byte[] data)
         {
@@ -47,14 +47,6 @@ namespace MWP.BackEnd.Network
         {
             return new[] { byte.MaxValue, byte.MaxValue, state, cnt };
         }
-    }
-
-    internal enum P2PStateTypes : byte
-    {
-        State,
-        Port,
-        Request,
-        None
     }
 
     internal class ConnectionState
@@ -100,7 +92,7 @@ namespace MWP.BackEnd.Network
         /// <summary>
         /// Whether we initiated one time connection
         /// </summary>
-        private bool sentOnetimeSendFlag;
+        private readonly bool sentOnetimeSendFlag;
         /// <summary>
         /// Whether remote side initiated one time connection
         /// </summary>
@@ -113,7 +105,7 @@ namespace MWP.BackEnd.Network
         /// <summary>
         /// number of songs to send when syncing
         /// </summary>
-        internal int syncSendCount;
+        internal int SyncSendCount { get; private set; }
         /// <summary>
         /// number of songs already sent when syncing
         /// </summary>
@@ -137,7 +129,7 @@ namespace MWP.BackEnd.Network
         /// <summary>
         /// number of songs to send on one time connection
         /// </summary>
-        internal int oneTimeSendCount;
+        internal readonly int oneTimeSendCount;
         /// <summary>
         /// number of songs already sent on one time connection
         /// </summary>
@@ -147,8 +139,7 @@ namespace MWP.BackEnd.Network
         /// Whether we can receive files on current connection
         /// </summary>
         internal bool CanReceiveFiles => (isTrustedSyncTarget ?? false) ||
-            (ConnectionType == ConnectionType.OneTimeReceive && StateHandler.OneTimeSendStates.TryGetValue(remoteHostname, out UserAcceptedState userAcceptedState) &&
-             userAcceptedState == UserAcceptedState.SongsAccepted);
+            (ConnectionType == ConnectionType.OneTimeReceive && UserAcceptedState == UserAcceptedState.SongsAccepted);
 
         /// <summary>
         /// Whether we can send files on current connection
@@ -206,6 +197,8 @@ namespace MWP.BackEnd.Network
             }
         }
 
+        internal UserAcceptedState UserAcceptedState => StateHandler.OneTimeSendStates.GetValueOrDefault(remoteHostname, UserAcceptedState.None);
+
         /// <summary>
         /// Songs to sync
         /// </summary>
@@ -215,7 +208,7 @@ namespace MWP.BackEnd.Network
             set
             {
                 syncSongs = value;
-                syncSendCount = value.Count;
+                SyncSendCount = value.Count;
             }
         }
 
@@ -281,6 +274,12 @@ namespace MWP.BackEnd.Network
                             oneTimeReceiveCount == 0
                             ||
                             oneTimeReceivedCount >= oneTimeReceiveCount
+                        )
+                        && 
+                        (
+                            UserAcceptedState == UserAcceptedState.SongsAccepted
+                            ||
+                            UserAcceptedState == UserAcceptedState.Cancelled
                         )
                     )
                     ||

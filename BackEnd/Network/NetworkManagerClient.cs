@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Exception = Java.Lang.Exception;
 using Thread = System.Threading.Thread;
 #if DEBUG
+using AndroidX.AppCompat.App;
 using MWP.Helpers;
 #endif
 
@@ -32,7 +33,8 @@ namespace MWP.BackEnd.Network
 
             Notifications? notification = null;
             ConnectionState connectionState = new ConnectionState(false, songsToSend);
-            
+            SongJsonConverter customConverter = new SongJsonConverter(false);
+
             if (songsToSend.Count > 0)
             {
                 networkStream.WriteCommand(CommandsArr.OnetimeSend);
@@ -77,7 +79,7 @@ namespace MWP.BackEnd.Network
                     #region Writing
 
                     NetworkManagerCommonCommunication.Write(command, ref networkStream,
-                        ref encryptor, ref aes, ref connectionState);
+                        ref encryptor, ref aes, ref connectionState, ref notification);
 
                     #endregion
                 
@@ -109,7 +111,7 @@ namespace MWP.BackEnd.Network
                         case CommandsEnum.AesReceived:
                             throw new IllegalStateException("Client doesn't receive aes confirmation");
                         case CommandsEnum.SyncRequest:
-                            if (FileManager.IsTrustedSyncTarget(connectionState.remoteHostname))
+                            if (connectionState.isTrustedSyncTarget ?? false)
                             {
                                 networkStream.WriteCommand(CommandsArr.SyncAccepted, ref encryptor);
                             }
@@ -120,6 +122,8 @@ namespace MWP.BackEnd.Network
                             break;
                         case CommandsEnum.SyncAccepted:
                             connectionState.syncRequestState = SyncRequestState.Accepted;
+                            networkStream.WriteCommand(CommandsArr.SyncCount, BitConverter.GetBytes(connectionState.SyncSendCount), ref encryptor);
+                            notification?.Stage2(connectionState);
                             break;
                         case CommandsEnum.SyncRejected:
                             connectionState.syncRequestState = SyncRequestState.Rejected;
@@ -131,27 +135,61 @@ namespace MWP.BackEnd.Network
                             }
                             break;
                         case CommandsEnum.SongRequest:
+                            networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
                             break;
                         case CommandsEnum.SongRequestInfoRequest:
-                            //TODO: copy from server
+                            networkStream.WriteCommand(CommandsArr.SongRequestInfo,
+                                Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(connectionState.songsToSend,
+                                    customConverter)),
+                                ref encryptor,
+                                ref aes);
                             break;
                         case CommandsEnum.SongRequestInfo:
                             if (data != null)
                             {
+                                if (connectionState.UserAcceptedState != UserAcceptedState.ConnectionAccepted)
+                                {
+                                    networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
+                                    //TODO: move to function
+                                    return;
+                                }
                                 string json = Encoding.UTF8.GetString(data);
 #if DEBUG
                                 MyConsole.WriteLine(json);
 #endif
-                                SongJsonConverter customConverter = new SongJsonConverter(false);
                                 List<Song>? recSongs = JsonConvert.DeserializeObject<List<Song>>(json, customConverter);
-                                if (recSongs != null)
+                                if (recSongs is { Count: > 0 })
                                 {
 #if DEBUG
-                                    foreach (Song s in recSongs)
+                                    /*foreach (Song s in recSongs)
                                     {
                                         MyConsole.WriteLine(s.ToString());
-                                    }
+                                    }*/
 #endif
+                                    //TODO: dialogy daj do funkcie aby sme nemali boiler plate
+                                    connectionState.oneTimeReceiveCount = recSongs.Count;
+                                    StateHandler.OneTimeSendSongs.Add(connectionState.remoteHostname, recSongs);
+                                    notification?.Stage1Update(connectionState.remoteHostname, connectionState.oneTimeReceiveCount);
+                                    string rh = connectionState.remoteHostname;
+                                    int cnt = connectionState.oneTimeReceiveCount;
+                                    MainActivity.StateHandler.view?.RunOnUiThread(() =>
+                                    {
+                                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.StateHandler.view);
+                                        builder.SetTitle("New connection");
+                                        builder.SetMessage($"{rh} wants to send you {cnt} songs");
+                                        builder.SetCancelable(false);
+
+                                        builder.SetPositiveButton("Accept", delegate
+                                        {
+                                            StateHandler.OneTimeSendStates[rh] = UserAcceptedState.SongsAccepted;
+                                        });
+
+                                        builder.SetNegativeButton("Reject", delegate
+                                        {
+                                            StateHandler.OneTimeSendStates[rh] = UserAcceptedState.Cancelled;
+                                        });
+                                        StateHandler.OneTimeSendStates[rh] = UserAcceptedState.SongsShowed;
+                                    });
                                     bool x = true;
                                     if (x) //present some form of user check if they really want to receive files
                                     {
@@ -170,13 +208,14 @@ namespace MWP.BackEnd.Network
                             }
                             break;
                         case CommandsEnum.SongRequestAccepted:
+                            notification?.Stage2(connectionState);
                             connectionState.songSendRequestState = SongSendRequestState.Accepted;
                             break;
                         case CommandsEnum.SongRequestRejected:
                             connectionState.songSendRequestState = SongSendRequestState.Rejected;
                             break;
                         case CommandsEnum.SongSend:
-                            if (length != null && connectionState.isTrustedSyncTarget != null)
+                            if (length != null)
                             {
 #if DEBUG
                                 MyConsole.WriteLine($"file length: {length}");
@@ -185,14 +224,14 @@ namespace MWP.BackEnd.Network
                             }
                             break;
                         case CommandsEnum.ArtistImageSend:
-                            if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
+                            if (data != null && length != null)
                             {
                                 NetworkManagerCommonCommunication.ArtistImageSend(ref networkStream, ref encryptor, ref aes,
                                     (long)length, data, ref connectionState);
                             }
                             break;
                         case CommandsEnum.AlbumImageSend:
-                            if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
+                            if (data != null && length != null)
                             {
                                 NetworkManagerCommonCommunication.AlbumImageSend(ref networkStream, ref encryptor, ref aes,
                                     (long)length, data, ref connectionState);
@@ -232,7 +271,7 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                             MyConsole.WriteLine("got end");
 #endif
-                            if (!connectionState.Ending || connectionState.ackCount < 0)//if work to do
+                            if (!connectionState.Ending)//if work to do
                             {
 #if DEBUG
                                 MyConsole.WriteLine("Still work to do");
@@ -288,6 +327,8 @@ namespace MWP.BackEnd.Network
             aes.Dispose();
             networkStream.Dispose();
             client.Dispose();
+            StateHandler.OneTimeSendSongs.Remove(connectionState.remoteHostname);
+            StateHandler.OneTimeSendStates.Remove(connectionState.remoteHostname);
             NetworkManagerCommon.Connected.Remove(server);
         }
     }

@@ -9,6 +9,7 @@ namespace MWP.BackEnd.Network
 {
     internal class Notifications
     {
+        //TODO: https://www.phind.com/search?cache=lh160qbo9lskbqnl4pbnpko9 na stage 1
         private readonly int notificationId;
         
         private const string CHANNEL_ID_LOW_IMPORTANCE = "network_notification_channel";
@@ -100,9 +101,13 @@ namespace MWP.BackEnd.Network
                         .SetSilent(true);
                     break;
                 case NotificationTypes.OneTimeReceive:
+                    Intent intent = new Intent(AndroidApp.Context, typeof(MainActivity));
+                    intent.PutExtra("NotificationAction", "ShowConnectionStatus");
+                    intent.PutExtra("RemoteHostname", remoteHostname);
+                    PendingIntent? pendingIntent = PendingIntent.GetActivity(MainActivity.StateHandler.view, notificationId, intent, PendingIntentFlags.UpdateCurrent);
                     notificationBuilder
-                        .SetContentTitle($"{remoteHostname} wants to connect to you")
-                        //.SetContentIntent()
+                        .SetContentTitle($"{remoteHostname} wants to connect to your device")
+                        .SetContentIntent(pendingIntent)
                         .SetAutoCancel(true)
                         .SetSilent(false);
                     break;
@@ -120,9 +125,13 @@ namespace MWP.BackEnd.Network
                 case NotificationTypes.Sync:
                     return;
                 case NotificationTypes.OneTimeReceive:
+                    Intent intent = new Intent(AndroidApp.Context, typeof(MainActivity));
+                    intent.PutExtra("NotificationAction", "ShowSongList");
+                    intent.PutExtra("RemoteHostname", remoteHostname);
+                    PendingIntent? pendingIntent = PendingIntent.GetActivity(MainActivity.StateHandler.view, notificationId, intent, PendingIntentFlags.UpdateCurrent);
                     notificationBuilder
                         .SetContentTitle($"{remoteHostname} wants to send you {songCount} songs")
-                        //.SetContentIntent()
+                        .SetContentIntent(pendingIntent)
                         .SetShowWhen(false)
                         .SetOngoing(true)
                         .SetAutoCancel(true)
@@ -194,33 +203,38 @@ namespace MWP.BackEnd.Network
                 .SetAutoCancel(true)
                 .SetOngoing(false)
                 .SetSilent(true);
-            if (succeeded)
+            
+            notificationBuilder
+                .SetContentTitle(succeeded
+                    ? $"Finished transfer with {connectionState.remoteHostname}"
+                    : $"Transfer with {connectionState.remoteHostname} failed");
+            
+            switch (notificationType)
             {
-                notificationBuilder
-                    .SetContentTitle($"Finished transfer with {connectionState.remoteHostname}");
-            }
-            else
-            {
-                notificationBuilder
-                    .SetContentTitle($"Transfer with {connectionState.remoteHostname} failed");
-                switch (notificationType)
-                {
-                    case NotificationTypes.OneTimeSend:
+                case NotificationTypes.OneTimeSend:
+                    if (connectionState.oneTimeSentCount < connectionState.oneTimeSendCount)
+                    {
                         notificationBuilder
-                            .SetContentText($"Sent {connectionState.oneTimeSentCount}/{connectionState.oneTimeSendCount} songs");
-                        break;
-                    case NotificationTypes.Sync:
+                        .SetContentText($"Sent {connectionState.oneTimeSentCount}/{connectionState.oneTimeSendCount} songs");
+                    }
+                    break;
+                case NotificationTypes.Sync:
+                    if (connectionState.syncSentCount < connectionState.SyncSendCount || connectionState.syncReceiveCount < connectionState.syncReceivedCount)
+                    {
                         notificationBuilder
-                            .SetContentText(
-                                $"Sent {connectionState.syncSentCount}/{connectionState.syncSendCount} songs {System.Environment.NewLine} Received {connectionState.syncReceiveCount}/{connectionState.syncReceivedCount} songs");
-                        break;
-                    case NotificationTypes.OneTimeReceive:
+                        .SetContentText(
+                            $"Sent {connectionState.syncSentCount}/{connectionState.SyncSendCount} songs {System.Environment.NewLine} Received {connectionState.syncReceiveCount}/{connectionState.syncReceivedCount} songs");
+                    }
+                    break;
+                case NotificationTypes.OneTimeReceive:
+                    if (connectionState.oneTimeSentCount < connectionState.oneTimeSendCount)
+                    {
                         notificationBuilder
-                            .SetContentText($"Received {connectionState.oneTimeSentCount}/{connectionState.oneTimeSendCount} songs");
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                        .SetContentText($"Received {connectionState.oneTimeSentCount}/{connectionState.oneTimeSendCount} songs");
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
             manager.Notify(notificationId, notificationBuilder.Build());
         }

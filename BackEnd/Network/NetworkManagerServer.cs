@@ -17,7 +17,7 @@ namespace MWP.BackEnd.Network
 
 internal static class NetworkManagerServer
 {
-    internal static (TcpListener, int) StartServer(IPAddress ip)
+    internal static (TcpListener server, int listenPort) StartServer(IPAddress ip)
     {
         int listenPort = new Random().Next(1024, 65535);
         TcpListener server;
@@ -139,7 +139,7 @@ internal static class NetworkManagerServer
                     #region Writing
 
                     NetworkManagerCommonCommunication.Write(command, ref networkStream,
-                        ref encryptor, ref aes, ref connectionState);
+                        ref encryptor, ref aes, ref connectionState, ref notification);
 
                     #endregion
 
@@ -166,7 +166,7 @@ internal static class NetworkManagerServer
 #endif
                             break;
                         case CommandsEnum.SyncRequest:
-                            if (FileManager.IsTrustedSyncTarget(connectionState.remoteHostname))
+                            if (connectionState.isTrustedSyncTarget ?? false)
                             {
                                 networkStream.WriteCommand(CommandsArr.SyncAccepted, ref encryptor);
                             }
@@ -177,6 +177,8 @@ internal static class NetworkManagerServer
                             break;
                         case CommandsEnum.SyncAccepted:
                             connectionState.syncRequestState = SyncRequestState.Accepted;
+                            networkStream.WriteCommand(CommandsArr.SyncCount, BitConverter.GetBytes(connectionState.SyncSendCount), ref encryptor);
+                            notification?.Stage2(connectionState);
                             break;
                         case CommandsEnum.SyncRejected:
                             connectionState.syncRequestState = SyncRequestState.Rejected;
@@ -197,13 +199,14 @@ internal static class NetworkManagerServer
                         case CommandsEnum.SongRequestInfo:
                             break;
                         case CommandsEnum.SongRequestAccepted:
+                            notification?.Stage2(connectionState);
                             connectionState.songSendRequestState = SongSendRequestState.Accepted;
                             break;
                         case CommandsEnum.SongRequestRejected:
                             connectionState.songSendRequestState = SongSendRequestState.Rejected;
                             break;
                         case CommandsEnum.SongSend:
-                            if (length != null && connectionState.isTrustedSyncTarget != null)
+                            if (length != null)
                             {
 #if DEBUG
                                 MyConsole.WriteLine($"file length: {length}");
@@ -212,14 +215,14 @@ internal static class NetworkManagerServer
                             }
                             break;
                         case CommandsEnum.ArtistImageSend:
-                            if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
+                            if (data != null && length != null)
                             {
                                 NetworkManagerCommonCommunication.ArtistImageSend(ref networkStream, ref encryptor, ref aes,
                                     (long)length, data, ref connectionState);
                             }
                             break;
                         case CommandsEnum.AlbumImageSend:
-                            if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
+                            if (data != null && length != null)
                             {
                                 NetworkManagerCommonCommunication.AlbumImageSend(ref networkStream, ref encryptor, ref aes,
                                     (long)length, data, ref connectionState);
@@ -259,7 +262,7 @@ internal static class NetworkManagerServer
 #if DEBUG
                             MyConsole.WriteLine("got end");
 #endif
-                            if (!connectionState.Ending || connectionState.ackCount < 0)//if work to do
+                            if (!connectionState.Ending)//if work to do
                             {
 #if DEBUG
                                 MyConsole.WriteLine("Still work to do");
@@ -314,6 +317,8 @@ internal static class NetworkManagerServer
             aes.Dispose();
             networkStream.Close();
             client.Close();
+            StateHandler.OneTimeSendSongs.Remove(connectionState.remoteHostname);
+            StateHandler.OneTimeSendStates.Remove(connectionState.remoteHostname);
             NetworkManagerCommon.Connected.Remove(targetIp);
             //GC.Collect();
         }
