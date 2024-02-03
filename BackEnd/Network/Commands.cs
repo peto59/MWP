@@ -14,6 +14,7 @@ namespace MWP.BackEnd.Network
         internal const byte SyncRequest = (byte)CommandsEnum.SyncRequest;
         internal const byte SyncAccepted = (byte)CommandsEnum.SyncAccepted;
         internal const byte SyncRejected = (byte)CommandsEnum.SyncRejected;
+        internal const byte SyncCount = (byte)CommandsEnum.SyncCount;
         internal const byte SongRequest = (byte)CommandsEnum.SongRequest;
         internal const byte SongRequestInfoRequest = (byte)CommandsEnum.SongRequestInfoRequest;
         internal const byte SongRequestInfo = (byte)CommandsEnum.SongRequestInfo;
@@ -78,6 +79,7 @@ namespace MWP.BackEnd.Network
         internal static readonly byte[] SyncRequest = { Commands.SyncRequest };
         internal static readonly byte[] SyncAccepted = { Commands.SyncAccepted };
         internal static readonly byte[] SyncRejected = { Commands.SyncRejected };
+        internal static readonly byte[] SyncCount = { Commands.SyncCount };
         internal static readonly byte[] SongRequest = { Commands.SongRequest };
         internal static readonly byte[] SongRequestInfoRequest = { Commands.SongRequestInfoRequest };
         internal static readonly byte[] SongRequestInfo = { Commands.SongRequestInfo };
@@ -92,27 +94,69 @@ namespace MWP.BackEnd.Network
         internal static readonly byte[] AlbumImageNotFound = { Commands.AlbumImageNotFound };
         internal static readonly byte[] Ack = { Commands.Ack };
         internal static readonly byte[] End = { Commands.End };
-        internal static readonly byte[] LongCommands = { Commands.SongRequestInfo, Commands.SongSend, Commands.ArtistImageSend, Commands.AlbumImageSend };
+        internal static readonly byte[] LongCommands =
+        {
+            Commands.SongRequestInfo,
+            Commands.SongSend,
+            Commands.ArtistImageSend,
+            Commands.AlbumImageSend
+        };
         internal static readonly CommandsEnum[] LongCommandsEnum =
         {
-            CommandsEnum.SongRequestInfo, CommandsEnum.SongSend, CommandsEnum.ArtistImageSend,
+            CommandsEnum.SongRequestInfo,
+            CommandsEnum.SongSend,
+            CommandsEnum.ArtistImageSend,
             CommandsEnum.AlbumImageSend
         };
-        internal static readonly byte[] FileCommands = { Commands.SongSend, Commands.ArtistImageSend, Commands.AlbumImageSend  };
-        internal static readonly CommandsEnum[] FileCommandsEnum = { CommandsEnum.SongSend, CommandsEnum.ArtistImageSend, CommandsEnum.AlbumImageSend };
+        internal static readonly byte[] FileCommands =
+        {
+            Commands.SongSend,
+            Commands.ArtistImageSend,
+            Commands.AlbumImageSend
+        };
+        internal static readonly CommandsEnum[] FileCommandsEnum =
+        {
+            CommandsEnum.SongSend,
+            CommandsEnum.ArtistImageSend,
+            CommandsEnum.AlbumImageSend
+        };
         internal static readonly byte[] EncryptedOnlyCommands =
         {
-            Commands.SyncRequest, Commands.SyncAccepted, Commands.SyncRejected, Commands.SongSend,
-            Commands.ArtistImageSend, Commands.AlbumImageSend, Commands.ArtistImageRequest, Commands.AlbumImageRequest,
-            Commands.SongRequest, Commands.SongRequestInfoRequest, Commands.SongRequestInfo, Commands.SongRequestAccepted,
-            Commands.SongRequestRejected
+            Commands.SyncRequest,
+            Commands.SyncAccepted,
+            Commands.SyncRejected,
+            Commands.SyncCount,
+            Commands.SongRequest,
+            Commands.SongRequestInfoRequest,
+            Commands.SongRequestInfo,
+            Commands.SongRequestAccepted,
+            Commands.SongRequestRejected,
+            Commands.SongSend,
+            Commands.ArtistImageSend,
+            Commands.AlbumImageSend,
+            Commands.ArtistImageRequest,
+            Commands.AlbumImageRequest,
+            Commands.ArtistImageNotFound,
+            Commands.AlbumImageNotFound
         };
         internal static readonly CommandsEnum[] EncryptedOnlyCommandsEnums =
         {
-            CommandsEnum.SyncRequest, CommandsEnum.SyncAccepted, CommandsEnum.SyncRejected, CommandsEnum.SongSend,
-            CommandsEnum.ArtistImageSend, CommandsEnum.AlbumImageSend, CommandsEnum.ArtistImageRequest, CommandsEnum.AlbumImageRequest,
-            CommandsEnum.SongRequest, CommandsEnum.SongRequestInfoRequest, CommandsEnum.SongRequestInfo,
-            CommandsEnum.SongRequestAccepted, CommandsEnum.SongRequestRejected
+            CommandsEnum.SyncRequest,
+            CommandsEnum.SyncAccepted,
+            CommandsEnum.SyncRejected,
+            CommandsEnum.SyncCount,
+            CommandsEnum.SongRequest,
+            CommandsEnum.SongRequestInfoRequest,
+            CommandsEnum.SongRequestInfo,
+            CommandsEnum.SongRequestAccepted,
+            CommandsEnum.SongRequestRejected,
+            CommandsEnum.SongSend,
+            CommandsEnum.ArtistImageSend,
+            CommandsEnum.AlbumImageSend,
+            CommandsEnum.ArtistImageRequest,
+            CommandsEnum.AlbumImageRequest,
+            CommandsEnum.ArtistImageNotFound,
+            CommandsEnum.AlbumImageNotFound
         };
     }
 
@@ -128,6 +172,7 @@ namespace MWP.BackEnd.Network
         SyncRequest = 20,
         SyncAccepted = 21,
         SyncRejected = 22,
+        SyncCount = 23,
         SongRequest = 30,
         SongRequestInfoRequest = 31,
         SongRequestInfo = 32,

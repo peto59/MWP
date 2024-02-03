@@ -10,6 +10,7 @@ using Xamarin.Essentials;
 using Exception = System.Exception;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Android.Graphics;
 using AndroidX.AppCompat.App;
 #if DEBUG
 using MWP.Helpers;
@@ -41,7 +42,7 @@ namespace MWP.BackEnd.Network
                             throw new IllegalStateException("Received empty public key");
                         }
                     }
-                    else if (command != CommandsEnum.None)
+                    else if (command != CommandsEnum.None && command != CommandsEnum.Wait)
                     {
                         throw new IllegalStateException($"wrong order to establish cypher, required step: {CommandsEnum.RsaExchange}");
                     }
@@ -51,28 +52,25 @@ namespace MWP.BackEnd.Network
                     {
                         throw new InvalidOperationException("Server doesn't receive aes request");
                     }
-                    else
+                    (command, data, _, _) = networkStream.ReadCommand(ref decryptor);
+                    if (command == CommandsEnum.AesSend)
                     {
-                        (command, data, _, _) = networkStream.ReadCommand(ref decryptor);
-                        if (command == CommandsEnum.AesSend)
+                        if (data == null)
                         {
-                            if (data == null)
-                            {
-                                throw new IllegalStateException("Received empty aes key");
-                            }
+                            throw new IllegalStateException("Received empty aes key");
                         }
-                        else if (command != CommandsEnum.None)
-                        {
-                            throw new IllegalStateException(
-                                $"wrong order to establish cypher, required step: {CommandsEnum.AesSend}");
-                        }
+                    }
+                    else if (command != CommandsEnum.None && command != CommandsEnum.Wait)
+                    {
+                        throw new IllegalStateException(
+                            $"wrong order to establish cypher, required step: {CommandsEnum.AesSend}");
                     }
                     break;
                 case EncryptionState.AesReceived:
                     if (connectionState.IsServer)
                     {
                         (command, _, _, _) = networkStream.ReadCommand(ref decryptor);
-                        if (command != CommandsEnum.AesReceived && command != CommandsEnum.None)
+                        if (command != CommandsEnum.AesReceived && command != CommandsEnum.None && command != CommandsEnum.Wait)
                         {
                             throw new InvalidOperationException($"wrong order to establish cypher, required step: {CommandsEnum.AesReceived}");
                         }
@@ -108,7 +106,7 @@ namespace MWP.BackEnd.Network
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Write(CommandsEnum command, ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, ref Aes aes, ref ConnectionState connectionState)
         {
-            if (connectionState.ending && command == CommandsEnum.None)
+            if (connectionState.Ending && command == CommandsEnum.None)
             {
                 if (connectionState.encryptionState == EncryptionState.Encrypted)
                 {
@@ -118,83 +116,60 @@ namespace MWP.BackEnd.Network
                 {
                     networkStream.WriteCommand(CommandsArr.End);
                 }
+                return;
             }
-            else if (connectionState.encryptionState == EncryptionState.Encrypted)
+
+            if (connectionState.encryptionState != EncryptionState.Encrypted) return;
+
+            if (connectionState is { IsOneTimeConnection: true, CanSendFiles: true })
             {
-                switch (connectionState.songsToSend.Count)
+                if (connectionState.songsToSend.Count <= 0) return;
+                
+                if (connectionState.songSendRequestState == SongSendRequestState.None)
                 {
-                    case > 0 when connectionState.songSendRequestState == SongSendRequestState.None:
-                        networkStream.WriteCommand(CommandsArr.SongRequest, ref encryptor);
-                        connectionState.songSendRequestState = SongSendRequestState.Sent;
-                        break;
-                    case > 0 when connectionState.songSendRequestState == SongSendRequestState.Accepted:
-                        if (connectionState.ackCount >= 0)
-                        {
-                            networkStream.WriteFile(connectionState.songsToSend[0].Path, ref encryptor, ref aes);
-                            connectionState.songsToSend.RemoveAt(0);
-                            connectionState.ackCount--;
-                        }
-                        break;
-                    default:
-                    {
-                        if(connectionState.isTrustedSyncTarget == null)
-                        {
-                            connectionState.isTrustedSyncTarget = FileManager.IsTrustedSyncTarget(connectionState.remoteHostname);
-#if DEBUG
-                            MyConsole.WriteLine($"Is trusted sync target? {connectionState.isTrustedSyncTarget}");                                                                    
-#endif
-                            if (connectionState.isTrustedSyncTarget ?? false)
-                            {
-                                connectionState.SyncSongs = FileManager.GetTrustedSyncTargetSongs(connectionState.remoteHostname);
-                            }
-                        }
-                        switch (connectionState.SyncSongs.Count)
-                        {
-                            case > 0 when connectionState.syncRequestState == SyncRequestState.None:
-                                networkStream.WriteCommand(CommandsArr.SyncRequest, ref encryptor);
-                                connectionState.syncRequestState = SyncRequestState.Sent;
-                                break;
-                            case > 0 when connectionState.syncRequestState == SyncRequestState.Accepted:
-#if DEBUG
-                                MyConsole.WriteLine($"Ack count: {connectionState.ackCount}");
-#endif
-                                if (connectionState.ackCount >= 0)
-                                {
-#if DEBUG
-                                    MyConsole.WriteLine(connectionState.SyncSongs[0].ToString());
-#endif
-                                    if (File.Exists(connectionState.SyncSongs[0].Path))
-                                    {
-                                        networkStream.WriteFile(connectionState.SyncSongs[0].Path, ref encryptor, ref aes);
-                                        connectionState.ackCount--;
-                                    }
-                                    connectionState.SyncSongs.RemoveAt(0);
-                                    FileManager.SetTrustedSyncTargetSongs(connectionState.remoteHostname, connectionState.SyncSongs);
-                                }
-                                break;
-                            default:
-                                connectionState.ending =
-                                    (connectionState.songsToSend.Count == 0 || 
-                                     (connectionState.songsToSend.Count > 0 && connectionState.songSendRequestState == SongSendRequestState.Rejected))
-                                    &&
-                                    (connectionState.SyncSongs.Count == 0 || 
-                                     (connectionState.SyncSongs.Count > 0 && connectionState.syncRequestState == SyncRequestState.Rejected))
-                                    && connectionState is { ackCount: >= 0, artistImageRequests: { Count: 0 } }
-                                    && connectionState.albumImageRequests.Count == 0;
-#if DEBUG
-                                    MyConsole.WriteLine($"isEnding? {connectionState.ending}");                               
-#endif
-                                break;
-                        }
-                        break;
-                    }
+                    networkStream.WriteCommand(CommandsArr.SongRequest, ref encryptor);
+                    connectionState.songSendRequestState = SongSendRequestState.Sent;
                 }
+
+                if (connectionState is not
+                    { songSendRequestState: SongSendRequestState.Accepted, ackCount: >= 0 }) return;
+                
+                networkStream.WriteFile(connectionState.songsToSend[0].Path, ref encryptor, ref aes);
+                connectionState.songsToSend.RemoveAt(0);
+                connectionState.ackCount--;
+            }
+            else if (connectionState is { ConnectionType: ConnectionType.Sync, CanSendFiles: true })
+            {
+                connectionState.isTrustedSyncTarget ??= FileManager.IsTrustedSyncTarget(connectionState.remoteHostname);
+                if (connectionState.SyncSongs.Count <= 0 && !connectionState.fetchedSyncSongs)
+                {
+                    connectionState.SyncSongs = FileManager.GetTrustedSyncTargetSongs(connectionState.remoteHostname);
+                    connectionState.fetchedSyncSongs = true;
+                }
+                if (connectionState.SyncSongs.Count <= 0) return;
+                if (connectionState.syncRequestState == SyncRequestState.None)
+                {
+                    networkStream.WriteCommand(CommandsArr.SyncRequest, ref encryptor);
+                    connectionState.syncRequestState = SyncRequestState.Sent;
+                }
+
+                if (connectionState.syncRequestState != SyncRequestState.Accepted || connectionState.ackCount < 0) return;
+                if (File.Exists(connectionState.SyncSongs[0].Path))
+                {
+#if DEBUG
+                    MyConsole.WriteLine($"Sending {connectionState.SyncSongs[0]}");
+#endif
+                    networkStream.WriteFile(connectionState.SyncSongs[0].Path, ref encryptor, ref aes);
+                    connectionState.ackCount--;
+                }
+                connectionState.SyncSongs.RemoveAt(0);
+                FileManager.SetTrustedSyncTargetSongs(connectionState.remoteHostname, connectionState.SyncSongs);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Host(ref NetworkStream networkStream,
-            ref RSACryptoServiceProvider decryptor, ref RSACryptoServiceProvider encryptor, ref Aes aes, ref ConnectionState connectionState)
+            ref RSACryptoServiceProvider decryptor, ref RSACryptoServiceProvider encryptor, ref Aes aes, ref ConnectionState connectionState, ref Notifications? notification)
         {
             connectionState.remoteHostname = Encoding.UTF8.GetString(networkStream.ReadData());
 #if DEBUG
@@ -203,6 +178,8 @@ namespace MWP.BackEnd.Network
             connectionState.isTrustedSyncTarget = FileManager.IsTrustedSyncTarget(connectionState.remoteHostname);
             if (connectionState.gotOneTimeSendFlag)
             {
+                notification = new Notifications(NotificationTypes.OneTimeReceive);
+                notification.Stage1(connectionState.remoteHostname);
                 string rh = connectionState.remoteHostname;
                 MainActivity.StateHandler.view?.RunOnUiThread(() =>
                 {
@@ -223,19 +200,19 @@ namespace MWP.BackEnd.Network
                     });
                 });
                 StateHandler.OneTimeSendStates.Add(connectionState.remoteHostname, UserAcceptedState.Showed);
-                
-                //TODO: notification
             }
                         
             Task<(string? storedPrivKey, string? storedPubKey)> task = NetworkManagerCommon.LoadKeys(connectionState.remoteHostname);
-            while (!task.IsCompleted)
-            {
-                Thread.Sleep(10);
-            }
 
-            (string? storedPrivKey, string? storedPubKey) = task.Result;
+            string? storedPrivKey = null;
+            string? storedPubKey = null;
+
+            if (connectionState.isTrustedSyncTarget ?? false)
+            {
+                (storedPrivKey, storedPubKey) = task.GetAwaiter().GetResult();
+            }
                         
-            if (storedPrivKey == null || storedPubKey == null)
+            if (connectionState.gotOneTimeSendFlag || storedPrivKey == null || storedPubKey == null)
             {
 #if DEBUG
                 MyConsole.WriteLine("generating keys");
@@ -245,18 +222,19 @@ namespace MWP.BackEnd.Network
                 networkStream.WriteCommand(CommandsArr.RsaExchange, Encoding.UTF8.GetBytes(myPubKeyString));
                 connectionState.encryptionState = EncryptionState.RsaExchange;
             }
-            else if (connectionState.IsServer)
-            {
-                encryptor.FromXmlString(storedPubKey);
-                decryptor.FromXmlString(storedPrivKey);
-                networkStream.WriteCommand(CommandsArr.AesSend, aes.Key, ref encryptor);
-                connectionState.encryptionState = EncryptionState.AesReceived;
-            }
             else
             {
                 encryptor.FromXmlString(storedPubKey);
                 decryptor.FromXmlString(storedPrivKey);
-                connectionState.encryptionState = EncryptionState.AesSend;
+                if (connectionState.IsServer)
+                {
+                    networkStream.WriteCommand(CommandsArr.AesSend, aes.Key, ref encryptor);
+                    connectionState.encryptionState = EncryptionState.AesReceived;
+                }
+                else
+                {
+                    connectionState.encryptionState = EncryptionState.AesSend;
+                }
             }
         }
 

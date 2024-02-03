@@ -7,7 +7,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Xamarin.Essentials;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -53,10 +52,9 @@ internal static class NetworkManagerServer
             aes.Padding = PaddingMode.PKCS7;
             aes.GenerateKey();
             
+            Notifications? notification = null;
             ConnectionState connectionState = new ConnectionState(false, songsToSend);
             
-
-            // Enter the listening loop.
 #if DEBUG
             MyConsole.WriteLine("Waiting for a connection... ");
 #endif
@@ -99,191 +97,210 @@ internal static class NetworkManagerServer
             if (songsToSend.Count > 0)
             {
                 networkStream.WriteCommand(CommandsArr.OnetimeSend);
+                notification = new Notifications(NotificationTypes.OneTimeSend);
             }
-            networkStream.WriteCommand(CommandsArr.Host, Encoding.UTF8.GetBytes(DeviceInfo.Name));
+            networkStream.WriteCommand(CommandsArr.Host, Encoding.UTF8.GetBytes(NetworkManager.DeviceName));
 
                 
 
             Thread.Sleep(100);
-            while (true)
+            try
             {
-                CommandsEnum command;
-                byte[]? data = null;
-                long? length = null;
-
-                #region Reading
-
-                if (networkStream.DataAvailable)
+                while (true)
                 {
-                    (command, data, length) = NetworkManagerCommonCommunication.Read(ref networkStream, ref decryptor, ref aes, ref connectionState);
-                    connectionState.timeoutCounter = 0;
-                }
-                else
-                {
-                    connectionState.timeoutCounter++;
-                    if (connectionState.timeoutCounter > NetworkManager.MaxTimeoutCounter)
+                    CommandsEnum command;
+                    byte[]? data = null;
+                    long? length = null;
+
+                    #region Reading
+
+                    if (networkStream.DataAvailable)
                     {
-                        goto EndServer;
+                        (command, data, length) = NetworkManagerCommonCommunication.Read(ref networkStream, ref decryptor, ref aes, ref connectionState);
+                        connectionState.timeoutCounter = 0;
                     }
-                    command = CommandsEnum.None;
-                }
+                    else
+                    {
+                        connectionState.timeoutCounter++;
+                        if (connectionState.timeoutCounter > NetworkManager.MaxTimeoutCounter)
+                        {
+                            notification?.Stage3(false, connectionState);
+                            goto EndServer;
+                        }
+                        command = CommandsEnum.None;
+                    }
 
 #if DEBUG
-                MyConsole.WriteLine($"Received command: {command}");
+                    MyConsole.WriteLine($"Received command: {command}");
 #endif
-                #endregion
+                    #endregion
                 
 
-                #region Writing
+                    #region Writing
 
-                NetworkManagerCommonCommunication.Write(command, ref networkStream,
-                    ref encryptor, ref aes, ref connectionState);
+                    NetworkManagerCommonCommunication.Write(command, ref networkStream,
+                        ref encryptor, ref aes, ref connectionState);
 
-                #endregion
+                    #endregion
 
-                switch (command)
-                {
-                    case CommandsEnum.OnetimeSend:
-                        connectionState.gotOneTimeSendFlag = true;
-                        break;
-                    case CommandsEnum.Host:
-                        NetworkManagerCommonCommunication.Host(ref networkStream, ref decryptor, ref encryptor, ref aes, ref connectionState);
-                        break;
-                    case CommandsEnum.RsaExchange:
-                        if (data != null)
-                        {
-                            NetworkManagerCommonCommunication.RsaExchange(ref networkStream, ref data, ref decryptor, ref encryptor, ref aes, ref connectionState);
-                        }
-                        break;
-                    case CommandsEnum.AesSend:
-                        throw new InvalidOperationException("Server doesn't receive aes request");
-                    case CommandsEnum.AesReceived:
-                        connectionState.encryptionState = EncryptionState.Encrypted;
+                    switch (command)
+                    {
+                        case CommandsEnum.OnetimeSend:
+                            connectionState.gotOneTimeSendFlag = true;
+                            break;
+                        case CommandsEnum.Host:
+                            NetworkManagerCommonCommunication.Host(ref networkStream, ref decryptor, ref encryptor, ref aes, ref connectionState, ref notification);
+                            break;
+                        case CommandsEnum.RsaExchange:
+                            if (data != null)
+                            {
+                                NetworkManagerCommonCommunication.RsaExchange(ref networkStream, ref data, ref decryptor, ref encryptor, ref aes, ref connectionState);
+                            }
+                            break;
+                        case CommandsEnum.AesSend:
+                            throw new InvalidOperationException("Server doesn't receive aes request");
+                        case CommandsEnum.AesReceived:
+                            connectionState.encryptionState = EncryptionState.Encrypted;
 #if DEBUG
-                        MyConsole.WriteLine("encrypted");
+                            MyConsole.WriteLine("encrypted");
 #endif
-                        break;
-                    case CommandsEnum.SyncRequest:
-                        if (FileManager.IsTrustedSyncTarget(connectionState.remoteHostname))
-                        {
-                            networkStream.WriteCommand(CommandsArr.SyncAccepted, ref encryptor);
-                        }
-                        else
-                        {
-                            networkStream.WriteCommand(CommandsArr.SyncRejected, ref encryptor);
-                        }
-                        break;
-                    case CommandsEnum.SyncAccepted:
-                        connectionState.syncRequestState = SyncRequestState.Accepted;
-                        break;
-                    case CommandsEnum.SyncRejected:
-                        connectionState.syncRequestState = SyncRequestState.Rejected;
-                        break;
-                    case CommandsEnum.SongRequest:
-                        break;
-                    case CommandsEnum.SongRequestInfoRequest:
-                        
-                        //byte[] msg = Encoding.UTF8.GetBytes(json);
-                        //networkStream.WriteCommand(CommandsArr.SongRequestInfo, msg, ref encryptor, ref aes);
-                        break;
-                    case CommandsEnum.SongRequestInfo:
-                        break;
-                    case CommandsEnum.SongRequestAccepted:
-                        connectionState.songSendRequestState = SongSendRequestState.Accepted;
-                        break;
-                    case CommandsEnum.SongRequestRejected:
-                        connectionState.songSendRequestState = SongSendRequestState.Rejected;
-                        break;
-                    case CommandsEnum.SongSend:
-                        if (length != null && connectionState.isTrustedSyncTarget != null)
-                        {
-#if DEBUG
-                            MyConsole.WriteLine($"file length: {length}");
-#endif
-                            NetworkManagerCommonCommunication.SongSend(ref networkStream, ref encryptor, (long)length, ref aes, ref connectionState);
-                        }
-                        break;
-                    case CommandsEnum.ArtistImageSend:
-                        if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
-                        {
-                            NetworkManagerCommonCommunication.ArtistImageSend(ref networkStream, ref encryptor, ref aes,
-                                (long)length, data, ref connectionState);
-                        }
-                        break;
-                    case CommandsEnum.AlbumImageSend:
-                        if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
-                        {
-                            NetworkManagerCommonCommunication.AlbumImageSend(ref networkStream, ref encryptor, ref aes,
-                                (long)length, data, ref connectionState);
-                        }
-                        break;
-                    case CommandsEnum.ArtistImageRequest:
-                        if (data != null)
-                        {
-                            NetworkManagerCommonCommunication.ArtistImageRequest(ref networkStream, ref encryptor, ref aes, data, ref connectionState);
-                        }
-                        break;
-                    case CommandsEnum.AlbumImageRequest:
-                        if (data != null)
-                        {
-                            NetworkManagerCommonCommunication.AlbumImageRequest(ref networkStream, ref encryptor, ref aes, data, ref connectionState);
-                        }
-                        break;
-                    case CommandsEnum.ArtistImageNotFound:
-                        if (data != null)
-                        {
-                            string artistName = Encoding.UTF8.GetString(data);
-                            connectionState.artistImageRequests.Remove(artistName);
-                            connectionState.artistImageRequests.Remove(FileManager.GetAlias(artistName));
-                        }
-                        break;
-                    case CommandsEnum.AlbumImageNotFound:
-                        if (data != null)
-                        {
-                            string albumName = Encoding.UTF8.GetString(data);
-                            connectionState.albumImageRequests.Remove(albumName);
-                        }
-                        break;
-                    case CommandsEnum.Ack:
-                        connectionState.ackCount++;
-                        break;
-                    case CommandsEnum.End:
-#if DEBUG
-                        MyConsole.WriteLine("got end");
-#endif
-                        if (!connectionState.ending || connectionState.ackCount < 0)//if work to do
-                        {
-#if DEBUG
-                            MyConsole.WriteLine("Still work to do");
-#endif
-                            continue;
-                        }
-                        try
-                        {
-                            if (connectionState.encryptionState == EncryptionState.Encrypted)
-                                networkStream.WriteCommand(CommandsArr.End, ref encryptor);
+                            break;
+                        case CommandsEnum.SyncRequest:
+                            if (FileManager.IsTrustedSyncTarget(connectionState.remoteHostname))
+                            {
+                                networkStream.WriteCommand(CommandsArr.SyncAccepted, ref encryptor);
+                            }
                             else
-                                networkStream.WriteCommand(CommandsArr.End);
+                            {
+                                networkStream.WriteCommand(CommandsArr.SyncRejected, ref encryptor);
+                            }
+                            break;
+                        case CommandsEnum.SyncAccepted:
+                            connectionState.syncRequestState = SyncRequestState.Accepted;
+                            break;
+                        case CommandsEnum.SyncRejected:
+                            connectionState.syncRequestState = SyncRequestState.Rejected;
+                            break;
+                        case CommandsEnum.SyncCount:
+                            if (data != null)
+                            {
+                                connectionState.syncReceiveCount = BitConverter.ToInt32(data);
+                            }
+                            break;
+                        case CommandsEnum.SongRequest:
+                            break;
+                        case CommandsEnum.SongRequestInfoRequest:
+                        
+                            //byte[] msg = Encoding.UTF8.GetBytes(json);
+                            //networkStream.WriteCommand(CommandsArr.SongRequestInfo, msg, ref encryptor, ref aes);
+                            break;
+                        case CommandsEnum.SongRequestInfo:
+                            break;
+                        case CommandsEnum.SongRequestAccepted:
+                            connectionState.songSendRequestState = SongSendRequestState.Accepted;
+                            break;
+                        case CommandsEnum.SongRequestRejected:
+                            connectionState.songSendRequestState = SongSendRequestState.Rejected;
+                            break;
+                        case CommandsEnum.SongSend:
+                            if (length != null && connectionState.isTrustedSyncTarget != null)
+                            {
+#if DEBUG
+                                MyConsole.WriteLine($"file length: {length}");
+#endif
+                                NetworkManagerCommonCommunication.SongSend(ref networkStream, ref encryptor, (long)length, ref aes, ref connectionState);
+                            }
+                            break;
+                        case CommandsEnum.ArtistImageSend:
+                            if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
+                            {
+                                NetworkManagerCommonCommunication.ArtistImageSend(ref networkStream, ref encryptor, ref aes,
+                                    (long)length, data, ref connectionState);
+                            }
+                            break;
+                        case CommandsEnum.AlbumImageSend:
+                            if (data != null && length != null && connectionState.isTrustedSyncTarget != null)
+                            {
+                                NetworkManagerCommonCommunication.AlbumImageSend(ref networkStream, ref encryptor, ref aes,
+                                    (long)length, data, ref connectionState);
+                            }
+                            break;
+                        case CommandsEnum.ArtistImageRequest:
+                            if (data != null)
+                            {
+                                NetworkManagerCommonCommunication.ArtistImageRequest(ref networkStream, ref encryptor, ref aes, data, ref connectionState);
+                            }
+                            break;
+                        case CommandsEnum.AlbumImageRequest:
+                            if (data != null)
+                            {
+                                NetworkManagerCommonCommunication.AlbumImageRequest(ref networkStream, ref encryptor, ref aes, data, ref connectionState);
+                            }
+                            break;
+                        case CommandsEnum.ArtistImageNotFound:
+                            if (data != null)
+                            {
+                                string artistName = Encoding.UTF8.GetString(data);
+                                connectionState.artistImageRequests.Remove(artistName);
+                                connectionState.artistImageRequests.Remove(FileManager.GetAlias(artistName));
+                            }
+                            break;
+                        case CommandsEnum.AlbumImageNotFound:
+                            if (data != null)
+                            {
+                                string albumName = Encoding.UTF8.GetString(data);
+                                connectionState.albumImageRequests.Remove(albumName);
+                            }
+                            break;
+                        case CommandsEnum.Ack:
+                            connectionState.ackCount++;
+                            break;
+                        case CommandsEnum.End:
+#if DEBUG
+                            MyConsole.WriteLine("got end");
+#endif
+                            if (!connectionState.Ending || connectionState.ackCount < 0)//if work to do
+                            {
+#if DEBUG
+                                MyConsole.WriteLine("Still work to do");
+#endif
+                                continue;
+                            }
+                            try
+                            {
+                                if (connectionState.encryptionState == EncryptionState.Encrypted)
+                                    networkStream.WriteCommand(CommandsArr.End, ref encryptor);
+                                else
+                                    networkStream.WriteCommand(CommandsArr.End);
+                                Thread.Sleep(100);
+                            }
+                            catch
+                            {
+#if DEBUG
+                                MyConsole.WriteLine("Disconnected");
+#endif
+                            }
+                            notification?.Stage3(true, connectionState);
+                            goto EndServer;
+                        case CommandsEnum.Wait:
+                            Thread.Sleep(25);
+                            break;
+                        case CommandsEnum.None:
+                        default: //wait or unimplemented
+#if DEBUG
+                            MyConsole.WriteLine($"default: {command}");
+#endif
                             Thread.Sleep(100);
-                        }
-                        catch
-                        {
-#if DEBUG
-                            MyConsole.WriteLine("Disconnected");
-#endif
-                        }
-                        goto EndServer;
-                    case CommandsEnum.Wait:
-                        Thread.Sleep(25);
-                        break;
-                    case CommandsEnum.None:
-                    default: //wait or unimplemented
-#if DEBUG
-                        MyConsole.WriteLine($"default: {command}");
-#endif
-                        Thread.Sleep(100);
-                        break;
+                            break;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+                notification?.Stage3(false, connectionState);
             }
             EndServer:
             // Shutdown and end connection

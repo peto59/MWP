@@ -9,7 +9,7 @@ namespace MWP.BackEnd.Network
 {
     internal class Notifications
     {
-        private int NotificationId { get; }
+        private readonly int notificationId;
         
         private const string CHANNEL_ID_LOW_IMPORTANCE = "network_notification_channel";
         private const string CHANNEL_ID_HIGH_IMPORTANCE = "network_notification_channel_priority";
@@ -17,8 +17,6 @@ namespace MWP.BackEnd.Network
         private const string CHANNEL_NAME_HIGH_IMPORTANCE = "Priority Network Notifications";
         private const string CHANNEL_DESCRIPTION_LOW_IMPORTANCE = "Notification for network activity";
         private const string CHANNEL_DESCRIPTION_HIGH_IMPORTANCE = "Notification for high priority network activity";
-        //private const int    SUMARRY_ID          = 1147;
-        //private const string GROUP_KEY           = "com.android.ass_pain.NETWORK_GROUP";
 
         private readonly NotificationTypes notificationType;
 
@@ -49,7 +47,7 @@ namespace MWP.BackEnd.Network
                 _ => throw new ArgumentOutOfRangeException()
             };
             
-            NotificationId = RandomId();
+            notificationId = RandomId();
             CreateNotificationChannel();
             manager = NotificationManagerCompat.From(AndroidApp.Context);
             notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, channelId);
@@ -79,7 +77,6 @@ namespace MWP.BackEnd.Network
             {
                 randomId = StateHandler.Rng.Next(10000);
             }
-
             return randomId;
         }
         
@@ -112,8 +109,7 @@ namespace MWP.BackEnd.Network
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
-            manager.Notify(NotificationId, notificationBuilder.Build());
+            manager.Notify(notificationId, notificationBuilder.Build());
         }
         
         internal void Stage1Update(string remoteHostname, int songCount)
@@ -135,8 +131,7 @@ namespace MWP.BackEnd.Network
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
-            manager.Notify(NotificationId, notificationBuilder.Build());
+            manager.Notify(notificationId, notificationBuilder.Build());
         }
 
         internal void Stage2(ConnectionState connectionState)
@@ -162,14 +157,33 @@ namespace MWP.BackEnd.Network
                     notificationBuilder
                         .SetContentTitle($"Receiving songs from {connectionState.remoteHostname}")
                         .SetProgress(connectionState.oneTimeReceiveCount, connectionState.oneTimeReceivedCount, false);
-                        
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
-            manager.Notify(NotificationId, notificationBuilder.Build());
-
+            manager.Notify(notificationId, notificationBuilder.Build());
+        }
+        
+        internal void Stage2Update(ConnectionState connectionState)
+        {
+            switch (notificationType)
+            {
+                case NotificationTypes.OneTimeSend:
+                    notificationBuilder
+                        .SetProgress(connectionState.oneTimeSendCount, connectionState.oneTimeSentCount, false);
+                    break;
+                case NotificationTypes.Sync:
+                    notificationBuilder
+                        .SetProgress(connectionState.TotalSyncCount, connectionState.SyncCount, false);
+                    break;
+                case NotificationTypes.OneTimeReceive:
+                    notificationBuilder
+                        .SetProgress(connectionState.oneTimeReceiveCount, connectionState.oneTimeReceivedCount, false);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            manager.Notify(notificationId, notificationBuilder.Build());
         }
 
         internal void Stage3(bool succeeded, ConnectionState connectionState)
@@ -203,13 +217,12 @@ namespace MWP.BackEnd.Network
                     case NotificationTypes.OneTimeReceive:
                         notificationBuilder
                             .SetContentText($"Received {connectionState.oneTimeSentCount}/{connectionState.oneTimeSendCount} songs");
-                        
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
             }
-
+            manager.Notify(notificationId, notificationBuilder.Build());
         }
     }
 }

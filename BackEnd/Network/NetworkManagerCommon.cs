@@ -441,7 +441,7 @@ namespace MWP.BackEnd.Network
         }
         
         
-        internal void SendBroadcast(List<Song>? songsToSend = null, IPAddress? ipAddress = null)
+        internal void SendBroadcast(List<Song>? songsToSend = null, IPAddress? targetIpAddress = null)
         {
             
 #if DEBUG
@@ -451,10 +451,10 @@ namespace MWP.BackEnd.Network
             {
                 case CanSend.Allowed:
                 {
-                    if (myBroadcastIp != null || ipAddress != null)
+                    if (myBroadcastIp != null || targetIpAddress != null)
                     {
-                        IPEndPoint destinationEndpoint = ipAddress != null
-                            ? new IPEndPoint(ipAddress,
+                        IPEndPoint destinationEndpoint = targetIpAddress != null
+                            ? new IPEndPoint(targetIpAddress,
                                 BroadcastPort)
                             : new IPEndPoint(myBroadcastIp!,
                                 BroadcastPort);
@@ -462,15 +462,15 @@ namespace MWP.BackEnd.Network
                         int retries = 0;
                         const int maxRetries = 3;
 
-                        IPEndPoint iep = ipAddress != null
-                            ? new IPEndPoint(ipAddress,
+                        IPEndPoint iep = targetIpAddress != null
+                            ? new IPEndPoint(targetIpAddress,
                                 BroadcastPort)
                             : new IPEndPoint(IPAddress.Any,
                                 BroadcastPort);
                         bool processedAtLestOne = false;
                         do
                         {
-                            Sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
+                            Sock.SendTo(Encoding.UTF8.GetBytes(NetworkManager.DeviceName), destinationEndpoint);
                             retries++;
                             try
                             {

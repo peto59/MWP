@@ -41,4 +41,12 @@ namespace MWP.BackEnd.Network
         OneTimeReceive,
         Sync
     }
+
+    internal enum ConnectionType : byte
+    {
+        None,
+        OneTimeSend,
+        OneTimeReceive,
+        Sync
+    }
 }

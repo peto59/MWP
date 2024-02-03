@@ -144,7 +144,7 @@ namespace MWP.BackEnd.Network
                 return (command, buffer, iv, longLength);
             }
 
-            int length = BitConverter.ToInt32(restOfData);
+            int length = restOfData.Length;
             byte[] data = new byte[length];
             Array.Copy(restOfData, 4, data, 0, length);
             return (command, data,  null, null);

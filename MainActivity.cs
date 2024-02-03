@@ -448,7 +448,7 @@ namespace MWP
                     if (toggle != null)
                     {
                         toggle.DrawerIndicatorEnabled = false;
-                        //TODO: pretty back
+                        //TODO: pretty back button
                         toggle.SetHomeAsUpIndicator(Resource.Drawable.back);
                         toggle.ToolbarNavigationClickListener = new MyClickListener(AfterInitialSettingsReturn);
                         

@@ -32,6 +32,8 @@ namespace MWP.BackEnd.Network
 
         internal static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
 
+        internal static string DeviceName => DeviceInfo.Name;
+
         /// <summary>
         /// Starts listening for broadcasts, sending broadcasts and managing connections. Entry point for NetworkManager.
         /// </summary>
@@ -95,7 +97,7 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                                     MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {remoteHostname}");
 #endif
-                                    sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), groupEp);
+                                    sock.SendTo(Encoding.UTF8.GetBytes(DeviceName), groupEp);
                                     
                                     NetworkManagerCommon.AddAvailableHost(targetIp, remoteHostname);
                                     
