@@ -23,14 +23,14 @@ namespace MWP.BackEnd.Player
         private bool isShuffled;
         private int index;
         private CancellationTokenSource cancellationToken = new CancellationTokenSource();
-        private readonly MediaSessionCompat session;
+        private readonly MediaSessionCompat? session;
         //-----------------------Private helpers--------------------
 
         /// <summary>
         /// Creates new queue object
         /// </summary>
         /// <param name="ses">Session to which send changes</param>
-        public MyMediaQueue(MediaSessionCompat ses)
+        public MyMediaQueue(MediaSessionCompat? ses)
         {
             session = ses;
         }
@@ -146,7 +146,7 @@ namespace MWP.BackEnd.Player
                 long i = 0;
                 List<MediaSessionCompat.QueueItem?> tempQueue = queue.Select(s => s.ToQueueItem(i++)).ToList();
                 List<MediaSessionCompat.QueueItem> queueLocal = tempQueue.Where(q => q != null).ToList()!;
-                session.SetQueue(queueLocal);
+                session?.SetQueue(queueLocal);
             }, cancellationToken.Token).Start();
         }
         /// <summary>
@@ -157,14 +157,17 @@ namespace MWP.BackEnd.Player
         public void GenerateQueue(IEnumerable<Song> source, Guid? id)
         {
             cancellationToken.Cancel();
+            cancellationToken = new CancellationTokenSource();
             queue = source.ToList();
             Index = id != null ? queue.FindIndex(s => s.Id.Equals(id)) : 0;
             if (IsShuffled)
             {
                 Shuffle();
             }
-            cancellationToken = new CancellationTokenSource();
-            SessionEnqueue();
+            else
+            {
+                SessionEnqueue();
+            }
         }
 
         /// <summary>
@@ -212,7 +215,12 @@ namespace MWP.BackEnd.Player
         private void Shuffle()
         {
             shuffling.WaitOne();
-            if(QueueCount == 0) { return; }
+            if (QueueCount == 0)
+            {
+                shuffling.Set();
+                return;
+            }
+
 
             originalQueue = queue.ToList();
             Song tmp = queue.Pop(Index);
@@ -227,7 +235,11 @@ namespace MWP.BackEnd.Player
         private void UnShuffle()
         {
             shuffling.WaitOne();
-            if (originalQueue.Count <= 0) return;
+            if (originalQueue.Count <= 0)
+            {
+                shuffling.Set();
+                return;
+            }
             
             Index = originalQueue.IndexOf(Current);
             queue = originalQueue.ToList();

@@ -402,9 +402,12 @@ namespace MWP
 
                     delete.Click += (o, args) =>
                     {
-                        if (songsFragmentContext != null)
+                        if (songsFragmentContext != null && font != null)
+                        {
                             AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context,
-                                songsFragmentContext, font);
+                                    songsFragmentContext, font);
+                            dialog?.Hide();
+                        }
                     };
 
                     edit.Click += (_, _) =>

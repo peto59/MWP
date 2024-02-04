@@ -104,8 +104,13 @@ namespace MWP.BackEnd.Network
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Write(CommandsEnum command, ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, ref Aes aes, ref ConnectionState connectionState, ref Notifications? notification)
         {
+            if (connectionState.encryptionState != EncryptionState.Encrypted) return;
+            
             if (connectionState.Ending && command == CommandsEnum.None)
             {
+#if DEBUG
+                MyConsole.WriteLine("Sending end!");
+#endif
                 if (connectionState.encryptionState == EncryptionState.Encrypted)
                 {
                     networkStream.WriteCommand(CommandsArr.End, ref encryptor);
@@ -117,11 +122,31 @@ namespace MWP.BackEnd.Network
                 return;
             }
 
-            if (connectionState.encryptionState != EncryptionState.Encrypted) return;
+            if (connectionState.ConnectionType == ConnectionType.OneTimeReceive)
+            {
+                if (connectionState.UserAcceptedState is UserAcceptedState.Showed or UserAcceptedState.SongsShowed)
+                {
+                    networkStream.WriteCommand(CommandsArr.Wait, ref encryptor);
+                }
 
-            if (connectionState.ConnectionType == ConnectionType.OneTimeSend)
+                if (connectionState.gotSongRequestCommand && connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
+                {
+                    connectionState.gotSongRequestCommand = false;
+                    if (connectionState.encryptionState == EncryptionState.Encrypted)
+                    {
+                        networkStream.WriteCommand(CommandsArr.ConnectionAccepted, ref encryptor);
+                    }
+                    else
+                    {
+                        networkStream.WriteCommand(CommandsArr.ConnectionAccepted);
+                    }
+                    
+                }
+            }
+            else if (connectionState.ConnectionType == ConnectionType.OneTimeSend)
             {
                 if (connectionState.songsToSend.Count <= 0) return;
+                if (!connectionState.connectionWasAccepted) return;
                 
                 if (connectionState.songSendRequestState == SongSendRequestState.None)
                 {
@@ -155,7 +180,7 @@ namespace MWP.BackEnd.Network
                     connectionState.syncRequestState = SyncRequestState.Sent;
                 }
 
-                if (connectionState.CanSendFiles || connectionState.ackCount < 0) return;
+                if (!connectionState.CanSendFiles || connectionState.ackCount < 0 || connectionState.syncRequestState != SyncRequestState.Accepted) return;
                 if (File.Exists(connectionState.SyncSongs[0].Path))
                 {
 #if DEBUG
@@ -168,6 +193,9 @@ namespace MWP.BackEnd.Network
                 connectionState.SyncSongs.RemoveAt(0);
                 notification?.Stage2Update(connectionState);
                 FileManager.SetTrustedSyncTargetSongs(connectionState.remoteHostname, connectionState.SyncSongs);
+#if DEBUG
+                MyConsole.WriteLine("Finished sending song");
+#endif
             }
         }
 
@@ -185,6 +213,21 @@ namespace MWP.BackEnd.Network
                 notification = new Notifications(NotificationTypes.OneTimeReceive);
                 notification.Stage1(connectionState.remoteHostname);
                 string rh = connectionState.remoteHostname;
+                /*StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.ConnectionAccepted;
+                if (connectionState)
+                {
+                    networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
+                }*/
+            
+            
+                /*
+                 StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled;
+
+                    if (connectionState)
+                    {
+                        networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
+                    }
+                */
                 MainActivity.StateHandler.view?.RunOnUiThread(() =>
                 {
                     MainActivity.NewConnectionDialog(rh, MainActivity.StateHandler.view);
@@ -218,6 +261,7 @@ namespace MWP.BackEnd.Network
                 decryptor.FromXmlString(storedPrivKey);
                 if (connectionState.IsServer)
                 {
+                    aes.GenerateKey();
                     networkStream.WriteCommand(CommandsArr.AesSend, aes.Key, ref encryptor);
                     connectionState.encryptionState = EncryptionState.AesReceived;
                 }
@@ -242,6 +286,9 @@ namespace MWP.BackEnd.Network
             }
             if (connectionState.IsServer)
             {
+#if DEBUG
+                MyConsole.WriteLine("Sending AES");
+#endif
                 networkStream.WriteCommand(CommandsArr.AesSend, aes.Key, ref encryptor);
                 connectionState.encryptionState = EncryptionState.AesReceived;
             }

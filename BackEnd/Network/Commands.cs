@@ -7,6 +7,7 @@ namespace MWP.BackEnd.Network
         internal const byte None = (byte)CommandsEnum.None;
         internal const byte Wait = (byte)CommandsEnum.Wait;
         internal const byte OnetimeSend = (byte)CommandsEnum.OnetimeSend;
+        internal const byte ConnectionAccepted = (byte)CommandsEnum.ConnectionAccepted;
         internal const byte Host = (byte)CommandsEnum.Host;
         internal const byte RsaExchange = (byte)CommandsEnum.RsaExchange;
         internal const byte AesSend = (byte)CommandsEnum.AesSend;
@@ -71,6 +72,7 @@ namespace MWP.BackEnd.Network
     {
         internal static readonly byte[] None = { Commands.None };
         internal static readonly byte[] OnetimeSend = { Commands.OnetimeSend };
+        internal static readonly byte[] ConnectionAccepted = { Commands.ConnectionAccepted };
         internal static readonly byte[] Wait = { Commands.Wait };
         internal static readonly byte[] Host = { Commands.Host };
         internal static readonly byte[] RsaExchange = { Commands.RsaExchange };
@@ -165,6 +167,7 @@ namespace MWP.BackEnd.Network
         None = 0,
         Wait = 1,
         OnetimeSend = 5,
+        ConnectionAccepted = 7,
         Host = 10,
         RsaExchange = 11,
         AesSend = 12,

@@ -50,7 +50,7 @@ namespace MWP.BackEnd.Network
         /// <summary>
         /// Interval between broadcasts
         /// </summary>
-        internal const int BroadcastInterval = 20000;
+        internal const int BroadcastInterval = 50_000;
         
         internal static readonly System.Timers.Timer BroadcastTimer = new System.Timers.Timer();
         private CanSend canSend = CanSend.Rejected;
@@ -402,6 +402,7 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                         MyConsole.WriteLine(e);
 #endif
+                        return false;
                     }
 
                     sock.Dispose();
@@ -451,6 +452,13 @@ namespace MWP.BackEnd.Network
             {
                 case CanSend.Allowed:
                 {
+                    if (targetIpAddress != null)
+                    {
+                        while (Enumerable.Contains(Connected, targetIpAddress))
+                        {
+                            Thread.Sleep(1000);
+                        }
+                    }
                     if (myBroadcastIp != null || targetIpAddress != null)
                     {
                         IPEndPoint destinationEndpoint = targetIpAddress != null
@@ -491,12 +499,6 @@ namespace MWP.BackEnd.Network
 #endif
                                         continue;
                                     }
-                                    processedAtLestOne = true;
-                                    //TODO: add to available targets. Don't connect directly, check if sync is allowed.
-                                    //TODO: doesn't work with one time sends....
-                                    //if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
-                                
-                                    //Connected.Add(targetIp);
                                     new Thread(() =>
                                     {
                                         if (!P2PDecide(targetIp, songsToSend))

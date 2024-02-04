@@ -69,6 +69,8 @@ namespace MWP.BackEnd.Network
                         }
                         command = CommandsEnum.None;
                     }
+                    
+                    connectionState.messagesCount++;
 
 #if DEBUG
                     MyConsole.WriteLine($"Received command: {command}");
@@ -85,7 +87,13 @@ namespace MWP.BackEnd.Network
                     switch (command)
                     {
                         case CommandsEnum.OnetimeSend:
+#if DEBUG
+                            MyConsole.WriteLine($"GOT ONE TIME SEND !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}");
+#endif
                             connectionState.gotOneTimeSendFlag = true;
+                            break;
+                        case CommandsEnum.ConnectionAccepted:
+                            connectionState.connectionWasAccepted = true;
                             break;
                         case CommandsEnum.Host:
                             NetworkManagerCommonCommunication.Host(ref networkStream, ref decryptor, ref encryptor, ref aes, ref connectionState, ref notification);
@@ -99,6 +107,9 @@ namespace MWP.BackEnd.Network
                         case CommandsEnum.AesSend:
                             if (data != null)
                             {
+#if DEBUG
+                                MyConsole.WriteLine($"Aes key size {data.Length*8} bits {data.Length} bytes");
+#endif
                                 aes.Key = data;
                                 networkStream.WriteCommand(CommandsArr.AesReceived, ref encryptor);
                                 connectionState.encryptionState = EncryptionState.Encrypted;
@@ -106,6 +117,12 @@ namespace MWP.BackEnd.Network
                                 MyConsole.WriteLine("encrypted");
 #endif
                             }
+#if DEBUG
+                            else
+                            {
+                                MyConsole.WriteLine("Empty data in AesSend");
+                            }
+#endif
                             break;
                         case CommandsEnum.AesReceived:
                             throw new IllegalStateException("Client doesn't receive aes confirmation");
@@ -122,7 +139,8 @@ namespace MWP.BackEnd.Network
                         case CommandsEnum.SyncAccepted:
                             connectionState.syncRequestState = SyncRequestState.Accepted;
                             networkStream.WriteCommand(CommandsArr.SyncCount, BitConverter.GetBytes(connectionState.SyncSendCount), ref encryptor);
-                            notification?.Stage2(connectionState);
+                            notification ??= new Notifications(NotificationTypes.Sync);
+                            notification.Stage2(connectionState);
                             break;
                         case CommandsEnum.SyncRejected:
                             connectionState.syncRequestState = SyncRequestState.Rejected;
@@ -134,7 +152,14 @@ namespace MWP.BackEnd.Network
                             }
                             break;
                         case CommandsEnum.SongRequest:
-                            networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
+                            if (connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
+                            {
+                                networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
+                            }
+                            else
+                            {
+                                connectionState.gotSongRequestCommand = true;
+                            }
                             break;
                         case CommandsEnum.SongRequestInfoRequest:
                             SongJsonConverter customConverter = new SongJsonConverter(false);

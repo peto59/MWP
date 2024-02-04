@@ -84,8 +84,11 @@ namespace MWP.BackEnd.Player
 #endif
                     Thread.Sleep(25);
                 }
-                if (_serviceConnection.Binder != null) 
-                    SessionToken = _serviceConnection.Binder.Service.Session.SessionToken;
+                if (_serviceConnection.Binder != null)
+                {
+                    if (_serviceConnection.Binder.Service.Session != null)
+                        SessionToken = _serviceConnection.Binder.Service.Session.SessionToken;
+                }
 #if DEBUG
                 else
                     MyConsole.WriteLine("Empty binder");

@@ -144,7 +144,7 @@ namespace MWP.BackEnd.Network
                 return (command, buffer, iv, longLength);
             }
 
-            int length = restOfData.Length;
+            int length = BitConverter.ToInt32(restOfData);
             byte[] data = new byte[length];
             Array.Copy(restOfData, 4, data, 0, length);
             return (command, data,  null, null);
@@ -273,16 +273,32 @@ namespace MWP.BackEnd.Network
             using MemoryStream msEncrypted = new MemoryStream();
             while (readLength > 0)
             {
-                int readThisCycle = readLength > int.MaxValue ? int.MaxValue : Convert.ToInt32(readLength);
+                int readThisCycle = readLength > NetworkManager.DefaultBuffSize ? NetworkManager.DefaultBuffSize : Convert.ToInt32(readLength);
                 byte[] read = stream.SafeRead(readThisCycle);
                 msEncrypted.Write(read);
                 readLength -= readThisCycle;
             }
-            using CryptoStream csDecrypt = new CryptoStream(msEncrypted, aes.CreateDecryptor(), CryptoStreamMode.Read, true);
+
+            if (msEncrypted.CanSeek)
+            {
+                msEncrypted.Seek(0, SeekOrigin.Begin);
+            }
+            CryptoStream csDecrypt = new CryptoStream(msEncrypted, aes.CreateDecryptor(), CryptoStreamMode.Read, true);
             using MemoryStream msDecrypt = new MemoryStream();
-            msDecrypt.WriteDataTo(csDecrypt);
+            msDecrypt.WriteData(csDecrypt);
             csDecrypt.Flush();
-            csDecrypt.FlushFinalBlock();
+            //csDecrypt.FlushFinalBlock();
+            try
+            {
+                csDecrypt.Dispose();
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+                //ignored
+            }
             return msDecrypt.ToArray();
         }
 
@@ -354,7 +370,7 @@ namespace MWP.BackEnd.Network
             stream.WriteCommand(CommandsArr.Wait, ref encryptor);
             encryptedFileStream.Seek(0, SeekOrigin.Begin);
             CryptoStream csDecrypt = new CryptoStream(encryptedFileStream, aes.CreateDecryptor(), CryptoStreamMode.Read, false);
-            fileStream.WriteDataTo(csDecrypt);
+            fileStream.WriteData(csDecrypt);
             csDecrypt.Dispose();
             encryptedFileStream.Dispose();
             fileStream.Dispose();
@@ -570,7 +586,7 @@ namespace MWP.BackEnd.Network
         /// <param name="destination">Destination of copy</param>
         /// <param name="source">Source of copy</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void WriteDataTo(this Stream destination, Stream source)
+        internal static void WriteData(this Stream destination, Stream source)
         {
             if (source.CanSeek)
             {
@@ -585,15 +601,15 @@ namespace MWP.BackEnd.Network
 #endif
             while (writeLength > 0)
             {
-                int writeThisCycle = writeLength > buffSize ? buffSize : Convert.ToInt32(writeLength);
+                int writeThisCycle = writeLength > NetworkManager.DefaultBuffSize ? NetworkManager.DefaultBuffSize : Convert.ToInt32(writeLength);
                 byte[] read = source.SafeRead(writeThisCycle);
                 destination.Write(read);
 #if DEBUG
                 MyConsole.WriteLine($"rem {writeLength}");
 #endif
                 writeLength -= writeThisCycle;
-            }
-            */
+            }*/
+            
             source.Flush();
             destination.Flush();
         }
@@ -612,12 +628,12 @@ namespace MWP.BackEnd.Network
             long totalWritten = 0;
             while (writeLength > 0)
             {
-                int writeThisCycle = writeLength > int.MaxValue ? int.MaxValue : Convert.ToInt32(writeLength);
+                int writeThisCycle = writeLength > NetworkManager.DefaultBuffSize ? NetworkManager.DefaultBuffSize : Convert.ToInt32(writeLength);
                 writeLength -= writeThisCycle;
-                totalWritten += writeThisCycle;
                 byte[] toBeWritten = new byte[writeThisCycle];
                 Array.Copy(data, totalWritten, toBeWritten, 0, writeThisCycle);
                 stream.Write(toBeWritten, 0, writeThisCycle);
+                totalWritten += writeThisCycle;
             }
         }
 
@@ -682,9 +698,26 @@ namespace MWP.BackEnd.Network
             {
                 throw new Java.Lang.Exception("Invalid data size");
             }*/
+#if DEBUG
+            MyConsole.WriteLine("rv written");
+#endif
             CryptoStream csEncrypt = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write, true);
+#if DEBUG
+            MyConsole.WriteLine("crypto opened");
+#endif
             using FileStream fs = fi.Open(FileMode.Open, FileAccess.Read);
-            csEncrypt.WriteDataTo(fs);
+#if DEBUG
+            MyConsole.WriteLine("fs opened");
+#endif
+            byte[] buffer = new byte[NetworkManager.DefaultBuffSize];
+            int bytesRead;
+            while ((bytesRead = fs.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                csEncrypt.Write(buffer, 0, bytesRead);
+            }
+#if DEBUG
+            MyConsole.WriteLine("flushing file");
+#endif
             csEncrypt.FlushFinalBlock();
             csEncrypt.Flush();
             csEncrypt.Close();
@@ -692,6 +725,9 @@ namespace MWP.BackEnd.Network
             csEncrypt.Dispose();
             
             stream.Flush();
+#if DEBUG
+            MyConsole.WriteLine("Finished writing file");
+#endif
         }
     }
 }

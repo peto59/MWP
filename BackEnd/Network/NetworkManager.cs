@@ -26,8 +26,8 @@ namespace MWP.BackEnd.Network
 
         //TODO: move to settings
         private const int numberOfMissedBroadcastsToRemoveHost = 3;
-        internal const int MaxTimeoutCounter = 10000;
-        internal const int DefaultBuffSize = 8096;
+        internal const int MaxTimeoutCounter = 1000;
+        internal const int DefaultBuffSize = 80_960;
         internal const int P2PMaxResponseCounter = 6;
 
         internal static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);

@@ -142,8 +142,7 @@ namespace MWP
                 );
             if (createPlaylist != null) createPlaylist.Click += delegate
             {
-                MainActivity.ServiceConnection.Binder?.Service.Shuffle(
-                    !MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false);
+                MainActivity.ServiceConnection.Binder?.Service.Shuffle(true);
                 MainActivity.ServiceConnection.Binder?.Service.Play();
             };
 

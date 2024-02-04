@@ -212,7 +212,20 @@ namespace MWP.BackEnd
         ///</summary>
         public static void Delete(string path)
         {
-            Directory.Delete(path, IsDirectory(path));
+            if (IsDirectory(path))
+            {
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, true);
+                }
+            }
+            else
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
         }
 
         ///<summary>
@@ -800,7 +813,6 @@ namespace MWP.BackEnd
             
             if (isNew && SettingsManager.MoveFiles == MoveFilesEnum.Yes)
             {
-                int newBitrate = tfile.Properties.AudioBitrate;
                 string output = $"{_musicFolder}/{Sanitize(artists[0])}";
                 if (!string.IsNullOrEmpty(album) && album != null)
                 {
@@ -817,11 +829,23 @@ namespace MWP.BackEnd
                 }
                 catch (IOException ioe)
                 {
-                    using TagLib.File tfileDest = TagLib.File.Create(path, ReadStyle.PictureLazy);
-                    if (newBitrate > tfileDest.Properties.AudioBitrate)
+                    try
                     {
-                        File.Delete(output);
-                        File.Move(path, output);
+                        int newBitrate = tfile.Properties.AudioBitrate;
+                        using TagLib.File tfileDest = TagLib.File.Create(path, ReadStyle.PictureLazy);
+                        if (newBitrate > tfileDest.Properties.AudioBitrate)
+                        {
+                            File.Delete(output);
+                            File.Move(path, output);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+#if DEBUG
+                        MyConsole.WriteLine(e);
+                        MyConsole.WriteLine(ioe);
+#endif
+                        //ignored;
                     }
                 }
                 catch (Exception e)

@@ -699,6 +699,10 @@ namespace MWP
             if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
             {
                 permissionsLocation.Add(Manifest.Permission.AccessWifiState);
+                if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
+                {
+                    permissionsLocation.Add(Manifest.Permission.PostNotifications);
+                }
                 permissionsLocation.Add(
                     ContextCompat.CheckSelfPermission(this, Manifest.Permission.AccessFineLocation) ==
                     (int)Permission.Granted
@@ -1032,6 +1036,8 @@ namespace MWP
             {
                 StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled;
             });
+            AlertDialog dialog = builder.Create();
+            dialog.Show();
         }
     }
 

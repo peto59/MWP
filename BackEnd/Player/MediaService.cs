@@ -33,7 +33,7 @@ namespace MWP.BackEnd.Player
 		/// <summary>
 		/// handle for current media session
 		/// </summary>
-		public MediaSessionCompat Session
+		public MediaSessionCompat? Session
 		{
 			get
 			{
@@ -41,8 +41,7 @@ namespace MWP.BackEnd.Player
 				{
 					InnitSession();
 				}
-
-				return session!;
+				return session;
 			}
 		}
 
@@ -77,6 +76,7 @@ namespace MWP.BackEnd.Player
 		private bool isSkippingToNext;
 		private bool isSkippingToPrevious;
 		private bool isBuffering = true;
+		private bool isUsed = false;
 
 		/// <inheritdoc />
 		public override void OnDestroy()
@@ -91,6 +91,10 @@ namespace MWP.BackEnd.Player
 		private void InnitPlayer()
 		{
 			mediaPlayer = new MediaPlayer();
+			mediaPlayer.Prepared += delegate
+			{
+				isUsed = true;
+			};
 			mediaPlayer.Completion += delegate
 			{
 				NextSong(false);
@@ -424,7 +428,7 @@ namespace MWP.BackEnd.Player
 			{
 				InnitPlayer();
 			}
-			if (!isPaused || reset)
+			if (isUsed || reset)
 			{
 				mediaPlayer!.Reset();
 #if DEBUG
@@ -439,7 +443,17 @@ namespace MWP.BackEnd.Player
 					return;
 				}
 				mediaPlayer.SetDataSource(QueueObject.Current.Path);
-				mediaPlayer.Prepare();
+				try
+				{
+					mediaPlayer.Prepare();
+				}
+				catch (Exception e)
+				{
+#if DEBUG
+					MyConsole.WriteLine(e);
+#endif
+					//ignored
+				}
 			}
 			mediaPlayer!.Start();
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MWP.Helpers;
 
 namespace MWP.BackEnd.Network
 {
@@ -102,6 +103,17 @@ namespace MWP.BackEnd.Network
         /// </summary>
         internal bool fetchedSyncSongs = false;
 
+        internal bool gotSongRequestCommand = false;
+
+        internal bool connectionWasAccepted = false;
+        
+        internal int messagesCount = 0;
+        
+        /// <summary>
+        /// Min number of messages before exiting if no connection is established 
+        /// </summary>
+        private const int minMessagesCountBeforeExit = 10;
+
         /// <summary>
         /// number of songs to send when syncing
         /// </summary>
@@ -145,7 +157,8 @@ namespace MWP.BackEnd.Network
         /// Whether we can send files on current connection
         /// </summary>
         internal bool CanSendFiles =>
-            ((isTrustedSyncTarget ?? false) && syncRequestState == SyncRequestState.Accepted) ||
+            ((isTrustedSyncTarget ?? false) && syncRequestState == SyncRequestState.Accepted) 
+            ||
             (ConnectionType == ConnectionType.OneTimeSend && songSendRequestState == SongSendRequestState.Accepted);
         
         /// <summary>
@@ -164,14 +177,24 @@ namespace MWP.BackEnd.Network
         internal int SyncCount => syncReceivedCount + syncSentCount;
 
         /// <summary>
-        /// Songs remaining to be sent on one time connection
+        /// Number of songs remaining to be sent on one time connection
         /// </summary>
         internal int OneTimeSendCountLeft => songsToSend.Count;
         
         /// <summary>
-        /// Songs remaining to be sent when syncing
+        /// Number of songs remaining to be sent when syncing
         /// </summary>
         internal int SyncSendCountLeft => syncSongs.Count;
+
+        /// <summary>
+        /// Number of songs remaining to be received when syncing
+        /// </summary>
+        internal int SyncReceiveCountLeft => syncReceiveCount - syncReceivedCount;
+        
+        /// <summary>
+        /// Number of songs remaining to be received on one time connection
+        /// </summary>
+        internal int OneTimeReceiveCountLeft => oneTimeReceiveCount - oneTimeReceivedCount;
 
         /// <summary>
         /// What type of connection is currently established
@@ -215,38 +238,67 @@ namespace MWP.BackEnd.Network
         /// <summary>
         /// Whether connection can be ended safely
         /// </summary>
-        internal bool Ending =>
-            ConnectionType != ConnectionType.None
-            &&
-            (
-                CanSendFiles
-                &&
+        internal bool Ending
+        {
+            get
+            {
+                if (ConnectionType == ConnectionType.None && messagesCount > minMessagesCountBeforeExit)
+                {
+                    return true;
+                }
+#if DEBUG
+                MyConsole.WriteLine($"Ending? Connection type {ConnectionType}, songSendRequestState {songSendRequestState}, ackCount {ackCount}");
+                MyConsole.WriteLine($"Ending? trusted + accepted {(isTrustedSyncTarget ?? false) && syncRequestState == SyncRequestState.Accepted}");
+                MyConsole.WriteLine($"Ending? CanSendFiles {CanSendFiles}");
+                MyConsole.WriteLine($"Ending? SyncSendCountLeft {SyncSendCountLeft}");
+                MyConsole.WriteLine($"Ending? SyncReceiveCountLeft {SyncReceiveCountLeft}");
+                MyConsole.WriteLine($"Ending? artistImageRequests.Count {artistImageRequests.Count}");
+                MyConsole.WriteLine($"Ending? albumImageRequests.Count {albumImageRequests.Count}");
+                MyConsole.WriteLine($"Ending? CanReceiveFiles {CanReceiveFiles}");
+#endif
+                bool write =
                 (
+                    CanSendFiles
+                    &&
                     (
-                        ConnectionType == ConnectionType.OneTimeSend
-                        &&
-                        OneTimeSendCountLeft == 0
+                        (
+                            ConnectionType == ConnectionType.OneTimeSend
+                            &&
+                            OneTimeSendCountLeft > 0
+                        )
+                        ||
+                        (
+                            ConnectionType == ConnectionType.Sync
+                            &&
+                            (
+                                (
+                                    SyncSendCountLeft > 0
+                                    ||
+                                    SyncReceiveCountLeft > 0
+                                )
+                                ||
+                                !fetchedSyncSongs
+                            )
+                        )
                     )
+                    ||
+                    ackCount < 0
                     ||
                     (
                         ConnectionType == ConnectionType.Sync
                         &&
-                        SyncSendCountLeft == 0
-                        &&
-                        fetchedSyncSongs
-                    )
-                )
-                &&
-                ackCount >= 0
-                &&
-                (
-                    (
-                        ConnectionType == ConnectionType.Sync
-                        &&
                         (
-                            syncRequestState == SyncRequestState.Accepted
-                            ||
-                            syncRequestState == SyncRequestState.Rejected
+                            (
+                                syncRequestState == SyncRequestState.None
+                                ||
+                                syncRequestState == SyncRequestState.Sent
+                            )
+                            &&
+                            (
+                                SyncSendCount > 0
+                                &&
+                                fetchedSyncSongs
+                            )
                         )
                     )
                     ||
@@ -254,49 +306,61 @@ namespace MWP.BackEnd.Network
                         ConnectionType == ConnectionType.OneTimeSend
                         &&
                         (
-                            songSendRequestState == SongSendRequestState.Accepted
+                            songSendRequestState == SongSendRequestState.None
                             ||
-                            songSendRequestState == SongSendRequestState.Rejected
+                            songSendRequestState == SongSendRequestState.Sent
                         )
                     )
-                )
-                        
-            )
-            &&
-            (
-                CanReceiveFiles
-                &&
+
+                );
+                bool read =
                 (
+                    CanReceiveFiles
+                    &&
+                    (
+                        (
+                            ConnectionType == ConnectionType.OneTimeReceive
+                            &&
+                            OneTimeReceiveCountLeft > 0
+                            
+                        )
+                        ||
+                        (
+                            ConnectionType == ConnectionType.Sync
+                            &&
+                            SyncReceiveCountLeft > 0
+                        )
+                    )
+                    ||
+                    artistImageRequests.Count > 0
+                    ||
+                    albumImageRequests.Count > 0
+                    ||
                     (
                         ConnectionType == ConnectionType.OneTimeReceive
                         &&
                         (
-                            oneTimeReceiveCount == 0
+                            UserAcceptedState == UserAcceptedState.None
                             ||
-                            oneTimeReceivedCount >= oneTimeReceiveCount
-                        )
-                        && 
-                        (
-                            UserAcceptedState == UserAcceptedState.SongsAccepted
+                            UserAcceptedState == UserAcceptedState.Showed
                             ||
-                            UserAcceptedState == UserAcceptedState.Cancelled
+                            UserAcceptedState == UserAcceptedState.SongsShowed
                         )
                     )
-                    ||
-                    (
-                        ConnectionType == ConnectionType.Sync
-                        &&
-                        (
-                            syncReceiveCount == 0
-                            ||
-                            syncReceivedCount >= syncReceiveCount
-                        )
-                    )
-                )
-                &&
-                artistImageRequests.Count == 0
-                &&
-                albumImageRequests.Count == 0
-            );
+                );
+                
+#if DEBUG
+                MyConsole.WriteLine($"Ending? read {read}");
+                MyConsole.WriteLine($"Ending? write {write}");
+                MyConsole.WriteLine($"Ending? readOrWrite {read || write}");
+#endif
+                bool notEnding = read || write;
+                bool ending = !notEnding;
+#if DEBUG
+                MyConsole.WriteLine($"Ending? {ending}");
+#endif
+                return ending;
+            }
+        }
     }
 }

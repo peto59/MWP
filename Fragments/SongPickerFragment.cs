@@ -80,15 +80,26 @@ namespace MWP
              * do užívateľského prostredia k prislúchajúcemu políčku v liste.
              */
             if (lazyImageBuffer != null)
-                lazyImageBuffer.ValueChanged += (_, _) =>
+                try
                 {
-                    ((Activity)context).RunOnUiThread(() => {
-                        string last = lazyImageBuffer.Items.Keys.Last();
+                    lazyImageBuffer.ValueChanged += (_, _) =>
+                    {
+                        ((Activity)context).RunOnUiThread(() =>
+                        {
+                            string last = lazyImageBuffer.Items.Keys.Last();
 
-                        LinearLayout? child = lazyBuffer?[last] ?? new LinearLayout(context);
-                        UiRenderFunctions.LoadSongImageFromBuffer(child, lazyImageBuffer, assets);
-                    });
-                };
+                            LinearLayout? child = lazyBuffer?[last] ?? new LinearLayout(context);
+                            UiRenderFunctions.LoadSongImageFromBuffer(child, lazyImageBuffer, assets);
+                        });
+                    };
+                }
+                catch (Exception e)
+                {
+#if DEBUG
+                    MyConsole.WriteLine(e);
+#endif
+                    //ignored
+                }
             
             
             /*
@@ -156,7 +167,10 @@ namespace MWP
                         List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.StateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
                         if(currentAvailableHosts.Count > 0){
                             IPAddress currentHostAddress = currentAvailableHosts.First().ipAddress;
-                            NetworkManager.Common.SendBroadcast(listOfSelectedSongs, currentHostAddress);
+                            new Task(() =>
+                            {
+                                NetworkManager.Common.SendBroadcast(listOfSelectedSongs, currentHostAddress);
+                            }).Start();
                         }
                         
                     }

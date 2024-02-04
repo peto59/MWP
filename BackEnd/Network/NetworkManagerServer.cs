@@ -54,7 +54,7 @@ internal static class NetworkManagerServer
             aes.GenerateKey();
             
             Notifications? notification = null;
-            ConnectionState connectionState = new ConnectionState(false, songsToSend);
+            ConnectionState connectionState = new ConnectionState(true, songsToSend);
             
 #if DEBUG
             MyConsole.WriteLine("Waiting for a connection... ");
@@ -74,7 +74,14 @@ internal static class NetworkManagerServer
                     P2PState stateObject = new P2PState(buffer);
                     if (stateObject is { IsValid: true, Type: P2PStateTypes.Request })
                     {
-                        sock.SendTo( P2PState.Send(stateObject.Cnt, local[stateObject.Cnt]), eP);
+                        if (local.TryGetValue(stateObject.Cnt, out byte value))
+                        {
+                            sock.SendTo( P2PState.Send(stateObject.Cnt, value), eP);
+                        }
+                        else
+                        {
+                            sock.SendTo( P2PState.Send(stateObject.Cnt, local[local.Keys.Last()]), eP);
+                        }
                     }
                 }
                 else
@@ -131,6 +138,8 @@ internal static class NetworkManagerServer
                         command = CommandsEnum.None;
                     }
 
+                    connectionState.messagesCount++;
+
 #if DEBUG
                     MyConsole.WriteLine($"Received command: {command}");
 #endif
@@ -147,7 +156,13 @@ internal static class NetworkManagerServer
                     switch (command)
                     {
                         case CommandsEnum.OnetimeSend:
+#if DEBUG
+                            MyConsole.WriteLine($"GOT ONE TIME SEND !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{Environment.NewLine}");
+#endif
                             connectionState.gotOneTimeSendFlag = true;
+                            break;
+                        case CommandsEnum.ConnectionAccepted:
+                            connectionState.connectionWasAccepted = true;
                             break;
                         case CommandsEnum.Host:
                             NetworkManagerCommonCommunication.Host(ref networkStream, ref decryptor, ref encryptor, ref aes, ref connectionState, ref notification);
@@ -157,6 +172,12 @@ internal static class NetworkManagerServer
                             {
                                 NetworkManagerCommonCommunication.RsaExchange(ref networkStream, ref data, ref decryptor, ref encryptor, ref aes, ref connectionState);
                             }
+#if DEBUG
+                            else
+                            {
+                                MyConsole.WriteLine("Empty data on RsaExchange");
+                            }
+#endif
                             break;
                         case CommandsEnum.AesSend:
                             throw new InvalidOperationException("Server doesn't receive aes request");
@@ -179,7 +200,8 @@ internal static class NetworkManagerServer
                         case CommandsEnum.SyncAccepted:
                             connectionState.syncRequestState = SyncRequestState.Accepted;
                             networkStream.WriteCommand(CommandsArr.SyncCount, BitConverter.GetBytes(connectionState.SyncSendCount), ref encryptor);
-                            notification?.Stage2(connectionState);
+                            notification ??= new Notifications(NotificationTypes.Sync);
+                            notification.Stage2(connectionState);
                             break;
                         case CommandsEnum.SyncRejected:
                             connectionState.syncRequestState = SyncRequestState.Rejected;
@@ -191,7 +213,14 @@ internal static class NetworkManagerServer
                             }
                             break;
                         case CommandsEnum.SongRequest:
-                            networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
+                            if (connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
+                            {
+                                networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
+                            }
+                            else
+                            {
+                                connectionState.gotSongRequestCommand = true;
+                            }
                             break;
                         case CommandsEnum.SongRequestInfoRequest:
                             SongJsonConverter customConverter = new SongJsonConverter(false);
