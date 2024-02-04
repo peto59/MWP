@@ -95,6 +95,9 @@ namespace MWP.BackEnd.Network
                         case CommandsEnum.ConnectionAccepted:
                             connectionState.connectionWasAccepted = true;
                             break;
+                        case CommandsEnum.ConnectionRejected:
+                            connectionState.songSendRequestState = SongSendRequestState.Rejected;
+                            break;
                         case CommandsEnum.Host:
                             NetworkManagerCommonCommunication.Host(ref networkStream, ref decryptor, ref encryptor, ref aes, ref connectionState, ref notification);
                             break;
@@ -151,14 +154,14 @@ namespace MWP.BackEnd.Network
                                 connectionState.syncReceiveCount = BitConverter.ToInt32(data);
                             }
                             break;
-                        case CommandsEnum.SongRequest:
+                        case CommandsEnum.SongSendRequest:
                             if (connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
                             {
                                 networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
                             }
                             else
                             {
-                                connectionState.gotSongRequestCommand = true;
+                                connectionState.gotSongSendRequestCommand = true;
                             }
                             break;
                         case CommandsEnum.SongRequestInfoRequest:
@@ -295,7 +298,7 @@ namespace MWP.BackEnd.Network
             aes.Dispose();
             networkStream.Dispose();
             client.Dispose();
-            StateHandler.OneTimeSendSongs.Remove(connectionState.remoteHostname);
+            StateHandler.OneTimeReceiveSongs.Remove(connectionState.remoteHostname);
             StateHandler.OneTimeSendStates.Remove(connectionState.remoteHostname);
             NetworkManagerCommon.Connected.Remove(server);
         }

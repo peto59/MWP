@@ -103,9 +103,13 @@ namespace MWP.BackEnd.Network
         /// </summary>
         internal bool fetchedSyncSongs = false;
 
-        internal bool gotSongRequestCommand = false;
+        internal bool gotSongSendRequestCommand = false;
 
         internal bool connectionWasAccepted = false;
+
+        internal bool gotSongInfoFlag = false;
+
+        internal bool sentConnectionAcceptedCommand = false;
         
         internal int messagesCount = 0;
         
@@ -345,6 +349,8 @@ namespace MWP.BackEnd.Network
                             UserAcceptedState == UserAcceptedState.Showed
                             ||
                             UserAcceptedState == UserAcceptedState.SongsShowed
+                            ||
+                            UserAcceptedState == UserAcceptedState.ConnectionAccepted
                         )
                     )
                 );

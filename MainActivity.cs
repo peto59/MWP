@@ -997,8 +997,8 @@ namespace MWP
 
         private void ProcessNetworkNotification(Intent? intent)
         {
-            string? action = Intent?.GetStringExtra("NotificationAction");
-            string? remoteHostname = Intent?.GetStringExtra("RemoteHostname");
+            string? action = intent?.GetStringExtra("NotificationAction");
+            string? remoteHostname = intent?.GetStringExtra("RemoteHostname");
             if (action != null && remoteHostname != null)
             {
                 if (action == "ShowConnectionStatus")
@@ -1007,10 +1007,7 @@ namespace MWP
                 }
                 else if (action == "ShowSongList")
                 {
-                    if (StateHandler.OneTimeSendSongs.TryGetValue(remoteHostname, out List<Song> songs))
-                    {
-                        UiRenderFunctions.ListIncomingSongsPopup(songs, remoteHostname, this, () => {}, () => {});
-                    }
+                    SongsSendDialog(remoteHostname);
                 }
             }
         }
@@ -1036,8 +1033,24 @@ namespace MWP
             {
                 StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled;
             });
+            //StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Showed;
             AlertDialog dialog = builder.Create();
             dialog.Show();
+        }
+
+        public static void SongsSendDialog(string remoteHostname)
+        {
+            if (StateHandler.OneTimeReceiveSongs.TryGetValue(remoteHostname, out List<Song> recSongs))
+            {
+                if (StateHandler.view != null)
+                    UiRenderFunctions.ListIncomingSongsPopup(
+                        recSongs,
+                        remoteHostname,
+                        StateHandler.view,
+                        () => { StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.SongsAccepted; },
+                        () => { StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled; }
+                    );
+            }
         }
     }
 

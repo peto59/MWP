@@ -106,32 +106,38 @@ namespace MWP.BackEnd.Network
         {
             if (connectionState.encryptionState != EncryptionState.Encrypted) return;
             
-            if (connectionState.Ending && command == CommandsEnum.None)
+            if (!((!connectionState.sentConnectionAcceptedCommand && connectionState.UserAcceptedState == UserAcceptedState.Cancelled) || (connectionState.gotSongInfoFlag && connectionState.UserAcceptedState == UserAcceptedState.Cancelled)))
             {
+                if (connectionState.Ending && command == CommandsEnum.None)
+                {
 #if DEBUG
-                MyConsole.WriteLine("Sending end!");
+                    MyConsole.WriteLine("Sending end!");
 #endif
-                if (connectionState.encryptionState == EncryptionState.Encrypted)
-                {
-                    networkStream.WriteCommand(CommandsArr.End, ref encryptor);
+                    if (connectionState.encryptionState == EncryptionState.Encrypted)
+                    {
+                        networkStream.WriteCommand(CommandsArr.End, ref encryptor);
+                    }
+                    else
+                    {
+                        networkStream.WriteCommand(CommandsArr.End);
+                    }
+                    return;
                 }
-                else
-                {
-                    networkStream.WriteCommand(CommandsArr.End);
-                }
-                return;
             }
 
             if (connectionState.ConnectionType == ConnectionType.OneTimeReceive)
             {
+#if DEBUG
+                MyConsole.WriteLine($"userstate {connectionState.UserAcceptedState}");
+#endif
                 if (connectionState.UserAcceptedState is UserAcceptedState.Showed or UserAcceptedState.SongsShowed)
                 {
                     networkStream.WriteCommand(CommandsArr.Wait, ref encryptor);
                 }
 
-                if (connectionState.gotSongRequestCommand && connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
+                if (!connectionState.sentConnectionAcceptedCommand && connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
                 {
-                    connectionState.gotSongRequestCommand = false;
+                    connectionState.sentConnectionAcceptedCommand = true;
                     if (connectionState.encryptionState == EncryptionState.Encrypted)
                     {
                         networkStream.WriteCommand(CommandsArr.ConnectionAccepted, ref encryptor);
@@ -142,6 +148,44 @@ namespace MWP.BackEnd.Network
                     }
                     
                 }
+#if DEBUG
+                if (connectionState.UserAcceptedState == UserAcceptedState.Cancelled)
+                {
+                    MyConsole.WriteLine("User rejected connection");
+                    MyConsole.WriteLine($"sentConnectionAcceptedCommand {connectionState.sentConnectionAcceptedCommand}");
+                }
+#endif
+                if (!connectionState.sentConnectionAcceptedCommand && connectionState.UserAcceptedState == UserAcceptedState.Cancelled)
+                {
+                    connectionState.sentConnectionAcceptedCommand = true;
+                    if (connectionState.encryptionState == EncryptionState.Encrypted)
+                    {
+                        networkStream.WriteCommand(CommandsArr.ConnectionRejected, ref encryptor);
+                    }
+                    else
+                    {
+                        networkStream.WriteCommand(CommandsArr.ConnectionRejected);
+                    }
+                }
+
+                if (connectionState.gotSongSendRequestCommand && connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
+                {
+                    connectionState.gotSongSendRequestCommand = false;
+                    networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
+                }
+                
+                if (connectionState.gotSongInfoFlag && connectionState.UserAcceptedState == UserAcceptedState.SongsAccepted)
+                {
+                    connectionState.gotSongInfoFlag = false;
+                    networkStream.WriteCommand(CommandsArr.SongRequestAccepted, ref encryptor);
+                    
+                }
+
+                if (connectionState.gotSongInfoFlag && connectionState.UserAcceptedState == UserAcceptedState.Cancelled)
+                {
+                    connectionState.gotSongInfoFlag = false;
+                    networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);
+                }
             }
             else if (connectionState.ConnectionType == ConnectionType.OneTimeSend)
             {
@@ -150,7 +194,7 @@ namespace MWP.BackEnd.Network
                 
                 if (connectionState.songSendRequestState == SongSendRequestState.None)
                 {
-                    networkStream.WriteCommand(CommandsArr.SongRequest, ref encryptor);
+                    networkStream.WriteCommand(CommandsArr.SongSendRequest, ref encryptor);
                     connectionState.songSendRequestState = SongSendRequestState.Sent;
                 }
 
@@ -208,6 +252,11 @@ namespace MWP.BackEnd.Network
             MyConsole.WriteLine($"hostname {connectionState.remoteHostname}");
 #endif
             connectionState.isTrustedSyncTarget = FileManager.IsTrustedSyncTarget(connectionState.remoteHostname);
+            if (connectionState.isTrustedSyncTarget ?? false)
+            {
+                notification ??= new Notifications(NotificationTypes.Sync);
+                notification.Stage1(connectionState.remoteHostname);
+            }
             if (connectionState.gotOneTimeSendFlag)
             {
                 notification = new Notifications(NotificationTypes.OneTimeReceive);
@@ -320,32 +369,16 @@ namespace MWP.BackEnd.Network
                     MyConsole.WriteLine(s.ToString());
                 }*/
 #endif
+                connectionState.gotSongInfoFlag = true;
                 connectionState.oneTimeReceiveCount = recSongs.Count;
-                StateHandler.OneTimeSendSongs.Add(connectionState.remoteHostname, recSongs);
+                StateHandler.OneTimeReceiveSongs.Add(connectionState.remoteHostname, recSongs);
                 notification?.Stage1Update(connectionState.remoteHostname, connectionState.oneTimeReceiveCount);
                 string rh = connectionState.remoteHostname;
-                //TODO: this cannot possibly work
-                NetworkStream stream = networkStream;
-                RSACryptoServiceProvider enc = encryptor;
                 MainActivity.StateHandler.view?.RunOnUiThread(() =>
                 {
-                    UiRenderFunctions.ListIncomingSongsPopup(
-                        recSongs,
-                        rh,
-                        MainActivity.StateHandler.view,
-                        () =>
-                        {
-                            StateHandler.OneTimeSendStates[rh] = UserAcceptedState.SongsAccepted;
-                            stream.WriteCommand(CommandsArr.SongRequestAccepted, ref enc);
-                        },
-                        () =>
-                        {
-                            StateHandler.OneTimeSendStates[rh] = UserAcceptedState.Cancelled;
-                            stream.WriteCommand(CommandsArr.SongRequestRejected, ref enc);
-                        }
-                    );
-                    StateHandler.OneTimeSendStates[rh] = UserAcceptedState.SongsShowed;
+                    MainActivity.SongsSendDialog(rh);
                 });
+                StateHandler.OneTimeSendStates[connectionState.remoteHostname] = UserAcceptedState.SongsShowed;
             }
             else
             {

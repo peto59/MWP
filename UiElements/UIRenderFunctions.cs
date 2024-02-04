@@ -186,6 +186,9 @@ namespace MWP
                 cancel.Typeface = font;
                 cancel.Click += (_, _) =>
                 {
+#if DEBUG
+                    MyConsole.WriteLine("User clicked on reject");
+#endif
                     reject();
                     dialog?.Hide();
                 };

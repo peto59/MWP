@@ -92,7 +92,7 @@ namespace MWP.BackEnd.Network
         {
             
             Sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-            Sock.ReceiveTimeout = 2000;
+            Sock.ReceiveTimeout = 500;
             if (SettingsManager.CanUseWan)
             {
                 NatUtility.DeviceFound += delegate(object _, DeviceEventArgs args)
@@ -456,6 +456,9 @@ namespace MWP.BackEnd.Network
                     {
                         while (Enumerable.Contains(Connected, targetIpAddress))
                         {
+#if DEBUG
+                            MyConsole.WriteLine("Waiting for remote host to became available");
+#endif
                             Thread.Sleep(1000);
                         }
                     }
@@ -506,6 +509,7 @@ namespace MWP.BackEnd.Network
                                             Connected.Remove(targetIp);
                                         }
                                     }).Start();
+                                    break;
                                 }
                             }
                             catch

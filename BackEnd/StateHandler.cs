@@ -53,7 +53,7 @@ namespace MWP.BackEnd
             new List<(IPAddress ipAddress, DateTime lastSeen, string hostname)>();
 
         internal static readonly Dictionary<string, UserAcceptedState> OneTimeSendStates = new Dictionary<string, UserAcceptedState>();
-        internal static readonly Dictionary<string, List<Song>> OneTimeSendSongs = new Dictionary<string, List<Song>>();
+        internal static readonly Dictionary<string, List<Song>> OneTimeReceiveSongs = new Dictionary<string, List<Song>>();
         
         
         

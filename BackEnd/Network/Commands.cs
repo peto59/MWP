@@ -8,6 +8,7 @@ namespace MWP.BackEnd.Network
         internal const byte Wait = (byte)CommandsEnum.Wait;
         internal const byte OnetimeSend = (byte)CommandsEnum.OnetimeSend;
         internal const byte ConnectionAccepted = (byte)CommandsEnum.ConnectionAccepted;
+        internal const byte ConnectionRejected = (byte)CommandsEnum.ConnectionRejected;
         internal const byte Host = (byte)CommandsEnum.Host;
         internal const byte RsaExchange = (byte)CommandsEnum.RsaExchange;
         internal const byte AesSend = (byte)CommandsEnum.AesSend;
@@ -16,7 +17,7 @@ namespace MWP.BackEnd.Network
         internal const byte SyncAccepted = (byte)CommandsEnum.SyncAccepted;
         internal const byte SyncRejected = (byte)CommandsEnum.SyncRejected;
         internal const byte SyncCount = (byte)CommandsEnum.SyncCount;
-        internal const byte SongRequest = (byte)CommandsEnum.SongRequest;
+        internal const byte SongSendRequest = (byte)CommandsEnum.SongSendRequest;
         internal const byte SongRequestInfoRequest = (byte)CommandsEnum.SongRequestInfoRequest;
         internal const byte SongRequestInfo = (byte)CommandsEnum.SongRequestInfo;
         internal const byte SongRequestAccepted = (byte)CommandsEnum.SongRequestAccepted;
@@ -73,6 +74,7 @@ namespace MWP.BackEnd.Network
         internal static readonly byte[] None = { Commands.None };
         internal static readonly byte[] OnetimeSend = { Commands.OnetimeSend };
         internal static readonly byte[] ConnectionAccepted = { Commands.ConnectionAccepted };
+        internal static readonly byte[] ConnectionRejected = { Commands.ConnectionRejected };
         internal static readonly byte[] Wait = { Commands.Wait };
         internal static readonly byte[] Host = { Commands.Host };
         internal static readonly byte[] RsaExchange = { Commands.RsaExchange };
@@ -82,7 +84,7 @@ namespace MWP.BackEnd.Network
         internal static readonly byte[] SyncAccepted = { Commands.SyncAccepted };
         internal static readonly byte[] SyncRejected = { Commands.SyncRejected };
         internal static readonly byte[] SyncCount = { Commands.SyncCount };
-        internal static readonly byte[] SongRequest = { Commands.SongRequest };
+        internal static readonly byte[] SongSendRequest = { Commands.SongSendRequest };
         internal static readonly byte[] SongRequestInfoRequest = { Commands.SongRequestInfoRequest };
         internal static readonly byte[] SongRequestInfo = { Commands.SongRequestInfo };
         internal static readonly byte[] SongRequestAccepted = { Commands.SongRequestAccepted };
@@ -128,7 +130,7 @@ namespace MWP.BackEnd.Network
             Commands.SyncAccepted,
             Commands.SyncRejected,
             Commands.SyncCount,
-            Commands.SongRequest,
+            Commands.SongSendRequest,
             Commands.SongRequestInfoRequest,
             Commands.SongRequestInfo,
             Commands.SongRequestAccepted,
@@ -147,7 +149,7 @@ namespace MWP.BackEnd.Network
             CommandsEnum.SyncAccepted,
             CommandsEnum.SyncRejected,
             CommandsEnum.SyncCount,
-            CommandsEnum.SongRequest,
+            CommandsEnum.SongSendRequest,
             CommandsEnum.SongRequestInfoRequest,
             CommandsEnum.SongRequestInfo,
             CommandsEnum.SongRequestAccepted,
@@ -168,6 +170,7 @@ namespace MWP.BackEnd.Network
         Wait = 1,
         OnetimeSend = 5,
         ConnectionAccepted = 7,
+        ConnectionRejected = 8,
         Host = 10,
         RsaExchange = 11,
         AesSend = 12,
@@ -176,7 +179,7 @@ namespace MWP.BackEnd.Network
         SyncAccepted = 21,
         SyncRejected = 22,
         SyncCount = 23,
-        SongRequest = 30,
+        SongSendRequest = 30,
         SongRequestInfoRequest = 31,
         SongRequestInfo = 32,
         SongRequestAccepted = 33,

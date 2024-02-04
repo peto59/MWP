@@ -164,6 +164,9 @@ internal static class NetworkManagerServer
                         case CommandsEnum.ConnectionAccepted:
                             connectionState.connectionWasAccepted = true;
                             break;
+                        case CommandsEnum.ConnectionRejected:
+                            connectionState.songSendRequestState = SongSendRequestState.Rejected;
+                            break;
                         case CommandsEnum.Host:
                             NetworkManagerCommonCommunication.Host(ref networkStream, ref decryptor, ref encryptor, ref aes, ref connectionState, ref notification);
                             break;
@@ -212,14 +215,14 @@ internal static class NetworkManagerServer
                                 connectionState.syncReceiveCount = BitConverter.ToInt32(data);
                             }
                             break;
-                        case CommandsEnum.SongRequest:
+                        case CommandsEnum.SongSendRequest:
                             if (connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
                             {
                                 networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
                             }
                             else
                             {
-                                connectionState.gotSongRequestCommand = true;
+                                connectionState.gotSongSendRequestCommand = true;
                             }
                             break;
                         case CommandsEnum.SongRequestInfoRequest:
@@ -355,7 +358,7 @@ internal static class NetworkManagerServer
             aes.Dispose();
             networkStream.Close();
             client.Close();
-            StateHandler.OneTimeSendSongs.Remove(connectionState.remoteHostname);
+            StateHandler.OneTimeReceiveSongs.Remove(connectionState.remoteHostname);
             StateHandler.OneTimeSendStates.Remove(connectionState.remoteHostname);
             NetworkManagerCommon.Connected.Remove(targetIp);
             //GC.Collect();
