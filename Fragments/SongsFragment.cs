@@ -82,10 +82,19 @@ namespace MWP
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.songs_fragment_main);
 
+            /*
+             * Metoda priradena datovej polozke EventHandler v objekte typu ObservableDictionary.
+             * Metoda sa spusti vzdy ked je pridany novy element do dictionary. Po tom co sa
+             * prida novy element spusti sa nasledovna seria prikazov.
+             */
             if (_lazyImageBuffer != null)
                 _lazyImageBuffer.ValueChanged += (_, _) =>
                 {
                     ((Activity)context).RunOnUiThread(() => {
+                        /*
+                         * ziskanie posledneho pridaneho elementu typu Bitmap (cize obrazok skladby)
+                         * a nasledne jeho priradenie prisluchajucemu policku v zozname skladibe v uzivatelskom rozhrani
+                         */
                         string last = _lazyImageBuffer.Items.Keys.Last();
 
                         LinearLayout? child = _lazyBuffer?[last] ?? new LinearLayout(context);
@@ -96,7 +105,8 @@ namespace MWP
             
 
             /*
-             * Handle creating base block views
+             * Vytvaranie zakladneho ScrollView elementu pre zoznam skladieb a obaloveho linearLayout elementu
+             * z dovodu toho, ze ScrollView moze obsahovat iba jeden element.
              */
             allSongsScroll = new ScrollView(context);
             RelativeLayout.LayoutParams allSongsScrollParams = new RelativeLayout.LayoutParams(
@@ -120,20 +130,13 @@ namespace MWP
             mainLayout?.AddView(allSongsScroll);
             
             
-            /*
-             * Handle rendering songs by some order
-             */
             SongOrder(view);
-
-            
-            /*
-             * Handle song searching
-             */
             SongSearch(view);
-
             
             /*
-             * Handle floating button for creating new playlist
+             * Vytvorenie FloatingActionButton sluziace na zapnutie nahodneho prehravania.
+             * Nastavi sa nahodne prehravanie v pripade ak  este nie je nastavene as spusti sa prehravanie hudby preostrednictvom
+             * metod z pozadia aplikacie.
              */
             FloatingActionButton? createPlaylist = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.songs_fab);
             if (BlendMode.Multiply != null)
@@ -148,7 +151,8 @@ namespace MWP
 
             
             /*
-             * Load Song images
+             * Vytvorenie noveho vlakna v ramci ktoreho sa na pozadi budu nacitavat skladby do ObservableDictionary,
+             * co znamena ze pri akelkovej uprave listu sa spusti metoda ktora prida posledny nacitany obrazok do UI
              */ 
             Task.Run(async () =>
             {
@@ -295,10 +299,18 @@ namespace MWP
         }
         
         
+        /*
+         * Hlavna metoda sluziaca na vytvorenie hlavneho zoznamu skladieb.
+         */
         private async void RenderSongs(List<Song> songs)
         {
             _lazyBuffer = new Dictionary<string, LinearLayout>();
             
+            /*
+             * Prechadzanie vsetkymi skladbami zo zosiakenho listu ako parameter.
+             * Pre kazdy list je vytvorene nove policko ako LinearLayout. Kazde pridane policko
+             * sa prida aj do listu neskor pouzity na pridelenie korektneho obrazka skladby.
+             */
             for (int i = 0; i < songs.Count; i++)
             {
                 
@@ -316,6 +328,12 @@ namespace MWP
                     
             }
 
+            /*
+             * Ak je metoda RenderSongs zavolana po prvotnom vytvoreni zoznamu, takze napriklad vyhladavanim alebo zmenenim
+             * poradia skladieb (A-Z, Z-A, ...), tak obrazky sa uz nenacitavaju odznova ale su nacitanvane z ObservableDictionary
+             * kde sa pri prvotnom nacitanu nahrali vsetky obrazky.
+             * Obrazky sa nacitaju ale len pod podmienkou ak zoznam skladieb nie je prazdy a nacitanych obrazkov je viac ako 90%
+             */
             if (_lazyBuffer.Count > 0)
             {
                 var percentage = (_lazyImageBuffer.Items.Count / _lazyBuffer.Count) * 100;
