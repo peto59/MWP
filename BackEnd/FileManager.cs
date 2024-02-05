@@ -30,8 +30,8 @@ namespace MWP.BackEnd
         //private static readonly string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string( System.IO.Path.GetInvalidFileNameChars() ) + new string( System.IO.Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>");
         //private static readonly string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", invalidChars );
         private static readonly string InvalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", System.Text.RegularExpressions.Regex.Escape(new string( Path.GetInvalidFileNameChars() ) + new string( Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>") );
-        private static HashSet<string> _chromaprintUsedSongs;
-        private static List<Task> Discoveries = new List<Task>();
+        private static HashSet<string>? _chromaprintUsedSongs;
+        private static readonly List<Task> Discoveries = new List<Task>();
 
         public static void EarlyInnit()
         {
@@ -133,16 +133,10 @@ namespace MWP.BackEnd
             {
                 return;
             }
-            switch (nameFromPath)
+
+            if (SettingsManager.ExcludedPaths.Contains(path))
             {
-                case "Android":
-                case "sound_recorder":
-                case "Notifications":
-                case "Recordings":
-                case "Ringtones":
-                case "MIUI":
-                case "Alarms":
-                    return;
+                return;
             }
             foreach (string dir in Directory.EnumerateDirectories(path))
             {
@@ -175,9 +169,9 @@ namespace MWP.BackEnd
         ///<summary>
         ///Creates virtual song topology in MainActivity.StateHandler
         ///</summary>
-        public static void GenerateList(string path)
+        public static void GenerateList()
         {
-            GenerateList(path, true);
+            GenerateList(MusicFolder, true);
         }
 
         ///<summary>
@@ -256,7 +250,7 @@ namespace MWP.BackEnd
         ///<summary>
         ///Gets last name/folder from <paramref name="path"/>
         ///</summary>
-        public static string GetNameFromPath(string path)
+        private static string GetNameFromPath(string path)
         {
             string[] subs = path.Split('/');
             return subs[^1];
@@ -469,7 +463,7 @@ namespace MWP.BackEnd
             return (GetAvailableTempFile("video", "mp3"), GetAvailableTempFile("unprocessed", "mp3"), GetAvailableTempFile("thumbnail", "jpg"));
         }
 
-        public static string GetAvailableFile(string path, string name, string extension)
+        private static string GetAvailableFile(string path, string name, string extension)
         {
             int i = 0;
             while (File.Exists($"{path}/{name}{i}.{extension.TrimStart('.')}"))
@@ -554,7 +548,7 @@ namespace MWP.BackEnd
         /// </summary>
         /// <param name="host"></param>
         /// <param name="song"></param>
-        public static void AddTrustedSyncTargetSongsExcluded(string? host, Song song)
+        private static void AddTrustedSyncTargetSongsExcluded(string? host, Song song)
         {
             string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
             SongJsonConverter customConverter = new SongJsonConverter(true);
@@ -761,7 +755,7 @@ namespace MWP.BackEnd
                 useChromaprint = true;
             }
             
-            if (chromaprintAllowed && useChromaprint && !_chromaprintUsedSongs.Contains(path))
+            if (_chromaprintUsedSongs != null && chromaprintAllowed && useChromaprint && !_chromaprintUsedSongs.Contains(path))
             {
 #if DEBUG
                 MyConsole.WriteLine($"Using chromaprint for {path}");
@@ -920,7 +914,7 @@ namespace MWP.BackEnd
             {
                 File.Move(path, output);
             }
-            catch (IOException ioe)
+            catch (IOException)
             {
                 using TagLib.File tfileDest = TagLib.File.Create(path, ReadStyle.PictureLazy);
                 if (newBitrate > tfileDest.Properties.AudioBitrate)
@@ -929,7 +923,7 @@ namespace MWP.BackEnd
                     File.Move(path, output);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 File.Delete(path);
 #if DEBUG

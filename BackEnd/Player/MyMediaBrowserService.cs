@@ -119,7 +119,7 @@ namespace MWP.BackEnd.Player
                 MainActivity.StateHandler.Albums = new List<Album>();
                     
                 MainActivity.StateHandler.Artists.Add(new Artist("No Artist", "Default"));
-                FileManager.GenerateList(FileManager.MusicFolder);
+                FileManager.GenerateList();
             }
 
             if (MainActivity.StateHandler.Songs.Count != 0)

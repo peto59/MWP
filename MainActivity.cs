@@ -824,7 +824,7 @@ namespace MWP
                     StateHandler.Albums = new List<Album>();
                     
                     StateHandler.Artists.Add(new Artist("No Artist", "Default"));
-                    FileManager.GenerateList(FileManager.MusicFolder);
+                    FileManager.GenerateList();
                     order = true;
                 }
 
