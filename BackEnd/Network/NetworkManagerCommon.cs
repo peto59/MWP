@@ -32,14 +32,14 @@ namespace MWP.BackEnd.Network
     {
         internal static readonly List<IPAddress> Connected = new List<IPAddress>();
 #if DEBUG
-        private IPAddress? myip;
+        private IPAddress? myIp;
         internal IPAddress? MyIp
         {
-            get => myip;
+            get => myIp;
             set
             {
                 MyConsole.WriteLine($"New IP is {value}");
-                myip = value;
+                myIp = value;
             }
         }
 #else
@@ -223,7 +223,7 @@ namespace MWP.BackEnd.Network
                                         continue;
                                     }
                                 }
-                                catch (SocketException e)
+                                catch (SocketException)
                                 {
                                     cnt++;
                                     state = (byte)new Random().Next(0, 2);
@@ -366,7 +366,7 @@ namespace MWP.BackEnd.Network
                                     continue;
                                 }
                             }
-                            catch (SocketException e)
+                            catch (SocketException)
                             {
                                 sock.SendTo(P2PState.Send(cnt, state), remoteEndpoint);
                                 continue;
@@ -417,7 +417,6 @@ namespace MWP.BackEnd.Network
 #endif
                 return false;
             }
-            return false;
         }
 
         private static IPAddress GetBroadCastIp(IPAddress host, IPAddress mask)
@@ -563,9 +562,9 @@ namespace MWP.BackEnd.Network
                 }
                 else
                 {
-                    short? prefix = networkInterface?.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
+                    short? prefix = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
                         .NetworkPrefixLength;
-                    myMask = PrefixLengthToNetmask(prefix ?? 0);
+                    myMask = PrefixLengthToNetmask((short)prefix);
                     myBroadcastIp = GetBroadCastIp(MyIp, myMask);
                 }
 #if DEBUG
@@ -597,7 +596,6 @@ namespace MWP.BackEnd.Network
 
         internal static void TestNetwork()
         {
-            //TODO: add evaluation
             if (SettingsManager.CanUseNetwork != CanUseNetworkState.Allowed)
             {
                 NetworkManager.Common.CanSend = CanSend.Rejected;
@@ -724,9 +722,9 @@ namespace MWP.BackEnd.Network
 
                 if (transportInfo.TryGetValue("IpAddress", out string ipString))
                 {
-                    if (long.TryParse(ipString, out long longip))
+                    if (long.TryParse(ipString, out long longIp))
                     {
-                        byte[] x = BitConverter.GetBytes(longip).Take(4).ToArray();
+                        byte[] x = BitConverter.GetBytes(longIp).Take(4).ToArray();
                         IPAddress ipAdd = new IPAddress(x);
                         string ip = ipAdd.ToString();
                         if (ValidateIPv4(ip) && ip != "0.0.0.0")
@@ -738,7 +736,6 @@ namespace MWP.BackEnd.Network
                             string ssid = transportInfo["SSID"];
 #if DEBUG
                             MyConsole.WriteLine($"SSID: {ssid}");         
-                            MyConsole.WriteLine($"BLUD: {ssid == "<unknown ssid>"}");
 #endif
                             if (ssid != NetworkManager.Common.CurrentSsid)
                             {

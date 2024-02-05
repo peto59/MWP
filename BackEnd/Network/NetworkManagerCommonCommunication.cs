@@ -106,7 +106,7 @@ namespace MWP.BackEnd.Network
         {
             if (connectionState.encryptionState != EncryptionState.Encrypted) return;
             
-            if (!((!connectionState.sentConnectionAcceptedCommand && connectionState.UserAcceptedState == UserAcceptedState.Cancelled) || (connectionState.gotSongInfoFlag && connectionState.UserAcceptedState == UserAcceptedState.Cancelled)))
+            if (connectionState is not ({ sentConnectionAcceptedCommand: false, UserAcceptedState: UserAcceptedState.Cancelled } or { gotSongInfoFlag: true, UserAcceptedState: UserAcceptedState.Cancelled }))
             {
                 if (connectionState.Ending && command == CommandsEnum.None)
                 {
@@ -124,18 +124,18 @@ namespace MWP.BackEnd.Network
                     return;
                 }
             }
-
+            
             if (connectionState.ConnectionType == ConnectionType.OneTimeReceive)
             {
 #if DEBUG
-                MyConsole.WriteLine($"userstate {connectionState.UserAcceptedState}");
+                MyConsole.WriteLine($"user state {connectionState.UserAcceptedState}");
 #endif
                 if (connectionState.UserAcceptedState is UserAcceptedState.Showed or UserAcceptedState.SongsShowed)
                 {
                     networkStream.WriteCommand(CommandsArr.Wait, ref encryptor);
                 }
 
-                if (!connectionState.sentConnectionAcceptedCommand && connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
+                if (connectionState is { sentConnectionAcceptedCommand: false, UserAcceptedState: UserAcceptedState.ConnectionAccepted })
                 {
                     connectionState.sentConnectionAcceptedCommand = true;
                     if (connectionState.encryptionState == EncryptionState.Encrypted)
@@ -155,7 +155,7 @@ namespace MWP.BackEnd.Network
                     MyConsole.WriteLine($"sentConnectionAcceptedCommand {connectionState.sentConnectionAcceptedCommand}");
                 }
 #endif
-                if (!connectionState.sentConnectionAcceptedCommand && connectionState.UserAcceptedState == UserAcceptedState.Cancelled)
+                if (connectionState is { sentConnectionAcceptedCommand: false, UserAcceptedState: UserAcceptedState.Cancelled })
                 {
                     connectionState.sentConnectionAcceptedCommand = true;
                     if (connectionState.encryptionState == EncryptionState.Encrypted)
@@ -168,20 +168,20 @@ namespace MWP.BackEnd.Network
                     }
                 }
 
-                if (connectionState.gotSongSendRequestCommand && connectionState.UserAcceptedState == UserAcceptedState.ConnectionAccepted)
+                if (connectionState is { gotSongSendRequestCommand: true, UserAcceptedState: UserAcceptedState.ConnectionAccepted })
                 {
                     connectionState.gotSongSendRequestCommand = false;
                     networkStream.WriteCommand(CommandsArr.SongRequestInfoRequest, ref encryptor);
                 }
                 
-                if (connectionState.gotSongInfoFlag && connectionState.UserAcceptedState == UserAcceptedState.SongsAccepted)
+                if (connectionState is { gotSongInfoFlag: true, UserAcceptedState: UserAcceptedState.SongsAccepted })
                 {
                     connectionState.gotSongInfoFlag = false;
                     networkStream.WriteCommand(CommandsArr.SongRequestAccepted, ref encryptor);
                     
                 }
 
-                if (connectionState.gotSongInfoFlag && connectionState.UserAcceptedState == UserAcceptedState.Cancelled)
+                if (connectionState is { gotSongInfoFlag: true, UserAcceptedState: UserAcceptedState.Cancelled })
                 {
                     connectionState.gotSongInfoFlag = false;
                     networkStream.WriteCommand(CommandsArr.SongRequestRejected, ref encryptor);

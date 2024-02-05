@@ -17,8 +17,8 @@ namespace MWP
     public class Local_notification_service
     {
         private const string ChannelId = "local_notification_channel";
-        private const string ChannelName = "Notifications";
-        private const string ChannelDescription = "description";
+        private const string ChannelName = "Media Notification";
+        private const string ChannelDescription = "Notification with media controls";
 
         private int notification_id = 1;
         public int NotificationId

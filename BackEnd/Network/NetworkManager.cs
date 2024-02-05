@@ -5,7 +5,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Xamarin.Essentials;
 #if DEBUG
 using MWP.Helpers;
@@ -26,7 +25,7 @@ namespace MWP.BackEnd.Network
 
         //TODO: move to settings
         private const int numberOfMissedBroadcastsToRemoveHost = 3;
-        internal const int MaxTimeoutCounter = 1000;
+        internal const int MaxTimeoutCounter = 1_000;
         internal const int DefaultBuffSize = 80_960;
         internal const int P2PMaxResponseCounter = 6;
 
@@ -39,7 +38,6 @@ namespace MWP.BackEnd.Network
         /// </summary>
         public static void Listener()
         {
-            //TODO: unknown SSID
             NetworkManagerCommon.BroadcastTimer.Interval = BroadcastInterval;
             NetworkManagerCommon.BroadcastTimer.Elapsed += delegate { Common.SendBroadcast(); };
             NetworkManagerCommon.BroadcastTimer.AutoReset = true;
@@ -100,11 +98,6 @@ namespace MWP.BackEnd.Network
                                     sock.SendTo(Encoding.UTF8.GetBytes(DeviceName), groupEp);
                                     
                                     NetworkManagerCommon.AddAvailableHost(targetIp, remoteHostname);
-                                    
-
-                                    //TODO: add to available targets. Don't connect directly, check if sync is allowed.
-                                    //TODO: doesn't work with one time sends....
-                                    //if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
                                     
                                     new Thread(() =>
                                     {

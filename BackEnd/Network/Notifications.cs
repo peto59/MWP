@@ -1,16 +1,22 @@
 using System;
 using Android.App;
 using Android.Content;
+using Android.Graphics;
 using Android.OS;
 using AndroidX.Core.App;
+using MWP.Helpers;
 using AndroidApp = Android.App.Application;
 
 namespace MWP.BackEnd.Network
 {
-    internal class Notifications
+    /// <summary>
+    /// Manages notifications for NetworkManager and receives broadcasts from said notifications
+    /// </summary>
+    [BroadcastReceiver(Enabled = true, Exported = true)]
+    [IntentFilter(new[] { ConnectionAccepted, ConnectionRejected })]
+    public class Notifications : BroadcastReceiver
     {
-        //TODO: https://www.phind.com/search?cache=lh160qbo9lskbqnl4pbnpko9 na stage 1
-        private readonly int notificationId;
+        private readonly int notificationId = -1;
         
         private const string CHANNEL_ID_LOW_IMPORTANCE = "network_notification_channel";
         private const string CHANNEL_ID_HIGH_IMPORTANCE = "network_notification_channel_priority";
@@ -21,14 +27,26 @@ namespace MWP.BackEnd.Network
 
         private readonly NotificationTypes notificationType;
 
-        private readonly NotificationCompat.Builder notificationBuilder;
-        private readonly NotificationManagerCompat manager;
+        private readonly NotificationCompat.Builder? notificationBuilder;
+        private readonly NotificationManagerCompat manager = NotificationManagerCompat.From(AndroidApp.Context);
 
         private readonly NotificationImportance notificationImportance;
-        private readonly string channelId;
-        private readonly string channelName;
-        private readonly string channelDescription;
+        private readonly string? channelId;
+        private readonly string? channelName;
+        private readonly string? channelDescription;
         private readonly bool enableVibrations;
+
+        private const string ConnectionAccepted = "ConnectionAccepted";
+        private const string ConnectionRejected = "ConnectionRejected";
+
+        /// <summary>
+        /// Default constructor for system
+        /// </summary>
+        public Notifications()
+        {
+            //ignored
+            //Needed for system for broadcast receiver
+        }
 
         internal Notifications(NotificationTypes notificationType)
         {
@@ -50,8 +68,13 @@ namespace MWP.BackEnd.Network
             
             notificationId = RandomId();
             CreateNotificationChannel();
-            manager = NotificationManagerCompat.From(AndroidApp.Context);
             notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, channelId);
+
+            
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.AddAction(ConnectionAccepted);
+            intentFilter.AddAction(ConnectionRejected);
+            AndroidApp.Context.RegisterReceiver(this, intentFilter);
         }
         
         private void CreateNotificationChannel()
@@ -84,10 +107,12 @@ namespace MWP.BackEnd.Network
         
         internal void Stage1(string remoteHostname)
         {
-            notificationBuilder
-                //TODO: icon
+            notificationBuilder?
                 .SetSmallIcon(
-                    Resource.Drawable.download
+                    Resource.Mipmap.ic_launcher_round
+                )
+                .SetLargeIcon(
+                    BitmapFactory.DecodeResource(AndroidApp.Context.Resources, Resource.Mipmap.ic_launcher_round)
                 )
                 .SetShowWhen(false)
                 .SetOngoing(true);
@@ -95,26 +120,42 @@ namespace MWP.BackEnd.Network
             {
                 case NotificationTypes.OneTimeSend:
                 case NotificationTypes.Sync:
-                    notificationBuilder
+                    notificationBuilder?
                         .SetContentTitle($"Connected to {remoteHostname}")
                         .SetAutoCancel(false)
                         .SetSilent(true);
                     break;
                 case NotificationTypes.OneTimeReceive:
-                    Intent intent = new Intent(AndroidApp.Context, typeof(MainActivity));
-                    intent.PutExtra("NotificationAction", "ShowConnectionStatus");
-                    intent.PutExtra("RemoteHostname", remoteHostname);
-                    PendingIntent? pendingIntent = PendingIntent.GetActivity(AndroidApp.Context, notificationId, intent, PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
-                    notificationBuilder
+                    Intent intentOpenMainActivity = new Intent(AndroidApp.Context, typeof(MainActivity));
+                    intentOpenMainActivity.PutExtra("NotificationAction", "ShowConnectionStatus");
+                    intentOpenMainActivity.PutExtra("RemoteHostname", remoteHostname);
+                    PendingIntent? pendingIntentOpenMainActivity = PendingIntent.GetActivity(AndroidApp.Context, notificationId, intentOpenMainActivity, PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
+                    
+                    Intent intentConnectionAccepted = new Intent(AndroidApp.Context, typeof(Notifications));
+                    intentConnectionAccepted.SetAction(ConnectionAccepted);
+                    intentConnectionAccepted.PutExtra("RemoteHostname", remoteHostname);
+                    intentConnectionAccepted.PutExtra("NotificationId", notificationId);
+                    PendingIntent? pendingIntentConnectionAccepted = PendingIntent.GetBroadcast(AndroidApp.Context, notificationId, intentConnectionAccepted, PendingIntentFlags.Immutable);
+                    
+                    Intent intentConnectionRejected = new Intent(AndroidApp.Context, typeof(Notifications));
+                    intentConnectionRejected.SetAction(ConnectionRejected);
+                    intentConnectionRejected.PutExtra("RemoteHostname", remoteHostname);
+                    intentConnectionRejected.PutExtra("NotificationId", notificationId);
+                    PendingIntent? pendingIntentConnectionRejected = PendingIntent.GetBroadcast(AndroidApp.Context, notificationId, intentConnectionRejected, PendingIntentFlags.Immutable);
+                    
+                    notificationBuilder?
                         .SetContentTitle($"{remoteHostname} wants to connect to your device")
-                        .SetContentIntent(pendingIntent)
+                        .SetContentIntent(pendingIntentOpenMainActivity)
                         .SetAutoCancel(true)
-                        .SetSilent(false);
+                        .SetSilent(false)
+                        .AddAction(Resource.Drawable.play, "Accept", pendingIntentConnectionAccepted)
+                        .AddAction(Resource.Drawable.cross, "Reject", pendingIntentConnectionRejected);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            manager.Notify(notificationId, notificationBuilder.Build());
+
+            if (notificationBuilder != null) manager.Notify(notificationId, notificationBuilder.Build());
         }
         
         internal void Stage1Update(string remoteHostname, int songCount)
@@ -129,51 +170,58 @@ namespace MWP.BackEnd.Network
                     intent.PutExtra("NotificationAction", "ShowSongList");
                     intent.PutExtra("RemoteHostname", remoteHostname);
                     PendingIntent? pendingIntent = PendingIntent.GetActivity(AndroidApp.Context, notificationId, intent, PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
-                    notificationBuilder
+                    notificationBuilder?
                         .SetContentTitle($"{remoteHostname} wants to send you {songCount} songs")
                         .SetContentIntent(pendingIntent)
                         .SetShowWhen(false)
                         .SetOngoing(true)
                         .SetAutoCancel(true)
-                        .SetSilent(false);
+                        .SetSilent(false)
+                        .ClearActions();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            manager.Notify(notificationId, notificationBuilder.Build());
+
+            if (notificationBuilder != null) manager.Notify(notificationId, notificationBuilder.Build());
         }
 
         internal void Stage2(ConnectionState connectionState)
         {
-            notificationBuilder
+            notificationBuilder?
                 .SetShowWhen(false)
                 .SetAutoCancel(false)
                 .SetOngoing(true)
                 .SetSilent(true)
+                .ClearActions()
                 .SetSmallIcon(
-                    Resource.Drawable.download
+                    Resource.Mipmap.ic_launcher_round
+                )
+                .SetLargeIcon(
+                    BitmapFactory.DecodeResource(AndroidApp.Context.Resources, Resource.Mipmap.ic_launcher_round)
                 );
             switch (notificationType)
             {
                 case NotificationTypes.OneTimeSend:
-                    notificationBuilder
+                    notificationBuilder?
                         .SetContentTitle($"Sending songs to {connectionState.remoteHostname}")
                         .SetProgress(connectionState.oneTimeSendCount, connectionState.oneTimeSentCount, false);
                     break;
                 case NotificationTypes.Sync:
-                    notificationBuilder
+                    notificationBuilder?
                         .SetContentTitle($"Syncing with {connectionState.remoteHostname}")
                         .SetProgress(connectionState.TotalSyncCount, connectionState.SyncCount, false);
                     break;
                 case NotificationTypes.OneTimeReceive:
-                    notificationBuilder
+                    notificationBuilder?
                         .SetContentTitle($"Receiving songs from {connectionState.remoteHostname}")
                         .SetProgress(connectionState.oneTimeReceiveCount, connectionState.oneTimeReceivedCount, false);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            manager.Notify(notificationId, notificationBuilder.Build());
+
+            if (notificationBuilder != null) manager.Notify(notificationId, notificationBuilder.Build());
         }
         
         internal void Stage2Update(ConnectionState connectionState)
@@ -181,36 +229,42 @@ namespace MWP.BackEnd.Network
             switch (notificationType)
             {
                 case NotificationTypes.OneTimeSend:
-                    notificationBuilder
+                    notificationBuilder?
                         .SetProgress(connectionState.oneTimeSendCount, connectionState.oneTimeSentCount, false);
                     break;
                 case NotificationTypes.Sync:
-                    notificationBuilder
+                    notificationBuilder?
                         .SetProgress(connectionState.TotalSyncCount, connectionState.SyncCount, false);
                     break;
                 case NotificationTypes.OneTimeReceive:
-                    notificationBuilder
-                        .SetProgress(connectionState.oneTimeReceiveCount, connectionState.oneTimeReceivedCount, false);
+                    notificationBuilder?
+                        .SetProgress(connectionState.oneTimeReceiveCount, connectionState.oneTimeReceivedCount, false)
+                        .ClearActions();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            manager.Notify(notificationId, notificationBuilder.Build());
+
+            if (notificationBuilder != null) manager.Notify(notificationId, notificationBuilder.Build());
         }
 
         internal void Stage3(bool succeeded, ConnectionState connectionState)
         {
-            notificationBuilder
+            notificationBuilder?
                 .SetProgress(0, 0, false)
                 .SetShowWhen(false)
                 .SetAutoCancel(true)
                 .SetOngoing(false)
                 .SetSilent(true)
+                .ClearActions()
                 .SetSmallIcon(
-                    Resource.Drawable.download
+                    Resource.Mipmap.ic_launcher_round
+                )
+                .SetLargeIcon(
+                    BitmapFactory.DecodeResource(AndroidApp.Context.Resources, Resource.Mipmap.ic_launcher_round)
                 );
             
-            notificationBuilder
+            notificationBuilder?
                 .SetContentTitle(succeeded
                     ? $"Finished transfer with {connectionState.remoteHostname}"
                     : $"Transfer with {connectionState.remoteHostname} failed");
@@ -220,14 +274,14 @@ namespace MWP.BackEnd.Network
                 case NotificationTypes.OneTimeSend:
                     if (connectionState.oneTimeSentCount < connectionState.oneTimeSendCount)
                     {
-                        notificationBuilder
+                        notificationBuilder?
                         .SetContentText($"Sent {connectionState.oneTimeSentCount}/{connectionState.oneTimeSendCount} songs");
                     }
                     break;
                 case NotificationTypes.Sync:
                     if (connectionState.syncSentCount < connectionState.SyncSendCount || connectionState.syncReceiveCount < connectionState.syncReceivedCount)
                     {
-                        notificationBuilder
+                        notificationBuilder?
                         .SetContentText(
                             $"Sent {connectionState.syncSentCount}/{connectionState.SyncSendCount} songs {System.Environment.NewLine} Received {connectionState.syncReceiveCount}/{connectionState.syncReceivedCount} songs");
                     }
@@ -235,14 +289,122 @@ namespace MWP.BackEnd.Network
                 case NotificationTypes.OneTimeReceive:
                     if (connectionState.oneTimeSentCount < connectionState.oneTimeSendCount)
                     {
-                        notificationBuilder
+                        notificationBuilder?
                         .SetContentText($"Received {connectionState.oneTimeSentCount}/{connectionState.oneTimeSendCount} songs");
                     }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            manager.Notify(notificationId, notificationBuilder.Build());
+
+            if (notificationBuilder != null) manager.Notify(notificationId, notificationBuilder.Build());
+        }
+
+        /// <inheritdoc />
+        public override void OnReceive(Context? context, Intent? intent)
+        {
+#if DEBUG
+            if (intent == null)
+            {
+                MyConsole.WriteLine("Notification No Intent");
+            }
+#endif
+            string? remoteHostname;
+            int notifId;
+            switch (intent?.Action)
+            {
+                case ConnectionAccepted:
+                    remoteHostname = intent.GetStringExtra("RemoteHostname");
+                    notifId = intent.GetIntExtra("NotificationId", -1);
+                    if (remoteHostname != null && notifId != -1 && notifId != notificationId)
+                    {
+                        StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.ConnectionAccepted;
+                        NotificationManagerCompat mgr = NotificationManagerCompat.From(AndroidApp.Context);
+                        mgr.Cancel(notifId);
+                        NotificationCompat.Builder notifBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID_HIGH_IMPORTANCE);
+                        notifBuilder
+                            .SetSmallIcon(
+                                Resource.Mipmap.ic_launcher_round
+                            )
+                            .SetLargeIcon(
+                                BitmapFactory.DecodeResource(AndroidApp.Context.Resources, Resource.Mipmap.ic_launcher_round)
+                            )
+                            .SetShowWhen(false)
+                            .SetOngoing(true)
+                            .SetAutoCancel(false)
+                            .SetSilent(true)
+                            .SetContentTitle($"Connected to {remoteHostname}");
+                        mgr.Notify(notifId, notifBuilder.Build());
+                    }
+#if DEBUG
+                    else
+                    {
+                        MyConsole.WriteLine("Notification No Action");
+                        
+                    }
+#endif
+                    break;
+                case ConnectionRejected:
+                    remoteHostname = intent.GetStringExtra("RemoteHostname");
+                    notifId = intent.GetIntExtra("NotificationId", -1);
+                    if (remoteHostname != null && notifId != -1 && notifId != notificationId)
+                    {
+                        StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled;
+                        NotificationManagerCompat mgr = NotificationManagerCompat.From(AndroidApp.Context);
+                        mgr.Cancel(notifId);
+                        NotificationCompat.Builder notifBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID_HIGH_IMPORTANCE);
+                        notifBuilder
+                            .SetSmallIcon(
+                                Resource.Mipmap.ic_launcher_round
+                            )
+                            .SetLargeIcon(
+                                BitmapFactory.DecodeResource(AndroidApp.Context.Resources, Resource.Mipmap.ic_launcher_round)
+                            )
+                            .SetShowWhen(false)
+                            .SetOngoing(true)
+                            .SetAutoCancel(false)
+                            .SetSilent(true)
+                            .SetContentTitle($"Connected to {remoteHostname}");
+                        mgr.Notify(notifId, notifBuilder.Build());
+                    }
+#if DEBUG
+                    else
+                    {
+                        MyConsole.WriteLine("Notification No Action");
+                    }
+#endif
+                    break;
+                default:
+#if DEBUG
+                    MyConsole.WriteLine("Unknown action");
+#endif
+                    break;
+            }
+        }
+        
+        private void ReleaseUnmanagedResources()
+        {
+            AndroidApp.Context.UnregisterReceiver(this);
+            MainActivity.StateHandler.NotificationIDs.Remove(notificationId);
+        }
+
+        /// <summary>
+        /// Releases memory
+        /// </summary>
+        /// <param name="disposing">Whether to dispose managed resource</param>
+        protected override void Dispose(bool disposing)
+        {
+#if DEBUG
+            MyConsole.WriteLine("Disposing notification object");
+#endif
+            ReleaseUnmanagedResources();
+            if (disposing)
+            {
+                notificationBuilder?.Dispose();
+                manager.Dispose();
+            }
+
+            base.Dispose(disposing);
         }
     }
 }

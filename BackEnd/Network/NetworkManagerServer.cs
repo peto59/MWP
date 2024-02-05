@@ -74,14 +74,10 @@ internal static class NetworkManagerServer
                     P2PState stateObject = new P2PState(buffer);
                     if (stateObject is { IsValid: true, Type: P2PStateTypes.Request })
                     {
-                        if (local.TryGetValue(stateObject.Cnt, out byte value))
-                        {
-                            sock.SendTo( P2PState.Send(stateObject.Cnt, value), eP);
-                        }
-                        else
-                        {
-                            sock.SendTo( P2PState.Send(stateObject.Cnt, local[local.Keys.Last()]), eP);
-                        }
+                        sock.SendTo(
+                            local.TryGetValue(stateObject.Cnt, out byte value)
+                                ? P2PState.Send(stateObject.Cnt, value)
+                                : P2PState.Send(stateObject.Cnt, local[local.Keys.Last()]), eP);
                     }
                 }
                 else
@@ -358,6 +354,7 @@ internal static class NetworkManagerServer
             aes.Dispose();
             networkStream.Close();
             client.Close();
+            notification?.Dispose();
             StateHandler.OneTimeReceiveSongs.Remove(connectionState.remoteHostname);
             StateHandler.OneTimeSendStates.Remove(connectionState.remoteHostname);
             NetworkManagerCommon.Connected.Remove(targetIp);

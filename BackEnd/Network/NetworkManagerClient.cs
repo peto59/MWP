@@ -298,6 +298,7 @@ namespace MWP.BackEnd.Network
             aes.Dispose();
             networkStream.Dispose();
             client.Dispose();
+            notification?.Dispose();
             StateHandler.OneTimeReceiveSongs.Remove(connectionState.remoteHostname);
             StateHandler.OneTimeSendStates.Remove(connectionState.remoteHostname);
             NetworkManagerCommon.Connected.Remove(server);
