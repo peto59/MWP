@@ -1,13 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
-			  
-			  <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="match_parent"
+			  android:background="@drawable/rounded_primaryColor"
+				android:gravity="center">
+
+	<TextView
+			android:id="@+id/discoveryTitle1"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Indexing songs"
+			android:textSize="15dp"
+			android:layout_marginTop="25dp"
+			android:textColor="#ffffff"
+			android:layout_marginHorizontal="20dp"
+			
+	/>
+	<TextView
         android:id="@+id/discoveryTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Indexing songs" />
+        android:text="0"
+		android:textSize="25dp"
+		android:layout_marginHorizontal="20dp"
+		android:textColor="#ffffff"
+		/>
+	<TextView
+			android:id="@+id/discoveryTitle2"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="songs indexed. Please wait"
+			android:textSize="15dp"
+			android:layout_marginHorizontal="25dp"
+			android:layout_marginBottom="25dp"
+			android:textColor="#ffffff"
+	/>
 
 </LinearLayout>

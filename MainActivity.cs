@@ -9,6 +9,7 @@ using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
+using Android.Graphics.Drawables;
 using Android.Media;
 using Android.OS;
 using Android.Provider;
@@ -730,32 +731,60 @@ namespace MWP
                 _ => string.Empty
             };
             
-            DrawerLayout? view = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
-            if (view != null)
-                Snackbar.Make(view, explanation, BaseTransientBottomBar.LengthIndefinite)
-                    .SetAction("OK", _ =>
-                    {
-                        if (!Environment.IsExternalStorageManager)
-                        {
-                            try
-                            {
-                                Intent intent = new Intent();
-                                intent.SetAction(Settings.ActionManageAppAllFilesAccessPermission);
-                                Uri? uri = Uri.FromParts("package", PackageName, null);
-                                intent.SetData(uri);
-                                StartActivity(intent);
-                            }
-                            catch (Exception ex)
-                            {
-#if DEBUG
-                                MyConsole.WriteLine(ex);
-#endif
-                                //ignored
-                            }
-                        }
+            
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            LayoutInflater? ifl = LayoutInflater.From(this);
+            View? view = ifl?.Inflate(Resource.Layout.permission_popup, null);
+            builder.SetView(view);
+            builder.SetCancelable(false);
+            
+            AlertDialog dialog = builder.Create();
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+            
+            TextView? title = view?.FindViewById<TextView>(Resource.Id.permission_popup_title);
+            TextView? ok = view?.FindViewById<TextView>(Resource.Id.permission_popup_ok);
+            TextView? cancel = view?.FindViewById<TextView>(Resource.Id.permission_popup_cancel);
 
-                        RequestPermissions(permissionsLocation.ToArray(), ActionPermissionsRequestCode);
-                    }).Show();
+            if (ok != null) ok.Typeface = font;
+            if (cancel != null) cancel.Typeface = font;
+            if (title != null) title.Typeface = font;
+
+            if (title != null) title.Text += explanation;
+
+            if (ok != null)
+                ok.Click += delegate
+                {
+                    if (!Environment.IsExternalStorageManager)
+                    {
+                        try
+                        {
+                            Intent intent = new Intent();
+                            intent.SetAction(Settings.ActionManageAppAllFilesAccessPermission);
+                            Uri? uri = Uri.FromParts("package", PackageName, null);
+                            intent.SetData(uri);
+                            StartActivity(intent);
+                        }
+                        catch (Exception ex)
+                        {
+#if DEBUG
+                            MyConsole.WriteLine(ex);
+#endif
+                            //ignored
+                        }
+                    }
+
+                    RequestPermissions(permissionsLocation.ToArray(), ActionPermissionsRequestCode);
+                    dialog?.Cancel();
+                };
+
+            if (cancel != null)
+                cancel.Click += delegate { 
+                    RequestMyPermission();
+                    dialog?.Cancel();
+                };
+
+            dialog?.Show();
+
         }
 
         private void AfterReceivingPermissions()
@@ -780,7 +809,16 @@ namespace MWP
             builder.SetCancelable(false);
             
             AlertDialog dialog = builder.Create();
-            TextView? textView = view?.FindViewById<TextView>(Resource.Id.discoveryTextView);
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+            
+            TextView? indexedSongs = view?.FindViewById<TextView>(Resource.Id.discoveryTextView);
+            TextView? label1 = view?.FindViewById<TextView>(Resource.Id.discoveryTextView);
+            TextView? label2 = view?.FindViewById<TextView>(Resource.Id.discoveryTextView);
+
+            if (label1 != null) label1.Typeface = font;
+            if (label2 != null) label2.Typeface = font;
+            if (indexedSongs != null) indexedSongs.Typeface = font;
+            
             System.Timers.Timer timer = new System.Timers.Timer(500);
             
             new Thread(() => {
@@ -788,13 +826,13 @@ namespace MWP
                 {
                     RunOnUiThread(() =>
                     {
-                        dialog.Show();
+                        dialog?.Show();
                         timer.Elapsed += (_, _) => {
                             RunOnUiThread(() =>
                             {
-                                if (textView != null)
-                                    textView.Text =
-                                        $"Indexing songs {System.Environment.NewLine}{StateHandler.Songs.Count} songs indexed {System.Environment.NewLine}Please wait";
+                                if (indexedSongs != null)
+                                    indexedSongs.Text =
+                                        $"{StateHandler.Songs.Count}";
                             });
                         };
                         timer.Start();
@@ -806,13 +844,13 @@ namespace MWP
                 {
                     RunOnUiThread(() =>
                     {
-                        dialog.Show();
+                        dialog?.Show();
                         timer.Elapsed += (_, _) => {
                             RunOnUiThread(() =>
                             {
-                                if (textView != null)
-                                    textView.Text =
-                                        $"Indexing songs {System.Environment.NewLine}{StateHandler.Songs.Count} songs indexed {System.Environment.NewLine}Please wait";
+                                if (indexedSongs != null)
+                                    indexedSongs.Text =
+                                        $"{StateHandler.Songs.Count}";
                             });
                         };
                         timer.Start();

@@ -97,10 +97,12 @@ namespace MWP
             foreach (var host in allHosts)
             {
                 LinearLayout? lnIn = CreateSongTile(host.hostname);
+                //LinearLayout? lnIn = CreateSongTile(host);
 
                 if (lnIn != null)
                 {
                     tiles.Add(host.hostname, lnIn);
+                    // tiles.Add(host, lnIn);
                     lnIn.Click += (sender, args) =>
                     {
                         LinearLayout? currentLin = sender as LinearLayout;
