@@ -93,7 +93,7 @@ namespace MWP.BackEnd.Network
         /// <summary>
         /// Whether we initiated one time connection
         /// </summary>
-        private readonly bool sentOnetimeSendFlag;
+        internal readonly bool sentOnetimeSendFlag;
         /// <summary>
         /// Whether remote side initiated one time connection
         /// </summary>

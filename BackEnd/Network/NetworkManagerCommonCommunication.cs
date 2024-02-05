@@ -257,6 +257,12 @@ namespace MWP.BackEnd.Network
                 notification ??= new Notifications(NotificationTypes.Sync);
                 notification.Stage1(connectionState.remoteHostname);
             }
+
+            if (connectionState.sentOnetimeSendFlag)
+            {
+                notification ??= new Notifications(NotificationTypes.OneTimeSend);
+                notification.Stage1(connectionState.remoteHostname);
+            }
             if (connectionState.gotOneTimeSendFlag)
             {
                 notification = new Notifications(NotificationTypes.OneTimeReceive);
@@ -376,7 +382,7 @@ namespace MWP.BackEnd.Network
                 string rh = connectionState.remoteHostname;
                 MainActivity.StateHandler.view?.RunOnUiThread(() =>
                 {
-                    MainActivity.SongsSendDialog(rh);
+                    MainActivity.SongsSendDialog(rh, MainActivity.StateHandler.view);
                 });
                 StateHandler.OneTimeSendStates[connectionState.remoteHostname] = UserAcceptedState.SongsShowed;
             }

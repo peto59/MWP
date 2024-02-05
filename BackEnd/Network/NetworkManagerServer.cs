@@ -327,7 +327,7 @@ internal static class NetworkManagerServer
                             notification?.Stage3(true, connectionState);
                             goto EndServer;
                         case CommandsEnum.Wait:
-                            Thread.Sleep(25);
+                            Thread.Sleep(100);
                             break;
                         case CommandsEnum.None:
                         default: //wait or unimplemented
@@ -344,7 +344,7 @@ internal static class NetworkManagerServer
 #if DEBUG
                 MyConsole.WriteLine(e);
 #endif
-                notification?.Stage3(false, connectionState);
+                notification?.Stage3(connectionState.Ending, connectionState);
             }
             EndServer:
             // Shutdown and end connection

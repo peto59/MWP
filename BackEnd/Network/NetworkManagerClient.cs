@@ -267,7 +267,7 @@ namespace MWP.BackEnd.Network
                             goto EndClient;
                         //break;
                         case CommandsEnum.Wait:
-                            Thread.Sleep(25);
+                            Thread.Sleep(100);
                             break;
                         case CommandsEnum.None:
                         default: //unimplemented
@@ -284,7 +284,7 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                 MyConsole.WriteLine(e);
 #endif
-                notification?.Stage3(false, connectionState);
+                notification?.Stage3(connectionState.Ending, connectionState);
             }
             EndClient:
             // Close everything.

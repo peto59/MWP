@@ -779,26 +779,43 @@ namespace MWP
             builder.SetCancelable(false);
             
             AlertDialog dialog = builder.Create();
-            dialog.Show();
-            
             TextView? textView = view?.FindViewById<TextView>(Resource.Id.discoveryTextView);
             System.Timers.Timer timer = new System.Timers.Timer(500);
             
-            timer.Elapsed += (_, _) => {
-                RunOnUiThread(() =>
-                {
-                    if (textView != null)
-                        textView.Text =
-                            $"Indexing songs {System.Environment.NewLine}{StateHandler.Songs.Count} songs indexed {System.Environment.NewLine}Please wait";
-                });
-            };
-            timer.Start();
-            
             new Thread(() => {
+                if (StateHandler.Songs.Count == 0)
+                {
+                    RunOnUiThread(() =>
+                    {
+                        dialog.Show();
+                        timer.Elapsed += (_, _) => {
+                            RunOnUiThread(() =>
+                            {
+                                if (textView != null)
+                                    textView.Text =
+                                        $"Indexing songs {System.Environment.NewLine}{StateHandler.Songs.Count} songs indexed {System.Environment.NewLine}Please wait";
+                            });
+                        };
+                        timer.Start();
+                    });
+                }
                 FileManager.DiscoverFiles(StateHandler.Songs.Count == 0);
                 bool order = false;
                 if (StateHandler.Songs.Count < FileManager.GetSongsCount())
                 {
+                    RunOnUiThread(() =>
+                    {
+                        dialog.Show();
+                        timer.Elapsed += (_, _) => {
+                            RunOnUiThread(() =>
+                            {
+                                if (textView != null)
+                                    textView.Text =
+                                        $"Indexing songs {System.Environment.NewLine}{StateHandler.Songs.Count} songs indexed {System.Environment.NewLine}Please wait";
+                            });
+                        };
+                        timer.Start();
+                    });
 #if DEBUG
                     MyConsole.WriteLine("Generating new songs");
 #endif
@@ -1007,7 +1024,7 @@ namespace MWP
                 }
                 else if (action == "ShowSongList")
                 {
-                    SongsSendDialog(remoteHostname);
+                    SongsSendDialog(remoteHostname, this);
                 }
             }
         }
@@ -1038,19 +1055,36 @@ namespace MWP
             dialog.Show();
         }
 
-        public static void SongsSendDialog(string remoteHostname)
+        public static void SongsSendDialog(string remoteHostname, Context ctx)
         {
             if (StateHandler.OneTimeReceiveSongs.TryGetValue(remoteHostname, out List<Song> recSongs))
             {
                 if (StateHandler.view != null)
+                {
+#if DEBUG
+                    MyConsole.WriteLine($"Popup opened");
+#endif
                     UiRenderFunctions.ListIncomingSongsPopup(
                         recSongs,
                         remoteHostname,
-                        StateHandler.view,
+                        ctx,
                         () => { StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.SongsAccepted; },
                         () => { StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled; }
                     );
+                }
+#if DEBUG
+                else
+                {
+                    MyConsole.WriteLine($"Popup no view");
+                }
+#endif
             }
+#if DEBUG
+            else
+            {
+                MyConsole.WriteLine($"Popup no value");
+            }
+#endif
         }
     }
 
