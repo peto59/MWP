@@ -42,27 +42,12 @@ namespace MWP.BackEnd
 #endif
                 Directory.CreateDirectory($"{_privatePath}/tmp");
             }
-
-            
             
             //File.Delete($"{FileManager.PrivatePath}/trusted_sync_targets.json");
             if (!File.Exists($"{_privatePath}/trusted_sync_targets.json"))
             {
                 File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
             }
-            
-            if (!File.Exists($"{_musicFolder}/usedChromaprintSongs.json"))
-            {
-                File.WriteAllText($"{_musicFolder}/usedChromaprintSongs.json", JsonConvert.SerializeObject(new HashSet<string>()));
-                _chromaprintUsedSongs = new HashSet<string>();
-            }
-            else
-            {
-                _chromaprintUsedSongs = GetHashSet();
-            }
-#if DEBUG
-            MyConsole.WriteLine($"Hashset length {_chromaprintUsedSongs.Count}");
-#endif
             
             if (!File.Exists($"{_privatePath}/trusted_SSIDs.json"))
             {
@@ -79,6 +64,19 @@ namespace MWP.BackEnd
 #endif
                 if (_musicFolder != null) Directory.CreateDirectory(_musicFolder);
             }
+            
+            if (!File.Exists($"{_musicFolder}/usedChromaprintSongs.json"))
+            {
+                File.WriteAllText($"{_musicFolder}/usedChromaprintSongs.json", JsonConvert.SerializeObject(new HashSet<string>()));
+                _chromaprintUsedSongs = new HashSet<string>();
+            }
+            else
+            {
+                _chromaprintUsedSongs = GetHashSet();
+            }
+#if DEBUG
+            MyConsole.WriteLine($"Hashset length {_chromaprintUsedSongs.Count}");
+#endif
 
             if (!File.Exists($"{_musicFolder}/aliases.json"))
             {
