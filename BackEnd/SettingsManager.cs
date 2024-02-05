@@ -99,21 +99,21 @@ namespace MWP.BackEnd
         private static Setting<string> _excludedPaths = new StringSetting(ShareName, "ShouldUseChromaprintAtDownload", GetDefaultExcludedPaths());
         public static List<string> ExcludedPaths
         {
-#if DEBUG
             get
             {
+#if DEBUG
                 MyConsole.WriteLine($"Excluded paths {_excludedPaths.Value}");
                 return _excludedPaths.Value.Split(';').ToList();
+#endif
             }
             set
             {
+#if DEBUG
                 MyConsole.WriteLine($"New Excluded paths {string.Join(';', value.ToArray())}");
-                _excludedPaths.Value = string.Join(';', value.ToArray());
-            }
-#else
-            get => _excludedPaths.Value.Split(';').ToList();
-            set => _excludedPaths.Value = string.Join(';', value.ToArray());
 #endif
+                _excludedPaths.Value = string.Join(';', value.ToArray());
+                FileManager.ReDiscoverFiles();
+            }
         }
 
         private static Setting<bool> _shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);

@@ -480,12 +480,12 @@ namespace MWP
             dialog?.Show();
         }
         
-        public override void OnActivityResult(int requestCode, int resultCode, Intent data) {
+        public override void OnActivityResult(int requestCode, int resultCode, Intent? data) {
             base.OnActivityResult(requestCode, resultCode, data);
 
             switch(requestCode) {
                 case 9999:
-                    if (data.Data?.Path != null)
+                    if (data is { Data: { Path: not null } })
                     {
                         File file = new File(data.Data.Path);//create path from uri
                         String[] split = file.Path.Split(System.IO.Path.PathSeparator);//split the path.

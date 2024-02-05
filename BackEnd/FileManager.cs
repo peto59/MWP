@@ -51,9 +51,9 @@ namespace MWP.BackEnd
                 File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
             }
             
-            if (!File.Exists($"{_privatePath}/usedChromaprintSongs.json"))
+            if (!File.Exists($"{_musicFolder}/usedChromaprintSongs.json"))
             {
-                File.WriteAllText($"{_privatePath}/usedChromaprintSongs.json", JsonConvert.SerializeObject(new HashSet<string>()));
+                File.WriteAllText($"{_musicFolder}/usedChromaprintSongs.json", JsonConvert.SerializeObject(new HashSet<string>()));
                 _chromaprintUsedSongs = new HashSet<string>();
             }
             else
@@ -101,6 +101,20 @@ namespace MWP.BackEnd
                 MyConsole.WriteLine($"Deleting {file}");
 #endif
             }
+        }
+
+        /// <summary>
+        /// Recreates virtual song topology in MainActivity.StateHandler
+        /// </summary>
+        public static void ReDiscoverFiles()
+        {
+            MainActivity.StateHandler.Songs = new List<Song>();
+            MainActivity.StateHandler.Artists = new List<Artist>();
+            MainActivity.StateHandler.Albums = new List<Album>();
+                    
+            MainActivity.StateHandler.Artists.Add(new Artist("No Artist", "Default"));
+            
+            DiscoverFiles(true);
         }
         
         /// <summary>
@@ -221,15 +235,7 @@ namespace MWP.BackEnd
                 }
             }
         }
-
-        ///<summary>
-        ///Gets all albums from <paramref name="author"/>
-        ///</summary>
-        private static List<string> GetAlbums(string author)
-        {
-            return Directory.EnumerateDirectories(author).ToList();
-        }
-
+        
         ///<summary>
         ///Gets all songs in device
         ///</summary>
@@ -237,15 +243,6 @@ namespace MWP.BackEnd
         {
             return Directory.EnumerateFiles(_musicFolder ?? string.Empty, "*.mp3", SearchOption.AllDirectories).Count();
         }
-
-        ///<summary>
-        ///Gets all songs in album or all album-less songs for author
-        ///</summary>
-        private static List<string> GetSongs(string path)
-        {
-            return Directory.EnumerateFiles(path, "*.mp3").ToList();
-        }
-        
 
         ///<summary>
         ///Gets last name/folder from <paramref name="path"/>
@@ -524,7 +521,6 @@ namespace MWP.BackEnd
 
         public static List<Song> GetTrustedSyncTargetSongs(string host)
         {
-            //TODO: add to this list on download and receiving song from network
             string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
             SongJsonConverter customConverter = new SongJsonConverter(true);
             Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
@@ -1033,13 +1029,13 @@ namespace MWP.BackEnd
 
         private static HashSet<string> GetHashSet()
         {
-            string json = File.ReadAllText($"{_privatePath}/usedChromaprintSongs.json");
+            string json = File.ReadAllText($"{_musicFolder}/usedChromaprintSongs.json");
             return JsonConvert.DeserializeObject<HashSet<string>>(json) ?? new HashSet<string>();
         }
         
         private static void SaveHashSet()
         {
-            File.WriteAllText($"{_privatePath}/usedChromaprintSongs.json", JsonConvert.SerializeObject(_chromaprintUsedSongs));
+            File.WriteAllText($"{_musicFolder}/usedChromaprintSongs.json", JsonConvert.SerializeObject(_chromaprintUsedSongs));
         }
     }
 }
