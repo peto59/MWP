@@ -81,7 +81,9 @@ namespace MWP.BackEnd
         public static List<(string name, Func<string> read, Action<string> write, string? remark)> GetStringSettings()
         {
             return new List<(string name, Func<string> read, Action<string> write, string? remark)> {
-                ("Set device name", () => Hostname, (val) => { Hostname = val; }, null),
+                ("Change device name", () => Hostname, (val) => { Hostname = val; },
+                    "Changing this will require you to reset trusted hosts on all devices that communicate with this device and you will need to reset trusted hosts on your device"
+                ),
                 
             };
         }
