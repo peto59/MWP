@@ -18,11 +18,11 @@ namespace MWP
     /// </summary>
     [Serializable]
     [JsonObject(MemberSerialization.OptIn)]
-    public class Artist : MusicBaseContainer
+    public sealed class Artist : MusicBaseContainer
     {
         /// <inheritdoc />
         [JsonProperty]
-        public override string Title { get; }
+        public override string Title { get; protected internal set; }
 
         /// <inheritdoc />
         public override List<Song> Songs { get; } = new List<Song>();
@@ -148,7 +148,7 @@ namespace MWP
         /// <returns>Path to image></returns>
         public static string GetImagePath(string name)
         {
-            string artistPart = FileManager.Sanitize(FileManager.GetAlias(name));
+            string artistPart = FileManager.Sanitize(name);
             if (File.Exists($"{FileManager.MusicFolder}/{artistPart}/cover.jpg"))
                 return $"{FileManager.MusicFolder}/{artistPart}/cover.jpg";
             if (File.Exists($"{FileManager.MusicFolder}/{artistPart}/cover.png"))
@@ -213,7 +213,11 @@ namespace MWP
         /// <param name="newAlias">new alias for this <see cref="MWP.Artist"/></param>
         public void AddAlias(string newAlias)
         {
-            FileManager.AddAlias(newAlias, Title);
+            string json = File.ReadAllText($"{FileManager.MusicFolder}/aliases.json");
+            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
+            aliases.Add(Title, newAlias);
+            File.WriteAllTextAsync($"{FileManager.MusicFolder}/aliases.json", JsonConvert.SerializeObject(aliases));
+            Title = newAlias;
         }
 
         /// <inheritdoc />
@@ -333,7 +337,7 @@ namespace MWP
         /// </summary>
         /// <param name="other">other <see cref="MWP.Artist"/></param>
         /// <returns>true if albums match, false otherwise</returns>
-        protected bool Equals(Artist other)
+        private bool Equals(Artist other)
         {
             return Title == other.Title && Equals(Songs, other.Songs) && Equals(Albums, other.Albums) && Equals(ImgPath, other.ImgPath);
         }
@@ -341,6 +345,7 @@ namespace MWP
         /// <inheritdoc />
         public override int GetHashCode()
         {
+            // ReSharper disable once NonReadonlyMemberInGetHashCode
             return HashCode.Combine(Title, Songs, Albums, ImgPath);
         }
 

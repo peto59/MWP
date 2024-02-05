@@ -9,16 +9,16 @@ namespace MWP
     /// Class to throttle function calls
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public  class APIThrottler : DelegatingHandler
+    public class APIThrottler : DelegatingHandler
     {
 
-        private Dictionary<string, (long milliseconds, bool running, int wait, int preWait)> signatures = new Dictionary<string, (long, bool, int, int)>();
+        private readonly Dictionary<string, (long milliseconds, bool running, int wait, int preWait)> signatures = new Dictionary<string, (long, bool, int, int)>();
         
         /// <summary>
         /// Throttles given function <paramref name="func"/> to call every <paramref name="wait"/> milliseconds
         /// </summary>
         /// <param name="func">Function to be executed</param>
-        /// <param name="id">Differentiator between mutltiple call queues</param>
+        /// <param name="id">Differentiator between multiple call queues</param>
         /// <param name="wait">time to wait between calls in milliseconds, subsequent calls with same <paramref name="id"/> ignore this value</param>
         /// <param name="preWait">time to wait before first call in milliseconds, subsequent calls with same <paramref name="id"/> ignore this value</param>
         /// <typeparam name="T">any type</typeparam>
@@ -49,7 +49,7 @@ namespace MWP
         /// Throttles given function <paramref name="func"/> to call every <paramref name="wait"/> milliseconds
         /// </summary>
         /// <param name="func">Function to be executed</param>
-        /// <param name="id">Differentiator between mutltiple call queues</param>
+        /// <param name="id">Differentiator between multiple call queues</param>
         /// <param name="wait">time to wait between calls, subsequent calls with same <paramref name="id"/> ignore this value</param>
         /// <param name="preWait">time to wait before first call, subsequent calls with same <paramref name="id"/> ignore this value</param>
         /// <typeparam name="T">any type</typeparam>

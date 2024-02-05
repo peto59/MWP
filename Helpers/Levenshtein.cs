@@ -1,23 +1,9 @@
-﻿using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
 
 namespace MWP
 {
-    public static class Levenshtein
+    internal static class Levenshtein
     {
-        /// <summary>
-        /// Convert strings to lowercase before comparing.
-        /// </summary>
-        public static bool IrgnoreCase = false;
-
         /// <summary>
         /// Compute the similarity of two strings using the Levenshtein distance.
         /// </summary>
@@ -33,11 +19,13 @@ namespace MWP
                 return 1.0f;
             }
 
-            if (IrgnoreCase)
+/*
+            if (IgnoreCase)
             {
                 s = s.ToLowerInvariant();
                 t = t.ToLowerInvariant();
             }
+*/
 
             float dis = Distance(s, t);
 
@@ -49,21 +37,25 @@ namespace MWP
             int n = s.Length;
             int m = t.Length;
             int[,] d = new int[n + 1, m + 1]; // matrix
-            int cost = 0;
 
             if (n == 0) return m;
             if (m == 0) return n;
 
             // Initialize.
-            for (int i = 0; i <= n; d[i, 0] = i++) ;
-            for (int j = 0; j <= m; d[0, j] = j++) ;
+            for (int i = 0; i <= n; d[i, 0] = i++)
+            {
+            }
+
+            for (int j = 0; j <= m; d[0, j] = j++)
+            {
+            }
 
             // Find min distance.
             for (int i = 1; i <= n; i++)
             {
                 for (int j = 1; j <= m; j++)
                 {
-                    cost = (t.Substring(j - 1, 1) == s.Substring(i - 1, 1) ? 0 : 1);
+                    int cost = t.Substring(j - 1, 1) == s.Substring(i - 1, 1) ? 0 : 1;
                     d[i, j] = Math.Min(Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1), d[i - 1, j - 1] + cost);
                 }
             }

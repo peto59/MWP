@@ -6,6 +6,9 @@ namespace MWP.BackEnd.Network
     {
         internal const byte None = (byte)CommandsEnum.None;
         internal const byte Wait = (byte)CommandsEnum.Wait;
+        internal const byte OnetimeSend = (byte)CommandsEnum.OnetimeSend;
+        internal const byte ConnectionAccepted = (byte)CommandsEnum.ConnectionAccepted;
+        internal const byte ConnectionRejected = (byte)CommandsEnum.ConnectionRejected;
         internal const byte Host = (byte)CommandsEnum.Host;
         internal const byte RsaExchange = (byte)CommandsEnum.RsaExchange;
         internal const byte AesSend = (byte)CommandsEnum.AesSend;
@@ -13,7 +16,8 @@ namespace MWP.BackEnd.Network
         internal const byte SyncRequest = (byte)CommandsEnum.SyncRequest;
         internal const byte SyncAccepted = (byte)CommandsEnum.SyncAccepted;
         internal const byte SyncRejected = (byte)CommandsEnum.SyncRejected;
-        internal const byte SongRequest = (byte)CommandsEnum.SongRequest;
+        internal const byte SyncCount = (byte)CommandsEnum.SyncCount;
+        internal const byte SongSendRequest = (byte)CommandsEnum.SongSendRequest;
         internal const byte SongRequestInfoRequest = (byte)CommandsEnum.SongRequestInfoRequest;
         internal const byte SongRequestInfo = (byte)CommandsEnum.SongRequestInfo;
         internal const byte SongRequestAccepted = (byte)CommandsEnum.SongRequestAccepted;
@@ -41,15 +45,15 @@ namespace MWP.BackEnd.Network
         }
         internal static bool IsLong(byte[] command)
         {
-            return Commands.IsLong(command[0]);
+            return IsLong(command[0]);
         }
         internal static bool IsFileCommand(byte[] command)
         {
-            return Commands.IsFileCommand(command[0]);
+            return IsFileCommand(command[0]);
         }
         internal static bool IsEncryptedOnlyCommand(byte[] command)
         {
-            return Commands.IsEncryptedOnlyCommand(command[0]);
+            return IsEncryptedOnlyCommand(command[0]);
         }
         internal static bool IsLong(CommandsEnum command)
         {
@@ -68,6 +72,9 @@ namespace MWP.BackEnd.Network
     internal static class CommandsArr
     {
         internal static readonly byte[] None = { Commands.None };
+        internal static readonly byte[] OnetimeSend = { Commands.OnetimeSend };
+        internal static readonly byte[] ConnectionAccepted = { Commands.ConnectionAccepted };
+        internal static readonly byte[] ConnectionRejected = { Commands.ConnectionRejected };
         internal static readonly byte[] Wait = { Commands.Wait };
         internal static readonly byte[] Host = { Commands.Host };
         internal static readonly byte[] RsaExchange = { Commands.RsaExchange };
@@ -76,7 +83,8 @@ namespace MWP.BackEnd.Network
         internal static readonly byte[] SyncRequest = { Commands.SyncRequest };
         internal static readonly byte[] SyncAccepted = { Commands.SyncAccepted };
         internal static readonly byte[] SyncRejected = { Commands.SyncRejected };
-        internal static readonly byte[] SongRequest = { Commands.SongRequest };
+        internal static readonly byte[] SyncCount = { Commands.SyncCount };
+        internal static readonly byte[] SongSendRequest = { Commands.SongSendRequest };
         internal static readonly byte[] SongRequestInfoRequest = { Commands.SongRequestInfoRequest };
         internal static readonly byte[] SongRequestInfo = { Commands.SongRequestInfo };
         internal static readonly byte[] SongRequestAccepted = { Commands.SongRequestAccepted };
@@ -90,27 +98,69 @@ namespace MWP.BackEnd.Network
         internal static readonly byte[] AlbumImageNotFound = { Commands.AlbumImageNotFound };
         internal static readonly byte[] Ack = { Commands.Ack };
         internal static readonly byte[] End = { Commands.End };
-        internal static readonly byte[] LongCommands = { Commands.SongRequestInfo, Commands.SongSend, Commands.ArtistImageSend, Commands.AlbumImageSend };
+        internal static readonly byte[] LongCommands =
+        {
+            Commands.SongRequestInfo,
+            Commands.SongSend,
+            Commands.ArtistImageSend,
+            Commands.AlbumImageSend
+        };
         internal static readonly CommandsEnum[] LongCommandsEnum =
         {
-            CommandsEnum.SongRequestInfo, CommandsEnum.SongSend, CommandsEnum.ArtistImageSend,
+            CommandsEnum.SongRequestInfo,
+            CommandsEnum.SongSend,
+            CommandsEnum.ArtistImageSend,
             CommandsEnum.AlbumImageSend
         };
-        internal static readonly byte[] FileCommands = { Commands.SongSend, Commands.ArtistImageSend, Commands.AlbumImageSend  };
-        internal static readonly CommandsEnum[] FileCommandsEnum = { CommandsEnum.SongSend, CommandsEnum.ArtistImageSend, CommandsEnum.AlbumImageSend };
+        internal static readonly byte[] FileCommands =
+        {
+            Commands.SongSend,
+            Commands.ArtistImageSend,
+            Commands.AlbumImageSend
+        };
+        internal static readonly CommandsEnum[] FileCommandsEnum =
+        {
+            CommandsEnum.SongSend,
+            CommandsEnum.ArtistImageSend,
+            CommandsEnum.AlbumImageSend
+        };
         internal static readonly byte[] EncryptedOnlyCommands =
         {
-            Commands.SyncRequest, Commands.SyncAccepted, Commands.SyncRejected, Commands.SongSend,
-            Commands.ArtistImageSend, Commands.AlbumImageSend, Commands.ArtistImageRequest, Commands.AlbumImageRequest,
-            Commands.SongRequest, Commands.SongRequestInfoRequest, Commands.SongRequestInfo, Commands.SongRequestAccepted,
-            Commands.SongRequestRejected
+            Commands.SyncRequest,
+            Commands.SyncAccepted,
+            Commands.SyncRejected,
+            Commands.SyncCount,
+            Commands.SongSendRequest,
+            Commands.SongRequestInfoRequest,
+            Commands.SongRequestInfo,
+            Commands.SongRequestAccepted,
+            Commands.SongRequestRejected,
+            Commands.SongSend,
+            Commands.ArtistImageSend,
+            Commands.AlbumImageSend,
+            Commands.ArtistImageRequest,
+            Commands.AlbumImageRequest,
+            Commands.ArtistImageNotFound,
+            Commands.AlbumImageNotFound
         };
         internal static readonly CommandsEnum[] EncryptedOnlyCommandsEnums =
         {
-            CommandsEnum.SyncRequest, CommandsEnum.SyncAccepted, CommandsEnum.SyncRejected, CommandsEnum.SongSend,
-            CommandsEnum.ArtistImageSend, CommandsEnum.AlbumImageSend, CommandsEnum.ArtistImageRequest, CommandsEnum.AlbumImageRequest,
-            CommandsEnum.SongRequest, CommandsEnum.SongRequestInfoRequest, CommandsEnum.SongRequestInfo,
-            CommandsEnum.SongRequestAccepted, CommandsEnum.SongRequestRejected
+            CommandsEnum.SyncRequest,
+            CommandsEnum.SyncAccepted,
+            CommandsEnum.SyncRejected,
+            CommandsEnum.SyncCount,
+            CommandsEnum.SongSendRequest,
+            CommandsEnum.SongRequestInfoRequest,
+            CommandsEnum.SongRequestInfo,
+            CommandsEnum.SongRequestAccepted,
+            CommandsEnum.SongRequestRejected,
+            CommandsEnum.SongSend,
+            CommandsEnum.ArtistImageSend,
+            CommandsEnum.AlbumImageSend,
+            CommandsEnum.ArtistImageRequest,
+            CommandsEnum.AlbumImageRequest,
+            CommandsEnum.ArtistImageNotFound,
+            CommandsEnum.AlbumImageNotFound
         };
     }
 
@@ -118,6 +168,9 @@ namespace MWP.BackEnd.Network
     {
         None = 0,
         Wait = 1,
+        OnetimeSend = 5,
+        ConnectionAccepted = 7,
+        ConnectionRejected = 8,
         Host = 10,
         RsaExchange = 11,
         AesSend = 12,
@@ -125,7 +178,8 @@ namespace MWP.BackEnd.Network
         SyncRequest = 20,
         SyncAccepted = 21,
         SyncRejected = 22,
-        SongRequest = 30,
+        SyncCount = 23,
+        SongSendRequest = 30,
         SongRequestInfoRequest = 31,
         SongRequestInfo = 32,
         SongRequestAccepted = 33,
@@ -139,30 +193,5 @@ namespace MWP.BackEnd.Network
         AlbumImageNotFound = 46,
         Ack = 254,
         End = 255
-    }
-
-    internal enum EncryptionState : byte
-    {
-        None,
-        RsaExchange,
-        AesSend,
-        AesReceived,
-        Encrypted,
-    }
-    
-    internal enum SyncRequestState : byte
-    {
-        None,
-        Sent,
-        Rejected,
-        Accepted
-    }
-
-    internal enum SongSendRequestState : byte
-    {
-        None,
-        Sent,
-        Rejected,
-        Accepted
     }
 }

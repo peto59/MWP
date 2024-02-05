@@ -18,11 +18,11 @@ namespace MWP
     /// </summary>
     [Serializable]
     [JsonObject(MemberSerialization.OptIn)]
-    public class Album : MusicBaseContainer
+    public sealed class Album : MusicBaseContainer
     {
         /// <inheritdoc />
         [JsonProperty]
-        public override string Title { get; }
+        public override string Title { get; protected internal set; }
 
         /// <inheritdoc />
         public override List<Song> Songs { get; } = new List<Song>();
@@ -327,7 +327,7 @@ namespace MWP
         /// </summary>
         /// <param name="other">other <see cref="MWP.Album"/></param>
         /// <returns>true if albums match, false otherwise</returns>
-        protected bool Equals(Album other)
+        private bool Equals(Album other)
         {
             return Title == other.Title && Equals(Songs, other.Songs) && Equals(Artists, other.Artists) && Equals(ImgPath, other.ImgPath);
         }
@@ -335,6 +335,7 @@ namespace MWP
         /// <inheritdoc />
         public override int GetHashCode()
         {
+            // ReSharper disable once NonReadonlyMemberInGetHashCode
             return HashCode.Combine(Title, Songs, Artists, ImgPath);
         }
 

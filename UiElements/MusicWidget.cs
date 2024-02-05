@@ -9,6 +9,8 @@ using Android.OS;
 using Android.Widget;
 using Java.Lang;
 using MWP.BackEnd.Player;
+using Bitmap = System.Drawing.Bitmap;
+using Color = Android.Graphics.Color;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -55,17 +57,32 @@ namespace MWP
             
             SetTextViewText(widgetView);
             RegisterClicks(context, widgetIds, widgetView);
+
+
+            Android.Graphics.Bitmap? squared = WidgetServiceHandler.CropBitmapToSquare(
+                MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Image ??
+                new Song("No Name", new DateTime(), "Default").Image, false);
             
-            
-            widgetView.SetImageViewBitmap(Resource.Id.widgetImage,
-                WidgetServiceHandler.GetRoundedCornerBitmap(
-                    MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Image ?? new Song("No Name", new DateTime(), "Default").Image, 
-                    120
-                )
-                
-            );
-            
-            
+            int roundedSize;
+            if (MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Image.Height == 360)
+            {
+                roundedSize = 50;
+            }
+            else
+            {
+                roundedSize = 90;
+            }
+
+            if (squared != null)
+                widgetView.SetImageViewBitmap(Resource.Id.widgetImage,
+                    WidgetServiceHandler.GetRoundedCornerBitmap(
+                        squared,
+                        roundedSize
+                    )
+                );
+
+            widgetView.SetInt(Resource.Id.widgetBackground, "setBackgroundColor", Color.Black);
+
             return widgetView;
         }
 
@@ -99,8 +116,12 @@ namespace MWP
             /*
              * register music widget click for opening application on widget layout click
              */
+            var pendingIntentFlags = (Build.VERSION.SdkInt >= BuildVersionCodes.S)
+                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable
+                : PendingIntentFlags.UpdateCurrent;
+            
             Intent mainAcitivtyIntent = new Intent(context, typeof(MainActivity));
-            PendingIntent? pendingIntent = PendingIntent.GetActivity(context, 0, mainAcitivtyIntent, 0);
+            PendingIntent? pendingIntent = PendingIntent.GetActivity(context, 0, mainAcitivtyIntent, pendingIntentFlags);
             widgetView.SetOnClickPendingIntent(Resource.Id.widgetBackground, pendingIntent);
         }
 
@@ -110,7 +131,7 @@ namespace MWP
             intent.SetAction(action);
             
             var pendingIntentFlags = (Build.VERSION.SdkInt >= BuildVersionCodes.S)
-                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Mutable
+                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable
                 : PendingIntentFlags.UpdateCurrent;
             
             return PendingIntent.GetBroadcast(context, 0, intent, pendingIntentFlags);

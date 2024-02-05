@@ -10,8 +10,6 @@ using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.OS;
-using Java.Util;
-using Kotlin.IO;
 using MWP.BackEnd;
 using Xamarin.Essentials;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
@@ -23,14 +21,31 @@ using MWP.Helpers;
 
 namespace MWP
 {
-    public class UIRenderFunctions
+    /// <summary>
+    /// Abstraktná trieda obsahujúca základne metódy na vkreslovanie dynamického
+    /// užívateľského rozhrania. Vznikla z dôvodu nevytvárania duplicitného kódu, keďže v aplikácii sa
+    /// opakuj štýli a elementy generované dynamicky.
+    /// </summary>
+    public abstract class UiRenderFunctions
     {
         private static List<string> _selectedPlaylists = new List<string>();
 
-        public enum SongType
+        /// <summary>
+        /// Pridelenie rozdielnych metód na základe typu skladby s ktorým je manipulované.
+        /// </summary>
+        public enum SongMediaType
         {
+            /// <summary>
+            /// skladba sa nachádza v albume (fargment Albums).
+            /// </summary>
             AlbumSong,
+            /// <summary>
+            /// skladba sa nachádza vo všeobecnom prehľade všetkých skladieb (fagrment Songs)
+            /// </summary>
             AllSong,
+            /// <summary>
+            /// skladba sa nachádza v playliste (fragment Playlist)
+            /// </summary>
             PlaylistSong
         }
 
@@ -41,29 +56,185 @@ namespace MWP
         /// </summary>
         public static object FragmentPositionObject;
         
-        
-        private static void AreYouSure(
-            object sender, EventArgs e, Song song, AlertDialog? di, 
-            LinearLayout linFromDelete, LinearLayout? linForDelete, 
-            Context context, SongsFragment songsFragmentContext)
+        /// <summary>
+        /// Shows dialog for user to accept or reject incoming songs from <paramref name="hostname"/>
+        /// </summary>
+        /// <param name="songs">List of songs to be received</param>
+        /// <param name="hostname">Device that wants to send <paramref name="songs"/></param>
+        /// <param name="context">App context</param>
+        /// <param name="accept"><see cref="Action{T}"/> on accept</param>
+        /// <param name="reject"><see cref="Action{T}"/> on Reject</param>
+        public static void ListIncomingSongsPopup(List<Song> songs, string hostname, Context context, Action accept, Action reject)
         {
+            int count = songs.Count;
+            Typeface? font = Typeface.CreateFromAsset(context.Assets, "sulphur.ttf");
+            
             LayoutInflater? ifl = LayoutInflater.From(context);
-            View? view = ifl?.Inflate(Resource.Layout.are_you_sure_popup, null);
+            View? view = ifl?.Inflate(Resource.Layout.accept_incoming_popup, null);
             AlertDialog.Builder alert = new AlertDialog.Builder(context);
             alert.SetView(view);
 
             AlertDialog? dialog = alert.Create();
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
 
-            TextView? txt = view?.FindViewById<TextView>(Resource.Id.are_you_sure_text);
-            txt?.SetTextColor(Color.White);
-            if (txt != null) txt.Text = "Deleting: " + song.Title;
+            TextView? title = view?.FindViewById<TextView>(Resource.Id.accept_incoming_title);
+            if (title != null)
+            {
+                title.Typeface = font;
+                title.Text = $"{hostname} wants to send you {count} songs";
+            }
 
-            Button? yes = view?.FindViewById<Button>(Resource.Id.yes_daddy);
-            if (BlendMode.Multiply != null)
-                yes?.Background?.SetColorFilter(
-                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
+            LinearLayout? ln = view?.FindViewById<LinearLayout>(Resource.Id.accept_incoming_song_list);
+            
+            /*
+             * Prechádzanie skladbami v liste a pre každú skladbu vytvorenie nového záznamu v liste v ScrollView.
+             */
+            for (int i = 0; i < count; i++)
+            {
+                /*
+                 * Vytvaranie LinearLayout-u ktory bude obsahpvat text skladby
+                 */
+                LinearLayout lnIn = new LinearLayout(context);
+                lnIn.Orientation = Orientation.Horizontal;
+                lnIn.SetBackgroundResource(Resource.Drawable.rounded_light);
+
+                LinearLayout.LayoutParams lnInParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MatchParent,
+                    ViewGroup.LayoutParams.WrapContent
                 );
-            yes?.SetTextColor(Color.Black);
+                lnInParams.SetMargins(20, 20, 20, 20);
+                lnIn.LayoutParameters = lnInParams;
+                lnIn.SetPadding(0, (int)ConvertDpToPixels(20, context), 0, (int)ConvertDpToPixels(20, context));
+                lnIn.SetGravity(GravityFlags.Left);
+
+                
+                /*
+                 * Vytváranie TextView komponentu pre názov skladby
+                 */
+                LinearLayout.LayoutParams nameAndArtistParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent,
+                    ViewGroup.LayoutParams.MatchParent
+                );
+                LinearLayout nameAndArtist = new LinearLayout(context);
+                nameAndArtist.LayoutParameters = nameAndArtistParams;
+                nameAndArtist.Orientation = Orientation.Vertical;
+                
+                
+                LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent,
+                    ViewGroup.LayoutParams.WrapContent
+                );
+                TextView name = new TextView(context);
+                name.LayoutParameters = nameParams;
+                name.TextSize = (int)ConvertDpToPixels(8, context);
+                name.Typeface = font;
+                name.SetTextColor(Color.White);
+                name.Text = songs[i].Title;
+                nameAndArtist.AddView(name);
+                
+                LinearLayout.LayoutParams artistParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent,
+                    ViewGroup.LayoutParams.WrapContent
+                );
+                TextView artist = new TextView(context);
+                artist.LayoutParameters = artistParams;
+                artist.TextSize = (int)ConvertDpToPixels(5, context);
+                artist.Typeface = font;
+                artist.SetTextColor(Color.White);
+                artist.Text = songs[i].Artist.Title;
+                nameAndArtist.AddView(artist);
+                
+                
+                
+                LinearLayout.LayoutParams indexParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent,
+                    ViewGroup.LayoutParams.MatchParent
+                );
+                TextView index = new TextView(context);
+                indexParams.Gravity = GravityFlags.Center;
+                indexParams.SetMargins(50, 0, 50, 0);
+                index.Gravity = GravityFlags.Center;
+                index.LayoutParameters = indexParams;
+                index.TextSize = (int)ConvertDpToPixels(8, context);
+                index.Typeface = font;
+                index.SetTextColor(Color.White);
+                index.Text = $"{i}";
+                
+                
+                lnIn.AddView(index);
+                lnIn.AddView(nameAndArtist);
+                
+                
+                ln?.AddView(lnIn);
+            }
+            
+            
+            TextView? addNew = view?.FindViewById<TextView>(Resource.Id.accept_incoming_accept_songs);
+            if (addNew != null)
+            {
+                addNew.Typeface = font;
+                addNew.Click += (_, _) =>
+                {
+                    accept();
+                    dialog?.Hide();
+                };
+            }
+
+            TextView? cancel = view?.FindViewById<TextView>(Resource.Id.accept_incoming_reject_songs);
+            if (cancel != null)
+            {
+                cancel.Typeface = font;
+                cancel.Click += (_, _) =>
+                {
+#if DEBUG
+                    MyConsole.WriteLine("User clicked on reject");
+#endif
+                    reject();
+                    dialog?.Hide();
+                };
+            }
+
+
+            dialog?.Show();
+            
+        }
+        
+        public static float ConvertDpToPixels(float dpValue, Context context) {
+            if (context.Resources is not { DisplayMetrics: not null }) return 0.0f;
+            var screenPixelDensity = context.Resources.DisplayMetrics.Density;
+            var pixels = dpValue * screenPixelDensity;
+            return pixels;
+
+        } 
+        
+        
+        
+        private static void AreYouSure(
+            object sender, EventArgs e, Song song, AlertDialog? di, 
+            LinearLayout linFromDelete, LinearLayout? linForDelete, 
+            Context context, SongsFragment songsFragmentContext, Typeface font)
+        {
+            LayoutInflater? ifl = LayoutInflater.From(context);
+            View? view = ifl?.Inflate(Resource.Layout.share_are_you_sure, null);
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.SetView(view);
+            
+            TextView? title = view?.FindViewById<TextView>(Resource.Id.share_are_you_sure_title);
+            TextView? yes = view?.FindViewById<TextView>(Resource.Id.share_are_you_sure_yes);
+            TextView? no = view?.FindViewById<TextView>(Resource.Id.share_are_you_sure_no);
+
+            if (title != null) title.Typeface = font;
+            if (yes != null) yes.Typeface = font;
+            if (no != null) no.Typeface = font;
+
+
+            AlertDialog? dialog = alert.Create();
+            dialog?.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+            
+            title?.SetTextColor(Color.White);
+            if (title != null) title.Text = "Deleting: " + song.Title;
+            
+            yes?.SetTextColor(Color.White);
 
             if (yes != null)
                 yes.Click += delegate
@@ -77,20 +248,18 @@ namespace MWP
                     Toast.MakeText(context, $"{song.Title} has been deleted", ToastLength.Short)?.Show();
                 };
 
-            Button? no = view?.FindViewById<Button>(Resource.Id.you_are_not_sure);
-            if (BlendMode.Multiply != null)
-                no?.Background?.SetColorFilter(
-                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                );
-            no?.SetTextColor(Color.Black);
 
             if (no != null)
-                no.Click += (_, _) => { di?.Hide(); };
+                no.Click += (_, _) =>
+                {
+                    dialog?.Hide();
+                    di?.Hide();
+                };
 
             dialog?.Show();
         }
 
-        private static void ListPlaylistsPopup(Song song, Context context, float scale)
+        private static void ListPlaylistsPopup(Song song, Context context, float scale, Typeface? font)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? view = ifl?.Inflate(Resource.Layout.list_plas_popup, null);
@@ -132,6 +301,7 @@ namespace MWP
                 };
                 
                 TextView name = new TextView(context);
+                name.Typeface = font;
                 name.TextAlignment = TextAlignment.Center;
                 name.SetTextColor(Color.White);
                 name.Text = p;
@@ -141,14 +311,10 @@ namespace MWP
             }
             
             
-            Button? submit = view?.FindViewById<Button>(Resource.Id.submit_plas);
-            if (BlendMode.Multiply != null)
-                submit?.Background?.SetColorFilter(
-                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                );
-            submit?.SetTextColor(Color.Black);
-
+            TextView? submit = view?.FindViewById<TextView>(Resource.Id.submit_plas);
             if (submit != null)
+            {
+                submit.Typeface = font;
                 submit.Click += (_, _) =>
                 {
                     foreach (string s in _selectedPlaylists)
@@ -158,7 +324,7 @@ namespace MWP
                             Toast.MakeText(context, "already exists in : " + s, ToastLength.Short)?.Show();
                         else
                         {
-                            FileManager.AddToPlaylist(s, song.Path);
+                            FileManager.AddToPlaylist(s, song);
 
                             Toast.MakeText(
                                     context, "added successfully",
@@ -172,16 +338,14 @@ namespace MWP
                     dialog?.Hide();
                     _selectedPlaylists.Clear();
                 };
+            }
 
-            Button? cancel = view?.FindViewById<Button>(Resource.Id.cancel_plas);
-            if (BlendMode.Multiply != null)
-                cancel?.Background?.SetColorFilter(
-                    new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                );
-            cancel?.SetTextColor(Color.Black);
-
+            TextView? cancel = view?.FindViewById<TextView>(Resource.Id.cancel_plas);
             if (cancel != null)
+            {
+                cancel.Typeface = font;
                 cancel.Click += (_, _) => { dialog?.Hide(); };
+            }
 
 
             dialog?.Show();
@@ -213,16 +377,11 @@ namespace MWP
                 {
                     addToPla.SetTextColor(Color.White);
                     addToPla.Typeface = font;
-                    if (BlendMode.Multiply != null)
-                        addToPla?.Background?.SetColorFilter(
-                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                        );
-                    if (addToPla != null)
-                        addToPla.Click += (_, _) =>
-                        {
-                            dialog?.Hide();
-                            ListPlaylistsPopup(song, context, scale);
-                        };
+                    addToPla.Click += (_, _) =>
+                    {
+                        dialog?.Hide();
+                        ListPlaylistsPopup(song, context, scale, font);
+                    };
                 }
 
                 
@@ -237,46 +396,34 @@ namespace MWP
                     delete.Typeface = font;
                     edit.Typeface = font;
                     
-                    if (BlendMode.Multiply != null)
+
+                    addToQu.Click += (_, _) =>
                     {
-                        addToQu?.Background?.SetColorFilter(
-                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                        );
-                        delete?.Background?.SetColorFilter(
-                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                        );
-                        edit?.Background?.SetColorFilter(
-                            new BlendModeColorFilter(Color.Rgb(255, 76, 41), BlendMode.Multiply)
-                        );
-                    }
+                        MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song);
+                        dialog?.Hide();
+                    };
 
-                    if (addToQu != null)
-                        addToQu.Click += (_, _) =>
+                    delete.Click += (o, args) =>
+                    {
+                        if (songsFragmentContext != null && font != null)
                         {
-                            MainActivity.ServiceConnection?.Binder?.Service?.AddToQueue(song);
+                            AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context,
+                                    songsFragmentContext, font);
                             dialog?.Hide();
-                        };
+                        }
+                    };
 
-                    if (delete != null)
-                        delete.Click += (o, args) =>
-                        {
-                            if (songsFragmentContext != null)
-                                AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context,
-                                    songsFragmentContext);
-                        };
-
-                    if (edit != null)
-                        edit.Click += (_, _) =>
-                        {
-                            dialog?.Hide();
+                    edit.Click += (_, _) =>
+                    {
+                        dialog?.Hide();
 
                             
-                            TagManagerFragment tagFrag = new TagManagerFragment(context, assets, path);
-                            FragmentTransaction fragmentTransaction = manager.BeginTransaction();
-                            fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, tagFrag);
-                            fragmentTransaction.AddToBackStack(null);
-                            fragmentTransaction.Commit();
-                        };
+                        TagManagerFragment tagFrag = new TagManagerFragment(context, assets, path);
+                        FragmentTransaction fragmentTransaction = manager.BeginTransaction();
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, tagFrag);
+                        fragmentTransaction.AddToBackStack(null);
+                        fragmentTransaction.Commit();
+                    };
                 }
             }
             
@@ -299,13 +446,13 @@ namespace MWP
         /// <param name="index"></param>
         /// <param name="context"></param>
         /// <param name="songButtons"></param>
-        /// <param name="songType"></param>
+        /// <param name="songMediaType"></param>
         /// <param name="assets"></param>
         /// <param name="linForDelete"></param>
         /// <returns></returns>
         public static LinearLayout? PopulateHorizontal(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize,
-            Context context, Dictionary<LinearLayout?, Guid> songButtons, SongType songType, AssetManager? assets, FragmentManager manager,
+            Context context, Dictionary<LinearLayout?, Guid> songButtons, SongMediaType songMediaType, AssetManager? assets, FragmentManager manager,
             LinearLayout? linForDelete = null, SongsFragment? songsfragmentContext = null 
         )
         {
@@ -343,18 +490,15 @@ namespace MWP
                 LinearLayout pressedButton = (LinearLayout)sender;
                 foreach (KeyValuePair<LinearLayout, Guid> pr in songButtons.Where(pr => pr.Key == pressedButton))
                 {
-#if DEBUG
-                    MyConsole.WriteLine($"UI Render functions testing pr value : {pr.Value} ----- {((Song)musics).Path}");
-#endif
-                    switch (songType) 
+                    switch (songMediaType) 
                     {
-                        case SongType.AllSong:
+                        case SongMediaType.AllSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue(MainActivity.StateHandler.Songs, pr.Value);
                             break;
-                        case SongType.AlbumSong:
+                        case SongMediaType.AlbumSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((Album)FragmentPositionObject, pr.Value);
                             break;
-                        case SongType.PlaylistSong:
+                        case SongMediaType.PlaylistSong:
                             MainActivity.ServiceConnection?.Binder?.Service?.GenerateQueue((List<Song>)FragmentPositionObject, pr.Value);
                             break;
                     }
@@ -565,62 +709,6 @@ namespace MWP
         
         
         
-        /// <summary>
-        /// Function used for applying an image to a view based on the source, which can be either album cover or song cover. 
-        /// </summary>
-        /// <param name="parent"></param>
-        /// <param name="obj"></param>
-        /// <param name="ww"></param>
-        /// <param name="hh"></param>
-        /// <param name="btnMargins"></param>
-        /// <param name="nameSize"></param>
-        /// <param name="nameMargins"></param>
-        /// <param name="scale"></param>
-        /// <param name="context"></param>
-        public static void SetTilesImage(LinearLayout? parent, MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
-        {
-            ImageView mori = new ImageView(context);
-            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
-                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
-            );
-            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
-            mori.LayoutParameters = ll;
-
-            if (obj is not (Album or Artist or Song))
-            {
-                return;
-            }
-
-            mori.SetImageBitmap(
-                obj.Image
-            );
-            
-            parent.AddView(mori);
-
-        }
-        
-        
-        public static ImageView GetTileImage(MusicBaseClass obj, int ww, int hh, int[] btnMargins, float scale, Context context)
-        {
-            ImageView songImage = new ImageView(context);
-            LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(
-                (int)(ww * scale + 0.5f), (int)(hh * scale + 0.5f)
-            );
-            ll.SetMargins(btnMargins[0], btnMargins[1], btnMargins[2], btnMargins[3]);
-            songImage.LayoutParameters = ll;
-
-            if (obj is not (Album or Artist or Song))
-            {
-                return new ImageView(context);
-            }
-
-            songImage.SetImageBitmap(
-                obj.Image
-            );
-
-            return songImage;
-
-        }
         
         
         /// <summary>
@@ -672,7 +760,7 @@ namespace MWP
                     for (int i = 0; i < al.Count; i++)
                     {
                         if (buffer != null && !buffer.Items.ContainsKey(al[i].Title)) 
-                            buffer.AddItem(al[i].Title, al[i].Image);
+                            buffer.AddItem(al[i].Title, WidgetServiceHandler.GetRoundedCornerBitmap(al[i].Image, 50));
                     }
                     break;
                 case LoadImageType.SONG:
@@ -680,7 +768,7 @@ namespace MWP
                     for (int i = 0; i < sg.Count; i++)
                     {
                         if (buffer != null && !buffer.Items.ContainsKey(sg[i].Title)) 
-                            buffer.AddItem(sg[i].Title, sg[i].Image);
+                            buffer.AddItem(sg[i].Title, WidgetServiceHandler.GetRoundedCornerBitmap(sg[i].Image, 50));
                     }
                     break;
                 case LoadImageType.AUTHOR:
@@ -688,7 +776,7 @@ namespace MWP
                     for (int i = 0; i < au.Count; i++)
                     {
                         if (buffer != null && !buffer.Items.ContainsKey(au[i].Title)) 
-                            buffer.AddItem(au[i].Title, au[i].Image);
+                            buffer.AddItem(au[i].Title, WidgetServiceHandler.GetRoundedCornerBitmap(au[i].Image, 50));
                     }
                     break;
             }
@@ -723,9 +811,11 @@ namespace MWP
         {
             ImageView currentImage = (ImageView)child?.GetChildAt(0)!;
             TextView? currentTitle = (TextView)child?.GetChildAt(1)!;
-            if (currentTitle.Text != null && images.Items.ContainsKey(currentTitle.Text))
+            if (images != null && currentTitle.Text != null && images.Items.ContainsKey(currentTitle.Text))
             {
-                // MyConsole.WriteLine($"{images.Items?[currentTitle.Text]} <<>> {currentTitle.Text}");
+#if DEBUG
+                MyConsole.WriteLine($"{images.Items?[currentTitle.Text]} <<>> {currentTitle.Text}");
+#endif
                 if (((BitmapDrawable)currentImage?.Drawable!)?.Bitmap != images.Items?[currentTitle.Text]) 
                     currentImage?.SetImageBitmap(images.Items?[currentTitle.Text]);
             }
@@ -749,7 +839,7 @@ namespace MWP
         /// <param name="tiles">List Elementov uzivatelskeho rozhrania (Songs, Albums, Authors) v podobe slovnika v paroch (string, LinearLayout)</param>
         /// <param name="images">List Obrazkov pre elementy uzivatelskeho rozhrania v podobe slovnika v paroch (string, Bitmap)</param>
         /// <param name="assets">staticke subory, assety</param>
-        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout?> tiles, ObservableDictionary<string, Bitmap> images, AssetManager? assets)
+        public static void FillImageHoles(Context context, Dictionary<string, LinearLayout?> tiles, ObservableDictionary<string, Bitmap>? images, AssetManager? assets)
         {
             
             ((Activity)context).RunOnUiThread(() =>

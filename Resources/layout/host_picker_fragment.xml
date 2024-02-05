@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:id="@+id/host_picker_layout_main"
+              android:background="@color/colorPrimaryDark"
+              android:gravity="center_horizontal">
+    
+    <TextView android:layout_width="250dp" android:layout_height="wrap_content"
+        android:text="Choose to whom you want to send the songs" android:textColor="#ffffff"
+              android:textSize="25dp" android:textAlignment="center"
+              android:layout_marginTop="20dp" android:id="@+id/host_picker_title"
+              android:layout_centerHorizontal="true"
+              
+    />
+    
+    <ScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="20dp" android:layout_below="@id/host_picker_title"
+    >
+        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                      android:id="@+id/host_picker_song_list" android:orientation="vertical"/>
+        
+    </ScrollView>
+    
+
+    <ImageView android:layout_width="match_parent" android:layout_height="150dp"
+               android:layout_alignParentBottom="true"
+               android:layout_centerHorizontal="true"
+               android:src="@drawable/shadow"
+               android:visibility="gone"
+               android:id="@+id/host_picker_slide_bar_bg"
+    />
+    
+    <LinearLayout 
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="15dp"
+    >
+        
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                  android:paddingHorizontal="25dp"
+                  android:text="Continue" android:background="@drawable/rounded_button" android:paddingVertical="10dp"
+                  android:textSize="15dp" android:textColor="#ffffff"
+                  android:layout_alignParentBottom="true"
+                  android:layout_centerHorizontal="true"
+                  android:visibility="gone"
+                  android:layout_marginRight="5dp"
+                  android:id="@+id/host_picker_continue"
+                  
+        />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                  android:paddingHorizontal="25dp"
+                  android:text="Cancel" android:background="@drawable/rounded_button" android:paddingVertical="10dp"
+                  android:textSize="15dp" android:textColor="#ffffff"
+                  android:layout_alignParentBottom="true"
+                  android:layout_centerHorizontal="true"
+                  android:visibility="gone"
+                  android:layout_marginLeft="5dp"
+                  android:id="@+id/host_picker_cancel"
+        />
+        
+    </LinearLayout>
+    
+</RelativeLayout>

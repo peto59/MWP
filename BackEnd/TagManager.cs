@@ -10,7 +10,7 @@ using File = System.IO.File;
 
 namespace MWP.BackEnd
 {
-    internal class TagManager : IDisposable
+    internal sealed class TagManager : IDisposable
     {
         private TagLib.File? tfile;
 
@@ -22,13 +22,11 @@ namespace MWP.BackEnd
         public string OriginalTitle
         {
             get;
-            private set;
         }
 
         public string[] OriginalArtists
         {
             get;
-            private set;
         }
 
         public string OriginalArtist => string.Join(';', OriginalArtists);
@@ -187,7 +185,7 @@ namespace MWP.BackEnd
             if (saveFlags.HasFlag(SongSave.Artist) && tfile != null)
             {
                 
-                path = $"{path}/{FileManager.Sanitize(FileManager.GetAlias(tfile.Tag.Performers.FirstOrDefault() ?? tfile.Tag.Performers[0]))}";
+                path = $"{path}/{FileManager.Sanitize(tfile.Tag.Performers.FirstOrDefault() ?? tfile.Tag.Performers[0])}";
             }
             else if(song != null)
             {
@@ -265,7 +263,7 @@ namespace MWP.BackEnd
                     }
                     else
                     {
-                        art = new Artist(alias, MWP.Artist.GetImagePath(FileManager.Sanitize(alias)));
+                        art = new Artist(alias, MWP.Artist.GetImagePath(FileManager.Sanitize(performer)));
                         art.AddSong(ref s);
                         if (saveFlags.HasFlag(SongSave.Album))
                         {
@@ -291,10 +289,10 @@ namespace MWP.BackEnd
                 song = s;
             }
 
-          
-            StateHandler.TriggerTagManagerFragmentRefresh(OriginalTitle, s);
-            
-           
+
+            if (s != null) StateHandler.TriggerTagManagerFragmentRefresh(OriginalTitle, s);
+
+
             saveFlags = SongSave.None;
             #if DEBUG
             MyConsole.WriteLine("Save is saving ver save (TagManager)!");
@@ -306,11 +304,11 @@ namespace MWP.BackEnd
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-    
-        protected virtual void Dispose(bool disposing)
+
+        private void Dispose(bool disposing)
         {
 #if DEBUG
-            MyConsole.WriteLine("Dispode in TagManager log");   
+            MyConsole.WriteLine("Dispose in TagManager log");   
 #endif
             if (disposing)
             {

@@ -47,6 +47,14 @@ namespace MWP
         private TextView? backButton;
 
         private TagManager tagManager;
+        
+        internal enum FieldTypes
+        {
+            Title,
+            Alau,
+            Author,
+            Album
+        }
 
         
         /// <inheritdoc cref="context"/>
@@ -374,12 +382,6 @@ namespace MWP
         }
     }
 
-    internal enum FieldTypes
-    {
-        Title,
-        Alau,
-        Author,
-        Album
-    }
+   
         
 }

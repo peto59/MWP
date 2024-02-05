@@ -126,7 +126,15 @@ namespace MWP
             //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
             Tag t = (Tag)tfile.GetTag(TagTypes.Id3v2);
             PrivateFrame? privateFrame = PrivateFrame.Get(t, tagName, false);
-            return privateFrame != null ? Convert.ToBoolean(privateFrame.PrivateData.Data) : defaultValue;
+            try
+            {
+                return privateFrame != null ? Convert.ToBoolean(privateFrame.PrivateData.Data) : defaultValue;
+            }
+            catch (Exception)
+            {
+                //ignored
+            }
+            return defaultValue;
         }
     }
 }

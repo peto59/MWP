@@ -1,22 +1,13 @@
 ﻿using Android.App;
 using Android.Content;
-using Android.Graphics;
-using Android.Icu.Number;
 using Android.OS;
 using Android.Support.V4.Media.Session;
-using Android.Widget;
-using AndroidX.AppCompat.App;
 using AndroidX.Core.App;
 using System;
-using System.Drawing;
-using System.IO;
-using System.Runtime.Remoting.Contexts;
 using MWP.BackEnd.Player;
-using Xamarin.Essentials;
 //using static Android.Renderscripts.ScriptGroup;
 using AndroidApp = Android.App.Application;
 using Context = Android.Content.Context;
-using TaskStackBuilder = AndroidX.Core.App.TaskStackBuilder;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -25,9 +16,9 @@ namespace MWP
 {
     public class Local_notification_service
     {
-        private const string CHANNEL_ID = "local_notification_channel";
-        private const string CHANNEL_NAME = "Notifications";
-        private const string CHANNEL_DESCRIPTION = "description";
+        private const string ChannelId = "local_notification_channel";
+        private const string ChannelName = "Media Notification";
+        private const string ChannelDescription = "Notification with media controls";
 
         private int notification_id = 1;
         public int NotificationId
@@ -61,7 +52,7 @@ namespace MWP
 
                 notificationBuilder.AddAction(
                     
-                    MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false ? Resource.Drawable.no_shuffle2 : Resource.Drawable.shuffle2, "shuffle",
+                    MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false ? Resource.Drawable.shuffle_on : Resource.Drawable.shuffle_off, "shuffle",
                       PendingIntent.GetBroadcast(
                           AndroidApp.Context, Convert.ToInt32(MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false),
                           new Intent(MyMediaBroadcastReceiver.SHUFFLE, null!, AndroidApp.Context, typeof(MyMediaBroadcastReceiver))
@@ -155,9 +146,9 @@ namespace MWP
                 return;
             }
 
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationImportance.Low)
+            NotificationChannel channel = new NotificationChannel(ChannelId, ChannelName, NotificationImportance.Low)
             {
-                Description = CHANNEL_DESCRIPTION
+                Description = ChannelDescription
             };
 
             NotificationManager? managerLocal = (NotificationManager?)AndroidApp.Context.GetSystemService(Context.NotificationService);
@@ -182,12 +173,11 @@ namespace MWP
                     (int) (PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable));*/
 
 
-            notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, CHANNEL_ID)
+            notificationBuilder = new NotificationCompat.Builder(AndroidApp.Context, ChannelId)
                 .SetSmallIcon(
-                    Resource.Drawable.ic_menu_camera
+                    Resource.Drawable.music
                 )
                 .SetShowWhen(false)
-                //.SetSilent(true)
                 .SetContentIntent(PendingIntent.GetActivity(AndroidApp.Context, 57, songsIntent, PendingIntentFlags.Immutable))
                 .SetStyle(new AndroidX.Media.App.NotificationCompat.MediaStyle().SetMediaSession(token));
 

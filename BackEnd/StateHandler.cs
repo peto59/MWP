@@ -4,7 +4,10 @@ using System.Net;
 using System.Threading;
 using Android.Graphics;
 using AndroidX.AppCompat.App;
+using Java.Util;
+using MWP.BackEnd.Network;
 using MWP.DatatypesAndExtensions;
+using Random = System.Random;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -32,14 +35,25 @@ namespace MWP.BackEnd
         /// Main Activity instance
         /// </summary>
         public MainActivity mainActivity;
+        /// <summary>
+        /// List of all notification IDs
+        /// </summary>
         public List<int> NotificationIDs = new List<int>();
         public Dictionary<long, (int?, int)> SessionIdToPlaylistOrderMapping = new Dictionary<long, (int?, int)>();
 
         /// <summary>
+        /// Whether NetworkManager Lister was Launched
+        /// </summary>
+        public bool launchedNetworkManagerListener = false;
+
+        /// <summary>
         /// List of live hosts on network
         /// </summary>
-        public List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> AvailableHosts =
+        public readonly List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> AvailableHosts =
             new List<(IPAddress ipAddress, DateTime lastSeen, string hostname)>();
+
+        internal static readonly Dictionary<string, UserAcceptedState> OneTimeSendStates = new Dictionary<string, UserAcceptedState>();
+        internal static readonly Dictionary<string, List<Song>> OneTimeReceiveSongs = new Dictionary<string, List<Song>>();
         
         
         
@@ -49,6 +63,8 @@ namespace MWP.BackEnd
         internal readonly AutoResetEvent ResultEvent = new AutoResetEvent(false);
         //-----------Discovery synchronization event------------------
         internal readonly AutoResetEvent FileListGenerationEvent = new AutoResetEvent(true);
+        internal readonly ManualResetEvent FileListGenerated = new ManualResetEvent(false);
+        internal readonly ManualResetEvent StartDiscoveringEvent = new ManualResetEvent(true);
         
 
         //---------------------------------------------------------
@@ -70,14 +86,14 @@ namespace MWP.BackEnd
         /// <summary>
         /// Binder for all functions requiring Share Fragment Refresh event
         /// </summary>
-        public static event Action<(string oldTitle, Song song)> OnTagManagerFragmentRefresh;
+        public static event Action<(string oldTitle, Song song)>? OnTagManagerFragmentRefresh;
         
         /// <summary>
         /// Share Fragment Refresh event invocation
         /// </summary>
         public static void TriggerTagManagerFragmentRefresh(string oldTitle, Song song)
         {
-            OnTagManagerFragmentRefresh.Invoke((oldTitle, song));
+            OnTagManagerFragmentRefresh?.Invoke((oldTitle, song));
         }
         //---------------------------------------------------------
         

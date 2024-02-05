@@ -84,8 +84,11 @@ namespace MWP.BackEnd.Player
 #endif
                     Thread.Sleep(25);
                 }
-                if (_serviceConnection.Binder != null) 
-                    SessionToken = _serviceConnection.Binder.Service.Session.SessionToken;
+                if (_serviceConnection.Binder != null)
+                {
+                    if (_serviceConnection.Binder.Service.Session != null)
+                        SessionToken = _serviceConnection.Binder.Service.Session.SessionToken;
+                }
 #if DEBUG
                 else
                     MyConsole.WriteLine("Empty binder");
@@ -116,7 +119,7 @@ namespace MWP.BackEnd.Player
                 MainActivity.StateHandler.Albums = new List<Album>();
                     
                 MainActivity.StateHandler.Artists.Add(new Artist("No Artist", "Default"));
-                FileManager.GenerateList(FileManager.MusicFolder);
+                FileManager.GenerateList();
             }
 
             if (MainActivity.StateHandler.Songs.Count != 0)

@@ -2,16 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading.Tasks;
 using Android.App;
 using Android.Views;
 using Google.Android.Material.Snackbar;
+using MWP.DatatypesAndExtensions;
 using Newtonsoft.Json;
 using TagLib;
-using TagLib.Id3v2;
 using Xamarin.Essentials;
 using File = System.IO.File;
-using Tag = TagLib.Id3v2.Tag;
 #if DEBUG
 using MWP.Helpers;
 #endif
@@ -20,7 +19,8 @@ namespace MWP.BackEnd
 {
     internal static class FileManager
     {
-        private static readonly string? Root = (string?)Android.OS.Environment.ExternalStorageDirectory;
+        private static readonly string? _root = (string?)Android.OS.Environment.ExternalStorageDirectory;
+        public static string Root => _root ?? string.Empty;
         // ReSharper disable once InconsistentNaming
         private static readonly string? _privatePath = Application.Context.GetExternalFilesDir(null)?.AbsolutePath;
         public static string PrivatePath => _privatePath ?? string.Empty;
@@ -30,17 +30,11 @@ namespace MWP.BackEnd
         //private static readonly string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string( System.IO.Path.GetInvalidFileNameChars() ) + new string( System.IO.Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>");
         //private static readonly string invalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", invalidChars );
         private static readonly string InvalidRegStr = string.Format( @"([{0}]*\.+$)|([{0}]+)", System.Text.RegularExpressions.Regex.Escape(new string( Path.GetInvalidFileNameChars() ) + new string( Path.GetInvalidPathChars() )+"'`/|\\:*\"#?<>") );
+        private static HashSet<string>? _chromaprintUsedSongs;
+        private static readonly List<Task> Discoveries = new List<Task>();
 
-        public static void Innit()
+        public static void EarlyInnit()
         {
-            if (!Directory.Exists(_musicFolder))
-            {
-#if DEBUG
-                MyConsole.WriteLine("Creating " + $"{_musicFolder}");
-#endif
-                if (_musicFolder != null) Directory.CreateDirectory(_musicFolder);
-            }
-
             if (!Directory.Exists($"{_privatePath}/tmp"))
             {
 #if DEBUG
@@ -48,6 +42,8 @@ namespace MWP.BackEnd
 #endif
                 Directory.CreateDirectory($"{_privatePath}/tmp");
             }
+
+            
             
             //File.Delete($"{FileManager.PrivatePath}/trusted_sync_targets.json");
             if (!File.Exists($"{_privatePath}/trusted_sync_targets.json"))
@@ -55,9 +51,33 @@ namespace MWP.BackEnd
                 File.WriteAllText($"{_privatePath}/trusted_sync_targets.json", JsonConvert.SerializeObject(new Dictionary<string, List<Song>>()));
             }
             
+            if (!File.Exists($"{_musicFolder}/usedChromaprintSongs.json"))
+            {
+                File.WriteAllText($"{_musicFolder}/usedChromaprintSongs.json", JsonConvert.SerializeObject(new HashSet<string>()));
+                _chromaprintUsedSongs = new HashSet<string>();
+            }
+            else
+            {
+                _chromaprintUsedSongs = GetHashSet();
+            }
+#if DEBUG
+            MyConsole.WriteLine($"Hashset length {_chromaprintUsedSongs.Count}");
+#endif
+            
             if (!File.Exists($"{_privatePath}/trusted_SSIDs.json"))
             {
                 File.WriteAllText($"{_privatePath}/trusted_SSIDs.json", JsonConvert.SerializeObject(new List<string>()));
+            }
+        }
+
+        public static void LateInnit()
+        {
+            if (!Directory.Exists(_musicFolder))
+            {
+#if DEBUG
+                MyConsole.WriteLine("Creating " + $"{_musicFolder}");
+#endif
+                if (_musicFolder != null) Directory.CreateDirectory(_musicFolder);
             }
 
             if (!File.Exists($"{_musicFolder}/aliases.json"))
@@ -68,7 +88,8 @@ namespace MWP.BackEnd
 
             if (!File.Exists($"{_musicFolder}/playlists.json"))
             {
-                File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>()));
+                SongJsonConverter customConverter = new SongJsonConverter(true);
+                File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(new Dictionary<string, List<string>>(), customConverter));
             }
             
             DirectoryInfo di = new DirectoryInfo($"{_privatePath}/tmp/");
@@ -81,6 +102,20 @@ namespace MWP.BackEnd
 #endif
             }
         }
+
+        /// <summary>
+        /// Recreates virtual song topology in MainActivity.StateHandler
+        /// </summary>
+        public static void ReDiscoverFiles()
+        {
+            MainActivity.StateHandler.Songs = new List<Song>();
+            MainActivity.StateHandler.Artists = new List<Artist>();
+            MainActivity.StateHandler.Albums = new List<Album>();
+                    
+            MainActivity.StateHandler.Artists.Add(new Artist("No Artist", "Default"));
+            
+            DiscoverFiles(true);
+        }
         
         /// <summary>
         /// Creates virtual song topology in MainActivity.StateHandler and allocates all new files
@@ -88,12 +123,21 @@ namespace MWP.BackEnd
         public static void DiscoverFiles(bool generateStateHandlerEntry = false)
         {
             MainActivity.StateHandler.FileListGenerationEvent.WaitOne();
-            if (Root != null) DiscoverFiles(Root, generateStateHandlerEntry);
+            if (_root != null) DiscoverFiles(_root, generateStateHandlerEntry);
+            while (Discoveries.Any())
+            {
+                Task finishedTask = Task.WhenAny(Discoveries).GetAwaiter().GetResult();
+                Discoveries.Remove(finishedTask);
+            }
             MainActivity.StateHandler.FileListGenerationEvent.Set();
+            MainActivity.StateHandler.FileListGenerated.Set();
         }
 
         private static void DiscoverFiles(string path, bool generateStateHandlerEntry)
         {
+#if DEBUG
+            MyConsole.WriteLine($"Path {path}");
+#endif
             string nameFromPath = GetNameFromPath(path);
             if(nameFromPath.StartsWith(".") || File.Exists($"{path}/.nomedia"))
             {
@@ -103,16 +147,10 @@ namespace MWP.BackEnd
             {
                 return;
             }
-            switch (nameFromPath)
+
+            if (SettingsManager.ExcludedPaths.Contains(path))
             {
-                case "Android":
-                case "sound_recorder":
-                case "Notifications":
-                case "Recordings":
-                case "Ringtones":
-                case "MIUI":
-                case "Alarms":
-                    return;
+                return;
             }
             foreach (string dir in Directory.EnumerateDirectories(path))
             {
@@ -123,15 +161,21 @@ namespace MWP.BackEnd
             {
                 try
                 {
-                    AddSong(file, _musicFolder != null && !file.Contains(_musicFolder), generateStateHandlerEntry || (_musicFolder != null && !file.Contains(_musicFolder)));
+                    Task x = new Task(() =>
+                    {
+                        _ = AddSong(file, _musicFolder != null && !file.Contains(_musicFolder),
+                            generateStateHandlerEntry || (_musicFolder != null && !file.Contains(_musicFolder)));
+                    });
+                    Discoveries.Add(x);
                     
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
 #if DEBUG
                     MyConsole.WriteLine($"error: {file}");
                     MyConsole.WriteLine(ex);
 #endif
+                    // ignored
                 }
             }
         }
@@ -139,9 +183,9 @@ namespace MWP.BackEnd
         ///<summary>
         ///Creates virtual song topology in MainActivity.StateHandler
         ///</summary>
-        public static void GenerateList(string path)
+        public static void GenerateList()
         {
-            GenerateList(path, true);
+            GenerateList(MusicFolder, true);
         }
 
         ///<summary>
@@ -178,33 +222,20 @@ namespace MWP.BackEnd
         {
             if (IsDirectory(path))
             {
-                foreach (string playlistName in GetPlaylist())
+                if (Directory.Exists(path))
                 {
-                    foreach(string file in GetSongs(path))
-                    {
-                        DeletePlaylist(playlistName, file);
-                    }
+                    Directory.Delete(path, true);
                 }
-                Directory.Delete(path, true);
             }
             else
             {
-                File.Delete(path);
-                foreach (string playlistName in GetPlaylist())
+                if (File.Exists(path))
                 {
-                    DeletePlaylist(playlistName, path);
+                    File.Delete(path);
                 }
             }
         }
-
-        ///<summary>
-        ///Gets all albums from <paramref name="author"/>
-        ///</summary>
-        private static List<string> GetAlbums(string author)
-        {
-            return Directory.EnumerateDirectories(author).ToList();
-        }
-
+        
         ///<summary>
         ///Gets all songs in device
         ///</summary>
@@ -214,18 +245,9 @@ namespace MWP.BackEnd
         }
 
         ///<summary>
-        ///Gets all songs in album or all album-less songs for author
-        ///</summary>
-        private static List<string> GetSongs(string path)
-        {
-            return Directory.EnumerateFiles(path, "*.mp3").ToList();
-        }
-        
-
-        ///<summary>
         ///Gets last name/folder from <paramref name="path"/>
         ///</summary>
-        public static string GetNameFromPath(string path)
+        private static string GetNameFromPath(string path)
         {
             string[] subs = path.Split('/');
             return subs[^1];
@@ -238,10 +260,10 @@ namespace MWP.BackEnd
 
         public static string GetAlias(string name)
         {
+            string json = File.ReadAllText($"{_musicFolder}/aliases.json");
+            Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
             while (true)
             {
-                string json = File.ReadAllText($"{_musicFolder}/aliases.json");
-                Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
                 if (aliases.TryGetValue(name, out string alias))
                 {
                     name = alias;
@@ -252,17 +274,17 @@ namespace MWP.BackEnd
                 name = alias;
             }
         }
-
-        // TODO : recursive alias 
-        public static void AddAlias(string name, string target)
+        
+        /*[Obsolete]
+        public static void AddAliasObsolete(string originalName, string newAlias)
         {
-            if(name == target)
+            if(originalName == newAlias)
             {
                 return;
             }
-            string author = Sanitize(target);
+            string author = Sanitize(newAlias);
 
-            string nameFile = Sanitize(name);
+            string nameFile = Sanitize(originalName);
 
             string json = File.ReadAllText($"{_musicFolder}/aliases.json");
             Dictionary<string, string> aliases = JsonConvert.DeserializeObject<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
@@ -303,13 +325,12 @@ namespace MWP.BackEnd
                 string[] authors = tfile.Tag.Performers;
                 for (int i = 0; i < authors.Length; i++)
                 {
-                    if (authors[i] == name)
+                    if (authors[i] == originalName)
                     {
-                        authors[i] = target;
+                        authors[i] = newAlias;
                     }
                     else
                     {
-                        //TODO: add symlink move
                         if (i == 0)
                         {
                         }
@@ -319,43 +340,92 @@ namespace MWP.BackEnd
                 tfile.Tag.Performers = authors;
                 tfile.Save();
             }
+        }*/
+        
+        ///<summary>
+        ///Gets all playlist names
+        ///</summary>
+        public static List<string> GetPlaylist()
+        {
+            try
+            {
+                string json = File.ReadAllText($"{_musicFolder}/playlists.json");
+                SongJsonConverter customConverter = new SongJsonConverter(true);
+                Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+                return playlists.Keys.ToList();
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                MyConsole.WriteLine(ex);
+#endif
+                return new List<string>();
+            }
+        }
+
+        ///<summary>
+        ///Gets all <see cref="Song"/>s in <paramref name="playlist"/>
+        ///</summary>
+        ///<param name="playlist">Name of playlist from which you want to get songs</param>
+        ///<returns>
+        ///<see cref="List{Song}"/> of <see cref="Song"/>s in <paramref name="playlist"/> or empty <see cref="List{Song}"/> of <see cref="Song"/>s if <paramref name="playlist"/> doesn't exist
+        ///</returns>
+        public static List<Song> GetPlaylist(string playlist)
+        {
+            string json = File.ReadAllText($"{_musicFolder}/playlists.json");
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            if (!playlists.TryGetValue(playlist, out List<Song> playlist1))
+            {
+               return new List<Song>();
+            }
+            foreach (Song song in playlist1)
+            {
+                song.AddPlaylist(playlist);
+            }
+
+            return playlist1;
         }
 
         public static void CreatePlaylist(string name)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
-            playlists.Add(name, new List<string>());
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            playlists.Add(name, new List<Song>());
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
-        public static void AddToPlaylist(string name, string song)
+        public static void AddToPlaylist(string name, Song song)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             playlists[name].Add(song);
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
-        public static void AddToPlaylist(string name, List<string> songs)
+        public static void AddToPlaylist(string name, IEnumerable<Song> songs)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             playlists[name].AddRange(songs);
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
 
         ///<summary>
         ///Deletes <paramref name="song"/> from <paramref name="playlist"/>
         ///</summary>
-        public static void DeletePlaylist(string playlist, string song)
+        public static void DeletePlaylist(string playlist, Song song)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
-            if (!playlists.TryGetValue(playlist, out List<string> playlist1)) return;
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
+            if (!playlists.TryGetValue(playlist, out List<Song> playlist1)) return;
             playlist1.Remove(song);
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
         ///<summary>
@@ -364,9 +434,10 @@ namespace MWP.BackEnd
         public static void DeletePlaylist(string playlist)
         {
             string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
+            SongJsonConverter customConverter = new SongJsonConverter(true);
+            Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             playlists.Remove(playlist);
-            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists));
+            File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 
         public static string Sanitize(string value)
@@ -389,7 +460,7 @@ namespace MWP.BackEnd
             return (GetAvailableTempFile("video", "mp3"), GetAvailableTempFile("unprocessed", "mp3"), GetAvailableTempFile("thumbnail", "jpg"));
         }
 
-        public static string GetAvailableFile(string path, string name, string extension)
+        private static string GetAvailableFile(string path, string name, string extension)
         {
             int i = 0;
             while (File.Exists($"{path}/{name}{i}.{extension.TrimStart('.')}"))
@@ -404,54 +475,6 @@ namespace MWP.BackEnd
         public static void GetPlaceholderFile(string writePath, string name, string extension)
         {
             File.Create($"{writePath}/{name}.{extension}").Close();
-        }
-
-        ///<summary>
-        ///Gets all playlist names
-        ///</summary>
-        public static List<string> GetPlaylist()
-        {
-            try
-            {
-                string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-                Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
-                return playlists.Keys.ToList();
-            }
-            catch (Exception ex)
-            {
-#if DEBUG
-                MyConsole.WriteLine(ex);
-#endif
-                return new List<string>();
-            }
-        }
-
-        ///<summary>
-        ///Gets all <see cref="Song"/>s in <paramref name="playlist"/>
-        ///</summary>
-        ///<param name="playlist">Name of playlist from which you want to get songs</param>
-        ///<returns>
-        ///<see cref="List{Song}"/> of <see cref="Song"/>s in <paramref name="playlist"/> or empty <see cref="List{Song}"/> of <see cref="Song"/>s if <paramref name="playlist"/> doesn't exist
-        ///</returns>
-        public static List<Song> GetPlaylist(string playlist)
-        {
-            string json = File.ReadAllText($"{_musicFolder}/playlists.json");
-            Dictionary<string, List<string>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
-            if (!playlists.TryGetValue(playlist, out List<string> playlist1)) return new List<Song>();
-            List<Song> x = new List<Song>();
-            foreach (string song in playlist1)
-            {
-                List<Song> y = MainActivity.StateHandler.Songs.Where(a => a.Path == song).ToList();
-                if (y.Any())
-                {
-                    x.AddRange(y);
-                }
-                else
-                {
-                    DeletePlaylist(playlist, song);
-                }
-            }
-            return x;
         }
 
         public static void AddTrustedSyncTarget(string host)
@@ -498,7 +521,6 @@ namespace MWP.BackEnd
 
         public static List<Song> GetTrustedSyncTargetSongs(string host)
         {
-            //TODO: add to this list on download and receiving song from network
             string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
             SongJsonConverter customConverter = new SongJsonConverter(true);
             Dictionary<string, List<Song>> targets = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
@@ -522,7 +544,7 @@ namespace MWP.BackEnd
         /// </summary>
         /// <param name="host"></param>
         /// <param name="song"></param>
-        public static void AddTrustedSyncTargetSongsExcluded(string? host, Song song)
+        private static void AddTrustedSyncTargetSongsExcluded(string? host, Song song)
         {
             string json = File.ReadAllText($"{_privatePath}/trusted_sync_targets.json");
             SongJsonConverter customConverter = new SongJsonConverter(true);
@@ -641,7 +663,7 @@ namespace MWP.BackEnd
                     else
                     {
                         string albumPath = Sanitize(album);
-                        string artistPath = Sanitize(GetAlias(artists[0]));
+                        string artistPath = Sanitize(artists[0]);
                         if(File.Exists($"{_musicFolder}/{artistPath}/{albumPath}/cover.jpg"))
                             albumObj = new Album(album, song, artistList, $"{_musicFolder}/{artistPath}/{albumPath}/cover.jpg");
                         else if(File.Exists($"{_musicFolder}/{artistPath}/{albumPath}/cover.png"))
@@ -673,6 +695,11 @@ namespace MWP.BackEnd
         public static (List<string> missingArtists, (string album, string artistPath) missingAlbum) AddSong(string path, bool isNew = false, bool generateStateHandlerEntry = true, string? remoteHostname = null)
         {
             using TagLib.File tfile = TagLib.File.Create(path, ReadStyle.PictureLazy);
+            bool useChromaprint = false;
+            bool chromaprintAllowed =
+                (SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Manual ||
+                 SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Automatic) &&
+                string.IsNullOrEmpty(remoteHostname);
             string title;
             if (!string.IsNullOrEmpty(tfile.Tag.Title))
             {
@@ -684,9 +711,10 @@ namespace MWP.BackEnd
                     tfile.Save();
                 }
             }
-            else if(SettingsManager.ShouldUseChromaprintAtDiscover)
+            else if (chromaprintAllowed)
             {
-                title = "";
+                useChromaprint = true;
+                title = Path.GetFileName(path).Replace(".mp3", "");
             }
             else
             {
@@ -704,8 +732,9 @@ namespace MWP.BackEnd
             {
                 artists = tfile.Tag.AlbumArtists;
             }
-            else if (SettingsManager.ShouldUseChromaprintAtDiscover)
+            else if (chromaprintAllowed)
             {
+                useChromaprint = true;
                 artists = new[] { "No Artist" };
             }
             else
@@ -716,11 +745,66 @@ namespace MWP.BackEnd
 
 
 
-            string album = tfile.Tag.Album;
-            if (isNew)
+            string? album = tfile.Tag.Album;
+            if (chromaprintAllowed && string.IsNullOrEmpty(album))
             {
-                string output = $"{_musicFolder}/{Sanitize(GetAlias(artists[0]))}";
-                if (!string.IsNullOrEmpty(album))
+                useChromaprint = true;
+            }
+            
+            if (_chromaprintUsedSongs != null && chromaprintAllowed && useChromaprint && !_chromaprintUsedSongs.Contains(path))
+            {
+#if DEBUG
+                MyConsole.WriteLine($"Using chromaprint for {path}");
+#endif
+                (string title, string recordingId, string trackId, List<(string title, string id)> artist,
+                    List<(string title, string id)> releaseGroup, byte[]? thumbnail) result = Chromaprint.Search(
+                            path,
+                            artists[0],
+                            title,
+                            album,
+                            SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.Manual
+                        )
+                        .GetAwaiter()
+                        .GetResult();
+#if DEBUG
+                MyConsole.WriteLine($"Finished chromaprint for {path}");
+#endif
+                title = result.title;
+                artists = result.artist.Select(a => a.title).ToArray();
+                album = null;
+                if (result.releaseGroup.Count > 0 && !string.IsNullOrEmpty(result.releaseGroup[0].title))
+                {
+                    album = result.releaseGroup[0].title;
+                    if (!string.IsNullOrEmpty(result.releaseGroup[0].id))
+                    {
+                        tfile.Tag.MusicBrainzReleaseGroupId = result.releaseGroup[0].id;
+                    }
+                }
+                tfile.Tag.Title = title;
+                tfile.Tag.Performers = artists;
+                tfile.Tag.AlbumArtists = artists;
+                tfile.Tag.Album = album;
+                string tagMusicBrainzArtistId = result.artist.First().id;
+                if (string.IsNullOrEmpty(tagMusicBrainzArtistId)) tfile.Tag.MusicBrainzArtistId = tagMusicBrainzArtistId;
+                if (string.IsNullOrEmpty(result.recordingId)) tfile.Tag.MusicBrainzReleaseId = result.recordingId;
+                if (string.IsNullOrEmpty(result.trackId)) tfile.Tag.MusicBrainzTrackId = result.trackId;
+                if (result.thumbnail != null)
+                {
+                    IPicture[] pics = new IPicture[1];
+                    pics[0] = new Picture(result.thumbnail);
+                    tfile.Tag.Pictures = pics;
+                }
+                tfile.Save();
+                if (_chromaprintUsedSongs.Add(path))
+                {
+                    SaveHashSet();
+                }
+            }
+            
+            if (isNew && SettingsManager.MoveFiles == MoveFilesEnum.Yes)
+            {
+                string output = $"{_musicFolder}/{Sanitize(artists[0])}";
+                if (!string.IsNullOrEmpty(album) && album != null)
                 {
                     output = $"{output}/{Sanitize(album)}";
                 }
@@ -733,11 +817,33 @@ namespace MWP.BackEnd
 #endif
                     File.Move(path, output);
                 }
+                catch (IOException ioe)
+                {
+                    try
+                    {
+                        int newBitrate = tfile.Properties.AudioBitrate;
+                        using TagLib.File tfileDest = TagLib.File.Create(path, ReadStyle.PictureLazy);
+                        if (newBitrate > tfileDest.Properties.AudioBitrate)
+                        {
+                            File.Delete(output);
+                            File.Move(path, output);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+#if DEBUG
+                        MyConsole.WriteLine(e);
+                        MyConsole.WriteLine(ioe);
+#endif
+                        //ignored;
+                    }
+                }
                 catch (Exception e)
                 {
 #if DEBUG
                     MyConsole.WriteLine(e);
 #endif
+                    //ignored
                 }
                 path = output;
             }
@@ -747,16 +853,16 @@ namespace MWP.BackEnd
                 AddSong(path, title, artists, album, generateStateHandlerEntry, isNew, remoteHostname);
             }
 
-            List<string> missingArtists = (from artist in artists let artistPath = $"{_musicFolder}/{Sanitize(GetAlias(artist))}" where !File.Exists($"{artistPath}/cover.jpg") && !File.Exists($"{artistPath}/cover.png") select artist).ToList();
-            if (!string.IsNullOrEmpty(album))
+            List<string> missingArtist = (from artist in artists let artistPath = $"{_musicFolder}/{Sanitize(artist)}" where !File.Exists($"{artistPath}/cover.jpg") && !File.Exists($"{artistPath}/cover.png") select artist).ToList();
+            if (!string.IsNullOrEmpty(album) && album != null)
             {
-                string albumPath = $"{_musicFolder}/{Sanitize(GetAlias(artists[0]))}/{Sanitize(album)}";
+                string albumPath = $"{_musicFolder}/{Sanitize(artists[0])}/{Sanitize(album)}";
                 if (!File.Exists($"{albumPath}/cover.jpg") && !File.Exists($"{albumPath}/cover.png"))
                 {
-                    return (missingArtists, (album, Sanitize(GetAlias(artists[0]))));
+                    return (missingArtist, (album, Sanitize(artists[0])));
                 }
             }
-            return (missingArtists, (string.Empty, string.Empty));
+            return (missingArtist, (string.Empty, string.Empty));
         }
         
         public static void AddSong(View view, string path, string title, string[] artists, string artistId,
@@ -785,7 +891,7 @@ namespace MWP.BackEnd
             }
             
             
-            string output = $"{_musicFolder}/{Sanitize(GetAlias(artists[0]))}";
+            string output = $"{_musicFolder}/{Sanitize(artists[0])}";
             if (!string.IsNullOrEmpty(album))
             {
                 output = $"{output}/{Sanitize(album!)}";
@@ -795,6 +901,8 @@ namespace MWP.BackEnd
                     tfile.Tag.MusicBrainzReleaseGroupId = releaseGroupId;
                 }
             }
+
+            int newBitrate = tfile.Properties.AudioBitrate;
             tfile.Save();
             Directory.CreateDirectory(output);
             output = $"{output}/{Sanitize(title)}.mp3";
@@ -802,7 +910,16 @@ namespace MWP.BackEnd
             {
                 File.Move(path, output);
             }
-            catch
+            catch (IOException)
+            {
+                using TagLib.File tfileDest = TagLib.File.Create(path, ReadStyle.PictureLazy);
+                if (newBitrate > tfileDest.Properties.AudioBitrate)
+                {
+                    File.Delete(output);
+                    File.Move(path, output);
+                }
+            }
+            catch (Exception)
             {
                 File.Delete(path);
 #if DEBUG
@@ -875,7 +992,6 @@ namespace MWP.BackEnd
         {
             try
             {
-                
 #if DEBUG
                 MyConsole.WriteLine(ssid);
 #endif
@@ -889,6 +1005,7 @@ namespace MWP.BackEnd
 #if DEBUG
                 MyConsole.WriteLine(e);
 #endif
+                //ignored
             }
         }
         
@@ -906,7 +1023,19 @@ namespace MWP.BackEnd
 #if DEBUG
                 MyConsole.WriteLine(e);
 #endif
+                //ignored
             }
+        }
+
+        private static HashSet<string> GetHashSet()
+        {
+            string json = File.ReadAllText($"{_musicFolder}/usedChromaprintSongs.json");
+            return JsonConvert.DeserializeObject<HashSet<string>>(json) ?? new HashSet<string>();
+        }
+        
+        private static void SaveHashSet()
+        {
+            File.WriteAllText($"{_musicFolder}/usedChromaprintSongs.json", JsonConvert.SerializeObject(_chromaprintUsedSongs));
         }
     }
 }

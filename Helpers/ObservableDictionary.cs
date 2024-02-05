@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Android.Widget;
 
 namespace MWP
 {
@@ -22,7 +21,7 @@ namespace MWP
 
         public event EventHandler ValueChanged;
 
-        public void OnValueChanged(Object sender,EventArgs e, TKey key, TValue value)
+        private void OnValueChanged(object sender,EventArgs e, TKey key, TValue value)
         {
             lastValueAdded = key;
             EventHandler handler = ValueChanged;

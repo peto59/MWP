@@ -99,5 +99,20 @@ namespace MWP.DatatypesAndExtensions
         /// </summary>
         ThisShufflePlay = 4
     }
+
+    internal enum UseChromaprint
+    {
+        None,
+        No,
+        Manual,
+        Automatic
+    } 
+    
+    internal enum MoveFilesEnum
+    {
+        None,
+        No,
+        Yes
+    } 
     
 }

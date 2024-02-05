@@ -55,9 +55,9 @@ namespace MWP
 					_playImage.LayoutParameters = playImageParams;
 
 					if (MainActivity.ServiceConnection.Binder?.Service.IsPlaying ?? false)
-						_playImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("pause.png")));
+						_playImage.SetImageResource(Resource.Drawable.pause_fill1_wght200_grad200_opsz48);
 					else
-						_playImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("play.png")));
+						_playImage.SetImageResource(Resource.Drawable.play);
 
 
 					cube.AddView(_playImage);
@@ -85,7 +85,7 @@ namespace MWP
 					switch (sides)
 					{
 						case "right":
-							lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("right.png")));
+							lastImage.SetImageResource(Resource.Drawable.next);
 							lastImageParams = new LinearLayout.LayoutParams(
 							   ViewGroup.LayoutParams.MatchParent,
 							   ViewGroup.LayoutParams.MatchParent
@@ -99,7 +99,7 @@ namespace MWP
 							   ViewGroup.LayoutParams.MatchParent
 							);
 							lastImage.LayoutParameters = lastImageParams;
-							lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("left.png")));
+							lastImage.SetImageResource(Resource.Drawable.previous);
 							cube.SetBackgroundResource(Resource.Drawable.rounded_light);
 							break;
 						case "shuffle":
@@ -110,11 +110,11 @@ namespace MWP
 							lastImage.LayoutParameters = lastImageParams;
 							if (MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false)
 							{
-								lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("shuffle_on.png")));
+								lastImage.SetImageResource(Resource.Drawable.shuffle_on);
 							}
 							else
 							{
-								lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("shuffle.png")));
+								lastImage.SetImageResource(Resource.Drawable.shuffle_off);
 							}
 							
 							break;
@@ -127,13 +127,13 @@ namespace MWP
 							switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? LoopState.None)
 							{
 								case LoopState.None:
-									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
+									lastImage.SetImageResource(Resource.Drawable.no_repeat);
 									break;
 								case LoopState.All:
-									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
+									lastImage.SetImageResource(Resource.Drawable.repeat);
 									break;
 								case LoopState.Single:
-									lastImage.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
+									lastImage.SetImageResource(Resource.Drawable.repeat_one);
 									break;
 							}
 							break;
@@ -166,12 +166,12 @@ namespace MWP
 
 		public static void SetPlayButton()
 		{
-			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(Application.Context.Assets?.Open("play.png")));
+			_playImage?.SetImageResource(Resource.Drawable.play);
 		}
 
 		public static void SetStopButton()
 		{
-			_playImage?.SetImageBitmap(BitmapFactory.DecodeStream(Application.Context.Assets?.Open("pause.png")));
+			_playImage?.SetImageResource(Resource.Drawable.pause_fill1_wght200_grad200_opsz48);
 		}
 
 	  
@@ -220,12 +220,12 @@ namespace MWP
 					songAuthor.Click += (sender, e) =>
 					{
 						/*
-				Intent intent = new Intent(context, typeof(AllSongs));
-				int? x = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.GetHashCode();
-				if (x is not { } hash) return;
-				intent.PutExtra("link_author", hash);
-				context.StartActivity(intent);
-				*/
+						Intent intent = new Intent(context, typeof(AllSongs));
+						int? x = MainActivity.ServiceConnection?.Binder?.Service?.Current.Artist.GetHashCode();
+						if (x is not { } hash) return;
+						intent.PutExtra("link_author", hash);
+						context.StartActivity(intent);
+						*/
 					};
 				}
 
@@ -233,8 +233,8 @@ namespace MWP
 					songAlbum.Text = MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Album.Title ?? "No Album";
 
 				/*
-			 * player buttons
-			 */
+				 * player buttons
+				 */
 				LinearLayout? buttonsMainLin = context.FindViewById<LinearLayout>(Resource.Id.player_buttons);
 				buttonsMainLin?.RemoveAllViews();
 				//_playerButtons.Clear();
@@ -247,9 +247,10 @@ namespace MWP
 					shuffle.Click += delegate
 					{
 						ImageView? shuffleImg = (ImageView?)shuffle.GetChildAt(0);
-						shuffleImg?.SetImageBitmap(MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false
-							? BitmapFactory.DecodeStream(context.Assets?.Open("shuffle.png"))
-							: BitmapFactory.DecodeStream(context.Assets?.Open("shuffle_on.png")));
+						shuffleImg?.SetImageResource(
+							MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false
+								? Resource.Drawable.shuffle_off
+								: Resource.Drawable.shuffle_on);
 					
 						MainActivity.ServiceConnection.Binder?.Service.Shuffle(!MainActivity.ServiceConnection.Binder?.Service.QueueObject.IsShuffled ?? false);
 					};
@@ -262,15 +263,18 @@ namespace MWP
 						switch (MainActivity.ServiceConnection.Binder?.Service.QueueObject.LoopState ?? LoopState.None)
 						{
 							case LoopState.None:
-								repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
+								// repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat.png")));
+								repeatImg?.SetImageResource(Resource.Drawable.repeat);
 								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(LoopState.All);
 								break;
 							case LoopState.All:
-								repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
+								repeatImg?.SetImageResource(Resource.Drawable.repeat_one);
+								//repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("repeat_one.png")));
 								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(LoopState.Single);
 								break;
 							case LoopState.Single:
-								repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
+								// repeatImg?.SetImageBitmap(BitmapFactory.DecodeStream(context.Assets?.Open("no_repeat.png")));
+								repeatImg?.SetImageResource(Resource.Drawable.no_repeat);
 								MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(LoopState.None);
 								break;
 						}

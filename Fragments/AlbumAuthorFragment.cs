@@ -84,7 +84,7 @@ namespace MWP
                     string last = albumImagesBuffer.lastValueAdded;
                     LinearLayout? child = albumTilesBuffer?[last] ?? new LinearLayout(context);
                     if (assets != null)
-                        UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
+                        UiRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
                 });
             };
             
@@ -95,7 +95,7 @@ namespace MWP
                     string last = authorImagesBuffer.lastValueAdded;
                     LinearLayout? child = authorTilesBuffer?[last] ?? new LinearLayout(context);
                     if (assets != null)
-                        UIRenderFunctions.LoadSongImageFromBuffer(child, authorImagesBuffer, assets);
+                        UiRenderFunctions.LoadSongImageFromBuffer(child, authorImagesBuffer, assets);
                 });
             };
             
@@ -117,8 +117,8 @@ namespace MWP
                  
             Task.Run(async () =>
             {
-                await UIRenderFunctions.LoadSongImages(MainActivity.StateHandler.Albums, albumImagesBuffer,
-                    UIRenderFunctions.LoadImageType.ALBUM);
+                await UiRenderFunctions.LoadSongImages(MainActivity.StateHandler.Albums, albumImagesBuffer,
+                    UiRenderFunctions.LoadImageType.ALBUM);
 
                 ((Activity)context).RunOnUiThread(() =>
                 {
@@ -126,14 +126,14 @@ namespace MWP
                     {
                         ImageView? vv = (ImageView)tile.Value.GetChildAt(0);
                         if (vv?.Drawable == null)
-                            UIRenderFunctions.LoadSongImageFromBuffer(tile.Value, albumImagesBuffer, assets);
+                            UiRenderFunctions.LoadSongImageFromBuffer(tile.Value, albumImagesBuffer, assets);
                     }
                 });
             });
             Task.Run(async () =>
             {
-                await UIRenderFunctions.LoadSongImages(MainActivity.StateHandler.Artists, authorImagesBuffer,
-                    UIRenderFunctions.LoadImageType.AUTHOR);
+                await UiRenderFunctions.LoadSongImages(MainActivity.StateHandler.Artists, authorImagesBuffer,
+                    UiRenderFunctions.LoadImageType.AUTHOR);
                 
                 ((Activity)context).RunOnUiThread(() =>
                 {
@@ -141,7 +141,7 @@ namespace MWP
                     {
                         ImageView? vv = (ImageView)tile.Value.GetChildAt(0);
                         if (vv?.Drawable == null)
-                            UIRenderFunctions.LoadSongImageFromBuffer(tile.Value, authorImagesBuffer, assets);
+                            UiRenderFunctions.LoadSongImageFromBuffer(tile.Value, authorImagesBuffer, assets);
                     }
                 });
             });
@@ -171,7 +171,7 @@ namespace MWP
             var albums = MainActivity.StateHandler.Albums;
             for (int i = 0; i < albums.Count; i++)
             {
-                LinearLayout? lnIn = UIRenderFunctions.PopulateVertical(
+                LinearLayout? lnIn = UiRenderFunctions.PopulateVertical(
                     albums[i], 
                     scale, 150, 100, buttonMargins,cardMargins, nameMargins, 15, i, 
                     context, albumButtons, 
@@ -189,7 +189,7 @@ namespace MWP
                 for (int i = 0; i < albums.Count; i++)
                 {
                     LinearLayout? child = albumTilesBuffer[albums[i].Title];
-                    if (assets != null) UIRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
+                    if (assets != null) UiRenderFunctions.LoadSongImageFromBuffer(child, albumImagesBuffer, assets);
                 }
             }
             
@@ -217,7 +217,7 @@ namespace MWP
             List<Artist> artists = MainActivity.StateHandler.Artists;
             for (int i = 0; i < artists.Count; i++)
             {
-                LinearLayout? lnIn = UIRenderFunctions.PopulateVertical(
+                LinearLayout? lnIn = UiRenderFunctions.PopulateVertical(
                     MainActivity.StateHandler.Artists[i], scale, 150, 100, buttonMargins ,cardMargins, nameMargins, 15, i, context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 if (authorTilesBuffer.TryAdd(artists[i].Title, lnIn))
@@ -232,7 +232,7 @@ namespace MWP
                 for (int i = 0; i < artists.Count; i++)
                 {
                     LinearLayout? child = authorTilesBuffer[artists[i].Title];
-                    if (assets != null) UIRenderFunctions.LoadSongImageFromBuffer(child, authorImagesBuffer, assets);
+                    if (assets != null) UiRenderFunctions.LoadSongImageFromBuffer(child, authorImagesBuffer, assets);
                 }
             }
 
@@ -258,7 +258,7 @@ namespace MWP
                     displayWidth / 2,
                     ViewGroup.LayoutParams.MatchParent
                 );
-                authorScrollParams.SetMargins(0, 100, 0, 0);
+                authorScrollParams.SetMargins(0, 185, 0, 0);
                 authorScroll.LayoutParameters = authorScrollParams;
 
                 LinearLayout authorLin = AuthorTiles();
@@ -273,7 +273,7 @@ namespace MWP
                     displayWidth / 2,
                     ViewGroup.LayoutParams.MatchParent
                 );
-                albumScrollParams.SetMargins((displayWidth / 2) - 20, 100, 0, 0);
+                albumScrollParams.SetMargins((displayWidth / 2) - 20, 185, 0, 0);
                 albumScroll.LayoutParameters = albumScrollParams;
             }
 

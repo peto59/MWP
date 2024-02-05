@@ -8,7 +8,7 @@ namespace MWP
     /// <inheritdoc />
     public class SongJsonConverter : JsonConverter<Song>
     {
-        private bool includePrivateInfo;
+        private readonly bool includePrivateInfo;
 
         /// <inheritdoc />
         public SongJsonConverter(bool includePrivateInfo)

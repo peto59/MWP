@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/settings_fragment_layout"
+            android:background="@color/colorPrimaryDark"
+>
+    <LinearLayout 
+            android:layout_width="match_parent" 
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:id="@+id/settings_main_linear"
+    >
+        
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center"
+                      android:layout_margin="20dp"
+        >
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                        android:orientation="vertical"
+            >
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                           android:text="Restricted folders" android:textColor="#ffffff"
+                          android:textSize="20dp" android:id="@+id/settings_restricted_title"
+                />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                          android:text="Paths where looking for mp3 files is forbidden" android:textColor="#A9A9A9"
+                          android:textSize="12dp" android:id="@+id/settings_restricted_remark"
+                />
+            </LinearLayout>
+
+            
+            <TextView 
+                    android:layout_width="wrap_content" 
+                    android:layout_height="wrap_content"
+                    android:text="Add New"
+                    android:textColor="#ffffff"
+                    android:paddingVertical="8dp"
+                    android:paddingHorizontal="15dp"
+                    android:background="@drawable/rounded_button"
+                    android:id="@+id/settings_restricted_button"
+            />
+        </LinearLayout>
+        
+        
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Default settings"
+            android:textColor="#ffffff"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="15dp"
+            android:background="@drawable/rounded_button"
+            android:id="@+id/settings_testbtn"
+    />
+    </LinearLayout>
+    
+</ScrollView>

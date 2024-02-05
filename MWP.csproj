@@ -100,18 +100,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="accept_songs.cs" />
+    <Compile Include="BackEnd\Chromaprint.cs" />
     <Compile Include="BackEnd\Network\Commands.cs" />
     <Compile Include="BackEnd\Network\Datatypes.cs" />
+    <Compile Include="BackEnd\Network\Enums.cs" />
     <Compile Include="BackEnd\Network\Extensions.cs" />
     <Compile Include="BackEnd\Network\NetworkManager.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerClient.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerCommon.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerCommonCommunication.cs" />
     <Compile Include="BackEnd\Network\NetworkManagerServer.cs" />
-    <Compile Include="AlbumAuthorFragment.cs" />
-    <Compile Include="AlbumFragment.cs" />
-    <Compile Include="AllSongsFragment.cs" />
-    <Compile Include="AuthorFragment.cs" />
+    <Compile Include="BackEnd\Network\Notifications.cs" />
     <Compile Include="BackEnd\Player\Enums.cs" />
     <Compile Include="BackEnd\Player\MediaService.cs" />
     <Compile Include="BackEnd\Player\MediaServiceBinder.cs" />
@@ -126,9 +125,21 @@
     <Compile Include="DatatypesAndExtensions\CoverArtArchive.cs" />
     <Compile Include="DatatypesAndExtensions\Enums.cs" />
     <Compile Include="DatatypesAndExtensions\Setting.cs" />
+    <Compile Include="Fragments\AlbumAuthorFragment.cs" />
+    <Compile Include="Fragments\AlbumFragment.cs" />
+    <Compile Include="Fragments\AllSongsFragment.cs" />
+    <Compile Include="Fragments\AuthorFragment.cs" />
+    <Compile Include="Fragments\HostPickerFragment.cs" />
+    <Compile Include="Fragments\PlaylistFragment.cs" />
+    <Compile Include="Fragments\PlaylistsFragment.cs" />
+    <Compile Include="Fragments\SettingsFragment.cs" />
+    <Compile Include="Fragments\ShareFragment.cs" />
+    <Compile Include="Fragments\SongPickerFragment.cs" />
+    <Compile Include="Fragments\SongsFragment.cs" />
+    <Compile Include="Fragments\TagManagerFragment.cs" />
+    <Compile Include="Fragments\YoutubeFragment.cs" />
     <Compile Include="Helpers\APIThrottler.cs" />
     <Compile Include="DatatypesAndExtensions\Artist.cs" />
-    <Compile Include="DownloadNotification.cs" />
     <Compile Include="Helpers\ObservableDictionary.cs" />
     <Compile Include="Helpers\ObservableInteger.cs" />
     <Compile Include="Helpers\SongJsonConverter.cs" />
@@ -137,28 +148,24 @@
     <Compile Include="DatatypesAndExtensions\Extensions.cs" />
     <Compile Include="Helpers\Levenshtein.cs" />
     <Compile Include="Helpers\WidgetServiceHandler.cs" />
-    <Compile Include="Local_notification_service.cs" />
     <Compile Include="DatatypesAndExtensions\MusicBaseClass.cs" />
     <Compile Include="BackEnd\Downloader.cs" />
     <Compile Include="BackEnd\FileManager.cs" />
     <Compile Include="Helpers\HelloWebViewClient.cs" />
     <Compile Include="MainActivity.cs" />
-    <Compile Include="MusicWidget.cs" />
-    <Compile Include="PlaylistFragment.cs" />
-    <Compile Include="PlaylistsFragment.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ShareFragment.cs" />
-    <Compile Include="SidePlayer.cs" />
     <Compile Include="DatatypesAndExtensions\Song.cs" />
     <Compile Include="DatatypesAndExtensions\SongExtensions.cs" />
     <Compile Include="BackEnd\StateHandler.cs" />
     <Compile Include="BackEnd\TagManager.cs" />
-    <Compile Include="SongsFragment.cs" />
-    <Compile Include="TagManagerFragment.cs" />
-    <Compile Include="UIRenderFunctions.cs" />
+    <Compile Include="UiElements\DownloadNotification.cs" />
+    <Compile Include="UiElements\Local_notification_service.cs" />
+    <Compile Include="UiElements\MusicWidget.cs" />
+    <Compile Include="UiElements\SidePlayer.cs" />
+    <Compile Include="UiElements\SlideButton.cs" />
+    <Compile Include="UiElements\UIRenderFunctions.cs" />
     <Compile Include="youtube.cs" />
-    <Compile Include="YoutubeFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -180,6 +187,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\drawable\dropdown_item.xml" />
     <AndroidResource Include="Resources\drawable\forward.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -190,7 +198,8 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
-    <AndroidResource Include="Resources\drawable\no_shuffle2.xml">
+    <AndroidResource Include="Resources\drawable\shadow.xml" />
+    <AndroidResource Include="Resources\drawable\shuffle_on.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
@@ -228,11 +237,32 @@
     <AndroidResource Include="Resources\drawable\save.xml" />
     <AndroidResource Include="Resources\drawable\settings.xml" />
     <AndroidResource Include="Resources\drawable\share.xml" />
-    <AndroidResource Include="Resources\drawable\shuffle2.xml">
+    <AndroidResource Include="Resources\drawable\shuffle_off.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\slide_button_background.xml" />
+    <AndroidResource Include="Resources\drawable\slide_button_background_gren.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\slide_button_thumb.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\white_rounded_label_left.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\white_rounded_label_right.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
     <AndroidResource Include="Resources\drawable\widget_rounded.xml" />
+    <AndroidResource Include="Resources\layout\accept_incoming_popup.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\layout\activity_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
@@ -245,23 +275,53 @@
     <AndroidResource Include="Resources\layout\content_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\delete_playlist_popup.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\discovery_popup_layout.xml" />
     <AndroidResource Include="Resources\layout\download_notification_single.xml" />
+    <AndroidResource Include="Resources\layout\host_picker_fragment.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\layout\music_widget_layout.xml" />
     <AndroidResource Include="Resources\layout\nav_header_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\playlists_fragment.xml" />
     <AndroidResource Include="Resources\layout\playlist_fragment.xml" />
+    <AndroidResource Include="Resources\layout\settings_fragment.xml" />
+    <AndroidResource Include="Resources\layout\settings_restricted_paths_popup.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\layout\share_are_you_sure.xml" />
     <AndroidResource Include="Resources\layout\share_fragment.xml" />
     <AndroidResource Include="Resources\layout\share_new_port.xml" />
     <AndroidResource Include="Resources\layout\songs_fragment.xml" />
     <AndroidResource Include="Resources\layout\song_download_selection_dialog.xml" />
+    <AndroidResource Include="Resources\layout\song_picker_fragment.xml" />
     <AndroidResource Include="Resources\layout\tag_manager_fragment.xml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateGeneratedFiles</Generator>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\youtube_fragment.xml" />
+    <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher.png" />
+    <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher_foreground.png" />
+    <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\ic_launcher.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\ic_launcher_foreground.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\ic_launcher.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\ic_launcher_foreground.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\ic_launcher.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\ic_launcher_foreground.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_foreground.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
     <AndroidResource Include="Resources\values\colors.xml" />
     <AndroidResource Include="Resources\values\dimens.xml" />
     <AndroidResource Include="Resources\values\drawables.xml" />
@@ -279,21 +339,6 @@
     <AndroidResource Include="Resources\menu\menu_main.xml" />
     <AndroidResource Include="Resources\mipmap-anydpi-v26\ic_launcher.xml" />
     <AndroidResource Include="Resources\mipmap-anydpi-v26\ic_launcher_round.xml" />
-    <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher.png" />
-    <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher_foreground.png" />
-    <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher_round.png" />
-    <AndroidResource Include="Resources\mipmap-mdpi\ic_launcher.png" />
-    <AndroidResource Include="Resources\mipmap-mdpi\ic_launcher_foreground.png" />
-    <AndroidResource Include="Resources\mipmap-mdpi\ic_launcher_round.png" />
-    <AndroidResource Include="Resources\mipmap-xhdpi\ic_launcher.png" />
-    <AndroidResource Include="Resources\mipmap-xhdpi\ic_launcher_foreground.png" />
-    <AndroidResource Include="Resources\mipmap-xhdpi\ic_launcher_round.png" />
-    <AndroidResource Include="Resources\mipmap-xxhdpi\ic_launcher.png" />
-    <AndroidResource Include="Resources\mipmap-xxhdpi\ic_launcher_foreground.png" />
-    <AndroidResource Include="Resources\mipmap-xxhdpi\ic_launcher_round.png" />
-    <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher.png" />
-    <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_foreground.png" />
-    <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
     <AndroidResource Include="Resources\xml\automotive_app_desc.xml" />
     <AndroidResource Include="Resources\xml\musicwidget_provider.xml" />
     <AndroidResource Include="Resources\xml\provider_paths.xml" />

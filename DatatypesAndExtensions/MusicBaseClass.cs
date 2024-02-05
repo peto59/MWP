@@ -75,7 +75,7 @@ namespace MWP
         /// shuffle symbol
         /// </summary>
         public static Bitmap ShuffleImage =>
-            _shuffleImage ??= BitmapFactory.DecodeResource(Application.Context.Resources, Resource.Drawable.shuffle2) ??
+            _shuffleImage ??= BitmapFactory.DecodeResource(Application.Context.Resources, Resource.Drawable.shuffle_off) ??
                               Placeholder;
     }
     /// <summary>
@@ -94,7 +94,7 @@ namespace MWP
         /// <summary>
         /// Name of object
         /// </summary>
-        public abstract string Title { get; }
+        public abstract string Title { get; protected internal set; }
         /// <summary>
         /// Image for this object
         /// </summary>

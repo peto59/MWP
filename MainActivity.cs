@@ -1,37 +1,41 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Android;
 using Android.App;
 using Android.Content;
+using Android.Content.PM;
+using Android.Graphics;
+using Android.Media;
 using Android.OS;
+using Android.Provider;
 using Android.Runtime;
+using Android.Util;
 using Android.Views;
+using Android.Views.InputMethods;
+using Android.Widget;
 using AndroidX.AppCompat.App;
+using AndroidX.Core.Content;
 using AndroidX.Core.View;
 using AndroidX.DrawerLayout.Widget;
 using Google.Android.Material.Navigation;
 using Google.Android.Material.Snackbar;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using Android.Content.PM;
-using Android.Graphics;
-using Android.Media;
-using Android.Provider;
-using Android.Views.InputMethods;
-using Android.Widget;
-using AndroidX.Core.Content;
-using MWP.BackEnd.Network;
 using MWP.BackEnd;
+using MWP.BackEnd.Network;
 using MWP.BackEnd.Player;
 using MWP.DatatypesAndExtensions;
 using Octokit;
 using Xamarin.Essentials;
 using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
 using Application = Android.App.Application;
+using Environment = Android.OS.Environment;
+using Exception = System.Exception;
 using FileProvider = AndroidX.Core.Content.FileProvider;
 using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
+using Thread = System.Threading.Thread;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
 using Uri = Android.Net.Uri;
 #if DEBUG
@@ -56,6 +60,8 @@ namespace MWP
         /// </summary>
         public static readonly StateHandler StateHandler = new StateHandler();
         private static readonly MediaServiceConnection ServiceConnectionPrivate = new MediaServiceConnection();
+        private ActionBarDrawerToggle? toggle;
+        private long lastBackPressedTime;
         /// <summary>
         /// Instance of Service Connection
         /// </summary>
@@ -66,7 +72,7 @@ namespace MWP
                 if (ServiceConnectionPrivate is { Connected: false })
                 {
 #if DEBUG
-                    MyConsole.WriteLine($"Session not connected");
+                    MyConsole.WriteLine("Session not connected");
 #endif
                     StateHandler.mainActivity.StartMediaService();
                 }
@@ -82,13 +88,12 @@ namespace MWP
          */
         private YoutubeFragment? youtubeFragment;
         private ShareFragment? shareFragment;
-        
+        private SettingsFragment? settingsFragment;
         private SongsFragment? songsFragment;
         private AlbumAuthorFragment? albumsFragment;
         private PlaylistsFragment? playlistsFragment;
         
-        
-        bool activeFragment = false;
+        bool activeFragment;
         
       
         private DrawerLayout? drawer;
@@ -115,13 +120,25 @@ namespace MWP
             if (action == "openDrawer")
                 drawer?.OpenDrawer(GravityCompat.Start);
 
-            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
+            action = Intent?.GetStringExtra("NotificationAction");
+            if (action is "ShowConnectionStatus" or "ShowSongList")
+            {
+                ProcessNetworkNotification(Intent);
+            }
+
+            toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open, Resource.String.navigation_drawer_close);
             drawer?.OpenDrawer(GravityCompat.Start);
             drawer?.AddDrawerListener(toggle);
             toggle.SyncState();
 
             NavigationView? navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
-            navigationView?.SetNavigationItemSelectedListener(this);
+            DisplayMetrics metric = new DisplayMetrics();
+            WindowManager?.DefaultDisplay?.GetMetrics(metric);
+            if (navigationView != null)
+            {
+                if (navigationView.LayoutParameters != null) navigationView.LayoutParameters.Width = metric.WidthPixels;
+                navigationView.SetNavigationItemSelectedListener(this);
+            }
 
             if (Assets != null)
             {
@@ -140,79 +157,10 @@ namespace MWP
             intentFilter.AddAction(MyMediaBroadcastReceiver.PREVIOUS_SONG);
             RegisterReceiver(_mediaReceiver, intentFilter);
             
+            FileManager.EarlyInnit();
+            
             VersionTracking.Track();
             
-            sbyte remainingDialogsBeforeRequestingPermissions = 0;
-
-            if (SettingsManager.CheckUpdates == AutoUpdate.NoState)
-            {
-                remainingDialogsBeforeRequestingPermissions--;
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.SetTitle("Automatic Updates");
-                builder.SetMessage("Would you like to enable automatic updates?");
-
-                builder.SetPositiveButton("Yes", delegate
-                {
-                    // ReSharper disable once AccessToModifiedClosure
-                    remainingDialogsBeforeRequestingPermissions++;
-                    SettingsManager.CheckUpdates = AutoUpdate.Requested;
-                    if (remainingDialogsBeforeRequestingPermissions == 0)
-                    {
-                        RequestMyPermission();
-                    }
-                });
-
-                builder.SetNegativeButton("No", delegate
-                {
-                    remainingDialogsBeforeRequestingPermissions++;
-                    SettingsManager.CheckUpdates = AutoUpdate.Forbidden;
-                    if (remainingDialogsBeforeRequestingPermissions == 0)
-                    {
-                        RequestMyPermission();
-                    }
-                });
-
-                AlertDialog dialog = builder.Create();
-                dialog.Show();
-            }
-
-            if (SettingsManager.CanUseNetwork == CanUseNetworkState.None)
-            {
-                remainingDialogsBeforeRequestingPermissions--;
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.SetTitle("Music sharing");
-                builder.SetMessage("Would you like to enable network scanning for available devices for music sharing? Warning: this requires precise location access for security reasons.");
-
-                builder.SetPositiveButton("Yes", delegate
-                {
-                    remainingDialogsBeforeRequestingPermissions++;
-                    SettingsManager.CanUseNetwork = CanUseNetworkState.Allowed;
-                    if (remainingDialogsBeforeRequestingPermissions == 0)
-                    {
-                        RequestMyPermission();
-                    }
-                });
-
-                builder.SetNegativeButton("No", delegate
-                {
-                    remainingDialogsBeforeRequestingPermissions++;
-                    SettingsManager.CanUseNetwork = CanUseNetworkState.Rejected;
-                    if (remainingDialogsBeforeRequestingPermissions == 0)
-                    {
-                        RequestMyPermission();
-                    }
-                });
-
-                AlertDialog dialog = builder.Create();
-                dialog.Show();
-            }
-            
-            if (remainingDialogsBeforeRequestingPermissions == 0)
-            {
-                RequestMyPermission();
-            }
-
-            //rest of the stuff that was here is in AfterReceivingPermissions()
 
             // notififcations
             //Local_notification_service notif_service = new Local_notification_service();
@@ -234,6 +182,7 @@ namespace MWP
             songsFragment = new SongsFragment(this, Assets);
             albumsFragment = new AlbumAuthorFragment(this, Assets);
             playlistsFragment = new PlaylistsFragment(this, Assets);
+            settingsFragment = new SettingsFragment(this, Assets);
             
             
             /*
@@ -245,7 +194,8 @@ namespace MWP
             TextView? playlistsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemPlaylists);
             TextView? albumsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemAlbums);
 
-            TextView? downloadNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemDownload);
+            //TextView? downloadNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemDownload);
+            TextView? downloadNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemUpload);
             TextView? shareNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemUpload);
             TextView? settingsNavigationButton = FindViewById<TextView>(Resource.Id.MainNavManuItemSettings);
 
@@ -348,14 +298,37 @@ namespace MWP
                     drawer?.CloseDrawer(GravityCompat.Start);
                     Title = "Share";
                 };
-            
+
+            if (settingsNavigationButton != null)
+                settingsNavigationButton.Click += (_, _) =>
+                {
+                    FragmentTransaction fragmentTransaction = SupportFragmentManager.BeginTransaction();
+                    if (!activeFragment)
+                    {
+                        if (shareFragment != null)
+                            fragmentTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, settingsFragment,
+                                "settingsFragTag");
+                        activeFragment = true;
+                    }
+                    else if (shareFragment != null)
+                        fragmentTransaction.Replace(Resource.Id.MainFragmentLayoutDynamic, settingsFragment,
+                            "settingsFragTag");
+
+                    fragmentTransaction.AddToBackStack(null);
+                    fragmentTransaction.Commit();
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                    Title = "Settings";
+                };
+
             /*
-             * Initialize Widget Service 
+             * Initialize Widget Service
              */
             WidgetServiceHandler.Init(this);
+            
+            ShowDialogs();
         }
-
-
+        
+        
         /// <inheritdoc />
         public override bool DispatchTouchEvent(MotionEvent? ev)
         {
@@ -393,9 +366,37 @@ namespace MWP
         [Obsolete("deprecated")]
         public override void OnBackPressed()
         {
+            AndroidX.Fragment.App.Fragment? myFragment = SupportFragmentManager.FindFragmentByTag("SettingsFromDialog");
+            if (myFragment is { IsVisible: true })
+            {
+#if DEBUG
+                MyConsole.WriteLine($"returning from initial settings");
+#endif
+                AfterInitialSettingsReturn();
+            }
+
+            bool canCloseDrawer = true;
+            if (SupportFragmentManager is { Fragments: not null })
+            {
+                bool isAnyFragmentVisible = SupportFragmentManager.Fragments.Aggregate(false, (current, fragment) => current | fragment.IsVisible);
+                canCloseDrawer = !isAnyFragmentVisible;
+                if (!isAnyFragmentVisible && lastBackPressedTime + 2000 > DateTimeOffset.Now.ToUnixTimeMilliseconds())
+                {
+                    Finish();
+                }
+                else
+                {
+                    Toast.MakeText(this, "Press back again to exit", ToastLength.Short)?.Show();
+                    lastBackPressedTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                }
+            }
+
             if (drawer != null && drawer.IsDrawerOpen(GravityCompat.Start))
             {
-                drawer.CloseDrawer(GravityCompat.Start);
+                if (!canCloseDrawer)
+                {
+                    drawer.CloseDrawer(GravityCompat.Start);
+                }
             }
             else
             {
@@ -433,6 +434,208 @@ namespace MWP
             return true;
         }
 
+        private void ShowDialogs()
+        {
+            sbyte remainingDialogsBeforeRequestingPermissions = 0;
+            
+            if (SettingsManager.MoveFiles == MoveFilesEnum.None)
+            { 
+                remainingDialogsBeforeRequestingPermissions--;
+                AlertDialog.Builder builder2 = new AlertDialog.Builder(this);
+                builder2.SetTitle("Excluded folders");
+                builder2.SetMessage("You can exclude folders in which the app searches in settings. Would you like to edit them now?");
+                builder2.SetCancelable(false);
+
+                builder2.SetPositiveButton("Yes", delegate
+                {
+                    // ReSharper disable once AccessToModifiedClosure
+                    remainingDialogsBeforeRequestingPermissions++;
+
+                    if (toggle != null)
+                    {
+                        toggle.DrawerIndicatorEnabled = false;
+                        //TODO: pretty back button
+                        toggle.SetHomeAsUpIndicator(Resource.Drawable.back);
+                        toggle.ToolbarNavigationClickListener = new MyClickListener(AfterInitialSettingsReturn);
+                        
+                        toggle.SyncState();
+                    }
+
+                    SettingsFragment settingsFragmentAdam = new SettingsFragment(this, Assets);
+                    FragmentTransaction settingsTransaction = SupportFragmentManager.BeginTransaction();
+                    settingsTransaction.Add(Resource.Id.MainFragmentLayoutDynamic, settingsFragmentAdam, "SettingsFromDialog");
+                    settingsTransaction.AddToBackStack("SettingsFromDialog");
+                    drawer?.SetDrawerLockMode(DrawerLayout.LockModeLockedClosed, GravityCompat.Start);
+                    drawer?.CloseDrawer(GravityCompat.Start);
+                    settingsTransaction.Commit();
+                });
+
+                builder2.SetNegativeButton("No", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                AlertDialog dialog2 = builder2.Create();
+                dialog2.Show();
+                
+                remainingDialogsBeforeRequestingPermissions--;
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.SetTitle("File moving");
+                builder.SetMessage("Would you like to enable moving of files into hierarchy based on metadata into Music folder?");
+                builder.SetCancelable(false);
+
+                builder.SetPositiveButton("Yes", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.MoveFiles = MoveFilesEnum.Yes;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                builder.SetNegativeButton("No", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.MoveFiles = MoveFilesEnum.No;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+            }
+            
+            if (SettingsManager.CheckUpdates == AutoUpdate.NoState)
+            {
+                remainingDialogsBeforeRequestingPermissions--;
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.SetTitle("Automatic Updates");
+                builder.SetMessage("Would you like to enable automatic updates?");
+                builder.SetCancelable(false);
+
+                builder.SetPositiveButton("Yes", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.CheckUpdates = AutoUpdate.Requested;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                builder.SetNegativeButton("No", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.CheckUpdates = AutoUpdate.Forbidden;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+            }
+            
+            if (SettingsManager.ShouldUseChromaprintAtDiscover == UseChromaprint.None)
+            {
+                remainingDialogsBeforeRequestingPermissions--;
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.SetTitle("Automatic metadata discover");
+                builder.SetMessage("Would you like to enable searching for metadata such as Artist and Album for your songs on the internet?");
+                builder.SetCancelable(false);
+
+                builder.SetPositiveButton("Yes", delegate
+                {
+                    AlertDialog.Builder builder2 = new AlertDialog.Builder(this);
+                    builder2.SetTitle("Precise searching");
+                    builder2.SetMessage("Would you like to have precise metadata searching with need to manually confirm each new tag or automatic which can produce unexpected tags?");
+                    builder2.SetCancelable(false);
+
+                    builder2.SetPositiveButton("Manual", delegate
+                    {
+                        remainingDialogsBeforeRequestingPermissions++;
+                        SettingsManager.ShouldUseChromaprintAtDiscover = UseChromaprint.Manual;
+                        if (remainingDialogsBeforeRequestingPermissions == 0)
+                        {
+                            RequestMyPermission();
+                        }
+                    });
+
+                    builder2.SetNegativeButton("Automatic", delegate
+                    {
+                        remainingDialogsBeforeRequestingPermissions++;
+                        SettingsManager.ShouldUseChromaprintAtDiscover = UseChromaprint.Automatic;
+                        if (remainingDialogsBeforeRequestingPermissions == 0)
+                        {
+                            RequestMyPermission();
+                        }
+                    });
+
+                    AlertDialog dialog2 = builder2.Create();
+                    dialog2.Show();
+                });
+
+                builder.SetNegativeButton("No", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.ShouldUseChromaprintAtDiscover = UseChromaprint.No;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+            }
+            
+            if (SettingsManager.CanUseNetwork == CanUseNetworkState.None)
+            {
+                remainingDialogsBeforeRequestingPermissions--;
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.SetTitle("Music sharing");
+                builder.SetMessage("Would you like to enable network scanning for available devices for music sharing? Warning: this requires precise location access for security reasons.");
+                builder.SetCancelable(false);
+
+                builder.SetPositiveButton("Yes", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.CanUseNetwork = CanUseNetworkState.Allowed;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                builder.SetNegativeButton("No", delegate
+                {
+                    remainingDialogsBeforeRequestingPermissions++;
+                    SettingsManager.CanUseNetwork = CanUseNetworkState.Rejected;
+                    if (remainingDialogsBeforeRequestingPermissions == 0)
+                    {
+                        RequestMyPermission();
+                    }
+                });
+
+                AlertDialog dialog = builder.Create();
+                dialog.Show();
+            }
+            
+            if (remainingDialogsBeforeRequestingPermissions == 0)
+            {
+                RequestMyPermission();
+            }
+            
+        }
+
         /// <inheritdoc />
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
         {
@@ -454,8 +657,27 @@ namespace MWP
                 shouldRequestAgain = true;
                 break;
             }
+            if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
+            {
 
-            if (!Android.OS.Environment.IsExternalStorageManager || shouldRequestAgain)
+                if (ContextCompat.CheckSelfPermission(this, Manifest.Permission.AccessFineLocation) ==
+                    (int)Permission.Granted)
+                {
+                    if (ContextCompat.CheckSelfPermission(this, Manifest.Permission.AccessBackgroundLocation) !=
+                        (int)Permission.Granted)
+                    {
+                        shouldRequestAgain = true;
+                    }
+                }
+                else
+                {
+                    shouldRequestAgain = true;
+                }
+            }
+            
+            
+
+            if (!Environment.IsExternalStorageManager || shouldRequestAgain)
             {
                 RequestMyPermission();
             }
@@ -467,29 +689,37 @@ namespace MWP
 
         private void RequestMyPermission()
         {
-            List<string> permissionsLocation = new List<string>{Android.Manifest.Permission.ForegroundService};
+            List<string> permissionsLocation = new List<string>{Manifest.Permission.ForegroundService};
             
             if (Build.VERSION.SdkInt < BuildVersionCodes.Tiramisu) {
-                permissionsLocation.Add(Android.Manifest.Permission.WriteExternalStorage);
-                permissionsLocation.Add(Android.Manifest.Permission.ReadExternalStorage);
+                permissionsLocation.Add(Manifest.Permission.WriteExternalStorage);
+                permissionsLocation.Add(Manifest.Permission.ReadExternalStorage);
             }
             
             if (SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
             {
-                permissionsLocation.Add(Android.Manifest.Permission.AccessWifiState);
-                permissionsLocation.Add(Android.Manifest.Permission.AccessFineLocation);
-                permissionsLocation.Add(Android.Manifest.Permission.AccessBackgroundLocation);
+                permissionsLocation.Add(Manifest.Permission.AccessWifiState);
+                if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
+                {
+                    permissionsLocation.Add(Manifest.Permission.PostNotifications);
+                }
+                permissionsLocation.Add(
+                    ContextCompat.CheckSelfPermission(this, Manifest.Permission.AccessFineLocation) ==
+                    (int)Permission.Granted
+                        ? Manifest.Permission.AccessBackgroundLocation
+                        : Manifest.Permission.AccessFineLocation);
             }
 
             bool exitFlag = permissionsLocation.Aggregate(true, (current, perm) => current & ContextCompat.CheckSelfPermission(this, perm) == (int)Permission.Granted);
 
-            if (exitFlag && Android.OS.Environment.IsExternalStorageManager)
+            if (exitFlag && Environment.IsExternalStorageManager)
             {
                 AfterReceivingPermissions();
                 return;
             }
 
-            string explanation = Android.OS.Environment.IsExternalStorageManager switch
+            //TODO: add normal explanation for ExternalStorageManager and BackgroundLocation
+            string explanation = Environment.IsExternalStorageManager switch
             {
                 false when SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed =>
                     "Storage access is required for storing and playing songs, location is required for identifying current network for security",
@@ -499,13 +729,13 @@ namespace MWP
                     "Storage access is required for storing and playing songs",
                 _ => string.Empty
             };
-
+            
             DrawerLayout? view = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
             if (view != null)
                 Snackbar.Make(view, explanation, BaseTransientBottomBar.LengthIndefinite)
                     .SetAction("OK", _ =>
                     {
-                        if (!Android.OS.Environment.IsExternalStorageManager)
+                        if (!Environment.IsExternalStorageManager)
                         {
                             try
                             {
@@ -529,7 +759,7 @@ namespace MWP
 
         private void AfterReceivingPermissions()
         {
-            FileManager.Innit();
+            FileManager.LateInnit();
             
             
             if (SettingsManager.CheckUpdates == AutoUpdate.Requested)
@@ -541,12 +771,51 @@ namespace MWP
             {
                 new Thread(NetworkManager.Listener).Start();
             }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            LayoutInflater? ifl = LayoutInflater.From(this);
+            View? view = ifl?.Inflate(Resource.Layout.discovery_popup_layout, null);
+            builder.SetView(view);
+            builder.SetCancelable(false);
+            
+            AlertDialog dialog = builder.Create();
+            TextView? textView = view?.FindViewById<TextView>(Resource.Id.discoveryTextView);
+            System.Timers.Timer timer = new System.Timers.Timer(500);
             
             new Thread(() => {
+                if (StateHandler.Songs.Count == 0)
+                {
+                    RunOnUiThread(() =>
+                    {
+                        dialog.Show();
+                        timer.Elapsed += (_, _) => {
+                            RunOnUiThread(() =>
+                            {
+                                if (textView != null)
+                                    textView.Text =
+                                        $"Indexing songs {System.Environment.NewLine}{StateHandler.Songs.Count} songs indexed {System.Environment.NewLine}Please wait";
+                            });
+                        };
+                        timer.Start();
+                    });
+                }
                 FileManager.DiscoverFiles(StateHandler.Songs.Count == 0);
                 bool order = false;
                 if (StateHandler.Songs.Count < FileManager.GetSongsCount())
                 {
+                    RunOnUiThread(() =>
+                    {
+                        dialog.Show();
+                        timer.Elapsed += (_, _) => {
+                            RunOnUiThread(() =>
+                            {
+                                if (textView != null)
+                                    textView.Text =
+                                        $"Indexing songs {System.Environment.NewLine}{StateHandler.Songs.Count} songs indexed {System.Environment.NewLine}Please wait";
+                            });
+                        };
+                        timer.Start();
+                    });
 #if DEBUG
                     MyConsole.WriteLine("Generating new songs");
 #endif
@@ -555,7 +824,7 @@ namespace MWP
                     StateHandler.Albums = new List<Album>();
                     
                     StateHandler.Artists.Add(new Artist("No Artist", "Default"));
-                    FileManager.GenerateList(FileManager.MusicFolder);
+                    FileManager.GenerateList();
                     order = true;
                 }
 
@@ -566,6 +835,15 @@ namespace MWP
                 RunOnUiThread(() =>
                 {
                     if (Assets != null) SidePlayer.populate_side_bar(this, Assets);
+                    dialog.Hide();
+                    timer.Stop();
+                    timer.Dispose();
+                    //TODO: crashing because doing something on disposed textView
+                    /*dialog.Dispose();
+                    builder.Dispose();
+                    view?.Dispose();
+                    ifl?.Dispose();
+                    textView?.Dispose();*/
                 });
 #if DEBUG
                 MyConsole.WriteLine($"Songs count {StateHandler.Songs.Count}");       
@@ -598,6 +876,7 @@ namespace MWP
         public void StartMediaService()
         {
             Intent serviceIntent = new Intent(Application.Context, typeof(MediaService));
+            // ReSharper disable once BitwiseOperatorOnEnumWithoutFlags
             if (!BindService(serviceIntent, ServiceConnectionPrivate, Bind.Important | Bind.AutoCreate))
             {
 #if DEBUG
@@ -717,7 +996,110 @@ namespace MWP
             installIntent.AddFlags(ActivityFlags.NewTask);
             StartActivity(installIntent);
         }
-        
+
+        private void AfterInitialSettingsReturn()
+        {
+            if (toggle != null)
+            {
+                toggle.DrawerIndicatorEnabled = true;
+                toggle.SetHomeAsUpIndicator(null);
+                toggle.ToolbarNavigationClickListener = null;
+                toggle.SyncState();
+            }
+            drawer?.SetDrawerLockMode(DrawerLayout.LockModeUnlocked, GravityCompat.Start);
+            drawer?.OpenDrawer(GravityCompat.Start);
+            SupportFragmentManager.PopBackStack();
+            RequestMyPermission();
+        }
+
+        private void ProcessNetworkNotification(Intent? intent)
+        {
+            string? action = intent?.GetStringExtra("NotificationAction");
+            string? remoteHostname = intent?.GetStringExtra("RemoteHostname");
+            if (action != null && remoteHostname != null)
+            {
+                if (action == "ShowConnectionStatus")
+                {
+                    NewConnectionDialog(remoteHostname, this);
+                }
+                else if (action == "ShowSongList")
+                {
+                    SongsSendDialog(remoteHostname, this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Shows dialog for user to accept or reject untrusted connection attempt
+        /// </summary>
+        /// <param name="remoteHostname">Name of device wanting to connect</param>
+        /// <param name="ctx">App context</param>
+        public static void NewConnectionDialog(string remoteHostname, Context ctx)
+        {
+            AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+            builder.SetTitle("New connection");
+            builder.SetMessage($"{remoteHostname} wants to connect to your device.");
+            builder.SetCancelable(false);
+
+            builder.SetPositiveButton("Allow", delegate
+            {
+                StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.ConnectionAccepted;
+            });
+
+            builder.SetNegativeButton("Disconnect", delegate
+            {
+                StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled;
+            });
+            //StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Showed;
+            AlertDialog dialog = builder.Create();
+            dialog.Show();
+        }
+
+        public static void SongsSendDialog(string remoteHostname, Context ctx)
+        {
+            if (StateHandler.OneTimeReceiveSongs.TryGetValue(remoteHostname, out List<Song> recSongs))
+            {
+                if (StateHandler.view != null)
+                {
+#if DEBUG
+                    MyConsole.WriteLine($"Popup opened");
+#endif
+                    UiRenderFunctions.ListIncomingSongsPopup(
+                        recSongs,
+                        remoteHostname,
+                        ctx,
+                        () => { StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.SongsAccepted; },
+                        () => { StateHandler.OneTimeSendStates[remoteHostname] = UserAcceptedState.Cancelled; }
+                    );
+                }
+#if DEBUG
+                else
+                {
+                    MyConsole.WriteLine($"Popup no view");
+                }
+#endif
+            }
+#if DEBUG
+            else
+            {
+                MyConsole.WriteLine($"Popup no value");
+            }
+#endif
+        }
+    }
+
+    internal class MyClickListener : Java.Lang.Object, View.IOnClickListener
+    {
+        private readonly Action action;
+
+        internal MyClickListener(Action a)
+        {
+            action = a;
+        }
+        public void OnClick(View? v)
+        {
+            action.Invoke();
+        }
     }
 }
 

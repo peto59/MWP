@@ -18,7 +18,7 @@ namespace MWP
     /// Custom Song object
     /// </summary>
     [Serializable]
-    public class Song : MusicBaseClass
+    public sealed class Song : MusicBaseClass
     {
         /// <summary>
         /// List of <see cref="MWP.Artist"/>s collaborating on this <see cref="MWP.Album"/>
@@ -41,8 +41,14 @@ namespace MWP
         /// </summary>
         public Album Album => Albums.Count > 0 ? Albums[0] : new Album("No Album", "Default", false);
 
+        /// <summary>
+        /// Which playlists ist this song member of
+        /// </summary>
+        public List<string> Playlists { get; } = new List<string>();
+
         /// <inheritdoc />
-        public override string Title { get; }
+        public override string Title { get; protected internal set; }
+
         /// <summary>
         /// Timestamp when was this <see cref="MWP.Song"/> added to device
         /// </summary>
@@ -96,6 +102,15 @@ namespace MWP
         {
             if (!Albums.Contains(album))
                 Albums.Add(album);
+        }
+
+        /// <summary>
+        /// Adds <paramref name="playlist"/> to <see cref="MWP.Song.Playlists"/>
+        /// </summary>
+        /// <param name="playlist">playlist to be added to <see cref="MWP.Song.Playlists"/></param>
+        public void AddPlaylist(string playlist)
+        {
+            Playlists.Add(playlist);
         }
         
         /// <summary>
@@ -394,6 +409,7 @@ namespace MWP
         /// <inheritdoc />
         public override int GetHashCode()
         {
+            // ReSharper disable once NonReadonlyMemberInGetHashCode
             return HashCode.Combine(Artists, Albums, Title, DateCreated, Path);
         }
 

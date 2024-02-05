@@ -38,14 +38,12 @@ namespace MWP.Helpers
         /// </summary>
         public int Value
         {
-            get { return value; }
+            get => value;
             set
             {
-                if (this.value != value)
-                {
-                    this.value = value;
-                    IntegerChanged?.Invoke(this, new IntegerChangeEventArgs(this.value));
-                }
+                if (this.value == value) return;
+                this.value = value;
+                IntegerChanged?.Invoke(this, new IntegerChangeEventArgs(this.value));
             }
         }
     }

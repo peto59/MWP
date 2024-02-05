@@ -5,7 +5,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Xamarin.Essentials;
 #if DEBUG
 using MWP.Helpers;
@@ -26,18 +25,19 @@ namespace MWP.BackEnd.Network
 
         //TODO: move to settings
         private const int numberOfMissedBroadcastsToRemoveHost = 3;
-        internal const int MaxTimeoutCounter = 10000;
-        internal const int DefaultBuffSize = 8096;
+        internal const int MaxTimeoutCounter = 1_000;
+        internal const int DefaultBuffSize = 80_960;
         internal const int P2PMaxResponseCounter = 6;
 
         internal static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
+
+        internal static string DeviceName => DeviceInfo.Name;
 
         /// <summary>
         /// Starts listening for broadcasts, sending broadcasts and managing connections. Entry point for NetworkManager.
         /// </summary>
         public static void Listener()
         {
-            //TODO: unknown SSID
             NetworkManagerCommon.BroadcastTimer.Interval = BroadcastInterval;
             NetworkManagerCommon.BroadcastTimer.Elapsed += delegate { Common.SendBroadcast(); };
             NetworkManagerCommon.BroadcastTimer.AutoReset = true;
@@ -95,16 +95,10 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                                     MyConsole.WriteLine($"Received broadcast from {groupEp}, hostname: {remoteHostname}");
 #endif
-                                    sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), groupEp);
+                                    sock.SendTo(Encoding.UTF8.GetBytes(DeviceName), groupEp);
                                     
                                     NetworkManagerCommon.AddAvailableHost(targetIp, remoteHostname);
                                     
-
-                                    //TODO: add to available targets. Don't connect directly, check if sync is allowed.
-                                    //TODO: doesn't work with one time sends....
-                                    if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
-                                    
-                                    //NetworkManagerCommon.Connected.Add(targetIp);
                                     new Thread(() =>
                                     {
                                         if (!NetworkManagerCommon.P2PDecide(targetIp))
@@ -139,18 +133,25 @@ namespace MWP.BackEnd.Network
         /// Get combination of all trusted and available hosts
         /// </summary>
         /// <returns>List of tuple with hostname, lastSeen, and whether this host is trusted</returns>
-        public static List<(string hostname, DateTime? lastSeen, bool state)> GetAllHosts()
+        public static List<(string hostname, DateTime? lastSeen, bool state)> GetAllHosts(bool includeTrusted = true)
         {
+            //remove stale hosts
+            DateTime now = DateTime.Now;
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) removal in MainActivity.StateHandler.AvailableHosts.Where(a =>
+                         a.lastSeen > now + RemoveInterval))
+            {
+                MainActivity.StateHandler.AvailableHosts.Remove(removal);
+            }
+            
+            //StateHandler.TriggerShareFragmentRefresh();
+            
             List<string> trusted = FileManager.GetTrustedSyncTargets();
             List<(string hostname, DateTime? lastSeen, bool state)> output = new List<(string hostname, DateTime? lastSeen, bool state)>();
-            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.StateHandler.AvailableHosts)
+            foreach ((IPAddress ipAddress, DateTime lastSeen, string hostname) stateHandlerAvailableHost in MainActivity.StateHandler.AvailableHosts.Where(stateHandlerAvailableHost => stateHandlerAvailableHost.hostname != "localhost"))
             {
-                if (stateHandlerAvailableHost.hostname == "localhost")
-                {
-                    continue;
-                }
                 if (trusted.Contains(stateHandlerAvailableHost.hostname))
                 {
+                    if (!includeTrusted) continue;
                     output.Add((stateHandlerAvailableHost.hostname, stateHandlerAvailableHost.lastSeen, true));
                     trusted.Remove(stateHandlerAvailableHost.hostname);
                 }

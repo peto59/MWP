@@ -31,13 +31,26 @@ namespace MWP.BackEnd.Network
     internal class NetworkManagerCommon
     {
         internal static readonly List<IPAddress> Connected = new List<IPAddress>();
+#if DEBUG
+        private IPAddress? myIp;
+        internal IPAddress? MyIp
+        {
+            get => myIp;
+            set
+            {
+                MyConsole.WriteLine($"New IP is {value}");
+                myIp = value;
+            }
+        }
+#else
         internal IPAddress? MyIp;
+#endif
         private IPAddress myMask = new IPAddress(0); //0.0.0.0
         
         /// <summary>
         /// Interval between broadcasts
         /// </summary>
-        internal const int BroadcastInterval = 20000;
+        internal const int BroadcastInterval = 50_000;
         
         internal static readonly System.Timers.Timer BroadcastTimer = new System.Timers.Timer();
         private CanSend canSend = CanSend.Rejected;
@@ -61,14 +74,14 @@ namespace MWP.BackEnd.Network
         private const int P2PPort = 8009;
         internal const int RsaDataSize = 256;
 #if DEBUG
-        private string _currentSsid = string.Empty;
+        private string currentSsid = string.Empty;
         internal string CurrentSsid
         {
-            get => _currentSsid;
+            get => currentSsid;
             set
             {
                 MyConsole.WriteLine($"Changing CurrentSsid to {value}");
-                _currentSsid = value;
+                currentSsid = value;
             }
         }
 #else
@@ -79,10 +92,10 @@ namespace MWP.BackEnd.Network
         {
             
             Sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-            Sock.ReceiveTimeout = 2000;
+            Sock.ReceiveTimeout = 500;
             if (SettingsManager.CanUseWan)
             {
-                NatUtility.DeviceFound += delegate(object sender, DeviceEventArgs args)
+                NatUtility.DeviceFound += delegate(object _, DeviceEventArgs args)
                 {
                     INatDevice device = args.Device;
 #if DEBUG
@@ -210,7 +223,7 @@ namespace MWP.BackEnd.Network
                                         continue;
                                     }
                                 }
-                                catch (SocketException e)
+                                catch (SocketException)
                                 {
                                     cnt++;
                                     state = (byte)new Random().Next(0, 2);
@@ -353,7 +366,7 @@ namespace MWP.BackEnd.Network
                                     continue;
                                 }
                             }
-                            catch (SocketException e)
+                            catch (SocketException)
                             {
                                 sock.SendTo(P2PState.Send(cnt, state), remoteEndpoint);
                                 continue;
@@ -389,6 +402,7 @@ namespace MWP.BackEnd.Network
 #if DEBUG
                         MyConsole.WriteLine(e);
 #endif
+                        return false;
                     }
 
                     sock.Dispose();
@@ -403,7 +417,6 @@ namespace MWP.BackEnd.Network
 #endif
                 return false;
             }
-            return false;
         }
 
         private static IPAddress GetBroadCastIp(IPAddress host, IPAddress mask)
@@ -427,8 +440,10 @@ namespace MWP.BackEnd.Network
             return (pubKey, privKey);
         }
         
-        internal void SendBroadcast(List<Song>? songsToSend = null)
+        
+        internal void SendBroadcast(List<Song>? songsToSend = null, IPAddress? targetIpAddress = null)
         {
+            
 #if DEBUG
             MyConsole.WriteLine($"SSID: {CurrentSsid}");            
 #endif
@@ -436,18 +451,36 @@ namespace MWP.BackEnd.Network
             {
                 case CanSend.Allowed:
                 {
-                    if (myBroadcastIp != null)
+                    if (targetIpAddress != null)
                     {
-                        IPEndPoint destinationEndpoint = new IPEndPoint(myBroadcastIp, BroadcastPort);
+                        while (Enumerable.Contains(Connected, targetIpAddress))
+                        {
+#if DEBUG
+                            MyConsole.WriteLine("Waiting for remote host to became available");
+#endif
+                            Thread.Sleep(1000);
+                        }
+                    }
+                    if (myBroadcastIp != null || targetIpAddress != null)
+                    {
+                        IPEndPoint destinationEndpoint = targetIpAddress != null
+                            ? new IPEndPoint(targetIpAddress,
+                                BroadcastPort)
+                            : new IPEndPoint(myBroadcastIp!,
+                                BroadcastPort);
 
                         int retries = 0;
                         const int maxRetries = 3;
 
-                        IPEndPoint iep = new IPEndPoint(IPAddress.Any, BroadcastPort);
+                        IPEndPoint iep = targetIpAddress != null
+                            ? new IPEndPoint(targetIpAddress,
+                                BroadcastPort)
+                            : new IPEndPoint(IPAddress.Any,
+                                BroadcastPort);
                         bool processedAtLestOne = false;
                         do
                         {
-                            Sock.SendTo(Encoding.UTF8.GetBytes(DeviceInfo.Name), destinationEndpoint);
+                            Sock.SendTo(Encoding.UTF8.GetBytes(NetworkManager.DeviceName), destinationEndpoint);
                             retries++;
                             try
                             {
@@ -468,12 +501,6 @@ namespace MWP.BackEnd.Network
 #endif
                                         continue;
                                     }
-                                    processedAtLestOne = true;
-                                    //TODO: add to available targets. Don't connect directly, check if sync is allowed.
-                                    //TODO: doesn't work with one time sends....
-                                    if (!FileManager.IsTrustedSyncTarget(remoteHostname)) continue;
-                                
-                                    //Connected.Add(targetIp);
                                     new Thread(() =>
                                     {
                                         if (!P2PDecide(targetIp, songsToSend))
@@ -481,6 +508,7 @@ namespace MWP.BackEnd.Network
                                             Connected.Remove(targetIp);
                                         }
                                     }).Start();
+                                    break;
                                 }
                             }
                             catch
@@ -534,9 +562,9 @@ namespace MWP.BackEnd.Network
                 }
                 else
                 {
-                    short? prefix = networkInterface?.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
+                    short? prefix = networkInterface.InterfaceAddresses.First(a => a.Address != null && a.Address.Equals(inetAddress))
                         .NetworkPrefixLength;
-                    myMask = PrefixLengthToNetmask(prefix ?? 0);
+                    myMask = PrefixLengthToNetmask((short)prefix);
                     myBroadcastIp = GetBroadCastIp(MyIp, myMask);
                 }
 #if DEBUG
@@ -568,7 +596,6 @@ namespace MWP.BackEnd.Network
 
         internal static void TestNetwork()
         {
-            //TODO: add evaluation
             if (SettingsManager.CanUseNetwork != CanUseNetworkState.Allowed)
             {
                 NetworkManager.Common.CanSend = CanSend.Rejected;
@@ -692,33 +719,36 @@ namespace MWP.BackEnd.Network
             if (networkCapabilities.HasCapability(NetCapability.NotMetered) && networkCapabilities.HasCapability(NetCapability.Trusted))
             {
                 Dictionary<string, string> transportInfo = networkCapabilities.TransportInfo.ToDictionary();
-                string ipString = transportInfo["IpAddress"];
-                if (int.TryParse(ipString, out int ipInt))
+
+                if (transportInfo.TryGetValue("IpAddress", out string ipString))
                 {
-                    IPAddress ipAdd = new IPAddress(ipInt);
-                    string ip = ipAdd.ToString();
-                    if (ValidateIPv4(ip) && ip != "0.0.0.0")
+                    if (long.TryParse(ipString, out long longIp))
                     {
-                        if (NetworkManager.Common.MyIp == null)
+                        byte[] x = BitConverter.GetBytes(longIp).Take(4).ToArray();
+                        IPAddress ipAdd = new IPAddress(x);
+                        string ip = ipAdd.ToString();
+                        if (ValidateIPv4(ip) && ip != "0.0.0.0")
                         {
-                            NetworkManager.Common.CanSend = NetworkManager.Common.GetConnectionInfo(ipAdd) ? CanSend.Test : CanSend.Rejected;
-                        }
-                        string ssid = transportInfo["SSID"];
+                            if (NetworkManager.Common.MyIp == null)
+                            {
+                                NetworkManager.Common.CanSend = NetworkManager.Common.GetConnectionInfo(ipAdd) ? CanSend.Test : CanSend.Rejected;
+                            }
+                            string ssid = transportInfo["SSID"];
 #if DEBUG
-                        MyConsole.WriteLine($"SSID: {ssid}");         
-                        MyConsole.WriteLine($"BLUD: {ssid == "<unknown ssid>"}");
+                            MyConsole.WriteLine($"SSID: {ssid}");         
 #endif
-                        if (ssid != NetworkManager.Common.CurrentSsid)
-                        {
-                            NetworkManager.Common.CanSend = CanSend.Test;
-                            NetworkManager.Common.CurrentSsid = ssid;
-                            StateHandler.TriggerShareFragmentRefresh();
+                            if (ssid != NetworkManager.Common.CurrentSsid)
+                            {
+                                NetworkManager.Common.CanSend = CanSend.Test;
+                                NetworkManager.Common.CurrentSsid = ssid;
+                                StateHandler.TriggerShareFragmentRefresh();
+                            }
+                            else if (NetworkManager.Common.CanSend == CanSend.Rejected)
+                            {
+                                NetworkManager.Common.CanSend = CanSend.Test;
+                            }
+                            return;
                         }
-                        else if (NetworkManager.Common.CanSend == CanSend.Rejected)
-                        {
-                            NetworkManager.Common.CanSend = CanSend.Test;
-                        }
-                        return;
                     }
                 }
             }
