@@ -103,8 +103,8 @@ namespace MWP.BackEnd
             {
 #if DEBUG
                 MyConsole.WriteLine($"Excluded paths {_excludedPaths.Value}");
-                return _excludedPaths.Value.Split(';').ToList();
 #endif
+                return _excludedPaths.Value.Split(';').ToList();
             }
             set
             {
