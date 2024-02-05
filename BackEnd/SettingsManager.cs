@@ -77,9 +77,18 @@ namespace MWP.BackEnd
                 
             };
         }
+        
+        public static List<(string name, Func<string> read, Action<string> write, string? remark)> GetStringSettings()
+        {
+            return new List<(string name, Func<string> read, Action<string> write, string? remark)> {
+                ("Set device name", () => Hostname, (val) => { Hostname = val; }, null),
+                
+            };
+        }
 
         private static void RegisterSettings()
         {
+            _hostname = new StringSetting(ShareName, "Hostname", DeviceInfo.Name);
             _moveFiles = new IntSetting(ShareName, "MoveFiles", (int)MoveFilesEnum.None);
             _shouldUseChromaprintAtDownload = new BoolSetting(ShareName, "ShouldUseChromaprintAtDownload", true);
             _shouldUseChromaprintAtDiscover = new IntSetting(ShareName, "ShouldUseChromaprintAtDiscover", (int)UseChromaprint.None);
@@ -87,6 +96,13 @@ namespace MWP.BackEnd
             _defaultDownloadAction = new IntSetting(ShareName, "defaultDownloadAction", (int)DownloadActions.DownloadOnly);
             _checkUpdates = new IntSetting(ShareName, "checkUpdates", (int)AutoUpdate.NoState);
             _excludedPaths = new StringSetting(ShareName, "ShouldUseChromaprintAtDownload", GetDefaultExcludedPaths());
+        }
+        
+        private static Setting<string> _hostname = new StringSetting(ShareName, "Hostname", DeviceInfo.Name);
+        public static string Hostname
+        {
+            get => _hostname.Value;
+            set => _hostname.Value = value;
         }
         
         private static Setting<int> _moveFiles = new IntSetting(ShareName, "MoveFiles", (int)MoveFilesEnum.None);

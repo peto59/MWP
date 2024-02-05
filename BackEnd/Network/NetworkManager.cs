@@ -31,7 +31,7 @@ namespace MWP.BackEnd.Network
 
         internal static readonly TimeSpan RemoveInterval = new TimeSpan(BroadcastInterval*numberOfMissedBroadcastsToRemoveHost*TimeSpan.TicksPerSecond);
 
-        internal static string DeviceName => DeviceInfo.Name;
+        internal static string DeviceName => SettingsManager.Hostname;
 
         /// <summary>
         /// Starts listening for broadcasts, sending broadcasts and managing connections. Entry point for NetworkManager.
