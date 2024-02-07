@@ -289,6 +289,10 @@
     <AndroidResource Include="Resources\layout\nav_header_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\permission_popup.xml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\layout\playlists_fragment.xml" />
     <AndroidResource Include="Resources\layout\playlist_fragment.xml" />
     <AndroidResource Include="Resources\layout\settings_fragment.xml" />
@@ -538,7 +542,6 @@
     
         <PropertyGroup Condition="'@(GitTagMatches)' != ''">
           <MyBuildNumber>$([System.Text.RegularExpressions.Regex]::Match('%(GitTagMatches.Identity)', '$(Pattern)').Groups[2].Value)</MyBuildNumber>
-          <!-- <MyNewBuildNumber>$([MSBuild]::Add($(MyBuildNumber), 1))</MyNewBuildNumber> -->
         </PropertyGroup>
     
         <XmlPoke XmlInputPath="$(AndroidManifest)" Query="/manifest/@android:versionCode" Value="$(MyBuildNumber)" Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;" />

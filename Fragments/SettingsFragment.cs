@@ -6,21 +6,16 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
-using System.Threading.Tasks;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
-using Android.Net;
-using Android.Provider;
 using Java.IO;
 using Fragment = AndroidX.Fragment.App.Fragment;
 using MWP.BackEnd;
 using MWP.Helpers;
 using Color = Android.Graphics.Color;
 using Orientation = Android.Widget.Orientation;
-using Uri = Android.Net.Uri;
 
 namespace MWP
 {
@@ -47,6 +42,7 @@ namespace MWP
             context = ctx;
             this.assets = assets;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
+            paths = new List<string>();
         }
 
 
@@ -60,24 +56,20 @@ namespace MWP
 
             TextView? dropdownItem = view?.FindViewById<TextView>(Resource.Id.dropdown_item_textview);
             if (dropdownItem != null) dropdownItem.Typeface = font;
+            
 
             /*
-            TextView? settingsTestbtbn = view?.FindViewById<TextView>(Resource.Id.settings_testbtn);
-            settingsTestbtbn.Click += delegate
-            {
-                List<string> dd = new List<string>() { "jeden song", "druhhy song", "ttreti song" };
-                if (assets != null) UiRenderFunctions.ListIncomingSongsPopup(dd, "lukas", 15, context, () => { }, () => { });
-            }; */
-
-            /*
-             * Príjmanie dáta nastavení z pozadia aplikácie. Rozlišijeme 3 typi nastavení
+             * Príjmanie dáta nastavení z pozadia aplikácie. Rozlišijeme 4 typi nastavení
              * Bool - Nastavenie reprezentované komponentom Switch
              * Int  - Nastavenie reprezentované komponentom Spinner typu dropdown
              * Folder Picker - statické nastavenie zadefinované v XML. Môže sa nachádzať iba raz.
+             * String - nastavenie reprezentované komponentom EditText, čiže input
              */
             List<(string name, Func<bool> read, Action<bool> write, string? remark)> boolSettings = SettingsManager.GetBoolSettings();
             List<(string name, Func<int> read, Action<int> write, Dictionary<string, int>? mapping, string? remark)> intSettings = SettingsManager.GetIntSettings();
-
+            List<(string name, Func<string> read, Action<string> write, string? remark)> stringSettings =
+                SettingsManager.GetStringSettings();
+            
             /*
              * Vykreslovanie všetkých n-počet Bool nastavení získaných z pozadia. Vytváram for loop podľa počtu
              * nastavení v liste. Pre každý element v liste nastavení volám funkciy DropdownSetting ktorá vráti
@@ -97,7 +89,7 @@ namespace MWP
             
             /*
              * Vykreslovanie všetkých n-počet Int nastavení získaných z pozadia. Vytváram for loop podľa počtu
-             * nastavení v liste. Pre každý element v liste nastavení volám funkciy DropdownSetting ktorá vráti
+             * nastavení v liste. Pre každý element v liste nastavení volám funkciu DropdownSetting ktorá vráti
              * LinearLayout obsahujúci užívateľské rozhranie pripravené na vykreslenie.
              */
             for (int i = 0; i < intSettings.Count; i++)
@@ -112,7 +104,24 @@ namespace MWP
                     )
                 );
             }
-            
+
+            /*
+             * Vykreslovanie všetkých n-počet String nastavení získaných z pozadia. Vytváram for loop podľa počtu
+             * nastavení v liste. Pre každý element v liste nastavení volám funkciu InputSetting ktorá vráti
+             * LinearLayout obsahujúci užívateľské rozhranie obsahujúce EditText element s príslušnými metódami a obsahom,
+             * pripravené na vykreslenie.
+             */
+            for (int i = 0; i < stringSettings.Count; i++)
+            {
+                mainLinearLayout?.AddView(
+                    InputSetting(
+                        stringSettings[i].name, 
+                        stringSettings[i].remark,
+                        stringSettings[i].write,
+                        stringSettings[i].read()
+                    )
+                );
+            }
             
             /*
              * Restricted MP3 folders setting
@@ -290,6 +299,80 @@ namespace MWP
 
         }
         
+        /**/
+        private LinearLayout InputSetting(string name, string? remark, Action<string> write, string current)
+        {
+            /**/
+            LinearLayout linOuter = new LinearLayout(context);
+            linOuter.Orientation = Orientation.Vertical;
+            LinearLayout.LayoutParams linParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                ViewGroup.LayoutParams.WrapContent
+            );
+            linParams.SetMargins(
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(20.0f, context)
+            );
+            linOuter.LayoutParameters = linParams;
+            linOuter.SetGravity(GravityFlags.Left);
+            
+            
+            /**/
+            LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                ViewGroup.LayoutParams.WrapContent
+            );
+            TextView title = new TextView(context);
+            title.LayoutParameters = titleParams;
+            title.TextSize = 20;
+            title.Typeface = font;
+            title.Text = name;
+            title.SetTextColor(Color.White);
+            linOuter.AddView(title);
+            
+            /**/
+            LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                (int)UiRenderFunctions.ConvertDpToPixels(40, context)
+            );
+            inputParams.SetMargins(0, 
+                (int)UiRenderFunctions.ConvertDpToPixels(10, context), 
+                (int)UiRenderFunctions.ConvertDpToPixels(50, context), 
+                0
+            );
+            EditText nameInput = new EditText(context);
+            nameInput.LayoutParameters = inputParams;
+            nameInput.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
+            nameInput.Text = current;
+            nameInput.Typeface = font;
+            nameInput.TextSize = 15;
+            nameInput.SetTextColor(Color.White);
+            nameInput.SetPadding(20, 20, 20, 20);
+            nameInput.TextChanged += delegate
+            {
+                if (nameInput.Text != null) write(nameInput.Text);
+            };
+            linOuter.AddView(nameInput);
+            
+            /**/
+            LinearLayout.LayoutParams remarkParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent,
+                ViewGroup.LayoutParams.WrapContent
+            );
+            remarkParams.SetMargins(0, (int)UiRenderFunctions.ConvertDpToPixels(10, context), 0, 0);
+            TextView remarkLabel = new TextView(context);
+            remarkLabel.LayoutParameters = remarkParams;
+            remarkLabel.TextSize = 12;
+            remarkLabel.Typeface = font;
+            remarkLabel.Text = remark;
+            remarkLabel.SetTextColor(Color.ParseColor("#A9A9A9"));
+            linOuter.AddView(remarkLabel);
+            
+            return linOuter;
+        }
+        
         
         /**/
         private AndroidX.AppCompat.Widget.SwitchCompat CreateSwitch(Action<bool> write, bool initialValue)
@@ -306,7 +389,7 @@ namespace MWP
             switchCompat.SetThumbResource(Resource.Drawable.custom_thumb);
 
             switchCompat.Checked = initialValue;
-            switchCompat.CheckedChange += (sender, args) => write(args.IsChecked);
+            switchCompat.CheckedChange += (_, args) => write(args.IsChecked);
             
             
             return switchCompat;
@@ -329,27 +412,30 @@ namespace MWP
             
             Spinner dropdown = new Spinner(context);
             dropdown.LayoutParameters = dropdownParams;
-            dropdown.SetBackgroundResource(Resource.Drawable.rounded_dark);
+            dropdown.SetBackgroundResource(Resource.Drawable.rounded_primaryColor);
             dropdown.SetPadding(
                 (int)UiRenderFunctions.ConvertDpToPixels(10, context), 
                 (int)UiRenderFunctions.ConvertDpToPixels(10, context), 
                 (int)UiRenderFunctions.ConvertDpToPixels(10, context), 
                 (int)UiRenderFunctions.ConvertDpToPixels(10, context)
             );
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, Resource.Drawable.dropdown_item, items);
-            dropdown.Adapter = adapter;
-            
-            if (values != null)
+            if (items != null)
             {
-                dropdown.SetSelection(adapter.GetPosition(
-                    values.FirstOrDefault(x => x.Value == initialValue).Key
-                ));
-
-                dropdown.ItemSelected += (sender, args) =>
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, Resource.Drawable.dropdown_item, items);
+                dropdown.Adapter = adapter;
+            
+                if (values != null)
                 {
-                    string selected = (string)args.Parent?.GetItemAtPosition(args.Position)!;
-                    write(values[selected]);
-                };
+                    dropdown.SetSelection(adapter.GetPosition(
+                        values.FirstOrDefault(x => x.Value == initialValue).Key
+                    ));
+
+                    dropdown.ItemSelected += (_,args) =>
+                    {
+                        string selected = (string)args.Parent?.GetItemAtPosition(args.Position)!;
+                        write(values[selected]);
+                    };
+                }
             }
 
             return dropdown;
@@ -360,7 +446,7 @@ namespace MWP
          * zakázaných ciest priečinkov pre hľadanie MP3 súborov a tlačidlom pre možnosť pridania novej
          * cesty prostredníctvom Folder Picker-u. 
          */
-        private void ListPathsPopup(List<string> paths)
+        private void ListPathsPopup(List<string> list)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? view = ifl?.Inflate(Resource.Layout.settings_restricted_paths_popup, null);
@@ -375,7 +461,7 @@ namespace MWP
             /*
              * Prechádzanie cestami v liste a pre každú cestu vytvorenie nového záznamu v liste v ScrollView.
              */
-            foreach (string path in paths)
+            foreach (string path in list)
             {
                 /*
                  * Vytvaranie LinearLayout-u ktory bude obsahpvat text cesty a tlacidlo na vymazanie
@@ -445,10 +531,10 @@ namespace MWP
                 deleteButton.Text = "X";
                 deleteButton.Click += delegate
                 {
-                    paths.Remove(path);
-                    SettingsManager.ExcludedPaths = paths;
+                    list.Remove(path);
+                    SettingsManager.ExcludedPaths = list;
                     dialog?.Cancel();
-                    ListPathsPopup(paths);
+                    ListPathsPopup(list);
                 };
                 lnIn.AddView(deleteButton);
                 

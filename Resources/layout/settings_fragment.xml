@@ -44,18 +44,25 @@
                     android:id="@+id/settings_restricted_button"
             />
         </LinearLayout>
+        <!--
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:orientation="vertical" android:gravity="left"
+                      android:layout_margin="20dp"
+        >
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:textSize="20dp" android:text="Change name" android:textColor="#ffffff"
+            />
+            <EditText android:layout_width="match_parent" android:layout_height="40dp"
+                      android:layout_marginTop="10dp"
+                      android:background="@drawable/rounded_primaryColor" android:layout_marginRight="50dp"
+            />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:layout_marginTop="5dp" 
+                      android:textSize="12dp" android:text="Some remark idk what shpuld be here" android:textColor="#A9A9A9"
+            />
+        </LinearLayout>
+        -->
         
-        
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Default settings"
-            android:textColor="#ffffff"
-            android:paddingVertical="8dp"
-            android:paddingHorizontal="15dp"
-            android:background="@drawable/rounded_button"
-            android:id="@+id/settings_testbtn"
-    />
     </LinearLayout>
     
 </ScrollView>
