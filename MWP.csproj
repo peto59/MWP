@@ -522,7 +522,7 @@
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
     Other similar extension points exist, see Microsoft.Common.targets.-->
-      <!-- <Target Name="BeforeBuild" Condition=" '$(IsGithubRunner)' == 'false' ">
+      <Target Name="BeforeBuild" Condition=" '$(IsGithubRunner)' == 'false' ">
         <Copy SourceFiles="$(AndroidManifest)" DestinationFiles="$(ProjectDir)\Properties\.AndroidManifest.xml.bck" />
 
         <Exec Command="git pull" />
@@ -546,7 +546,7 @@
     
         <XmlPoke XmlInputPath="$(AndroidManifest)" Query="/manifest/@android:versionCode" Value="$(MyBuildNumber)" Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;" />
         <XmlPoke XmlInputPath="$(AndroidManifest)" Query="/manifest/@android:versionName" Value="$(MyBuildNumber)" Namespaces="&lt;Namespace Prefix='android' Uri='http://schemas.android.com/apk/res/android' /&gt;" />
-      </Target> -->
+      </Target>
   
       <Target Name="ReadKeystoreCredentials" BeforeTargets="Build" Condition=" '$(IsGithubRunner)' == 'false' and '$(UnifiedSigning)' == 'true' ">
         <XmlPeek XmlInputPath="$(UserHomeDir)/apkSigningKeyConfig.xml" Query="/Root/StorePass/text()">
@@ -565,7 +565,7 @@
         </PropertyGroup>
       </Target>
   
-      <!-- <Target Name="AfterBuild" Condition=" '$(IsGithubRunner)' == 'false' ">
+      <Target Name="AfterBuild" Condition=" '$(IsGithubRunner)' == 'false' ">
         <Move SourceFiles="$(ProjectDir)\Properties\.AndroidManifest.xml.bck" DestinationFiles="$(AndroidManifest)" OverwriteReadOnlyFiles="true" />
-      </Target> -->
+      </Target>
 </Project>

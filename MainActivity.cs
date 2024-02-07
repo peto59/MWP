@@ -720,18 +720,20 @@ namespace MWP
             }
 
             //TODO: add normal explanation for ExternalStorageManager and BackgroundLocation
-            string explanation = Environment.IsExternalStorageManager switch
-            {
-                false when SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed =>
-                    "Storage access is required for storing and playing songs, location is required for identifying current network for security",
-                true when SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed =>
-                    "Location is required for identifying current network for security",
-                false when SettingsManager.CanUseNetwork != CanUseNetworkState.Allowed =>
-                    "Storage access is required for storing and playing songs",
-                _ => string.Empty
-            };
-            
-            
+            string explanation = string.Empty;
+            if (!Environment.IsExternalStorageManager && SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
+                explanation =
+                    "Storage access is required for storing and playing songs, location is required for identifying current network for security";
+            else if (Environment.IsExternalStorageManager &&
+                     SettingsManager.CanUseNetwork == CanUseNetworkState.Allowed)
+                explanation = ContextCompat.CheckSelfPermission(this, Manifest.Permission.AccessFineLocation) ==
+                              (int)Permission.Granted
+                    ? "Background location is required for the application to work at all times, make sure to click Allow all the time"
+                    : "Location is required for identifying current network for security";
+            else if (!Environment.IsExternalStorageManager &&
+                     SettingsManager.CanUseNetwork != CanUseNetworkState.Allowed)
+                explanation = "Storage access is required for storing and playing songs";
+
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             LayoutInflater? ifl = LayoutInflater.From(this);
             View? view = ifl?.Inflate(Resource.Layout.permission_popup, null);
