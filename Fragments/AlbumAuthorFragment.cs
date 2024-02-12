@@ -181,9 +181,15 @@ namespace MWP
                     lin.AddView(lnIn);
                 }
             }
-            
-            
-            decimal percentage = ((decimal)albumImagesBuffer.Items.Count / (decimal)albumTilesBuffer.Count) * 100;
+            decimal percentage = 100;
+            try
+            {
+                percentage = ((decimal)albumImagesBuffer.Items.Count / (decimal)albumTilesBuffer.Count) * 100;
+            }
+            catch
+            {
+                //ignored
+            }
             if (percentage > 80)
             {
                 for (int i = 0; i < albums.Count; i++)

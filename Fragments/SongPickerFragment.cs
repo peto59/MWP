@@ -163,7 +163,6 @@ namespace MWP
                         
                         /* /* prenasanie songov */
                         List<Song> listOfSelectedSongs = selectedSongs.Values.ToList();
-                        /*
                         List<(IPAddress ipAddress, DateTime lastSeen, string hostname)> currentAvailableHosts = MainActivity.StateHandler.AvailableHosts.Where(a => a.hostname == hostname).ToList();
                         if(currentAvailableHosts.Count > 0){
                             IPAddress currentHostAddress = currentAvailableHosts.First().ipAddress;
@@ -171,7 +170,7 @@ namespace MWP
                             {
                                 NetworkManager.Common.SendBroadcast(listOfSelectedSongs, currentHostAddress);
                             }).Start();
-                        } */
+                        }
                         
                         ShareFragment shareFragment = new ShareFragment(context, assets);
                         var fragmentTransaction = ParentFragmentManager.BeginTransaction();
