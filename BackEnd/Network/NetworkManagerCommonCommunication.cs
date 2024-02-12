@@ -178,7 +178,7 @@ namespace MWP.BackEnd.Network
                 {
                     connectionState.gotSongInfoFlag = false;
                     networkStream.WriteCommand(CommandsArr.SongRequestAccepted, ref encryptor);
-                    
+                    notification?.Stage2(connectionState);
                 }
 
                 if (connectionState is { gotSongInfoFlag: true, UserAcceptedState: UserAcceptedState.Cancelled })
@@ -393,7 +393,7 @@ namespace MWP.BackEnd.Network
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void SongSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, long length, ref Aes aes, ref ConnectionState connectionState)
+        internal static void SongSend(ref NetworkStream networkStream, ref RSACryptoServiceProvider encryptor, long length, ref Aes aes, ref ConnectionState connectionState, ref Notifications? notification)
         {
             switch (connectionState.ConnectionType)
             {
@@ -458,6 +458,7 @@ namespace MWP.BackEnd.Network
 #endif
                 //ignored
             }
+            notification?.Stage2Update(connectionState);
             networkStream.WriteCommand(CommandsArr.Ack, ref encryptor);
         }
 

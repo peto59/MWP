@@ -248,7 +248,7 @@ internal static class NetworkManagerServer
 #if DEBUG
                                 MyConsole.WriteLine($"file length: {length}");
 #endif
-                                NetworkManagerCommonCommunication.SongSend(ref networkStream, ref encryptor, (long)length, ref aes, ref connectionState);
+                                NetworkManagerCommonCommunication.SongSend(ref networkStream, ref encryptor, (long)length, ref aes, ref connectionState, ref notification);
                             }
                             break;
                         case CommandsEnum.ArtistImageSend:
