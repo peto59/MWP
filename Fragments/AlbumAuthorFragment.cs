@@ -1,3 +1,4 @@
+using System;
 using Android.App;
 using Android.Content;
 using Android.OS;
@@ -186,8 +187,11 @@ namespace MWP
             {
                 percentage = ((decimal)albumImagesBuffer.Items.Count / (decimal)albumTilesBuffer.Count) * 100;
             }
-            catch
+            catch(Exception e)
             {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
                 //ignored
             }
             if (percentage > 80)
@@ -230,9 +234,20 @@ namespace MWP
                 {
                     lin.AddView(lnIn);
                 }
-            } 
-            
-            decimal percentage = ((decimal)authorImagesBuffer.Items.Count / (decimal)authorTilesBuffer.Count) * 100;
+            }
+
+            decimal percentage = 100;
+            try
+            {
+                percentage = ((decimal)authorImagesBuffer.Items.Count / (decimal)authorTilesBuffer.Count) * 100;
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MyConsole.WriteLine(e);
+#endif
+                //ignored
+            }
             if (percentage > 80)
             {
                 for (int i = 0; i < artists.Count; i++)
