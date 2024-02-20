@@ -81,7 +81,7 @@ namespace MWP
                     )
                 );
 
-            widgetView.SetInt(Resource.Id.widgetBackground, "setBackgroundColor", Color.Black);
+            // widgetView.SetInt(Resource.Id.widgetBackground, "setBackgroundColor", Color.Black);
 
             return widgetView;
         }

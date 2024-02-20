@@ -29,7 +29,8 @@ namespace MWP
     {
         private readonly Context context;
         private RelativeLayout? mainLayout;
-        private Typeface? font;
+        private LinearLayout playlistLnMain;
+        private readonly Typeface? font;
 
         private PlaylistFragment playlistFragment; 
             
@@ -81,7 +82,7 @@ namespace MWP
             playlistsScroll.LayoutParameters = playlistScrollParams;
 
 
-            LinearLayout playlistLnMain = new LinearLayout(context);
+            playlistLnMain = new LinearLayout(context);
             playlistLnMain.Orientation = Orientation.Vertical;
             RelativeLayout.LayoutParams playlistLnMainParams = new RelativeLayout.LayoutParams(
                     ViewGroup.LayoutParams.MatchParent,
@@ -189,12 +190,20 @@ namespace MWP
                 if (pButton != null)
                     pButton.Click += (_, _) =>
                     {
-                        if (userData.Text != null)
+                        if (!string.IsNullOrEmpty(userData.Text) && !string.IsNullOrWhiteSpace(userData.Text))
                         {
                             FileManager.CreatePlaylist(userData.Text);
                             Toast.MakeText(
                                     context, userData.Text + " Created successfully",
                                     ToastLength.Short
+                                )
+                                ?.Show();
+                        }
+                        else
+                        {
+                            Toast.MakeText(
+                                    context, "You have to enter some text, emmpty space isn't allowed!",
+                                    ToastLength.Long
                                 )
                                 ?.Show();
                         }
@@ -246,6 +255,7 @@ namespace MWP
                     
                     alert.Dispose();
                     dialog?.Cancel();
+                    playlistLnMain.RemoveAllViews();
                     RenderPlaylists();
                 };
 

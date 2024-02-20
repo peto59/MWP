@@ -176,7 +176,7 @@
                 <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
                 android:orientation="vertical" android:gravity="center_horizontal">
                     
-                    
+                    <!--
                     <TextView android:layout_width="match_parent" android:layout_height="50dp"
                               android:text="Download"
                               android:gravity="center_vertical"
@@ -190,8 +190,8 @@
                               android:drawablePadding="8dp"
                               android:drawableStart="@drawable/download"
                               android:layout_marginHorizontal="10dp"
-                    />
-                    <TextView android:layout_width="match_parent" android:layout_height="50dp"
+                    /> -->
+                    <TextView android:layout_width="match_parent" android:layout_height="75dp"
                               android:text="Share"
                               android:gravity="center_vertical"
                               android:background="@drawable/rounded_primaryColor"
@@ -205,7 +205,7 @@
                               android:drawableStart="@drawable/share"
                               android:layout_marginHorizontal="10dp"
                     />
-                    <TextView android:layout_width="match_parent" android:layout_height="50dp"
+                    <TextView android:layout_width="match_parent" android:layout_height="75dp"
                               android:text="Settings"
                               android:gravity="center_vertical"
                               android:background="@drawable/rounded_primaryColor"

@@ -127,7 +127,6 @@
     <Compile Include="DatatypesAndExtensions\Setting.cs" />
     <Compile Include="Fragments\AlbumAuthorFragment.cs" />
     <Compile Include="Fragments\AlbumFragment.cs" />
-    <Compile Include="Fragments\AllSongsFragment.cs" />
     <Compile Include="Fragments\AuthorFragment.cs" />
     <Compile Include="Fragments\HostPickerFragment.cs" />
     <Compile Include="Fragments\PlaylistFragment.cs" />

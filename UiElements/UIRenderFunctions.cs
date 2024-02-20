@@ -199,6 +199,12 @@ namespace MWP
             
         }
         
+        /// <summary>
+        /// Premena DP jednotky na jodnutku pixelov. 
+        /// </summary>
+        /// <param name="dpValue">Hodnota v DP jednotkach.</param>
+        /// <param name="context">Kontext hlavnej aktivity. Ziskat sa da porstrednictvom parametru ziskaneho z explictneho konstrkutora v akomokolvek fragmente.</param>
+        /// <returns></returns>
         public static float ConvertDpToPixels(float dpValue, Context context) {
             if (context.Resources is not { DisplayMetrics: not null }) return 0.0f;
             var screenPixelDensity = context.Resources.DisplayMetrics.Density;
