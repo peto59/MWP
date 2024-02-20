@@ -422,7 +422,10 @@ namespace MWP.BackEnd
             SongJsonConverter customConverter = new SongJsonConverter(true);
             Dictionary<string, List<Song>> playlists = JsonConvert.DeserializeObject<Dictionary<string, List<Song>>>(json, customConverter) ?? new Dictionary<string, List<Song>>();
             if (!playlists.TryGetValue(playlist, out List<Song> playlist1)) return;
-            playlist1.Remove(song);
+            foreach (Song song1 in playlist1.Where(song1 => song1.Path == song.Path))
+            {
+                playlist1.Remove(song1);
+            }
             File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }
 

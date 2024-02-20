@@ -168,6 +168,17 @@ namespace MWP.BackEnd
 #endif
                 return;
             }
+            
+            List<string> playlistsToUpdate = new List<string>();
+            if (song != null)
+            {
+                string originalPath = song.Path;
+                foreach (string playlist in FileManager.GetPlaylist().Where(playlist => FileManager.GetPlaylist(playlist).Any(playlistSong => playlistSong.Path == originalPath)))
+                {
+                    playlistsToUpdate.Add(playlist);
+                    FileManager.DeletePlaylist(playlist, song);
+                }
+            }
 
             Changed = false;
             bool  movingFlag = saveFlags.HasFlag(SongSave.Title) || saveFlags.HasFlag(SongSave.Artist) ||
@@ -291,6 +302,10 @@ namespace MWP.BackEnd
 
 
             if (s != null) StateHandler.TriggerTagManagerFragmentRefresh(OriginalTitle, s);
+            foreach (string playlist in playlistsToUpdate)
+            {
+                if (s != null) FileManager.AddToPlaylist(playlist, s);
+            }
 
 
             saveFlags = SongSave.None;
