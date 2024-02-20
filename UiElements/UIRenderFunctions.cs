@@ -525,6 +525,7 @@ namespace MWP
              */
             TextView name = new TextView(context);
             name.Text = musics.Title;
+            name.Typeface = Typeface.CreateFromAsset(assets, "sulphur.ttf");
             name.TextSize = nameSize;
             name.SetTextColor(Color.White);
             name.TextAlignment = TextAlignment.Center;

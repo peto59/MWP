@@ -425,6 +425,7 @@ namespace MWP.BackEnd
             foreach (Song song1 in playlist1.Where(song1 => song1.Path == song.Path))
             {
                 playlist1.Remove(song1);
+                break;
             }
             File.WriteAllTextAsync($"{_musicFolder}/playlists.json", JsonConvert.SerializeObject(playlists, customConverter));
         }

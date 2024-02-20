@@ -202,7 +202,7 @@ namespace MWP
                         else
                         {
                             Toast.MakeText(
-                                    context, "You have to enter some text, emmpty space isn't allowed!",
+                                    context, "You have to enter some text, empty space isn't allowed!",
                                     ToastLength.Long
                                 )
                                 ?.Show();

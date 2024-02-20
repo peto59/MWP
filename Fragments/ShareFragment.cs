@@ -96,7 +96,7 @@ namespace MWP
             /*
              * ziskavanie elementov z XAML suboru za pomoci ID ktore maju pridelene v XAML subore
              */
-            TextView? remoteListeningLabel = view?.FindViewById<TextView>(Resource.Id.remote_listening_label);
+            // TextView? remoteListeningLabel = view?.FindViewById<TextView>(Resource.Id.remote_listening_label);
             TextView? remoteConnectionsPortLabel = view?.FindViewById<TextView>(Resource.Id.remote_connections_port_label);
             TextView? remoteConnectionsPort = view?.FindViewById<TextView>(Resource.Id.remote_connections_port);
             TextView? trustedNetworkLabel = view?.FindViewById<TextView>(Resource.Id.trusted_network_label);
@@ -108,7 +108,7 @@ namespace MWP
              * nenulovu hodnotu.
              */
             if (availableHostsLabel != null) availableHostsLabel.Typeface = font;
-            if (remoteListeningLabel != null) remoteListeningLabel.Typeface = font;
+            // if (remoteListeningLabel != null) remoteListeningLabel.Typeface = font;
             if (remoteConnectionsPortLabel != null) remoteConnectionsPortLabel.Typeface = font;
             if (remoteConnectionsPort != null) remoteConnectionsPort.Typeface = font;
             if (trustedNetworkLabel != null) trustedNetworkLabel.Typeface = font;
@@ -176,13 +176,13 @@ namespace MWP
             /*
              * Vytvorenie click eventu pre switch sluziaci na prepinanie medzi stavom "moze pouzivat WAN" a "nemoze pouzivat WAN"
              */
-            SwitchCompat? remoteListeningSwitch = view?.FindViewById<SwitchCompat>(Resource.Id.remote_listening_switch);
+            /*SwitchCompat? remoteListeningSwitch = view?.FindViewById<SwitchCompat>(Resource.Id.remote_listening_switch);
             if (remoteListeningSwitch != null)
                 remoteListeningSwitch.CheckedChange +=
                     delegate(object _, CompoundButton.CheckedChangeEventArgs args)
                     {
                         SettingsManager.CanUseWan = args.IsChecked;
-                    };
+                    }; */
             
         }
 
