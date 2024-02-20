@@ -83,6 +83,9 @@ namespace MWP.BackEnd.Player
                 case PREVIOUS_SONG:
                     MainActivity.ServiceConnection.Binder?.Service.PreviousSong();
                     break;
+                case TOGGLE_LOOP:
+                    MainActivity.ServiceConnection.Binder?.Service.ToggleLoop(intent.GetIntExtra("loopState", 0));
+                    break;
             }
         }
     }
