@@ -76,7 +76,7 @@ namespace MWP.BackEnd.Player
 		private bool isSkippingToNext;
 		private bool isSkippingToPrevious;
 		private bool isBuffering = true;
-		private bool isUsed = false;
+		//private bool isUsed = false;
 
 		/// <inheritdoc />
 		public override void OnDestroy()
@@ -91,10 +91,10 @@ namespace MWP.BackEnd.Player
 		private void InnitPlayer()
 		{
 			mediaPlayer = new MediaPlayer();
-			mediaPlayer.Prepared += delegate
+			/*mediaPlayer.Prepared += delegate
 			{
 				isUsed = true;
-			};
+			};*/
 			mediaPlayer.Completion += delegate
 			{
 				NextSong(false);
@@ -428,7 +428,7 @@ namespace MWP.BackEnd.Player
 			{
 				InnitPlayer();
 			}
-			if (isUsed || reset)
+			if (reset)
 			{
 				mediaPlayer!.Reset();
 #if DEBUG
@@ -502,11 +502,11 @@ namespace MWP.BackEnd.Player
 			isPaused = false;
 			if (!user && QueueObject.LoopState == LoopState.Single)
 			{
-				Play();
+				Play(true);
 			}
 			else if (QueueObject.IncrementIndex())
 			{
-				Play();
+				Play(true);
 			}
 			isSkippingToNext = false;
 		}
@@ -525,7 +525,7 @@ namespace MWP.BackEnd.Player
 			isSkippingToPrevious = true;
 			isPaused = false;
 			QueueObject.DecrementIndex();
-            Play();
+            Play(true);
 			isSkippingToPrevious = false;
 		}
 

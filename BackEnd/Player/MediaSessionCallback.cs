@@ -94,7 +94,7 @@ namespace MWP.BackEnd.Player
                     {
                         binder.Service.GenerateQueue(MainActivity.StateHandler.Songs, null, false);
                         binder.Service.Shuffle(true);
-                        binder.Service.Play();
+                        binder.Service.Play(true);
                     }
                     else
                     {
@@ -119,12 +119,12 @@ namespace MWP.BackEnd.Player
                     {
                         binder.Service.GenerateQueue(Album.FromId(mediaId), null, false);
                         binder.Service.Shuffle(true);
-                        binder.Service.Play();
+                        binder.Service.Play(true);
                     }else if (mediaTypeShuffle == MediaType.Artist)
                     {
                         binder.Service.GenerateQueue(Artist.FromId(mediaId), null, false);
                         binder.Service.Shuffle(true);
-                        binder.Service.Play();
+                        binder.Service.Play(true);
                     }
                     break;
                 case MediaType.Album:
