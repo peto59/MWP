@@ -50,20 +50,20 @@ namespace MWP
         }
 
         /// <summary>
-        /// General object, that will take on different forms, based on where its currently being defined.
-        /// E.g. if album fragment is currently active, than the object of that active album you are browsing will be
-        /// used to define this global position parameter
+        /// Všeobecný objekt, ktorý bude nadobúdať rôzne formy v závislosti na tom, kde je momentálne definovaný.
+        /// Napríklad, ak je aktívny fragment albumu, potom sa objekt tohto aktívneho albumu,
+        /// ktorý prezeráte, použije na definovanie tohto globálneho parametra polohy.
         /// </summary>
         public static object FragmentPositionObject;
         
         /// <summary>
         /// Shows dialog for user to accept or reject incoming songs from <paramref name="hostname"/>
         /// </summary>
-        /// <param name="songs">List of songs to be received</param>
-        /// <param name="hostname">Device that wants to send <paramref name="songs"/></param>
-        /// <param name="context">App context</param>
-        /// <param name="accept"><see cref="Action{T}"/> on accept</param>
-        /// <param name="reject"><see cref="Action{T}"/> on Reject</param>
+        /// <param name="songs">List skladieb ktore sa prijamju</param>
+        /// <param name="hostname">Zariadenie ktore chce poslat <paramref name="songs"/></param>
+        /// <param name="context">Kontext hlavnej aktivity</param>
+        /// <param name="accept"><see cref="Action{T}"/> na prijmutie skladieb</param>
+        /// <param name="reject"><see cref="Action{T}"/> na odmietnutie skladieb</param>
         public static void ListIncomingSongsPopup(List<Song> songs, string hostname, Context context, Action accept, Action reject)
         {
             int count = songs.Count;
@@ -214,9 +214,23 @@ namespace MWP
         } 
         
         
-        
+        /// <summary>
+        /// Táto metóda vytvára a zobrazuje upozornenie na potvrdenie odstránenia skladby. Naplní rozloženie pre dialóg,
+        /// nastaví zobrazenie a prispôsobí vzhľad textu pomocou poskytnutého písma.
+        /// Pozadie dialógu sa nastaví na priehľadné a farby textu sa nastavia.
+        /// Keď používateľ potvrdí odstránenie, skladba sa odstráni, dialóg sa skryje a spustí sa neplatnosť vyrovnávacej pamäte.
+        /// Okrem toho sa odstráni rozloženie obsahujúce zobrazenie odstránenej skladby a správa Toast potvrdí odstránenie.
+        /// Ak používateľ zruší, dialóg sa jednoducho skryje.
+        /// </summary>
+        /// <param name="song">Skladba</param>
+        /// <param name="di">Predosli dialog</param>
+        /// <param name="linFromDelete">Rodickovsky layout z ktoreho odstranujeme</param>
+        /// <param name="linForDelete">Element ktory chceme odstranit</param>
+        /// <param name="context">Kontext hlavnej aktivity</param>
+        /// <param name="songsFragmentContext">Kontext fragmentu songs (všetkých skladieb)</param>
+        /// <param name="font">Typeface objekt zainicializovany na prislusny font</param>
         private static void AreYouSure(
-            object sender, EventArgs e, Song song, AlertDialog? di, 
+            Song song, AlertDialog? di, 
             LinearLayout linFromDelete, LinearLayout? linForDelete, 
             Context context, SongsFragment songsFragmentContext, Typeface font)
         {
@@ -265,6 +279,17 @@ namespace MWP
             dialog?.Show();
         }
 
+        /// <summary>
+        /// Táto metóda vytvára a zobrazuje dialógové okno s výberom playlistov, v ktorých má byť pridaná skladba.
+        /// Naplní rozloženie pre dialóg, nastaví zobrazenie a vytvorí zoznam playlistov.
+        /// Pre každý playlist vytvorí nový riadok v rozložení, na ktorý sa dá kliknúť pre pridanie alebo odobratie zo zvolených playlistov.
+        /// Po kliknutí na tlačidlo odoslať sa skladba pridá do vybraných playlistov a dialóg sa skryje.
+        /// Ak sa skladba už nachádza v playliste, zobrazí sa upozornenie. Po kliknutí na tlačidlo zrušiť sa dialóg jednoducho skryje.
+        /// </summary>
+        /// <param name="song">Skladba Ktoru chceme pridat do playlistu</param>
+        /// <param name="context">Kontext hlavnej aktivity</param>
+        /// <param name="scale">škála používaná na normalizáciu veľkosti na DP</param>
+        /// <param name="font">Typeface objekt zainicializovany na prislusny font</param>
         private static void ListPlaylistsPopup(Song song, Context context, float scale, Typeface? font)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
@@ -413,7 +438,7 @@ namespace MWP
                     {
                         if (songsFragmentContext != null && font != null)
                         {
-                            AreYouSure(o, args, song, dialog, linFromDelete, linForDelete, context,
+                            AreYouSure( song, dialog, linFromDelete, linForDelete, context,
                                     songsFragmentContext, font);
                             dialog?.Hide();
                         }
@@ -439,22 +464,30 @@ namespace MWP
 
 
         /// <summary>
-        /// Horizontal order of elements within single element in list of songs or albums (only songs, bcs only albums have vertical alignment of cover and title)
+        /// Táto metóda vytvára a napĺňa horizontálny layout pre zobrazenie informácií o skladbe.
+        /// Vytvára nový horizontálny layout a nastavuje jeho parametre, vrátane veľkosti a okrajov.
+        /// Následne vytvára ImageView pre zobrazenie obrázka skladby a pridáva ho do layoutu.
+        /// Obsluhuje udalosti kliknutia a dlhého stlačenia na dlaždicu skladby.
+        /// Po kliknutí na dlaždicu sa vygeneruje fronta pre prehrávanie skladby v závislosti od typu mediálnej skladby.
+        /// Dlhým stlačením na dlaždicu sa zobrazí kontextové menu pre úpravu skladby.
+        /// Nakoniec sa pridáva TextView pre zobrazenie názvu skladby s nastavenými parametrami veľkosti písma, farby a zarovnania.
+        /// Návratovou hodnotou je naplnený horizontálny layout.
         /// </summary>
-        /// <param name="musics"></param>
-        /// <param name="scale"></param>
-        /// <param name="ww"></param>
-        /// <param name="hh"></param>
-        /// <param name="btnMargins"></param>
-        /// <param name="nameMargins"></param>
-        /// <param name="cardMargins"></param>
-        /// <param name="nameSize"></param>
-        /// <param name="index"></param>
-        /// <param name="context"></param>
-        /// <param name="songButtons"></param>
-        /// <param name="songMediaType"></param>
-        /// <param name="assets"></param>
-        /// <param name="linForDelete"></param>
+        /// <param name="musics">Objekt obsahujúci hudobný objekt (Album, Author, Song)</param>
+        /// <param name="scale">škála pre normalizáciu veľkosti na DP</param>
+        /// <param name="ww">šírka kartičky</param>
+        /// <param name="hh">výška kartičky</param>
+        /// <param name="btnMargins">List margin-ov pre tlačidlo</param>
+        /// <param name="nameMargins">List margin-ov pre názov kartičky</param>
+        /// <param name="cardMargins">List margin-ov pre kartičku</param>
+        /// <param name="nameSize">veľkosť fontu názvu</param>
+        /// <param name="context">Kontext hlavnej aktivity</param>
+        /// <param name="songButtons">List tlačidiel pre jednotlivé skladby</param>
+        /// <param name="songMediaType">typ príjmaného hudobného objektu</param>
+        /// <param name="assets">Assety aplikácie získane z hlavnej aktivity</param>
+        /// <param name="manager">Manažér fragmentov</param>
+        /// <param name="linForDelete">Element na vymazanie v prípade kliknutia na voľbu vymazať pri dlhom podržaní</param>
+        /// <param name="songsfragmentContext">Kontext fragmentu skladieb (SongsFragment)</param>
         /// <returns></returns>
         public static LinearLayout? PopulateHorizontal(
             MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] nameMargins, int[] cardMargins, int nameSize,
@@ -548,28 +581,34 @@ namespace MWP
 
 
         /// <summary>
-        /// Vertical order of elements within single element in list of songs or albums (only albums, bcs only albums have vertical alignment of cover and title) 
+        /// Táto metóda vytvára a napĺňa vertikálny layout pre zobrazenie informácií o hudobnom objekte.
+        /// Vytvára nový vertikálny layout a nastavuje jeho parametre, vrátane veľkosti a okrajov.
+        /// Následne vytvára ImageView pre zobrazenie náhľadu albumu/umelca a pridáva ho do layoutu.
+        /// Pre albumy a interpretov spravuje udalosti kliknutia na tlačidlo albumu/interpreta.
+        /// Po kliknutí sa prepne na príslušný fragment s detailmi albumu/interpreta.
+        /// Dlhým stlačením na dlaždicu sa zobrazí kontextové menu pre úpravu albumu/interpreta.
+        /// Nakoniec sa pridáva TextView pre zobrazenie názvu albumu/interpreta s nastavenými parametrami veľkosti písma, farby a zarovnania.
+        /// Návratovou hodnotou je naplnený vertikálny layout.
         /// </summary>
-        /// <param name="musics"></param>
-        /// <param name="scale"></param>
-        /// <param name="btnMargins"></param>
-        /// <param name="cardMargins"></param>
-        /// <param name="nameMargins"></param>
-        /// <param name="nameSize"></param>
-        /// <param name="index"></param>
-        /// <param name="context"></param>
-        /// <param name="albumButtons"></param>
-        /// <param name="manager"></param>
-        /// <param name="assets"></param>
-        /// <param name="linForDelete"></param>
-        /// <param name="albumFragment"></param>
-        /// <param name="authorFragment"></param>
-        /// <param name="ww"></param>
-        /// <param name="hh"></param>
+        /// <param name="musics">Objekt obsahujúci hudobný objekt (Album, Author, Song)</param>
+        /// <param name="scale">škála pre normalizáciu veľkosti na DP</param>
+        /// <param name="btnMargins">List margin-ov pre tlačidlo</param>
+        /// <param name="cardMargins">List margin-ov pre kartičku</param>
+        /// <param name="nameMargins">List margin-ov pre kartičku</param>
+        /// <param name="nameSize">veľkosť fontu názvu</param>
+        /// <param name="context">Kontext hlavnej aktivity (this)</param>
+        /// <param name="albumButtons">List elementov albumov vyobrazených na obrazovke používateľa</param>
+        /// <param name="manager">Manažér fragmentov</param>
+        /// <param name="assets">Assety aplikácie získané z hlavnej aktivity aplikácie (Assets)</param>
+        /// <param name="linForDelete">Layout na vymazanie v prípade výber mznosti po dlhom stlačení</param>
+        /// <param name="albumFragment">AlbumFragment objekt</param>
+        /// <param name="authorFragment">AuthorFragment objekt</param>
+        /// <param name="ww">šírka kartičky</param>
+        /// <param name="hh">výška kartičky</param>
         /// <param name="songsFragmentContext"></param>
         /// <returns></returns>
         public static LinearLayout? PopulateVertical(
-            MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] cardMargins, int[] nameMargins, int nameSize, int index,
+            MusicBaseClass musics, float scale, int ww, int hh, int[] btnMargins, int[] cardMargins, int[] nameMargins, int nameSize,
             Context context, Dictionary<LinearLayout?, object> albumButtons, 
             FragmentManager manager, AssetManager? assets,
             AlbumFragment? albumFragment = null, AuthorFragment? authorFragment = null,

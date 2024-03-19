@@ -238,7 +238,7 @@ namespace MWP
                     
                     LinearLayout? lnIn = UiRenderFunctions.PopulateVertical(
                         album, scale, 
-                        150, 100, buttonMargins, cardMargins, nameMargins, 15, index, 
+                        150, 100, buttonMargins, cardMargins, nameMargins, 15, 
                         context, albumButtons, ParentFragmentManager, assets, albumFragment);
                     if (albumTilesBuffer.TryAdd(album.Title, lnIn))
                     {

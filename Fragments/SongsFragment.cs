@@ -25,7 +25,10 @@ using MWP.Helpers;
 namespace MWP
 {
     /// <summary>
-    /// Fragment for all songs scroll view
+    /// Fragment slúžiaci na vyobrazenie zoznamu všetkých skladieb zariadenia používateľa. V rámci fragmentu má používateľ k dispozícii
+    /// vyhľadávanie a zoradzovanie skladieb. Možnosti zoradenia sú (od a-z, od z-a, do najnovšiej a od najstršiej). Zoznam je interaktívny,
+    /// používateľ je schopný skladby spúśťať a pri dlhom podržaní s nimi manipulovať ako napríklad, meniť metadáta, vymazávať, pridávať do playlistov.
+    /// Sklaby su renderované prostredníctvom techniky Lazy Loading implementovaný za pomoci viacerých vlákien.
     /// </summary>
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class SongsFragment : Fragment
@@ -39,6 +42,10 @@ namespace MWP
         private static LinearLayout? _allSongsLnMain;
         private static AssetManager? _assets;
         
+        /*
+         * Listy obsahujúce jednotlivé elementy skladieb a ich príslušné obrázky. Obrázky sú v osobitnom liste z dôvody
+         * Lazy Loading-u (takže pre rýchle nezávislé načítavanie)
+         */
         private Dictionary<LinearLayout?, Guid> songButtons = new Dictionary<LinearLayout?, Guid>();
         private static Dictionary<string, LinearLayout> _lazyBuffer;
         private static ObservableDictionary<string, Bitmap>? _lazyImageBuffer;
@@ -47,6 +54,9 @@ namespace MWP
         private long lastTextEdit = 0;
         private static Handler _handler = new Handler();
 
+        /*
+         * Hodnoty udávajúce Marginy jednotlivých elementov kartičiek v zozname skladieb
+         */
         private int[] allSongsButtonMargins;
         private int[] allSongsNameMargins;
         private int[] allSongsCardMargins;
@@ -75,7 +85,13 @@ namespace MWP
         
         
         
-        /// <inheritdoc />
+        
+        /// <summary>
+        /// OnCreateView je metóda ktorá sa spúšta pri vytváraní fragmentu a slúźi na inicializáciu elementov fragmentu, ako napríklad:
+        /// Lazy Loading, začatie načítavania obrázkov skladieb; vytvorenie hlavného layout-u zoznamu skladieb; Vytvorenie Fab tlačidla;
+        /// inicializácie funkcie vyhľadávania; inicializácia funkcie zoradzovania skladieb.
+        /// </summary>
+        /// <returns></returns>
         public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
             View? view = inflater.Inflate(Resource.Layout.songs_fragment, container, false);
@@ -165,7 +181,10 @@ namespace MWP
         }
 
 
-
+        /// <summary>
+        /// Metóda slúži na obstranie událostí pri klknutí na tlčidlá slúžiace na zoradenie skladieb.
+        /// </summary>
+        /// <param name="view">View v ktorom sa nachádza fragment a z ktorého získavame jednotlivé elementy nachádzajúce sa vo fragmente</param>
         private void SongOrder(View? view)
         {
             TextView? aZ = view?.FindViewById<TextView>(Resource.Id.A_Z_btn);
@@ -363,7 +382,13 @@ namespace MWP
             RenderSongs(MainActivity.StateHandler.Songs);
         }
 
-       
+       /// <summary>
+       /// Táto metóda aktualizuje zoznamu skladieb ak bola skladba upravená v TagManager-i
+       /// Prechádza všetky potomky lineárneho layoutu, ktorý obsahuje zoznam skladieb. Porovnáva názvy skladieb a ak nájde skladbu so starým názvom,
+       /// odstráni ju a nahradí novou skladbou.
+       /// </summary>
+       /// <param name="oldTitle">starý názov skladby pre identifikáciu sklaby ktorá sa zmenila a jej následne odobratie</param>
+       /// <param name="song">nová skladba na pridanie do zoznamu s upravenými metadátami</param>
         private void UpdateSong(string oldTitle, Song song)
         {
           

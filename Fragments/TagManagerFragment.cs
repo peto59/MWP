@@ -12,6 +12,7 @@ using Android.Graphics.Drawables;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
+using Com.Arthenica.Ffmpegkit;
 using MWP.BackEnd;
 using Google.Android.Material.FloatingActionButton;
 using Xamarin.Essentials;
@@ -23,32 +24,48 @@ using MWP.Helpers;
 
 namespace MWP
 {
-    /// <inheritdoc />
+ 
+    /// <summary>
+    /// TagManager slúži na úpravu metadát skladby. V rámci fragmentu sa nahádzajú metódy slúžiace na obstarávanie
+    /// událostí ako ukladanie zmien, otvorenie dialogu pre výber obrázku zo zariadenia, zobrazenie tlačidla na uloženie pri zmene.
+    /// 
+    /// </summary>
     public class TagManagerFragment : Fragment
     {
-        private const int ActionScrollViewHeight = 200;
-        private float scale;
         private readonly Context context;
         private RelativeLayout? mainLayout;
         private Typeface? font;
         private AssetManager? assets;
         private MusicBaseClass? song;
 
+        // premenné slúžiace obstaranie obrázka nového a starého
         private ImageView? songCover;
         private Bitmap? newImage;
         
+        // Jednotlivé Inputy pre metadáta skladby
         private EditText? titleIn;
         private EditText? albumIn;
         private EditText? authorIn;
         private EditText? alauIn;
         
-        
+        /// <summary>
+        /// FAB slúžiaci na uloženie zmien
+        /// </summary>
         private FloatingActionButton? saveChanges;
+        // Tlačidlo slúžiace na vrátenie sa späť do predošlého fragmentu
         private TextView? backButton;
 
+        /// <summary>
+        /// TagManager objekt slúžiaci na zavolanie metód ktoré aplikujú zmeny na pozadí vytvorené používateľom v TagManager fragmente.
+        /// Slúži na komunikáciu s pozadím aplikácie.
+        /// </summary>
         private TagManager tagManager;
-        
-        internal enum FieldTypes
+
+        /// <summary>
+        /// Enum FielTypes slúži na rozlíšenie EditText elementov pre jednotlivé metadáta sklaby.
+        /// Enum sa využiva napríklad pri kontrole či bol vytvorená zmena.
+        /// </summary>
+        private enum FieldTypes
         {
             Title,
             Alau,
@@ -65,23 +82,31 @@ namespace MWP
             this.context = context;
             this.assets = assets;
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
-            if (context.Resources is { DisplayMetrics: not null }) scale = context.Resources.DisplayMetrics.Density;
 
             if (song is not Song song1) return;
             
             tagManager = new TagManager(song1);
         }
         
+        /// <summary>
+        /// Táto metóda asynchrónne vyberie súbor pomocou užívateľom definovaných možností a zobrazí ho v ImageView.
+        /// Najskôr sa pokúsi vybrať súbor pomocou asynchrónnej metódy PickAsync z triedy FilePicker, pričom sa očakávajú možnosti definované v parametri options.
+        /// Po získaní výsledku sa vytvorí nová inštancia triedy TagManager pre prácu s metadátami pre aktuálnu skladbu (song).
+        /// Ak výber súboru prebehne úspešne a nájdený súbor je obrázok vo formátoch JPG alebo PNG, načíta sa tento obrázok ako bitmapa a zobrazí sa v ImageView.
+        /// V prípade chyby zobrazí upozornenie o nemožnosti načítania obrázku.
+        /// Vráti sa výsledok operácie, ak je úspešne dokončená, inak sa vráti null.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="view"></param>
+        /// <returns></returns>
         async Task<FileResult?> PickAndShow(PickOptions options, ImageView view)
         {
             try
             {
-                
                 var result = await FilePicker.PickAsync(options);
                 tagManager = new TagManager((Song)song);
                 if (result != null)
                 {
-                    string text = $"File Name: {result.FileName}";
                     if (result.FileName.EndsWith("jpg", StringComparison.OrdinalIgnoreCase) ||
                         result.FileName.EndsWith("png", StringComparison.OrdinalIgnoreCase))
                     {
@@ -96,7 +121,7 @@ namespace MWP
             }
             catch (Exception ex)
             {
-                // The user canceled or something went wrong
+                Toast.MakeText(context, "Couldnt retrieve any image, try again.", ToastLength.Long)?.Show();
             }
     
             return null;
@@ -198,10 +223,6 @@ namespace MWP
 
             }
             
-
-            // if (createPlaylist != null) createPlaylist.Click += CreatePlaylistPopup;
-            
-            
             
             /*
              * Inputs, handle on change, appearance of save button
@@ -297,9 +318,6 @@ namespace MWP
 
         private void SaveChanges()
         {
-#if DEBUG
-            MyConsole.WriteLine("Saving changes");
-#endif
             tagManager.Save();
             tagManager.Dispose();
         }

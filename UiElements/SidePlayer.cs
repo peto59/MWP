@@ -18,12 +18,22 @@ namespace MWP
 {
 	public static class SidePlayer
 	{
-		//private static Dictionary<LinearLayout, string> _playerButtons = new Dictionary<LinearLayout, string>();
-
 		static ImageView? _playImage;
 
 	
-
+		/// <summary>
+		/// Metóda slúźiaca na vytvorenie jednotlivých kockovitých tlačidiel v bočnom prehrávači.
+		/// Vytvára nový LinearLayout reprezentujúci kocku a nastavuje jeho parametre v závislosti od veľkosti.
+		/// Pre veľké kocky pridáva ImageView pre zobrazenie ikony prehrávania alebo pozastavenia podľa aktuálneho stavu prehrávania.
+		/// Pre malé kocky pridáva ImageView s rôznymi ikonami podľa zvolenej strany kocky (vpravo, vľavo, shuffle, repeat).
+		/// Na základe aktuálneho stavu prehrávania a nastavení opakovania sa nastavujú správne ikony.
+		/// Návratovou hodnotou je vytvorený LinearLayout predstavujúci kocku.
+		/// </summary>
+		/// <param name="size">argument slúžiaci na rozlíšenie malého a veľkého tlačidla ("big", "small")</param>
+		/// <param name="scale">škála slúžiaca na normalizáciu veľkosti do DP</param>
+		/// <param name="context">kontext hlavnej aktivity</param>
+		/// <param name="sides">typ malého kockového tlačidla ("left", "right", "repeat", "shuffle")</param>
+		/// <returns></returns>
 		private static LinearLayout cube_creator(string size, float scale, AppCompatActivity context, string sides = "idk")
 		{
 
@@ -164,17 +174,30 @@ namespace MWP
 			// WidgetServiceHandler.UpdateWidgetViews();
 		}
 
+		/// <summary>
+		/// Metóda služi na nastavenie obrázku označújúceho "prebieha prehrávanie" na tlačidlo stop/štart na bočnom paneli
+		/// </summary>
 		public static void SetPlayButton()
 		{
 			_playImage?.SetImageResource(Resource.Drawable.play);
 		}
 
+		/// <summary>
+		/// Metóda služi na nastavenie obrázku označújúceho "neprebieha prehrávanie" na tlačidlo stop/štart na bočnom paneli
+		/// </summary>
 		public static void SetStopButton()
 		{
 			_playImage?.SetImageResource(Resource.Drawable.pause_fill1_wght200_grad200_opsz48);
 		}
 
 	  
+		/// <summary>
+		/// Metóda slúži na vytvorenie jednotlivých elementov v bočnom paneli ako aj zaobstaranie jednotlivých událostí ako
+		/// opakovaná zmena času prehrávania. Zmena progresu prehrávania pri prehrávaní skladby. Vytvorenie a nastavenie hodnôt pre jednotlivé elementy ako
+		/// názov autora, názov skladby a albumu. Vytvorenie jednotlivých tlačidiel pomocou privátnej metódy CubeCreator: štart/stop, dopredu, dozadu, shuffle, repeat
+		/// </summary>
+		/// <param name="context">Kontext hlavnej aktivity aplikácie</param>
+		/// <param name="assets">Assety aplikácia získavané z kontextu hlavnej aktivity (Assets)</param>
 		public static void populate_side_bar(AppCompatActivity? context, AssetManager assets)
 		{
 			// basic  vars
@@ -368,6 +391,13 @@ namespace MWP
             }
 		}
 
+		/// <summary>
+		/// Metóda slúži na získavanie času prebiehania skladby z pozadia aplikácie
+		/// a prevedenie času na štardizovanú podobu, takže sekundy na sekundy a minúty, milisekundy na sekundy a minuty.
+		/// Premena slúži na vytvorenie formy času, ktorá sa dá vložiť do užívateľského rozhrania a je zrozumiteľná pre používateľov
+		/// </summary>
+		/// <param name="token">Token na získanie aktuálnej relácie prehrávania skladieb</param>
+		/// <param name="context">Kontext hlavnej aktivity</param>
 		public static void StartMovingProgress(CancellationToken token, AppCompatActivity? context)
 		{
             SeekBar? sek = context?.FindViewById<SeekBar>(Resource.Id.seek);

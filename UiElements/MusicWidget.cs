@@ -17,7 +17,9 @@ using MWP.Helpers;
 
 namespace MWP
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Trieda slúžiaca na definovanie miniaplikácie widget. Je natívne poskitnutá frameworkom Xamarin. My ju už len override-ujeme
+    /// </summary>
     [BroadcastReceiver(Label = "Music Widget", Exported = false)]
     [IntentFilter(new[] { "android.appwidget.action.APPWIDGET_UPDATE" })]
     [MetaData("android.appwidget.provider", Resource = "@xml/musicwidget_provider")]
@@ -31,7 +33,9 @@ namespace MWP
 
         private static readonly string WIDGET_REPEAT_TAG = "WIDGET_REPEAT_TAG";
 
-
+        /*
+         * PendingIntent-y slúžiace na získanie události stlačenia tlačidla v rámci miniaplikacie 
+         */
         private static PendingIntent? _shuffleIntent;
         private static PendingIntent? _previousIntent;
         private static PendingIntent? _playIntent;
@@ -49,7 +53,15 @@ namespace MWP
             }
         }
        
-
+        /// <summary>
+        /// Keďže miniaplikácia widget je aplikácia spustená nezávisle od hlavnej aplikácie MWP, k jednotlivým elementom musíme
+        /// pristupovať prostredníctvom pozadia aplikácie. pomocou kontextu aplikácie získavame RemoteViews objekt obsahujúci
+        /// elementy nachádzajúce sa vo widget-e. Ten následne predávame do metód ako SetTextViewText kde sa iniciualizujú texty
+        /// TextView elementov z pozadia aplikácie, a metódy RegisterClicks ktorá slúži na inicializáciu potrebných PendingIntent-ov. 
+        /// </summary>
+        /// <param name="context">kontext pozadia aplikácie</param>
+        /// <param name="widgetIds">Id jedno</param>
+        /// <returns></returns>
         private RemoteViews BuildRemoteView(Context context, int[]? widgetIds)
         {
             var widgetView = new RemoteViews(context.PackageName, Resource.Layout.music_widget_layout);
@@ -57,12 +69,15 @@ namespace MWP
             
             SetTextViewText(widgetView);
             RegisterClicks(context, widgetIds, widgetView);
-
-
+            
+            // vytvorenie zaobleného obrázka aktuálne prebiehajúcej skladby 
             Android.Graphics.Bitmap? squared = WidgetServiceHandler.CropBitmapToSquare(
                 MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Image ??
                 new Song("No Name", new DateTime(), "Default").Image, false);
             
+            /*
+             * Upravenie zaoblenia obrázka na základe veľkosti a rozlíšenia obrázka
+             */
             int roundedSize;
             if (MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Image.Height == 360)
             {
@@ -86,12 +101,27 @@ namespace MWP
             return widgetView;
         }
 
+        /// <summary>
+        /// Metóda slúži na nastavenie názvu skladby a názvu interpreta na príslušné TextView elementy.
+        /// </summary>
+        /// <param name="widgetView">RemoteViews objekt slúžiaci na získanie elementov z widgetu</param>
         private void SetTextViewText(RemoteViews widgetView)
         {
             widgetView.SetTextViewText(Resource.Id.widgetSongTitle, MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Title ?? "No Name");
             widgetView.SetTextViewText(Resource.Id.widgetSongArtist, MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Artist.Title ?? "No Artist");
         }
         
+        /// <summary>
+        /// Táto metóda registruje kliknutia pre ovládacie prvky widgetu.
+        /// Vytvára nový intent pre triedu MusicWidget a nastavuje akciu pre aktualizáciu widgetu a pridáva identifikátory widgetov ako extra údaje.
+        /// Následne získava pending intenty pre rôzne akcie, ako je zamiešanie, predošlá, prehrávanie, ďalšia a opakovanie.
+        /// Tieto pending intenty sú priradené k odpovedajúcim tlačidlám na widgetView.
+        /// Okrem toho sa registruje kliknutie na otvorenie aplikácie na kliknutie na pozadie widgetu.
+        /// Nastavuje sa vhodný pendingIntentFlags na základe verzie Androidu.
+        /// </summary>
+        /// <param name="context">Kontext pozadia aplikácie</param>
+        /// <param name="widgetIds">identifikátory widgetov (voliteľné)</param>
+        /// <param name="widgetView">RemoteViews objekt slúžiaci na získanie elementov z widgetu</param>
         private void RegisterClicks(Context context, int[]? widgetIds, RemoteViews widgetView)
         {
             var intent = new Intent(context, typeof(MusicWidget));
@@ -138,7 +168,11 @@ namespace MWP
         }
 
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Spustenie príslušnej události na základe typu príjmutého PendingIntent-u
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="intent"></param>
         public override void OnReceive(Context? context, Intent? intent)
         {
             base.OnReceive(context, intent);
@@ -192,10 +226,7 @@ namespace MWP
 
         }
 
-        public static void DisablePendingIntents()
-        {
-            _shuffleIntent?.Cancel();
-        }
+      
         
     }
 }

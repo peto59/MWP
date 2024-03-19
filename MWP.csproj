@@ -162,7 +162,6 @@
     <Compile Include="UiElements\Local_notification_service.cs" />
     <Compile Include="UiElements\MusicWidget.cs" />
     <Compile Include="UiElements\SidePlayer.cs" />
-    <Compile Include="UiElements\SlideButton.cs" />
     <Compile Include="UiElements\UIRenderFunctions.cs" />
     <Compile Include="youtube.cs" />
   </ItemGroup>

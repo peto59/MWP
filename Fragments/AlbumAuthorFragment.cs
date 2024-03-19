@@ -174,7 +174,7 @@ namespace MWP
             {
                 LinearLayout? lnIn = UiRenderFunctions.PopulateVertical(
                     albums[i], 
-                    scale, 150, 100, buttonMargins,cardMargins, nameMargins, 15, i, 
+                    scale, 150, 100, buttonMargins,cardMargins, nameMargins, 15,  
                     context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 if (albumTilesBuffer.TryAdd(albums[i].Title, lnIn))
@@ -228,7 +228,7 @@ namespace MWP
             for (int i = 0; i < artists.Count; i++)
             {
                 LinearLayout? lnIn = UiRenderFunctions.PopulateVertical(
-                    MainActivity.StateHandler.Artists[i], scale, 150, 100, buttonMargins ,cardMargins, nameMargins, 15, i, context, albumButtons, 
+                    MainActivity.StateHandler.Artists[i], scale, 150, 100, buttonMargins ,cardMargins, nameMargins, 15, context, albumButtons, 
                     ParentFragmentManager, assets, albumFragment, authorFragment);
                 if (authorTilesBuffer.TryAdd(artists[i].Title, lnIn))
                 {
