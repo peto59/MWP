@@ -425,11 +425,15 @@ namespace MWP
         }
 
 
+        /// <summary>
+        /// Automatically disposes of tagManager class instance when closing app
+        /// </summary>
         ~TagManagerFragment()
         {
             tagManager.Dispose();
         }
 
+        /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);

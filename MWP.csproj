@@ -99,7 +99,6 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="accept_songs.cs" />
     <Compile Include="BackEnd\Chromaprint.cs" />
     <Compile Include="BackEnd\Network\Commands.cs" />
     <Compile Include="BackEnd\Network\Datatypes.cs" />
@@ -148,7 +147,6 @@
     <Compile Include="Helpers\Levenshtein.cs" />
     <Compile Include="Helpers\WidgetServiceHandler.cs" />
     <Compile Include="DatatypesAndExtensions\MusicBaseClass.cs" />
-    <Compile Include="BackEnd\Downloader.cs" />
     <Compile Include="BackEnd\FileManager.cs" />
     <Compile Include="Helpers\HelloWebViewClient.cs" />
     <Compile Include="MainActivity.cs" />
@@ -158,7 +156,6 @@
     <Compile Include="DatatypesAndExtensions\SongExtensions.cs" />
     <Compile Include="BackEnd\StateHandler.cs" />
     <Compile Include="BackEnd\TagManager.cs" />
-    <Compile Include="UiElements\DownloadNotification.cs" />
     <Compile Include="UiElements\Local_notification_service.cs" />
     <Compile Include="UiElements\MusicWidget.cs" />
     <Compile Include="UiElements\SidePlayer.cs" />

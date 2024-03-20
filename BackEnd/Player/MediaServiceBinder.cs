@@ -18,7 +18,11 @@ namespace MWP.BackEnd.Player
         {
             Service = service;
         }
-
+        
+        /// <summary>
+        /// Disposes of service connection and binder
+        /// </summary>
+        /// <param name="conn">Connect to dispose</param>
         public void Dispose(IServiceConnection conn)
         {
             Service.UnbindService(conn);

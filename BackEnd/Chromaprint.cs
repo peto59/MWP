@@ -22,6 +22,15 @@ namespace MWP.BackEnd
     /// </summary>
     public static class Chromaprint
     {
+        /// <summary>
+        /// Searches for ID3v2 tags on the internet and returns them
+        /// </summary>
+        /// <param name="filePath">path to file for which to handle search</param>
+        /// <param name="originalAuthor">Original author of file, only used when user rejects all options</param>
+        /// <param name="originalTitle">Original title of file, only used when user rejects all options</param>
+        /// <param name="originalAlbum">Original album of file, only used when user rejects all options</param>
+        /// <param name="manual">Whether to display popup to user to choose which tags are preffered or handle best set of tags automatically</param>
+        /// <returns>New ID3v2 tags or original values of file</returns>
         public static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[]? thumbnail)> Search(string filePath, string originalAuthor, string originalTitle, string? originalAlbum, bool manual = true)
         {
             (string, string, string, List<(string, string)>, List<(string, string)>, byte[]?) output = (originalTitle, string.Empty, string.Empty, new List<(string, string)>{(originalAuthor, string.Empty)}, new List<(string, string)>{(originalAlbum ?? string.Empty, string.Empty)}, null);

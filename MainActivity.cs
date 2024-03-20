@@ -1096,6 +1096,11 @@ namespace MWP
             dialog.Show();
         }
 
+        /// <summary>
+        /// Handles displaying popup to user on network connections
+        /// </summary>
+        /// <param name="remoteHostname">hostname of remote side</param>
+        /// <param name="ctx">context</param>
         public static void SongsSendDialog(string remoteHostname, Context ctx)
         {
             if (StateHandler.OneTimeReceiveSongs.TryGetValue(remoteHostname, out List<Song> recSongs))

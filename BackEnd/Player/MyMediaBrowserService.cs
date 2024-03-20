@@ -347,12 +347,7 @@ namespace MWP.BackEnd.Player
         {
             base.OnSearch(query, extras, result);
         }
-
-        ~MyMediaBrowserService()
-        {
-            // Dispose(true);
-        }
-
+        
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {

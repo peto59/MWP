@@ -39,7 +39,6 @@ namespace MWP.BackEnd
         /// List of all notification IDs
         /// </summary>
         public List<int> NotificationIDs = new List<int>();
-        public Dictionary<long, (int?, int)> SessionIdToPlaylistOrderMapping = new Dictionary<long, (int?, int)>();
 
         /// <summary>
         /// Whether NetworkManager Lister was Launched

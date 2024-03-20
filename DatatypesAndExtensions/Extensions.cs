@@ -98,6 +98,12 @@ namespace MWP
             return source.IndexOf(toCheck, comp) >= 0;
         }
 
+        /// <summary>
+        /// writes custom ID3v2 tag
+        /// </summary>
+        /// <param name="tfile">instance of file editor</param>
+        /// <param name="tagName">tag name</param>
+        /// <param name="value">value to set</param>
         public static void writePrivateFrame(this File tfile, string tagName, string value)
         {
             //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
@@ -106,6 +112,12 @@ namespace MWP
             privateFrame.PrivateData = Encoding.UTF8.GetBytes(value);
         }
         
+        /// <summary>
+        /// writes custom ID3v2 tag
+        /// </summary>
+        /// <param name="tfile">instance of file editor</param>
+        /// <param name="tagName">tag name</param>
+        /// <param name="value">value to set</param>
         public static void writePrivateFrame(this File tfile, string tagName, bool value)
         {
             //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
@@ -114,6 +126,12 @@ namespace MWP
             privateFrame.PrivateData = Convert.ToByte(value);
         }
 
+        /// <summary>
+        /// reads custom ID3v2 tag
+        /// </summary>
+        /// <param name="tfile">instance of file editor</param>
+        /// <param name="tagName">tag name</param>
+        /// <param name="defaultValue">value to return when tag is not found</param>
         public static string readPrivateFrame(this File tfile, string tagName, string defaultValue)
         {
             //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
@@ -121,6 +139,13 @@ namespace MWP
             PrivateFrame? privateFrame = PrivateFrame.Get(t, tagName, false);
             return privateFrame != null ? Encoding.UTF8.GetString(privateFrame.PrivateData.Data) : defaultValue;
         }
+        
+        /// <summary>
+        /// reads custom ID3v2 tag
+        /// </summary>
+        /// <param name="tfile">instance of file editor</param>
+        /// <param name="tagName">tag name</param>
+        /// <param name="defaultValue">value to return when tag is not found</param>
         public static bool readPrivateFrame(this File tfile, string tagName, bool defaultValue)
         {
             //https://stackoverflow.com/questions/34507982/adding-custom-tag-using-taglib-sharp-library
