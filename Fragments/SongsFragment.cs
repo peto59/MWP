@@ -346,6 +346,7 @@ namespace MWP
                 }
                     
             }
+            
 
             /*
              * Ak je metoda RenderSongs zavolana po prvotnom vytvoreni zoznamu, takze napriklad vyhladavanim alebo zmenenim

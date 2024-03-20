@@ -22,7 +22,11 @@ using MWP.Helpers;
 
 namespace MWP
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Trieda slúži na vytvorenie fragmentu slúžiaceho na vytvorenie rozhrania pre výber doveryhodných hostov, ktorým používateľ následne smie odoslať sklaby.
+    /// Používateľ sa dostane do HostPickerFragmentu prostredníctvom stlačenia FAB tlačidla vo fragmenete ShareFragment. Pri výbere hosta je používateľ premiestnený do
+    /// SongPickerFragment-u.
+    /// </summary>
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class HostPickerFragment : Fragment
     {
@@ -32,11 +36,15 @@ namespace MWP
         private readonly AssetManager assets;
         private RelativeLayout? mainLayout;
         
+        // ImageView ktorý vytvára tieň na pozadí
         private ImageView? confirmPickBg;
+        // tlačidlá slúžiace na konfirmáciu alebo domietnutie výberu
         private TextView? confirmPick;
         private TextView? cancelPick;
+        // názov vybratého hosta
         private string selectedString;
 
+        // SongPickerFragment objekt ktorý bude použitý na vytvorenie nového fragmentu pre výber skladieb.
         private SongPickerFragment songPickerFragment;
 
         /// <inheritdoc />
@@ -68,7 +76,9 @@ namespace MWP
             /* získanie listu pre vykreslenie jednotlivých hostov */
             LinearLayout? hostList = view?.FindViewById<LinearLayout>(Resource.Id.host_picker_song_list);
 
-
+            /*
+             * Obstaranie události v príade kliknutia na tlačidlo Confirm pre potvrdenie výberu alebo Cancel pre zmazanie výberu
+             */
             if (confirmPick != null)
                 confirmPick.Click += delegate
                 {

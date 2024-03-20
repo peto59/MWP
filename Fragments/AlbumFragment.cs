@@ -20,7 +20,10 @@ using MWP.Helpers;
 namespace MWP
 {
     /// <summary>
-    /// Album fragment, initiated after one of the album buttons is clicked in the AlbumAuthorFragment
+    /// Fragment slúžiaci na zobrazenie skladieb nachádzajúcich sa v príslušnom albume. Do fragmentu sa používateľ dostáva prostredníctvom
+    /// stlačenia dlaždice akéhokoľvek albumu z vertikálneho zoznamu vo fragmente AlbumAuthorFragment. Fragment v samotnom jadre pozostáva z
+    /// vertikálneho ScrollView elementu v ktorom sa nachádzaju dlaždice pre každú skladbu prislúchajúcu k danému albumu. Obrázky
+    /// skladieb sú načitavané pomocou Lazy Loading-u tak ako vo zvyšku aplikácie.
     /// </summary>
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class AlbumFragment : Fragment
@@ -38,7 +41,7 @@ namespace MWP
 
 
         /// <summary>
-        /// Constructor for AlbumFragment.cs
+        /// Inicializácia dátových položiek.
         /// </summary>
         /// <param name="ctx">Main Activity context (insert "this")</param>
         public AlbumFragment(Context ctx, AssetManager? assets)
@@ -52,18 +55,18 @@ namespace MWP
         }
 
         /// <summary>
-        ///  AlbumFragment On create view
+        /// Override metódy OnCreateView. Volá metódu RenderSongs, ktorá vytvorý samotné rozhranie, takže vytvorý
+        /// dlaždice pre skladby albumu. Takisto sa aj pridá udalosť ktorá sa má sputiť v prípade ak sa pridá novy element do
+        /// ObservableDictionary pre načítavanie obrázkov. Ak sa pridá obrázok do dict., tak sa načíta do UI.
         /// </summary>
-        /// <param name="inflater"></param>
-        /// <param name="container"></param>
-        /// <param name="savedInstanceState"></param>
-        /// <returns></returns>
         public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
             View? view = inflater.Inflate(Resource.Layout.album_fragment, container, false);
 
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.album_fragment_main);
 
+            // získavanie názov albumu na ktorý používateľ klikol. Názov je pridaný do bundle v metóde PopuplateVertical
+            // nachádzajúcu sa v UIRenderFunctions.cs.
             string? title = Arguments?.GetString("title");
             List<Album> retreivedSongs = MainActivity.StateHandler.Albums.Search(title);
             if (retreivedSongs.Count > 0)
@@ -90,7 +93,9 @@ namespace MWP
         }
 
         
-        /// <inheritdoc />
+        /// <summary>
+        /// Obrázku pre jednotlivé dlaždice sa začnú načitavať až po tom čo sa vytvorý fragment.
+        /// </summary>
         public override void OnViewCreated(View view, Bundle? savedInstanceState)
         {
             base.OnViewCreated(view, savedInstanceState);
@@ -107,7 +112,9 @@ namespace MWP
         
         
         
-
+        /// <summary>
+        /// Metóda slúźiaca na vytvorenie dlaždíc každej skladby zo zoznamu skladieb pre album na ktorý používateľ klikol.
+        /// </summary>
         private void RenderSongs()
         {
             songTilesBuffer = new Dictionary<string, LinearLayout?>();

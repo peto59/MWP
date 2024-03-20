@@ -19,7 +19,11 @@ using Orientation = Android.Widget.Orientation;
 
 namespace MWP
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Trieda slúži na vytvorenie dynamického rozhrania nastavení. Pri načítaní fragmentu je používateľ prezentovaní s nastaveniami
+    /// ako je napríklad pridávanie a odobernie zakázaných ciest, zmena názvu zariadenia, permisie polohy, atď... Všetky nastavenia sú dynamicky generované
+    /// na základe dát z pozadia aplikácie.
+    /// </summary>
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class SettingsFragment : Fragment
     {
@@ -142,15 +146,20 @@ namespace MWP
             return view;
         }
 
-
-        /*
-         * Metoda sluziaca na vygenerovanie elementov uzivatelskeho prostredia pre nastavenie typu Bool, cize
-         * nastavenie pri ktorom sa meni hodnota z 0 na 1, inak povedane switch.
-         * Vracia LinearLayout ktory je potrebne vlozit na hlavneho LinearLayoutu fragmentu
-         *
-         * Metoda prijma nazov nastavenia, aktualnu hodnotu, text komentara a akciu sluziaca
-         * na zapisanie novej hodnoty v pripade jej zmeny
-         */
+        
+        /// <summary>
+        /// Metoda sluziaca na vygenerovanie elementov uzivatelskeho prostredia pre nastavenie typu Bool, cize
+        /// nastavenie pri ktorom sa meni hodnota z 0 na 1, inak povedane switch.
+        /// Vracia LinearLayout ktory je potrebne vlozit na hlavneho LinearLayoutu fragmentu
+        /// 
+        /// Metoda prijma nazov nastavenia, aktualnu hodnotu, text komentara a akciu sluziaca
+        /// na zapisanie novej hodnoty v pripade jej zmeny
+        /// </summary>
+        /// <param name="name">názov nastavenia</param>
+        /// <param name="initialValue">aktuálna hodnota</param>
+        /// <param name="remark">poznámka k nastaveniu</param>
+        /// <param name="write">metóda na uloženie zmien na pozadie aplikácie</param>
+        /// <returns>Vracia vyplnený LinearLayout obsahujúci rozhranie pre dané nastavenie</returns>
         private LinearLayout SwitchSetting(string name, bool initialValue, string? remark, Action<bool> write)
         {
             /*
@@ -229,6 +238,20 @@ namespace MWP
          * Metoda prijma nazov nastavenia, aktualnu hodnotu, text komentara a akciu sluziaca
          * na zapisanie novej hodnoty v pripade jej zmeny
          */
+         /// <summary>
+         /// Metoda sluziaca na vygenerovanie elementov uzivatelskeho prostredia pre nastavenie typu Int, cize
+         /// nastavenie pri ktorom viacero ciselnych hodnot ma pridelene iste string hodnoty, co si vyzaduje rolovaci vyber moznosti.
+         /// Vracia LinearLayout ktory je potrebne vlozit do hlavneho LinearLayoutu fragmentu
+         /// 
+         /// Metoda prijma nazov nastavenia, aktualnu hodnotu, text komentara a akciu sluziaca
+         /// na zapisanie novej hodnoty v pripade jej zmeny
+         /// </summary>
+         /// <param name="name">názov nastavenia</param>
+         /// <param name="initialValue">prvotná hodnota, aktuálna hodnota</param>
+         /// <param name="remark">poznámka nastavenia</param>
+         /// <param name="write">metóda slúžiaca na zapísanie zmien na pozadie</param>
+         /// <param name="mapping">možnosti rolovacieho nastavenia</param>
+         /// <returns>Vracia vyplnený LinearLayout obsahujúci rozhranie pre dané nastavenie</returns>
         private LinearLayout DropdownSetting(string name, int initialValue, string? remark, Action<int> write, Dictionary<string, int>? mapping)
         {
             /*
@@ -299,7 +322,14 @@ namespace MWP
 
         }
         
-        /**/
+        /// <summary>
+        /// Metóda slúži na dynamické vytvorenie EditText elementu. 
+        /// </summary>
+        /// <param name="name">názov nastavenia</param>
+        /// <param name="remark">poznámka k nastaveniu</param>
+        /// <param name="write">metóda ktorá sa spustí ak používateľ zmení text v EditText elemente</param>
+        /// <param name="current">aktuálna hodnota EditText elementu</param>
+        /// <returns>Vracia vyplnený LinearLayout obsahujúci rozhranie pre dané nastavenie</returns>
         private LinearLayout InputSetting(string name, string? remark, Action<string> write, string current)
         {
             /**/
@@ -374,7 +404,7 @@ namespace MWP
         }
         
         
-        /**/
+        
         private AndroidX.AppCompat.Widget.SwitchCompat CreateSwitch(Action<bool> write, bool initialValue)
         {
             AndroidX.AppCompat.Widget.SwitchCompat switchCompat = new AndroidX.AppCompat.Widget.SwitchCompat(context);
@@ -395,12 +425,17 @@ namespace MWP
             return switchCompat;
         }
         
-        /*
-         * Meoda slúžiaca na vytvorenie nového Spinner komponentu typu dropdown pre nastavenie typu Int,
-         * v ktorom každý riadok predstavuje jednu z monžostí pre používateľa daného nastavenia.
-         * Dáta pre rolovací list sú získavané z pozadia aplikácie
-         * ktoré sa následne musia vložiť ako argumentu ktoré príjma táto metóda.
-         */
+      
+        /// <summary>
+        /// Meoda slúžiaca na vytvorenie nového Spinner komponentu typu dropdown pre nastavenie typu Int,
+        /// v ktorom každý riadok predstavuje jednu z monžostí pre používateľa daného nastavenia.
+        /// Dáta pre rolovací list sú získavané z pozadia aplikácie
+        /// ktoré sa následne musia vložiť ako argumentu ktoré príjma táto metóda.
+        /// </summary>
+        /// <param name="write">metóda slúžiaca na zapísanie dát na pozadí</param>
+        /// <param name="initialValue">prvotná hodnota</param>
+        /// <param name="values">možnosti rolovacieho okna</param>
+        /// <returns>Vracia dropdown komponent s príslušnými hodnotami a štýlmi</returns>
         private Spinner CreateDropdown(Action<int> write, int initialValue, Dictionary<string, int>? values)
         {
             string[]? items = values?.Keys.ToArray();
@@ -441,11 +476,13 @@ namespace MWP
             return dropdown;
         }
         
-        /*
-         * Privátna metóda slúžiaca na vytvorenie AlertDialogu v ktorom sa nachádza ScrollView s listom
-         * zakázaných ciest priečinkov pre hľadanie MP3 súborov a tlačidlom pre možnosť pridania novej
-         * cesty prostredníctvom Folder Picker-u. 
-         */
+        
+        /// <summary>
+        /// Privátna metóda slúžiaca na vytvorenie AlertDialogu v ktorom sa nachádza ScrollView s listom
+        /// zakázaných ciest priečinkov pre hľadanie MP3 súborov a tlačidlom pre možnosť pridania novej
+        /// cesty prostredníctvom Folder Picker-u. 
+        /// </summary>
+        /// <param name="list">zoznam ciest</param>
         private void ListPathsPopup(List<string> list)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
@@ -542,6 +579,10 @@ namespace MWP
             }
             
             
+            /*
+             * Tlačidlo slúžiace na pridanie novej cesty, používateľovi sa otvorí nová aktivita natívna pre zariadenie používateľa pre výber cesty
+             * súboru. Aktivita sa otvorí s Request kódom 9999 a po jej skončení sa spustí natívna override-nutá netóda OnActivityResult.
+             */
             TextView? addNew = view?.FindViewById<TextView>(Resource.Id.settings_restricted_add_new_restricted);
             if (addNew != null)
             {
@@ -566,6 +607,19 @@ namespace MWP
             dialog?.Show();
         }
         
+        /// <summary>
+        /// Táto metóda sa volá po získaní výsledku z Akivity pre výber cesty súboru, ktorá bola spustená pomocou startActivityForResult() v metóde ListPathsPopup.
+        /// Najprv sa zavolá metóda z nadradenej triedy pre spracovanie výsledku.
+        /// Potom sa vykonáva prepínanie na základe requestCode, ktorý identifikuje žiadosť.
+        /// V tomto prípade je requestCode 9999.
+        /// Ak bol requestCode 9999, overí sa, či výsledok obsahuje dáta s cestou k súboru (Path).
+        /// Ak áno, z cesty sa vytvorí objekt File a získa sa cesta k súboru. Táto cesta sa pridá do zoznamu paths.
+        /// Potom sa aktualizuje nastavenie pre vynechané cesty pomocou triedy SettingsManager.
+        /// Nakoniec sa zavrie dialógové okno (ak existuje) a zavolá sa metóda ListPathsPopup() s aktualizovaným zoznamom ciest.
+        /// </summary>
+        /// <param name="requestCode"></param>
+        /// <param name="resultCode"></param>
+        /// <param name="data"></param>
         public override void OnActivityResult(int requestCode, int resultCode, Intent? data) {
             base.OnActivityResult(requestCode, resultCode, data);
 
@@ -578,9 +632,6 @@ namespace MWP
                         string filePath = $"{FileManager.Root}{System.IO.Path.DirectorySeparatorChar}{split[1]}";//assign it to a string(your choice).
                         paths.Add(filePath);
                         SettingsManager.ExcludedPaths = paths;
-#if DEBUG
-                        MyConsole.WriteLine($"Result URI {filePath}");
-#endif
                         dialog?.Cancel();
                         ListPathsPopup(paths);
                     }

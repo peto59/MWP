@@ -16,6 +16,13 @@ using MWP.Helpers;
 
 namespace MWP
 {
+	/// <summary>
+	/// Metóda slúži na vytvorenie uźívateľského rozhrania v bočnom paneli prehrávača. Používateľ má k dispozicii v rámci bočného prehrávača
+	/// multimediálne centrum v rámci ktorého má používateľ k dispozícii obrázok skladby, meno skladby, meno autora a albumu skladby ktorá sa aktuálne prehráva.
+	/// Nachádzajú sa tu aj tlačidla na ovládanie stavu prehrávania, takže: štart, stop, dopredu, dozadu, shuffle, repeat. Ďalej tu vie
+	/// používateľ nájsť aj SeekBar element vďaka ktorému sa dá sledovať stav a progres prehrávania hudby. Pod multimedialným centrom nájde používateľ
+	/// tlačidlá slúžiace na orientáciu mediz fragmentmi v rámci aplikácie. 
+	/// </summary>
 	public static class SidePlayer
 	{
 		static ImageView? _playImage;

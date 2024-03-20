@@ -22,9 +22,9 @@ using MWP.Helpers;
 namespace MWP
 {
     /// <summary>
-    /// Abstraktná trieda obsahujúca základne metódy na vkreslovanie dynamického
+    /// Trieda obsahujúca základne metódy na vykreslovanie dynamického
     /// užívateľského rozhrania. Vznikla z dôvodu nevytvárania duplicitného kódu, keďže v aplikácii sa
-    /// opakuj štýli a elementy generované dynamicky.
+    /// opakujú štýli a elementy generované dynamicky.
     /// </summary>
     public abstract class UiRenderFunctions
     {

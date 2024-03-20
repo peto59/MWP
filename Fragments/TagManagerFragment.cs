@@ -130,7 +130,21 @@ namespace MWP
 
     
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Táto metóda vytvára pohľad fragmentu pre správcu značiek.
+        /// Vyhľadá RelativeLayout s ID Resource.Id.tag_manager_main v pohľade a priradí sa k mainLayout. Následne sa nastaví názov aktivity na "Tag Manager"
+        /// Nasleduje zmena písma pre rôzne textové polia pomocou metódy SetGenericFont.
+        /// Následne sa spracováva tlačidlo späť (backButton), ktoré po kliknutí zistí, či boli vykonané zmeny a zobrazí dialóg AreYouSureDiscard v prípade, že boli.
+        /// V opačnom prípade sa fragment vracia späť.
+        /// Nasleduje spracovanie možnosti výberu obrázka (songCover), ktoré po kliknutí vyvolá asynchrónnu udalosť PickAndShow, ktorá umožňuje vybrať obrázok pomocou súborového selektora.
+        /// Potom sa spracováva tlačidlo uloženia zmien (saveChanges), ktoré po kliknutí zobrazí dialóg AreYouSureSave a je nastavené na neviditeľné.
+        /// Ďalej nasleduje spracovanie vstupných polí (titleIn, albumIn, authorIn) a ich príslušných zmeny, ktoré ovplyvnia vzhľad tlačidla uloženia zmien.
+        /// Nakoniec sa nastavia textové polia na ich pôvodné hodnoty zo značkovej správy.
+        /// </summary>
+        /// <param name="inflater"></param>
+        /// <param name="container"></param>
+        /// <param name="savedInstanceState"></param>
+        /// <returns></returns>
         public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
             View? view = inflater.Inflate(Resource.Layout.tag_manager_fragment, container, false);
@@ -140,7 +154,7 @@ namespace MWP
             if (Activity != null) ((MainActivity)Activity).Title = "Tag Manager";
 
             /*
-             * changing fonts
+             * Zmena fontov.
              */
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_album_label);
             // SetGenericFont<TextView>(view, Resource.Id.tagmngr_aual_label);
@@ -155,7 +169,7 @@ namespace MWP
             SetGenericFont<TextView>(view, Resource.Id.tagmngr_back_button);
             
             /*
-             * Back Button handle
+             * Zoabstaranie události stlačenia tlačidla pre presun späť do predošlého fragmentu
              */
             backButton = view?.FindViewById<TextView>(Resource.Id.tagmngr_back_button);
             if (backButton != null)
@@ -171,9 +185,11 @@ namespace MWP
                     }
                 };
 
+            
+            
             /*
-             * load image
-             */ 
+             * Výber obrázka
+             */
             songCover = view?.FindViewById<ImageView>(Resource.Id.song_cover_tag_manager);
             songCover?.SetImageBitmap(song?.Image);
             try
@@ -208,7 +224,7 @@ namespace MWP
 
 
             /*
-             * Save Button
+             * Tlačidlo slúžiace na ukladanie zmien.
              */
             saveChanges = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.tag_manager_savebtn);
             if (BlendMode.Multiply != null)
@@ -219,13 +235,11 @@ namespace MWP
             {
                 saveChanges.Click += delegate { AreYouSureSave(); };
                 saveChanges.Visibility = ViewStates.Gone;
-                
-
             }
             
             
             /*
-             * Inputs, handle on change, appearance of save button
+             * Obstarávanie vstupov a zabezpečenie zjavenia tlačidla na uloženie v prípade zmeny
              */
             titleIn = view?.FindViewById<EditText>(Resource.Id.tagmngr_title_field);
             albumIn = view?.FindViewById<EditText>(Resource.Id.tagmngr_album_field);
@@ -248,18 +262,27 @@ namespace MWP
             return view;
         }
 
+        /// <summary>
+        /// Zničenie inštancie TagManager objektu v prípade zničenia fragmentu pre uvolnenie pamäte
+        /// </summary>
         public override void OnDestroy()
         {
             base.OnDestroy();
             tagManager.Dispose();
         }
 
+        /// <summary>
+        /// Zničenie inštancie TagManager objektu v prípade zničenia fragmentu pre uvolnenie pamäte
+        /// </summary>
         public override void OnDestroyView()
         {
             base.OnDestroyView();
             tagManager.Dispose();
         }
 
+        /// <summary>
+        /// Zničenie inštancie TagManager objektu v prípade pozastavenia fragmentu pre uvolnenie pamäte
+        /// </summary>
         public override void OnStop()
         {
             base.OnStop();
@@ -267,6 +290,14 @@ namespace MWP
         }
 
 
+        /// <summary>
+        /// Metóda slúžiaca na zobrazenie alebo skrytie tlačidla na ukladanie v prípade ak nastane zmena
+        /// v Inpute ktorý sa príjma ako parameter input.
+        /// </summary>
+        /// <param name="input">Input na skontrolovanie</param>
+        /// <param name="initial">prvotná hodnota nachádzajúca sa v inpute</param>
+        /// <param name="type">typ poľa</param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         private void HandleSaveButtonAppear(EditText? input, string initial, FieldTypes type)
         {
             if (input != null)
@@ -299,6 +330,12 @@ namespace MWP
                 };
         }
 
+        /// <summary>
+        /// Metóda zabezpečújúca zmenu stavu viditeľnosti tlačidla pri zmene obrázka. Metóda nastaví na pozadí nové metadáta prostredníctvom
+        /// TagManager objektu
+        /// </summary>
+        /// <param name="view">element v ktorom sa obrázok nachádza</param>
+        /// <param name="newIm">nový obrázok</param>
         private void HandleSaveButtonAppearImage(ImageView view, Bitmap? newIm)
         {
             if (((BitmapDrawable)view.Drawable)?.Bitmap != newIm && saveChanges != null)

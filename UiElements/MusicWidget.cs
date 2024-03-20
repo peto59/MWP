@@ -18,7 +18,10 @@ using MWP.Helpers;
 namespace MWP
 {
     /// <summary>
-    /// Trieda slúžiaca na definovanie miniaplikácie widget. Je natívne poskitnutá frameworkom Xamarin. My ju už len override-ujeme
+    /// Trieda slúžiaca na definovanie miniaplikácie widget. Je natívne poskitnutá frameworkom Xamarin. My ju už len override-ujeme.
+    /// Používateľ má prístup k miniaplikácii v zozname widget-ov zariadenia používateľa. Widget MWP je označený ikonkou aplikácie.
+    /// Po vytvorení widget-u ma pouźívateľ dostupný widget o veľkosti 4x1, čiže na celú širku obrazovku a 1 na výšku. V rámvi miniaplikácie
+    /// používateľ smie kontrolovať a ovládať stav prehrávania skladieb.
     /// </summary>
     [BroadcastReceiver(Label = "Music Widget", Exported = false)]
     [IntentFilter(new[] { "android.appwidget.action.APPWIDGET_UPDATE" })]

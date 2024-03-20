@@ -22,7 +22,11 @@ using MWP.Helpers;
 namespace MWP
 {
     /// <summary>
-    /// Author fragment, initiated after one of the author buttons is clicked in the AlbumAuthorFragment
+    /// Fragment slúžiaci na zobrazenie skladieb a albumov príslušného interpreta. Do fragmentu sa používateľ dostáva prostredníctvom
+    /// stlačenia dlaždice akéhokoľvek interpreta z vertikálneho zoznamu vo fragmente AlbumAuthorFragment. Fragment v samotnom jadre pozostáva z
+    /// horizontálneho ScrollView elementu v ktorom sa nachádzaju dlaždice pre každý album prislúchajúci k danému interpretovi. Pod tým sa nachádza
+    /// vertikálny scrollview kde sa nachádzaju všetky nekategorizované skladby ktoré nespadajú pod žiaden album.
+    /// Obrázky skladieb sú načitavané pomocou Lazy Loading-u tak ako vo zvyšku aplikácie.
     /// </summary>
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class AuthorFragment : Fragment
@@ -34,21 +38,24 @@ namespace MWP
         private AssetManager? assets;
         private Typeface? font;
 
+        // Dicts. obsahujúce vytvorené dlaždice pre albumy a skladby
         private Dictionary<LinearLayout?, object> albumButtons = new Dictionary<LinearLayout?, object>();
         private Dictionary<LinearLayout?, Guid> songButtons = new Dictionary<LinearLayout?, Guid>();
 
+        // Dicts. slúžiacne na LazyLoading pri načítavaní obrázkov z pozadia aplikácie.
         private ObservableDictionary<string, Bitmap>? albumImagesBuffer;
         private ObservableDictionary<string, Bitmap>? songImagesBuffer;
         private Dictionary<string, LinearLayout?>? albumTilesBuffer;
         private Dictionary<string, LinearLayout?>? songTilesBuffer;
 
+        // Fragment objekt ktorý slúži na premiestnenie používateľa do nového fragmentu v prípade ak klikne na album v rámci interpreta. 
         private AlbumFragment albumFragment;
 
         /// <summary>
-        /// Constructor for AuthorFragment.cs
+        /// Inicializácia dátových položiek
         /// </summary>
-        /// <param name="ctx">Main Activity context (insert "this")</param>
-        /// <param name="assets"></param>
+        /// <param name="ctx">Main Activity context ("this")</param>
+        /// <param name="assets">Asset aplikácie získavasa z hlavnej aktivity ("this.Assets")</param>
         public AuthorFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
@@ -65,18 +72,18 @@ namespace MWP
         }
 
         /// <summary>
-        ///  AuthorFragment On create view
+        /// Override metódy OnCreateView. Volá metódu RenderAlbunmSongs, ktorá vytvorý samotné rozhranie, takže vytvorý
+        /// dlaždice pre skladby albumov daného interpreta. Takisto sa aj pridá udalosť ktorá sa má sputiť v prípade ak sa pridá novy element do
+        /// ObservableDictionary albumov alebo uncategorised songs pre načítavanie obrázkov. Ak sa pridá obrázok do dict., tak sa načíta do UI.
         /// </summary>
-        /// <param name="inflater"></param>
-        /// <param name="container"></param>
-        /// <param name="savedInstanceState"></param>
-        /// <returns></returns>
         public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
             View? view = inflater.Inflate(Resource.Layout.author_fragment, container, false);
 
             mainLayout = view?.FindViewById<LinearLayout>(Resource.Id.author_fragment_main);
 
+            // získavanie názov albumu na ktorý používateľ klikol. Názov je pridaný do bundle v metóde PopuplateVertical
+            // nachádzajúcu sa v UIRenderFunctions.cs.
             string? title = Arguments?.GetString("title");
             List<Artist> retreivedSongs = MainActivity.StateHandler.Artists.Search(title);
             if (retreivedSongs.Count > 0)
@@ -127,7 +134,9 @@ namespace MWP
 
         
         
-        /// <inheritdoc />
+        /// <summary>
+        /// Obrázky pre jednotlivé dlaždice sa začnú načitavať až po tom čo sa vytvorý fragment.
+        /// </summary>
         public override void OnViewCreated(View view, Bundle? savedInstanceState)
         {
             base.OnViewCreated(view, savedInstanceState);
@@ -152,9 +161,10 @@ namespace MWP
         }
 
         
-        
-        //TODO: Very big problem error, the key uncategorized cant be found in dictionary, fix!!!
-        
+        /// <summary>
+        /// Metóda slúži na vytvorenie zoznamu nekategorizovaných skladieb. 
+        /// </summary>
+        /// <param name="visible">parameter určuje aký sa má pridať margin ak existuje zoznam albumov alebo nie.</param>
         private void UncategorizedSongsRender(bool visible)
         {
 
@@ -204,6 +214,10 @@ namespace MWP
             mainLayout?.AddView(songsScroll);
         }
 
+        /// <summary>
+        /// Metóda slúži na vytvorenie horizontálneho ScrollView v ktorom sa nachádzaju dlaždice reprezentujúce
+        /// albumy prislúchajúce interpreta v ktorom sa pouźívateľ aktuálne nachádza (ktorého si aktuálne prezerá)
+        /// </summary>
         private void RenderAlbumsSongs()
         {
             albumTilesBuffer = new Dictionary<string, LinearLayout?>();

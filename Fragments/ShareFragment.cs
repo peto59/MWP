@@ -22,7 +22,9 @@ using MWP.Helpers;
 #endif
 namespace MWP
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Trieda ShareFragment slúži na vytvorenie fragmentu obsahujúceho rozhranie pre zmenu nastavení siete aplikácie a zdieľanie skladieb.
+    /// </summary>
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class ShareFragment : Fragment
     {
@@ -40,6 +42,11 @@ namespace MWP
         private FloatingActionButton? songPickerFragmentFab;
         private HostPickerFragment? hostPickerFragment;
         
+        /// <summary>
+        /// Enum ShareActionType slúži na diferenciovanie medzi rôznymi událosťami ku ktorým môže dojsť
+        /// pri manipulácii so sieťovými nastaveniami aplikácie. Môže tak ísť o pridanie nového hosta, jeho odobratie.
+        /// Alebo pridanie novej dôveryhodnej siete alebo jej odobratie. Tento Enum sa využíva hlavne v metóde AreYouSure.
+        /// </summary>
         private enum ShareActionType
         {
             TrustedNetworkAdd,
@@ -54,12 +61,15 @@ namespace MWP
             view = inflater?.Inflate(Resource.Layout.share_fragment, container, false);
             mainLayout = view?.FindViewById<RelativeLayout>(Resource.Id.share_fragment_main);
             
+            /*
+             * Načítanie hlavného rozhrania
+             */
             RenderUi();
-
-#if DEBUG
-            MyConsole.WriteLine(NetworkManager.GetAllHosts().ToString());
-#endif
             
+            /*
+             * Pri kliknutí na FlaotingActionButton tlačidlo premestni používateľa do nového fragmentu pre výber
+             * aktuálnych hostov, ktorým je možné zaslať skladby.
+             */
             songPickerFragmentFab = mainLayout?.FindViewById<FloatingActionButton>(Resource.Id.share_pick_songs_for_sharing_fab);
             if (BlendMode.Multiply != null)
                 songPickerFragmentFab?.Background?.SetColorFilter(
@@ -79,7 +89,12 @@ namespace MWP
         }
 
 
-        /// <inheritdoc />
+       
+        /// <summary>
+        /// Inicializácia dátových položiek
+        /// </summary>
+        /// <param name="ctx">Kontext hlavnej aktivity aplikácie</param>
+        /// <param name="assets">Assety získavané z hlavnej aktivity (MainActivity.Assets)</param>
         public ShareFragment(Context ctx, AssetManager assets)
         {
             context = ctx;
@@ -320,7 +335,16 @@ namespace MWP
             return tile;
         }
         
-
+        /// <summary>
+        /// Táto metóda vytvára dlaždicu pre dôveryhodnú sieť s daným SSID.
+        /// Najprv sa vytvorí nová inštancia LinearLayout s nastavením jej parametrov a vzhľadu.
+        /// Potom sa vytvorí textové pole pre zobrazenie názvu siete (networkName) a nastavia sa jeho parametre ako veľkosť, typ písma a farba textu.
+        /// Textové pole sa pridá do LinearLayout.
+        /// Ďalej sa vytvorí zobrazenie (fillingView) pre vyplnenie medzery a nastaví sa jeho váha na 1. Zobrazenie sa pridá do LinearLayout.
+        /// Nakoniec sa vytvorí tlačidlo s krížikom (crossButton) pre odstránenie siete. Nastavia sa jeho parametre a pridá sa k nemu reakcia na kliknutie, ktorá vyvolá dialóg AreYouSure s akciou TrustedNetworkDelete a zadaným SSID.
+        /// </summary>
+        /// <param name="ssid">názov siete</param>
+        /// <returns>Vracia naplnený LinearLayout</returns>
         private LinearLayout TrustedNetworkTile(string ssid)
         {
             LinearLayout tile = new LinearLayout(context);
@@ -391,7 +415,20 @@ namespace MWP
             return tile;
         }
 
-        
+        /// <summary>
+        /// Táto metóda zobrazuje dialógové okno so správou, ktorá informuje používateľa o dôsledkoch určitej akcie na základe ShareActionType Enum-u a žiada od neho potvrdenie.
+        /// Najprv sa pomocou LayoutInflater vytvorí zobrazenie dialógového okna a načíta sa layout pre AreYouSure dialóg.
+        /// Potom sa vytvorí inštancia AlertDialog.Builder a nastaví sa jej zobrazenie na vytvorené popupView.
+        /// Následne sa získajú referencie na textové polia pre titulok dialógu (title), tlačidlo Yes (yes) a tlačidlo No (no). Nastaví sa aj typ písma pre tieto komponenty.
+        /// Vytvorí sa AlertDialog a nastaví sa jeho pozadie na transparentné.
+        /// Podľa zadaného typu akcie (actionType) sa nastaví text titulku a správanie tlačidiel Yes a No v závislosti na tom, čo má akcia vykonať.
+        /// Pre každý typ akcie je definovaná správa a reakcia na kliknutie na tlačidlo Yes.
+        /// Akcia je vykonaná podľa typu akcie a po jej vykonaní sa dialóg zruší a obnoví sa fragment.
+        /// Ak používateľ klikne na tlačidlo No, dialóg sa jednoducho zruší.
+        /// Na záver sa dialóg zobrazí pomocou metódy Show().
+        /// </summary>
+        /// <param name="actionType">Typ akcie na základe ShareActionType Enum-u</param>
+        /// <param name="ssid">pokiaľ ide o vymazanie alebo pridanie siete, tak pridávame ssid siete</param>
         private void AreYouSure(ShareActionType actionType, string? ssid = null)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
@@ -491,6 +528,9 @@ namespace MWP
 
         }
         
+        /// <summary>
+        /// Metóda slúžiaca na resetovanie rozhrania fragmentu v prípade zmeny.
+        /// </summary>
         private void RefreshFragment()
         {
             try
@@ -527,9 +567,10 @@ namespace MWP
           
         }
 
-
-
         
+        /// <summary>
+        /// Metóda slúži na vytvorenie dialógového okna pre zmenu WAN port-u.
+        /// </summary>
         private void ChangeWanPort()
         {
             LayoutInflater? ifl = LayoutInflater.From(context);

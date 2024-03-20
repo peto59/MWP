@@ -23,7 +23,12 @@ using MWP.Helpers;
 
 namespace MWP
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Trieda slúźi na vytvorenie rozhrania pre výber skladieb, ktoré chce poslať hostovy ktorého si vybral v predošlom HostPickerFargemente.
+    /// Do fragmentu sa používateľ dostane po tom čo si vyberie hosta ktorému chce poslať sklaby. Používateľ pri načítaní fragmentu je prezentovaný so
+    /// zoznamom skladieb tak ako v SongsFragmente, avšak po klikutí na skladbu, skladba sa označí, vyfarbí pre indikáciu označenia a pridá do zoznamu na odoslanie.
+    /// Ak zoznam na odoslanie ni je prázdny, objaví sa posuvné tlačidlo pre konfirmáciu zaslanie skladieb.21
+    /// </summary>
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class SongPickerFragment : Fragment
     {

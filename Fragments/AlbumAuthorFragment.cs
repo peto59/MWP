@@ -21,7 +21,9 @@ namespace MWP
 {
     
     /// <summary>
-    /// Fragment view for Albums and Authors
+    /// Trieda AlbumAuthorFragment slúži na vytvorenie rozhrania poskytujúce zoznam albumov a interpretov skladieb. Pri načítani fragmentu je
+    /// používateľ prezenotvaný s dvoma stĺpcami, album a authors, sú to dva vertikalné ScrollView elementy, v každom z nich sa nachádzaju zoznamy
+    /// políčok reprezentujúce príslušne albumy alebo interpretov.
     /// </summary>
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar")]
     public class AlbumAuthorFragment : Fragment
@@ -33,28 +35,27 @@ namespace MWP
 
         private Dictionary<LinearLayout?, object> albumButtons = new Dictionary<LinearLayout?, object>();
 
+        // Dictionaries potrebné na Lazy Loading obrázkov albumov a autorov
         private Dictionary<string, LinearLayout?> albumTilesBuffer;
         private Dictionary<string, LinearLayout?> authorTilesBuffer;
         private ObservableDictionary<string, Bitmap> albumImagesBuffer;
         private ObservableDictionary<string, Bitmap> authorImagesBuffer;
-
-        private ObservableInteger UIdone;
         
+        // inštancie Fragmentov do ktorých je používateľ premiestnený po kliknutí na políčko albumu alebo autora
         private AlbumFragment albumFragment;
         private AuthorFragment authorFragment;
         
         
         /// <summary>
-        /// Constructor for AlbumAuthorFragment.cs
+        /// Inicializácia dátových položiek
         /// </summary>
-        /// <param name="ctx">Main Activity context (e.g. "this")</param>
+        /// <param name="ctx">Kontext hlanvje aktivity (takže "this")</param>
         public AlbumAuthorFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
             this.assets = assets;
             if (ctx.Resources is { DisplayMetrics: not null }) scale = ctx.Resources.DisplayMetrics.Density;
             
-            // fragmentManager = ParentFragment.Activity.SupportFragmentManager;
             albumFragment = new AlbumFragment(context, this.assets);
             authorFragment = new AuthorFragment(context, this.assets);
 
@@ -63,13 +64,14 @@ namespace MWP
 
             authorImagesBuffer = new ObservableDictionary<string, Bitmap>();
             authorTilesBuffer = new Dictionary<string, LinearLayout?>();
-
-            UIdone = new ObservableInteger();
             
         }
 
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Override metódy OnCreateView. Volá metódu SetupStructure, ktorá vytvorý samotné rozhranie a nastaví události
+        /// pre ObservableDictionaries, ktoré reagujú na zmenu, čiže ak sa pridá nový element pri načítavaní skladieb.
+        /// </summary>
         public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
         {
             View? view = inflater.Inflate(Resource.Layout.album_author_fragment, container, false);
@@ -108,9 +110,10 @@ namespace MWP
             
             return view;
         }
-
-
-        /// <inheritdoc />
+        
+        /// <summary>
+        /// Obrázku pre jednotlivé políčka sa začnú načitavať až po tom čo sa vytvorý fragment.
+        /// </summary>
         public override void OnViewCreated(View view, Bundle? savedInstanceState)
         {
             base.OnViewCreated(view, savedInstanceState);
@@ -151,7 +154,19 @@ namespace MWP
             
         }
 
-
+        /// <summary>
+        /// Metóda slúži na vytvorenie dlaždíc pre všetky albumy, ktoré su získavané z pozadia aplikácie.
+        /// Táto metóda vytvára a inicializuje zoznam dlaždíc pre zobrazenie albumov v režime vertikálneho rozloženia.
+        /// Vytvorí sa prázdny slovník albumTilesBuffer, ktorý bude slúžiť na ukladanie referencií na dlaždice albumov.
+        /// Potom sa vytvorí nový lineárny layout (lin), ktorému sa nastaví orientácia na vertikálnu.
+        /// Pre každý album v zozname MainActivity.StateHandler.Albums sa vytvorí dlaždica a pridá sa do lineárneho layoutu.
+        /// Taktiež sa pridá referencia dlaždice albumu do slovníka albumTilesBuffer.
+        /// Vypočíta sa percentuálny podiel nahratých obrázkov albumov voči celkovému počtu dlaždíc.
+        /// Ak tento podiel presahuje 80%, načítajú sa obrázky albumov z albumImagesBuffer do príslušných dlaždíc.
+        /// To je len v prípade ak náhodou sa isté obrázky nepodarí načítať. Je to akási druhá vlna načítavania, čím vytvárame
+        /// redundanciu načítavania obrázkov.
+        /// </summary>
+        /// <returns> Na záver sa vráti lineárny layout lin obsahujúci dlaždice albumov.</returns>
         private LinearLayout AlbumTiles()
         {
             albumTilesBuffer = new Dictionary<string, LinearLayout?>();
@@ -208,6 +223,11 @@ namespace MWP
         }
 
 
+        /// <summary>
+        /// Metóda AuthorTiles funguje na rovnakom princípe ako metóda AlbumTiles avšak vytvára zoznam dlaždíc pre všetkých
+        /// interpretov, ktorých zoznam získavam z pozadia aplikácie, rovnako ako pri AlbumTiles.
+        /// </summary>
+        /// <returns></returns>
         private LinearLayout AuthorTiles()
         {
             authorTilesBuffer = new Dictionary<string, LinearLayout?>();
@@ -261,6 +281,10 @@ namespace MWP
         }
 
 
+        /// <summary>
+        /// Hlavná metóda na vytvorenie samotného rozhrania. Inicializuje ScrollView elementy pre albumy a atorov.
+        /// Následne do nich vkladá všetky zoznamu prostrednícvtom metód AtuhorTiles a AlbumTiles.
+        /// </summary>
         private void SetupStructure()
         {
             ScrollView authorScroll = new ScrollView(context);

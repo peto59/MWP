@@ -14,6 +14,11 @@ using MWP.Helpers;
 
 namespace MWP
 {
+    /// <summary>
+    /// Trieda slúži na vytvorenie hudobnej notifikácie. Slúži na kontrolu a ovládanie stavu prehŕavania skladieb.
+    /// Základom notifikácie je nastavenie MediaStyle ako štýl notifikácie, vďaka tomu nadobudá natívny vzhľad pre dané zariadenie,
+    /// ktoré nemusíme zabezpečovať my. Zabezpečuje aj SeekBar pre zobrazenie čas a priebeh prehrávania skladby úplne natívne.
+    /// </summary>
     public class Local_notification_service
     {
         // Konštanty slúžiace na vytvorenie notifikačného kanálu unikátneho pre hudobnú notifikáciu
