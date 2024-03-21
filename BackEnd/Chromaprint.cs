@@ -202,7 +202,7 @@ namespace MWP.BackEnd
                         {
                             MainActivity.StateHandler.view.RunOnUiThread(() =>
                             {
-                                YoutubeFragment.UpdateSsDialog(current.title, current.artists.First().title,
+                                BottomDialogFunctions.UpdateSsDialog(current.title, current.artists.First().title,
                                     current.releaseGroups.First().title,
                                     imgBuffer[cnt1], originalAuthor,
                                     originalTitle, cnt1 < buffer.Count - 1 || next, cnt1 > 0);

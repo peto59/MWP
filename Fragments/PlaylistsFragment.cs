@@ -23,7 +23,10 @@ using Orientation = Android.Widget.Orientation;
 namespace MWP
 {
     /// <summary>
-    /// 
+    /// Trieda PlaylistsFragment slúži na vytvorenie zoznamu playlistov ktoré si používateľ vytvára sám vo vlastnej réžii.
+    /// Do fragmentu plyalists sa používateľ dostane prostredníctvom hlavného bočného panelu. Vo fragmente je nový používateľ
+    /// prezentovaný s prázdnym view keďže nemá ešte žiadne playlisty. Playlist sa dá vytvoriť pomocou FloatingActionButton
+    /// v pravom dolnom rohu obrazovky. Obsluhu tvorby plyalistu zabezpečuje metóda CreatePlaylistPopup.
     /// </summary>
     public class PlaylistsFragment : Fragment
     {
@@ -32,10 +35,13 @@ namespace MWP
         private LinearLayout playlistLnMain;
         private readonly Typeface? font;
 
+        // pri kliknutí na playlist sa vytvára playlistFragment do ktorého je používateľ následne premiestnený
         private PlaylistFragment playlistFragment; 
             
         /// <summary>
-        /// 
+        /// Metóda slúźi na získanie hlavného view a root elementu fragmentu. Metóda volá metódu RenderPlaylists
+        /// ktorá vygeneruje dlaždice pre všety playlisty používateľa na základe listu z pozadia aplikácie.
+        /// Metóda definuje udalosť pri kliknutí na FAB, čiže vytvorenie dialogu na vytvorenie nového playlistu.
         /// </summary>
         /// <param name="inflater"></param>
         /// <param name="container"></param>
@@ -62,7 +68,7 @@ namespace MWP
         /// Constructor for SongsFragment.cs
         /// </summary>
         /// <param name="ctx">Main Activity context (e.g. "this")</param>
-        /// <param name="assets"></param>
+        /// <param name="assets">Main Acitivty Assets (e.g. "this.Assets")</param>
         public PlaylistsFragment(Context ctx, AssetManager? assets)
         {
             context = ctx;
@@ -70,7 +76,15 @@ namespace MWP
             font = Typeface.CreateFromAsset(assets, "sulphur.ttf");
         }
 
-
+        /// <summary>
+        /// Táto metóda vykresľuje zoznam playlistov do zoznamu zobrazeného v ScrollView elemente.
+        /// Najprv sa inicializujú parametre pre ScrollView a LinearLayout, ktoré budú obsahovať playlisty.
+        /// Potom sa pre každý playlist vytvorí nový LinearLayout, ktorý bude reprezentovať jeden playlist.
+        /// Do tohto LinearLayoutu sa pridajú textové polia s názvom playlistu a počtom skladieb v playliste.
+        /// Pri kliknutí na playlist sa spustí udalosť prechodu na fragment s playlistom.
+        /// Pri dlhom stlačení playlistu sa spustí udalosť vymazania playlistu.
+        /// Nakoniec sa vytvorené playlisty pridajú do hlavného layoutu a zobrazenia.
+        /// </summary>
         private void RenderPlaylists()
         {
             ScrollView playlistsScroll = new ScrollView(context);
@@ -167,6 +181,16 @@ namespace MWP
         }
         
         
+        /// <summary>
+        /// Táto metóda vytvára dialógové okno na vytvorenie nového playlistu.
+        /// Najprv sa inflatuje layout na čo používame vlastný xml súbor pre vlastný dizjan dialógu.
+        /// Potom sa vytvára AlertDialog s daným view.
+        /// Následne sa pridáva logika pre tlačidlo na potvrdenie vytvorenia playlistu.
+        /// Ak vstupné pole nie je prázdne, vytvorí sa nový playlist s daným názvom a zobrazí sa správa o úspechu.
+        /// V opačnom prípade sa zobrazí upozornenie o povinnosti zadať text.
+        /// Taktiež sa pridáva logika pre tlačidlo na zrušenie vytvárania playlistu.
+        /// Nakoniec sa nastaví transparentné pozadie dialógového okna a dialóg sa zobrazí.
+        /// </summary>
         private void CreatePlaylistPopup(object sender, EventArgs e)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
@@ -223,7 +247,18 @@ namespace MWP
             dialog?.Show();
         }
         
-         private void DeletePlaylist(string playlistName)
+        /// <summary>
+        /// Táto metóda vytvára dialógové okno na odstránenie playlistu.
+        /// Najprv sa inflatuje layout na čo používame vlastný xml súbor pre vlastný dizjan dialógu.
+        /// Potom sa vytvára AlertDialog s daným view.
+        /// Následne sa nastavuje titul dialógového okna a formátuje sa načítaný názov playlistu.
+        /// Potom sa pridáva logika pre tlačidlo na potvrdenie odstránenia playlistu.
+        /// Po potvrdení sa playlist odstráni a zobrazí sa správa o úspechu. Následne sa prekreslia playlisty.
+        /// Taktiež sa pridáva logika pre tlačidlo na zrušenie odstránenia playlistu.
+        /// Nakoniec sa nastaví transparentné pozadie dialógového okna a dialóg sa zobrazí.
+        /// </summary>
+        /// <param name="playlistName">Názov playlistu ktorých chceme vymazať</param>
+        private void DeletePlaylist(string playlistName)
         {
             LayoutInflater? ifl = LayoutInflater.From(context);
             View? view = ifl?.Inflate(Resource.Layout.delete_playlist_popup, null);

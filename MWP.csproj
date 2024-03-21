@@ -156,6 +156,7 @@
     <Compile Include="DatatypesAndExtensions\SongExtensions.cs" />
     <Compile Include="BackEnd\StateHandler.cs" />
     <Compile Include="BackEnd\TagManager.cs" />
+    <Compile Include="UiElements\BottomDialogFunctions.cs" />
     <Compile Include="UiElements\Local_notification_service.cs" />
     <Compile Include="UiElements\MusicWidget.cs" />
     <Compile Include="UiElements\SidePlayer.cs" />
