@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <PropertyGroup>
+        <DefineConstants> $(DefineConstants);LINUX</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AcoustID.NET">
+        <Version>1.3.3</Version>
+      </PackageReference>
+      <PackageReference Include="Laerdal.FFmpeg.Full">
+        <Version>4.4.27</Version>
+      </PackageReference>
+      <PackageReference Include="Mono.Nat">
+        <Version>3.0.4</Version>
+      </PackageReference>
+      <PackageReference Include="Newtonsoft.Json">
+        <Version>13.0.3</Version>
+      </PackageReference>
+      <PackageReference Include="TagLibSharp">
+        <Version>2.3.0</Version>
+      </PackageReference>
+      <PackageReference Include="YoutubeExplode">
+        <Version>6.4.3</Version>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Images\left.png" />
+      <EmbeddedResource Include="Images\music_placeholder.png" />
+      <EmbeddedResource Include="Images\no_repeat.png" />
+      <EmbeddedResource Include="Images\pause.png" />
+      <EmbeddedResource Include="Images\play.png" />
+      <EmbeddedResource Include="Images\repeat.png" />
+      <EmbeddedResource Include="Images\repeat_one.png" />
+      <EmbeddedResource Include="Images\right.png" />
+      <EmbeddedResource Include="Images\shuffle.png" />
+      <EmbeddedResource Include="Images\shuffle_on.png" />
+    </ItemGroup>
+
+</Project>
