@@ -9,6 +9,7 @@ using MWP_Backend.BackEnd;
 using MWP_Backend.BackEnd.Helpers;
 using MWP_Backend.DatatypesAndExtensions;
 using MWP.DatatypesAndExtensions;
+using MWP.UIBinding;
 using Newtonsoft.Json;
 using TagLib;
 
@@ -893,7 +894,7 @@ namespace MWP.BackEnd
         }
         
         public delegate void SnackbarMessageDelegate(string message);
-        public static void AddSong(SnackbarMessageDelegate snackbarMessageDelegate, string path, string title, string[] artists, string artistId,
+        public static void AddSong(string path, string title, string[] artists, string artistId,
             string recordingId, string acoustIdTrackId, string? album = null, string? releaseGroupId = null)
         {
             using TagLib.File tfile = TagLib.File.Create(path, ReadStyle.PictureLazy);
@@ -953,11 +954,11 @@ namespace MWP.BackEnd
 #if DEBUG
                 MyConsole.WriteLine("Video already exists");
 #endif
-                snackbarMessageDelegate($"Exists: {title}");
+                Snackbar.Make($"Exists: {title}");
                 return;
             }
             File.Delete(path);
-            snackbarMessageDelegate($"Success: {title}");
+            Snackbar.Make($"Success: {title}");
 
             AddSong(path, title, artists, album);
         }

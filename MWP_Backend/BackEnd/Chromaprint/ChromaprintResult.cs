@@ -1,4 +1,4 @@
-namespace MWP.DatatypesAndExtensions
+namespace MWP.BackEnd.Chromaprint
 {
     /// <summary>
     /// Class for deserialization of Chromaprint json result

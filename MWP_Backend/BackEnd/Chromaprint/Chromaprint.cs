@@ -1,32 +1,55 @@
 using System.Diagnostics;
 using System.Net;
 using System.Xml.Linq;
-using AcoustID;
 using MWP_Backend.BackEnd.Helpers;
+using MWP.BackEnd;
 using MWP;
 using MWP.DatatypesAndExtensions;
 using Newtonsoft.Json;
-using AcoustID.Chromaprint;
+using MWP.UIBinding;
+using System.Runtime.InteropServices;
 
-namespace MWP_Backend.BackEnd
+namespace MWP.BackEnd.Chromaprint
 {
-#if ANDROID
     /// <summary>
     /// Functions for generating fingerprint from mp3 file and fetching metadata
     /// </summary>
-    public static class Chromaprint
+    public class Chromaprint
     {
-        public static async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[]? thumbnail)> Search(string filePath, string originalAuthor, string originalTitle, string? originalAlbum, bool manual = true)
+
+        private readonly IChromaprint chromaprint;
+        public Chromaprint()
+        {
+            
+            if (OperatingSystem.IsWindows())
+            {
+                chromaprint = new ChromaprintWindows();
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                chromaprint = new ChromaprintLinux();
+            }
+            else if (OperatingSystem.IsAndroid())
+            {
+                chromaprint = new ChromaprintAndroid();
+            }
+            else
+            {
+                throw new PlatformNotSupportedException("Chromaprint not supported");
+            }
+        }
+        
+        public async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artist, List<(string title, string id)> releaseGroup, byte[]? thumbnail)> Search(string filePath, string originalAuthor, string originalTitle, string? originalAlbum, bool manual = true)
         {
             (string, string, string, List<(string, string)>, List<(string, string)>, byte[]?) output = (originalTitle, string.Empty, string.Empty, new List<(string, string)>{(originalAuthor, string.Empty)}, new List<(string, string)>{(originalAlbum ?? string.Empty, string.Empty)}, null);
             try
             {
-                AcoustID.Configuration.ClientKey = "b\'5LIvrD3L";
-                var x = new ChromaContext();
+                ChromaprintResult? chromaprintResult = await chromaprint.Run(filePath);
+                /*var x = new ChromaContext();
                 ChromaprintResult? chromaprintResult =
                     
                     JsonConvert.DeserializeObject<ChromaprintResult>(FpCalc.InvokeFpCalc(new[]
-                        { "-json", $"{filePath}" }));
+                        { "-json", $"{filePath}" }));*/
                 
                 if (chromaprintResult == null) return output;
                 
@@ -186,9 +209,9 @@ namespace MWP_Backend.BackEnd
                     int cnt1 = cnt;
                     if (manual)
                     {
-                        if (MainActivity.StateHandler.view != null)
+                        if (StateHandler.UiStateHandler?.View != null)
                         {
-                            MainActivity.StateHandler.view.RunOnUiThread(() =>
+                            StateHandler.UiStateHandler.View.RunOnUiThread(() =>
                             {
                                 YoutubeFragment.UpdateSsDialog(current.title, current.artists.First().title,
                                     current.releaseGroups.First().title,
@@ -205,36 +228,36 @@ namespace MWP_Backend.BackEnd
                         StateHandler.ResultEvent.WaitOne();
                     }
 
-                    if (MainActivity.StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Next)
+                    if (StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Next)
                     {
                         lastNavigation = LastSongSelectionNavigation.Next;
                         cnt++;
-                        MainActivity.StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
                         continue;
                     }
 
-                    if (MainActivity.StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Previous)
+                    if (StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Previous)
                     {
                         lastNavigation = LastSongSelectionNavigation.Previous;
                         cnt--;
-                        MainActivity.StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
                         continue;
                     }
 
-                    if (MainActivity.StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Cancel)
+                    if (StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Cancel)
                     {
-                        MainActivity.StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                        StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
                         break;
                     }
 
-                    if (MainActivity.StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Accept || !manual)
+                    if (StateHandler.songSelectionDialogAction == SongSelectionDialogActions.Accept || !manual)
                     {
                         output = (current.title, current.recordingId, current.trackId, current.artists.ToList(),
                             current.releaseGroups.ToList(), imgBuffer[cnt]);
                         //output = ( current.title, current.recordingId, current.trackId, current.artists.ToList(), current.releaseGroups.ToList(), imgBuffer[cnt]);
                         if (manual)
                         {
-                            MainActivity.StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
+                            StateHandler.songSelectionDialogAction = SongSelectionDialogActions.None;
                         }
                         break;
                     }
@@ -244,7 +267,7 @@ namespace MWP_Backend.BackEnd
                 rEnumerator.Dispose();
                 if (manual)
                 {
-                    MainActivity.StateHandler.FileEvent.Set();
+                    StateHandler.FileEvent.Set();
                 }
                 return output;
             }
@@ -257,7 +280,7 @@ namespace MWP_Backend.BackEnd
 
             if (manual)
             {
-                MainActivity.StateHandler.FileEvent.Set();
+                StateHandler.FileEvent.Set();
             }
             return output;
         }
@@ -293,5 +316,4 @@ namespace MWP_Backend.BackEnd
             }
         }
     }
-#endif
 }

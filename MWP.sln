@@ -10,15 +10,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MWP", "MWP.csproj", "{44E81
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartExceptions", "SmartExceptions\SmartExceptions.csproj", "{16DD2390-DB1D-4F07-92DF-026EDD903EB5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FFmpeg", "FFmpeg\FFmpeg.csproj", "{A2EDE33D-4A77-4F05-A761-FF32462D0C13}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chromaprint", "Chromaprint\Chromaprint.csproj", "{FA8D9FC8-AC13-41DC-BFAA-F7674D350601}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidApp1", "AndroidApp1\AndroidApp1.csproj", "{F5B996A4-B6CF-417D-82DA-9BF77FCBEF2A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MWP_Backend", "MWP_Backend\MWP_Backend.csproj", "{99E7F4AD-74B0-45C0-9D27-2531B02A0165}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{5A18746C-AAB9-4AE5-8194-41020EBD962C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UIBinding", "UIBinding\UIBinding.csproj", "{C35C6D13-A812-4E63-AEAF-D4A1C472829A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "player", "player\player.csproj", "{172F176C-8C94-4B78-9000-F1F65B7E76C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,18 +32,6 @@ Global
 		{44E81BE3-AE9F-4215-B33F-D17EA3507138}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{16DD2390-DB1D-4F07-92DF-026EDD903EB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{16DD2390-DB1D-4F07-92DF-026EDD903EB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A2EDE33D-4A77-4F05-A761-FF32462D0C13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A2EDE33D-4A77-4F05-A761-FF32462D0C13}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A2EDE33D-4A77-4F05-A761-FF32462D0C13}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A2EDE33D-4A77-4F05-A761-FF32462D0C13}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FA8D9FC8-AC13-41DC-BFAA-F7674D350601}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FA8D9FC8-AC13-41DC-BFAA-F7674D350601}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FA8D9FC8-AC13-41DC-BFAA-F7674D350601}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FA8D9FC8-AC13-41DC-BFAA-F7674D350601}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F5B996A4-B6CF-417D-82DA-9BF77FCBEF2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F5B996A4-B6CF-417D-82DA-9BF77FCBEF2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F5B996A4-B6CF-417D-82DA-9BF77FCBEF2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F5B996A4-B6CF-417D-82DA-9BF77FCBEF2A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{99E7F4AD-74B0-45C0-9D27-2531B02A0165}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{99E7F4AD-74B0-45C0-9D27-2531B02A0165}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99E7F4AD-74B0-45C0-9D27-2531B02A0165}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -54,6 +40,14 @@ Global
 		{5A18746C-AAB9-4AE5-8194-41020EBD962C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A18746C-AAB9-4AE5-8194-41020EBD962C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A18746C-AAB9-4AE5-8194-41020EBD962C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C35C6D13-A812-4E63-AEAF-D4A1C472829A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C35C6D13-A812-4E63-AEAF-D4A1C472829A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C35C6D13-A812-4E63-AEAF-D4A1C472829A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C35C6D13-A812-4E63-AEAF-D4A1C472829A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{172F176C-8C94-4B78-9000-F1F65B7E76C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{172F176C-8C94-4B78-9000-F1F65B7E76C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{172F176C-8C94-4B78-9000-F1F65B7E76C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{172F176C-8C94-4B78-9000-F1F65B7E76C1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

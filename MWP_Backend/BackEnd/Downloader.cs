@@ -1,32 +1,33 @@
 ﻿using System.Diagnostics;
 using System.Net;
 using MWP_Backend.BackEnd.Helpers;
-using MWP;
 using MWP.BackEnd;
 using MWP.DatatypesAndExtensions;
-using YoutubeExplode;
-using YoutubeExplode.Channels;
-using YoutubeExplode.Common;
-using YoutubeExplode.Playlists;
-using YoutubeExplode.Videos;
-using YoutubeExplode.Videos.Streams;
-using Laerdal.FFmpeg;
-using Laerdal;
+using YoutubeReExplode;
+using YoutubeReExplode.Channels;
+using YoutubeReExplode.Common;
+using YoutubeReExplode.Playlists;
+using YoutubeReExplode.Videos;
+using YoutubeReExplode.Videos.Streams;
+using MWP;
+using MWP.BackEnd.Chromaprint;
+using MWP.BackEnd.FFmpeg;
+using MWP.UIBinding;
 
 namespace MWP_Backend.BackEnd
 {
-#if ANDROID
     // TODO: add new song to state handler
-    internal static class Downloader
+    public static class Downloader
     {
         public delegate void SnackbarMessageDelegate(string message);
-        public static async void Download(SnackbarMessageDelegate snackbarMessageDelegate, string url, DownloadActions action)
+        private static Chromaprint _chromaprint = new Chromaprint();
+        public static async void Download(string url, DownloadActions action)
         {
             List<string> authors = new List<string>();
             //APIThrottler throttler = new APIThrottler();
             if (url.Contains("playlist"))
             {
-                snackbarMessageDelegate("Download started");
+                //snackbarMessageDelegate("Download started");
 
                 YoutubeClient youtube = new YoutubeClient();
                 Playlist playlist = await youtube.Playlists.GetAsync(url);
@@ -34,9 +35,9 @@ namespace MWP_Backend.BackEnd
                 string playlistThumbnailPath = FileManager.GetAvailableTempFile("playlistThumb", "img");
                 string realPlaylistThumbnailPath = GetImage(playlist.Thumbnails.AsEnumerable(), playlistThumbnailPath);
                 DownloadNotification notification = new DownloadNotification(videos.Count);
-                StatisticsCallback callback = new StatisticsCallback(notification);
+                //StatisticsCallback callback = new StatisticsCallback(notification);
                 //FFmpegKitConfig.EnableStatisticsCallback(callback);
-                FFmpegConfig.FFmpegStatisticsDelegate = callback;
+                //FFmpegConfig.FFmpegStatisticsDelegate = callback;
                 for (int index = 0; index < videos.Count; index++)
                 {
                     (string songTempPath, string unprocessedTempPath, string thumbnailTempPath) = FileManager.GetAvailableDownloaderFiles();
@@ -56,7 +57,7 @@ namespace MWP_Backend.BackEnd
                     int poradieVPlayliste = index;
                     new Thread(() =>
                     {
-                        DownloadVideo(snackbarMessageDelegate, video.Url, songTempPath, unprocessedTempPath, thumbnailTempPath, video.Id, video.Title, video.Author.ChannelTitle,
+                        DownloadVideo(video.Url, songTempPath, unprocessedTempPath, thumbnailTempPath, video.Id, video.Title, video.Author.ChannelTitle,
                             shouldGetAuthorImage, video.Author.ChannelId, notification, playlist.Title, realPlaylistThumbnailPath,
                             video == videos.Last(), poradieVPlayliste);
                     }).Start();
@@ -64,28 +65,38 @@ namespace MWP_Backend.BackEnd
             }
             else if (url.Contains("watch"))
             {
-                snackbarMessageDelegate("Download started");
-                YoutubeClient youtube = new YoutubeClient();
-                Video video = await youtube.Videos.GetAsync(url);
-                (string songTempPath, string unprocessedTempPath, string thumbnailTempPath) = FileManager.GetAvailableDownloaderFiles();
-                DownloadNotification notification = new DownloadNotification();
-                StatisticsCallback callback = new StatisticsCallback(notification);
-                //FFmpegKitConfig.EnableStatisticsCallback(callback);
-                FFmpegConfig.FFmpegStatisticsDelegate = callback;
-                new Thread(() => { DownloadVideo(snackbarMessageDelegate, url, songTempPath, unprocessedTempPath, thumbnailTempPath, video.Id, video.Title, video.Author.ChannelTitle, true, video.Author.ChannelId, notification); }).Start();
+                //snackbarMessageDelegate("Download started");
+                try
+                {
+                    YoutubeClient youtube = new YoutubeClient();
+                    Video video = await youtube.Videos.GetAsync(url);
+                    (string songTempPath, string unprocessedTempPath, string thumbnailTempPath) = FileManager.GetAvailableDownloaderFiles();
+                    DownloadNotification notification = new DownloadNotification();
+                    //StatisticsCallback callback = new StatisticsCallback(notification);
+                    //FFmpegKitConfig.EnableStatisticsCallback(callback);
+                    //FFmpegConfig.FFmpegStatisticsDelegate = callback;
+                    new Thread(() => { DownloadVideo(url, songTempPath, unprocessedTempPath, thumbnailTempPath, video.Id, video.Title, video.Author.ChannelTitle, true, video.Author.ChannelId, notification); }).Start();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+                
             }
             else
             {
-                snackbarMessageDelegate("This is neither video nor playlist");
+                //snackbarMessageDelegate("This is neither video nor playlist");
                 //throw new ArgumentException($"{url} is not video or playlist");
             }
         }
 
 
-        private static async void DownloadVideo(object sender, string url, string songTempPath, string unprocessedPath, string thumbnailTempPath, VideoId videoId, string videoTitle, string channelName, bool getAuthorImage, ChannelId channelId, DownloadNotification notification, string? album = null, string? playlistThumbnailPath = null, bool last = false, int? poradieVPlayliste = null)
+        private static async void DownloadVideo(string url, string songTempPath, string unprocessedPath, string thumbnailTempPath, VideoId videoId, string videoTitle, string channelName, bool getAuthorImage, ChannelId channelId, DownloadNotification notification, string? album = null, string? playlistThumbnailPath = null, bool last = false, int? poradieVPlayliste = null)
         {
             try
             {
+                FFmpeg ffmpeg = new FFmpeg();
                 Progress<double> downloadProgress = new Progress<double>();
                 notification.Stage1(downloadProgress, videoTitle, poradieVPlayliste);
                 
@@ -101,32 +112,34 @@ namespace MWP_Backend.BackEnd
                 if (SettingsManager.ShouldUseChromaprintAtDownload)
                 {
                     string? album1 = album;
-                    async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artists, List<(string title, string id)> releaseGroup, byte[]? thumbnail)> TaskFactory() => await Chromaprint.Search(unprocessedPath, channelName, videoTitle, album1);
+                    async Task<(string title, string recordingId, string trackId, List<(string title, string id)> artists, List<(string title, string id)> releaseGroup, byte[]? thumbnail)> TaskFactory() => await _chromaprint.Search(unprocessedPath, channelName, videoTitle, album1);
                     mbSearchTask = StateHandler.Throttler.Throttle(TaskFactory, "GetMusicBrainzIdFromFingerprint");
                 }
                 
                 //FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu);
-                FFmpegConfig.IgnoreSignal(24);
+                //FFmpegConfig.IgnoreSignal(24);
                 
                 await imageTask;
                 
                 int duration;
-                int? s = FFmpeg.Execute($"-i {unprocessedPath} -show_entries format=duration -v quiet -of csv=\"p=0\"");
-                try
+                FFmpegSession sessionLength = new FFmpegSession();
+                await ffmpeg.Run($"-i {unprocessedPath} -show_entries format=duration -v quiet -of csv=\"p=0\"", sessionLength);
+                /*try
                 {
-                    duration = s != null ? (int)float.Parse(s) : 170;
+                    duration = s;
                 }
                 catch
                 {
                     duration = 170; //random song duration of 2:50
-                }
+                }*/
                 
                 // ReSharper disable once InconsistentNaming
+                FFmpegSession sessionConvert = new FFmpegSession();
                 Task FFmpegTask = Task.Run(() =>
                 {
-                    int executionId = FFmpeg.Execute(new []{"-i", unprocessedPath, "-i", thumbnailTempPath, "-filter_complex", "[1:v]crop=iw:iw/2[img]", "-map", "0:0", "-map", "[img]", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", songTempPath}); //aspect ratio 2:1
-                    //FFmpegSession session = new FFmpegSession(new []{"-i", $"{Path}/tmp/unprocessed{i}.mp3", "-i", $"{Path}/tmp/file{i}.jpg", "-map", "0:0", "-map", "1:0", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", $"{Path}/tmp/video{i}.mp3"}); //original aspect ration 
-                    StateHandler.SessionIdToPlaylistOrderMapping.Add(executionId, (poradieVPlayliste, duration));
+                    ffmpeg.Run($"-i {unprocessedPath} -i {thumbnailTempPath} -filter_complex [1:v]crop=iw:iw/2[img] -map 0:0 -map [img] -c:a libmp3lame -id3v2_version 4 -loglevel quiet -y {songTempPath}", sessionConvert); //aspect ratio 2:1
+                    //session = new FFmpegSession(new []{"-i", $"{Path}/tmp/unprocessed{i}.mp3", "-i", $"{Path}/tmp/file{i}.jpg", "-map", "0:0", "-map", "1:0", "-c:a", "libmp3lame", "-id3v2_version", "4", "-loglevel", "quiet", "-y", $"{Path}/tmp/video{i}.mp3"}); //original aspect ration 
+                    //StateHandler.SessionIdToPlaylistOrderMapping.Add(executionId, (poradieVPlayliste, duration));
                     notification.Stage3(poradieVPlayliste);
 #if DEBUG
                     MyConsole.WriteLine($"ffmpeg finished {poradieVPlayliste}");
@@ -212,30 +225,31 @@ namespace MWP_Backend.BackEnd
                     File.Delete(unprocessedPath);
                 });
                 
-                if (session.ReturnCode is { IsSuccess: true })
+                if (sessionConvert.ReturnCode is FFmpegStatusCode.Success)
                 {
 
                     if (album != null)
                     {
-                        FileManager.AddSong((View)sender, songTempPath, title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId, album, releaseGroups.First().id);
+                        FileManager.AddSong(songTempPath, title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId, album, releaseGroups.First().id);
                     }
                     else
                     {
-                        FileManager.AddSong((View)sender, songTempPath, title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId);
+                        FileManager.AddSong(songTempPath, title, artists.Select(t => t.title).Distinct().ToArray(), artists.First().id, recordingId, trackId);
                     }
                     notification.Stage4(true, string.Empty, poradieVPlayliste);
                     
                 }
                 else 
                 {
-                    notification.Stage4(false, $"{session.ReturnCode?.Value}", poradieVPlayliste);
+                    notification.Stage4(false, $"{sessionConvert.ReturnCode}", poradieVPlayliste);
                     File.Delete(songTempPath);
-                    if (session.ReturnCode == null) return;
+                    //if (sessionConvert.ReturnCode == null) return;
 #if DEBUG
-                    MyConsole.WriteLine($"FFmpeg failed with status code {session.ReturnCode} {session.Output} {session}");
+                    MyConsole.WriteLine($"FFmpeg failed with status code {sessionConvert.ReturnCode} {sessionConvert.RawOutput}");
 #endif
-                    View view = (View)sender;
-                    Snackbar.Make(view, $"{session.ReturnCode} Failed: {title}", BaseTransientBottomBar.LengthLong).Show();
+                    //View view = (View)sender;
+                    //Snackbar.Make(view, $"{session.ReturnCode} Failed: {title}", BaseTransientBottomBar.LengthLong).Show();
+                    Snackbar.Make($"{sessionConvert.ReturnCode} Failed: {title}");
                 }
             }
             catch (Exception ex)
@@ -249,8 +263,9 @@ namespace MWP_Backend.BackEnd
                 int line = frame.GetFileLineNumber();
                 MyConsole.WriteLine($"[tryCatch line: {line}]BIG EROOOOOOOOR: {ex}");
 #endif
-                View view = (View)sender;
-                Snackbar.Make(view, $"Failed: {videoTitle}", BaseTransientBottomBar.LengthLong).Show();
+                ///View view = (View)sender;
+                //Snackbar.Make(view, $"Failed: {videoTitle}", BaseTransientBottomBar.LengthLong).Show();
+                Snackbar.Make($"Failed: {videoTitle}");
             }
         }
 
@@ -319,7 +334,7 @@ namespace MWP_Backend.BackEnd
         }
     }
 
-    /// <inheritdoc cref="Com.Arthenica.Ffmpegkit.IStatisticsCallback" />
+    /*/// <inheritdoc cref="Com.Arthenica.Ffmpegkit.IStatisticsCallback" />
     public class StatisticsCallback : FFmpegStatisticsDelegate
     {
 
@@ -356,8 +371,7 @@ namespace MWP_Backend.BackEnd
 #endif
             }
         }
-    }
-#endif
+    }*/
 }
 
 

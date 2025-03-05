@@ -19,7 +19,7 @@ namespace MWP.DatatypesAndExtensions
         Previous
     }
     
-    internal enum DownloadActions
+    public enum DownloadActions
     {
         DownloadOnly,
         DownloadWithMbid,

@@ -411,16 +411,6 @@
     <AndroidResource Include="Resources\drawable\rounded_primaryColor.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Chromaprint\Chromaprint.csproj">
-      <Project>{fa8d9fc8-ac13-41dc-bfaa-f7674d350601}</Project>
-      <Name>Chromaprint</Name>
-    </ProjectReference>
-    <ProjectReference Include="FFmpeg\FFmpeg.csproj">
-      <Project>{a2ede33d-4a77-4f05-a761-ff32462d0c13}</Project>
-      <Name>FFmpeg</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <AndroidResource Include="Resources\layout\new_playlist_popup.xml">
       <SubType>Designer</SubType>
     </AndroidResource>

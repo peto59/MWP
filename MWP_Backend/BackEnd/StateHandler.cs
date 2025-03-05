@@ -3,14 +3,15 @@ using MWP_Backend.DatatypesAndExtensions;
 using MWP;
 using MWP.BackEnd.Network;
 using MWP.DatatypesAndExtensions;
+using MWP.UIBinding;
 using Random = System.Random;
 
-namespace MWP_Backend.BackEnd
+namespace MWP.BackEnd
 {
     /// <summary>
     /// Global handler of application states
     /// </summary>
-    public class StateHandler
+    public static class StateHandler
     {
         /// <summary>
         /// Global random number generator
@@ -19,7 +20,7 @@ namespace MWP_Backend.BackEnd
         /// <summary>
         /// Cancellation token for all song progress bars
         /// </summary>
-        public CancellationTokenSource SongProgressCts = new CancellationTokenSource();
+        public static CancellationTokenSource SongProgressCts = new CancellationTokenSource();
         public static APIThrottler Throttler = new APIThrottler();
         #if ANDROID
         /// <summary>
@@ -40,7 +41,7 @@ namespace MWP_Backend.BackEnd
         /// <summary>
         /// Whether NetworkManager Lister was Launched
         /// </summary>
-        public bool launchedNetworkManagerListener = false;
+        public static bool launchedNetworkManagerListener = false;
 
         /// <summary>
         /// List of live hosts on network
@@ -54,13 +55,13 @@ namespace MWP_Backend.BackEnd
         
         
         //----------Downloader Callback resolution helpers---------
-        internal SongSelectionDialogActions songSelectionDialogAction = SongSelectionDialogActions.None;
+        internal static SongSelectionDialogActions songSelectionDialogAction = SongSelectionDialogActions.None;
         internal static readonly AutoResetEvent FileEvent = new AutoResetEvent(true);
         internal static readonly AutoResetEvent ResultEvent = new AutoResetEvent(false);
         //-----------Discovery synchronization event------------------
         internal static readonly AutoResetEvent FileListGenerationEvent = new AutoResetEvent(true);
         internal static readonly ManualResetEvent FileListGenerated = new ManualResetEvent(false);
-        internal readonly ManualResetEvent StartDiscoveringEvent = new ManualResetEvent(true);
+        internal static readonly ManualResetEvent StartDiscoveringEvent = new ManualResetEvent(true);
         
 
         //---------------------------------------------------------
@@ -96,7 +97,7 @@ namespace MWP_Backend.BackEnd
         /// <summary>
         /// Whether to show remaining or elapsed time on sing progress bars
         /// </summary>
-        public bool ProgTimeState
+        public static bool ProgTimeState
         {
             get; set;
         }
@@ -114,7 +115,9 @@ namespace MWP_Backend.BackEnd
         /// </summary>
         public static readonly List<Album> Albums = new List<Album>();
 
-        #if ANDROID
+        public static UIStateHandler? UiStateHandler = null;
+
+#if ANDROID
         ///<summary>
         ///Sets view to current screen's view
         ///</summary>
@@ -122,6 +125,6 @@ namespace MWP_Backend.BackEnd
         {
             view = newView;
         }
-        #endif
+#endif
     }
 }
