@@ -1,2 +1,0 @@
-compile Ass_Pain_Chromaprint_Java in android studio
-extract aar from Ass_Pain_Chromaprint_Java/ass_pain_chromaprint/build/libs/ass_pain_chromaprint.jar

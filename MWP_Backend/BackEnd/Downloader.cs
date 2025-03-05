@@ -9,9 +9,9 @@ using YoutubeReExplode.Common;
 using YoutubeReExplode.Playlists;
 using YoutubeReExplode.Videos;
 using YoutubeReExplode.Videos.Streams;
-using MWP;
-using MWP.BackEnd.Chromaprint;
-using MWP.BackEnd.FFmpeg;
+using MWP.Chromaprint;
+using MWP.FFmpeg;
+using MWP.FFmpeg.DataTypes;
 using MWP.UIBinding;
 
 namespace MWP_Backend.BackEnd

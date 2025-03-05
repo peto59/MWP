@@ -233,7 +233,7 @@ namespace MWP
 					songAlbum.Text = MainActivity.ServiceConnection.Binder?.Service.QueueObject.Current.Album.Title ?? "No Album";
 
 				/*
-				 * player buttons
+				 * Player buttons
 				 */
 				LinearLayout? buttonsMainLin = context.FindViewById<LinearLayout>(Resource.Id.player_buttons);
 				buttonsMainLin?.RemoveAllViews();
