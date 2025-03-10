@@ -22,7 +22,7 @@ public class PlayerLinux : IPlayer
             StartInfo = new ProcessStartInfo
             {
                 FileName = "/bin/bash",
-                Arguments = "-c \"mpv --quiet --idle --input-ipc-server=/tmp/MWP_MPV_Socket1 \"",
+                Arguments = "-c \"mpv --quiet --no-video --idle --input-ipc-server=/tmp/MWP_MPV_Socket1 \"",
                 RedirectStandardOutput = true,
                 RedirectStandardInput = true,
                 UseShellExecute = false,
