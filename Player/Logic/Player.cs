@@ -85,6 +85,5 @@ public class Player :  IPlayer
         player.Dispose();
         GC.SuppressFinalize(this);
         isDisposed = true;
-        
     }
 }

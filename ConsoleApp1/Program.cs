@@ -10,7 +10,7 @@ class Program
     {
         Console.WriteLine("Hello, World!");
         Player player = new Player();
-        player.Play("/home/adam/Downloads/dirty-magic.mp3");
+        player.Play("/home/lenovolegion/Downloads/a.mp3");
         while (true)
         {
             
