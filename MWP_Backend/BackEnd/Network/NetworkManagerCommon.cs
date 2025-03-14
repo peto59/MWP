@@ -28,7 +28,7 @@ using MWP_Backend.DatatypesAndExtensions;
 using MWP.DatatypesAndExtensions;
 using SocketException = System.Net.Sockets.SocketException;
 #if DEBUG
-using MWP_Backend.BackEnd.Helpers;
+using MWP.BackEnd.Helpers;
 using MWP.Helpers;
 #endif
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using MWP_Backend.BackEnd;
 using MWP_Backend.DatatypesAndExtensions;
 #if DEBUG
-using MWP_Backend.BackEnd.Helpers;
+using MWP.BackEnd.Helpers;
 using MWP.Helpers;
 #endif
 namespace MWP.BackEnd.Network

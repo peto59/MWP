@@ -11,7 +11,7 @@ using Xamarin.Essentials;
 #endif
 #if DEBUG
 using MWP.Helpers;
-using MWP_Backend.BackEnd.Helpers;
+using MWP.BackEnd.Helpers;
 #endif
 
 namespace MWP.BackEnd.Network

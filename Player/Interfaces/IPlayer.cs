@@ -12,4 +12,5 @@ public interface IPlayer : IDisposable
     public Task SetVolume(float volume);
     public Task<long> GetDuration();
     public Task<long> GetPlayTime();
+    public Task<bool> Initialize();
 }

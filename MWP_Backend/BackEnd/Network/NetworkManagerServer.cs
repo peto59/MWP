@@ -11,7 +11,7 @@ using MWP_Backend.BackEnd;
 using MWP_Backend.DatatypesAndExtensions;
 using Newtonsoft.Json;
 #if DEBUG
-using MWP_Backend.BackEnd.Helpers;
+using MWP.BackEnd.Helpers;
 using MWP.Helpers;
 #endif
 

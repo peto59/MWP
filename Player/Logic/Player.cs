@@ -1,5 +1,7 @@
 using MWP.Player;
-using MWP.Player.Implementations;
+using MWP.Player.Implementations.Android;
+using MWP.Player.Implementations.Linux;
+using MWP.Player.Implementations.Windows;
 using MWP.Player.Interfaces;
 
 namespace MWP.Player;
@@ -27,6 +29,11 @@ public class Player :  IPlayer
         {
             throw new PlatformNotSupportedException("Player not supported");
         }
+    }
+    
+    public Task<bool> Initialize()
+    {
+        return player.Initialize();
     }
     
     public Task<bool> IsPlaying()
@@ -78,7 +85,7 @@ public class Player :  IPlayer
     {
         return player.GetPlayTime();
     }
-    
+
     public void Dispose()
     {
         if (isDisposed) return;

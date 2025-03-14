@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 using System.Runtime.CompilerServices;
 using MWP_Backend.DatatypesAndExtensions;
 #if DEBUG
-using MWP_Backend.BackEnd.Helpers;
+using MWP.BackEnd.Helpers;
 using MWP.Helpers;
 #endif
 

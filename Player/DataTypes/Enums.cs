@@ -18,4 +18,12 @@
         /// </summary>
         Single
     }
+
+    public enum RequestCodes : int
+    {
+        None = 0,
+        PlayState = 100,
+        Duration = 101,
+        PlayTime = 102,
+    }
 }

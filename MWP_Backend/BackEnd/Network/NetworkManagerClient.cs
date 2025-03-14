@@ -13,7 +13,7 @@ using Exception = Java.Lang.Exception;
 #endif
 using Thread = System.Threading.Thread;
 #if DEBUG
-using MWP_Backend.BackEnd.Helpers;
+using MWP.BackEnd.Helpers;
 using MWP.Helpers;
 #endif
 

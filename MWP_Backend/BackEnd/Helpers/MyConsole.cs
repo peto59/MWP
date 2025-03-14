@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace MWP_Backend.BackEnd.Helpers
+namespace MWP.BackEnd.Helpers
 {
     /// <summary>
     /// Console "extensions"
@@ -20,8 +20,8 @@ namespace MWP_Backend.BackEnd.Helpers
         {
             try
             {
-                char separatorChar = (char)typeof(Path).GetTypeInfo().GetDeclaredField("DirectorySeparatorChar")
-                    .GetValue(null);
+                char separatorChar = (char)(typeof(Path).GetTypeInfo().GetDeclaredField("DirectorySeparatorChar")
+                    ?.GetValue(null) ?? '/');
                 if (file == null) return;
                 file = file.Replace(@"\\", $"{separatorChar}").Replace('\\', separatorChar);
                 file = Path.GetFileName(file);
@@ -45,12 +45,13 @@ namespace MWP_Backend.BackEnd.Helpers
             {
                 StackTrace st = new StackTrace(ex, true);
                 // Get the top stack frame
-                StackFrame frame = st.GetFrame(st.FrameCount - 1);
+                StackFrame? frame = st.GetFrame(st.FrameCount - 1);
                 // Get the line number from the stack frame
+                if (frame == null) return;
                 int exLine = frame.GetFileLineNumber();
                 string message = $"[tryCatch line: {exLine}]: {ex}";
-                char separatorChar = (char)typeof(Path).GetTypeInfo().GetDeclaredField("DirectorySeparatorChar")
-                    .GetValue(null);
+                char separatorChar = (char)(typeof(Path).GetTypeInfo().GetDeclaredField("DirectorySeparatorChar")
+                    ?.GetValue(null) ?? '/');
                 if (file == null) return;
                 file = file.Replace(@"\\", $"{separatorChar}").Replace('\\', separatorChar);
                 file = Path.GetFileName(file);

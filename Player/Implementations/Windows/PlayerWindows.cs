@@ -1,8 +1,8 @@
 using MWP.Player.Interfaces;
 
-namespace MWP.Player.Implementations;
+namespace MWP.Player.Implementations.Windows;
 
-public class PlayerAndroid : IPlayer
+public class PlayerWindows : IPlayer
 {
     public Task<bool> IsPlaying()
     {
@@ -50,6 +50,11 @@ public class PlayerAndroid : IPlayer
     }
 
     public Task<long> GetPlayTime()
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> Initialize()
     {
         throw new NotImplementedException();
     }
